@@ -1,0 +1,19 @@
+{
+  "groups": [
+    {
+      "name": "org.moduliths.sample",
+      "type": "com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties",
+      "sourceType": "com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "org.moduliths.sample.test",
+      "type": "java.lang.Boolean",
+      "description": "Some test property of type {@link java.lang.Boolean}.",
+      "sourceType": "com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties",
+      "defaultValue": false
+    }
+  ],
+  "hints": []
+}

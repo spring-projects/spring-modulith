@@ -1,0 +1,59 @@
+= Moduliths Moments
+
+Moments is an implementation of the https://verraes.net/2019/05/patterns-for-decoupling-distsys-passage-of-time-event/[Passage of Time Event] idea, originally presented by https://github.com/mathiasverraes[Mathias Verraes].
+It enables Spring Boot applications to consume the following events to attach business logic to them:
+
+* `DayHasPassed` - signals the end of a day
+* `WeekHasPassed` - signals the end of a week
+* `MonthHasPassed` - signals the end of a month
+* `QuarterHasPassed` - signals the end of a quarter
+* `YearHasPassed` - signals the end of a year
+
+This allows event listeners to be registered that react on the publication of such events.
+They allow to decouple from the actual triggering mechanism (e.g. Spring's built-in scheduling) and can thus be tested more easily.
+
+== How to use Moments?
+
+Moments will auto-activate in a Spring Boot application if you put it on the classpath of your application.
+
+[source, xml]
+----
+<dependency>
+  <groupId>org.moduliths</groupId>
+  <artifactId>moduliths-moments</artifactId>
+  <version>…</version>
+</dependency>
+----
+
+== What does Moments enable?
+
+The Moments module enables scheduling for the application it is applied to.
+It registers a bean of type `Moments` that takes care of publishing the above mentioned events.
+By setting `moduliths.moments.enable-time-machine` you can also rather expose a bean of type `TimeMachine` (which extends `Moments`), which exposes a `….shift(Duration)` method which allows to move what constitutes "now" by the given `Duration`.
+Moving time forward will cause all events published that would occur during the delta.
+
+=== How to disable Moments?
+
+If you don't control the classpath of the application you run, you can still disable Moments by setting the `moduliths.moments.enabled` property to `false`.
+
+== Customization options
+
+Moments works with Java's standard `Clock` abstraction to determine the current time.
+By default, `Clock.standardUTC()` is used.
+To use a different clock, just register a Spring Bean of type `Clock`.
+Moments will pick it up automatically.
+
+=== Moments configuration properties
+
+Moments exposes configuration properties to tweak its behavior under the `moduliths.moments` namespace.
+
+[%header, cols="1,1,2"]
+|===
+|Property|Default value|Description
+|`enabled`|`true`|Whether to enable Moments in the first place.
+|`enable-time-machine`|`false`|Set to true to expose `TimeMachine` instead of `Moments` to publicly expose methods to shift time.
+|`granularity`|`hours`|At which granularity to publish events. Switch to `days` if you want to disable the distribution of `HourHasPassed` events.
+|`locale`|`Locale.default()`|The `Locale` to determine the start date of the week for `WeekHasPassed` events.
+|`quarter-start-month`|January|The month in which the first quarter starts. Customize via the month's name you like to start the quarters at (e.g. `February`).
+|`zone-id`|`UTC`|The time zone to determine the dates and times attached to the events published. Use standardized region time zone descriptors (e.g. `Europe/Berlin`) to customize
+|===

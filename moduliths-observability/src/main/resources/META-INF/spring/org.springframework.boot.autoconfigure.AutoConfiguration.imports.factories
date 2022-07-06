@@ -1,0 +1,2 @@
+org.moduliths.observability.autoconfigure.ModuleObservabilityAutoConfiguration
+org.moduliths.observability.autoconfigure.SpringDataRestModuleObservabilityAutoConfiguration

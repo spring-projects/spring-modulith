@@ -1,0 +1,30 @@
+= Spring (reliable) Domain Events
+
+image:https://travis-ci.org/olivergierke/spring-domain-events.svg?branch=master["Build Status", link="https://travis-ci.org/olivergierke/spring-domain-events"]
+
+== The Problem
+
+Spring allows applications to publish events via its `ApplicationEventPublisher` API.
+With a transaction in place, these events can either be consumed within the transaction (using `@EventListener`) or in a dedicated transaction completion phase (using `@TransactionalEventListener`, defaulting to after transaction commit).
+While an application failure for an in-transaction event listener is not a problem as the transaction has not been committed, a failure during the publication of events to transactional event listeners will mean that the event is lost and the notification of those listeners cannot be guaranteed.
+
+== The idea
+
+As we already have a transactional datastore in place, we could also store publication information about all transactional event listeners with the transaction that publishes one or more events.
+We can then wrap the transactional event listeners to be able to remove those registrations on successful listener invocation and completion.
+This allows us to re-publish the events to transactional listeners that either haven't been notified yet or didn't successfully complete the message handling in case of an application failure (on either a restart or in a scheduled way).
+
+== Building blocks of the prototype
+
+* The `EventPublicationRegistry` -- the core interface to register publications and mark them completed. It allows different implementations (JPA, JDBC).
+* The `EventSerializer` -- a component to serialize the actual domain event so that it can be kept around in the publication. Again, to allow pluggable implementations (Jackson etc.)
+* `PersistentApplicationEventMulticaster` -- a replacement for Spring's default `ApplicationEventMulticaster` that stores publications via the `EventPublicationRegistry`.
+* `CompletionRegisteringBeanPostProcessor` -- a `BeanPostProcessor` that wraps `@TransactionalEventListener` instances with an interceptor to mark publications as completed.
+* `@EnablePersistentDomainEvents` -- registers the multicaster and includes configuration classes for `EventPublicationConfigurationExtension` (to register the registry) and `EventSerializationConfigurationExtension` (to register an `EventSerializer`) via `spring.factories`.
+
+=== Implementation modules
+
+* `core` -- multicaster implementation, general and configuration infrastructure and SPI interfaces.
+* `jackson` -- a rudimentary Jackson-based `EventSerializer` implementation.
+* `jpa` -- a JPA-based `EventPublicationRegistry`.
+* `test` -- a sample integration test featuring two successful and one failing listener to show the registry exposes  the publication of the failed listener after the failure.
