@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2022 the original author or authors.
+ * Copyright 2017-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -85,7 +85,7 @@ class JpaEventPublicationRegistry implements EventPublicationRegistry, Disposabl
 		Assert.notNull(listener, "Listener identifier must not be null!");
 
 		events.findBySerializedEventAndListenerId(serializer.serialize(event), listener.toString()) //
-				.map(JpaEventPublicationRegistry::logCompleted) //
+				.map(JpaEventPublicationRegistry::LOGCompleted) //
 				.ifPresent(it -> events.update(it.markCompleted()));
 	}
 
@@ -130,7 +130,7 @@ class JpaEventPublicationRegistry implements EventPublicationRegistry, Disposabl
 		return result;
 	}
 
-	private static JpaEventPublication logCompleted(JpaEventPublication publication) {
+	private static JpaEventPublication LOGCompleted(JpaEventPublication publication) {
 
 		LOG.debug("Marking publication of event {} with id {} to listener {} completed.", //
 				publication.getEventType(), publication.getId(), publication.getListenerId());
@@ -145,20 +145,13 @@ class JpaEventPublicationRegistry implements EventPublicationRegistry, Disposabl
 		private final JpaEventPublication publication;
 		private final EventSerializer serializer;
 
-		private Object deserializedEvent;
-
 		/*
 		 * (non-Javadoc)
 		 * @see org.springframework.events.EventPublication#getEvent()
 		 */
 		@Override
 		public Object getEvent() {
-
-			if (deserializedEvent == null) {
-				this.deserializedEvent = serializer.deserialize(publication.getSerializedEvent(), publication.getEventType());
-			}
-
-			return deserializedEvent;
+			return serializer.deserialize(publication.getSerializedEvent(), publication.getEventType());
 		}
 
 		/*

@@ -17,24 +17,24 @@ package org.springframework.modulith.model;
 
 import static org.assertj.core.api.Assertions.*;
 
+import jakarta.persistence.Entity;
+
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
-import javax.persistence.Entity;
-
 import org.jmolecules.event.annotation.DomainEventHandler;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
-import org.springframework.modulith.model.ArchitecturallyEvidentType.SpringAwareArchitecturallyEvidentType;
-import org.springframework.modulith.model.ArchitecturallyEvidentType.SpringDataAwareArchitecturallyEvidentType;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.modulith.model.ArchitecturallyEvidentType.SpringAwareArchitecturallyEvidentType;
+import org.springframework.modulith.model.ArchitecturallyEvidentType.SpringDataAwareArchitecturallyEvidentType;
 import org.springframework.stereotype.Repository;
 
 import com.tngtech.archunit.core.domain.JavaClass;

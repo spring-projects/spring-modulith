@@ -18,12 +18,12 @@ package org.springframework.modulith.events.jpa;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
@@ -102,14 +102,13 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	@Test
 	void persistsJpaEventPublication() {
 
-		String listenerId = "listener";
-		JpaEventPublication publication = JpaEventPublication.of(Instant.now(), listenerId, "", Object.class);
+		JpaEventPublication publication = JpaEventPublication.of(Instant.now(), "listener", "", Object.class);
 
 		// Store publication
 		repository.create(publication);
 
 		assertThat(repository.findByCompletionDateIsNull()).containsExactly(publication);
-		assertThat(repository.findBySerializedEventAndListenerId("", listenerId)).isPresent();
+		assertThat(repository.findBySerializedEventAndListenerId("", "listener")).isPresent();
 
 		// Complete publication
 		repository.update(publication.markCompleted());

@@ -82,7 +82,7 @@ class Types {
 	@UtilityClass
 	static class JavaXTypes {
 
-		private static final String BASE_PACKAGE = "javax";
+		private static final String BASE_PACKAGE = "jakarta";
 
 		static final String AT_ENTITY = BASE_PACKAGE + ".persistence.Entity";
 		static final String AT_INJECT = BASE_PACKAGE + ".inject.Inject";

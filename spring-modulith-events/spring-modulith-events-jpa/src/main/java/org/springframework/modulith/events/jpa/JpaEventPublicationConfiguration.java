@@ -17,7 +17,7 @@ package org.springframework.modulith.events.jpa;
 
 import lombok.RequiredArgsConstructor;
 
-import javax.persistence.EntityManager;
+import jakarta.persistence.EntityManager;
 
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;

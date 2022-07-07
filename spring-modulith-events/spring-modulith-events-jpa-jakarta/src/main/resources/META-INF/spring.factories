@@ -1,6 +1,0 @@
-org.springframework.modulith.events.config.EventPublicationConfigurationExtension=\
-  org.springframework.modulith.events.jpa.JpaEventPublicationConfiguration
-
-org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.springframework.modulith.events.jpa.JpaEventPublicationAutoConfiguration,\
-  org.springframework.modulith.events.jpa.JpaEventPublicationConfiguration

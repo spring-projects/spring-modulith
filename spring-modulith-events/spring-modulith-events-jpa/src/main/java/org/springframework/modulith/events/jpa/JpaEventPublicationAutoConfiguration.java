@@ -23,6 +23,4 @@ import org.springframework.context.annotation.Configuration;
  */
 @Configuration(proxyBeanMethods = false)
 @AutoConfigurationPackage
-class JpaEventPublicationAutoConfiguration {
-
-}
+class JpaEventPublicationAutoConfiguration {}

@@ -15,13 +15,12 @@
  */
 package org.springframework.modulith.events.jpa;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 import java.util.Optional;
-
-import javax.persistence.EntityManager;
-import javax.persistence.TypedQuery;
 
 import org.springframework.transaction.annotation.Transactional;
 
