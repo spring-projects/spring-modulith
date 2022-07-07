@@ -1,0 +1,33 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.springframework.experimental</groupId>
+		<artifactId>spring-modulith</artifactId>
+		<version>0.1.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>spring-modulith-starter-test</artifactId>
+	<name>Spring Modulith - Starter Test</name>
+
+	<properties>
+		<module.name>org.springframework.modulith.starter.test</module.name>
+	</properties>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.experimental</groupId>
+			<artifactId>spring-modulith-test</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.experimental</groupId>
+			<artifactId>spring-modulith-docs</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
+		</dependency>
+
+	</dependencies>
+
+</project>

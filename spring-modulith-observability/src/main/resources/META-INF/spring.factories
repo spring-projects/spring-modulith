@@ -1,0 +1,3 @@
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.springframework.modulith.observability.autoconfigure.ModuleObservabilityAutoConfiguration,\
+  org.springframework.modulith.observability.autoconfigure.SpringDataRestModuleObservabilityAutoConfiguration

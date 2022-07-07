@@ -1,0 +1,2 @@
+org.springframework.test.context.ContextCustomizerFactory=\
+  org.springframework.modulith.test.ModuleContextCustomizerFactory
