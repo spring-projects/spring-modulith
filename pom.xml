@@ -1,13 +1,13 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>org.moduliths</groupId>
-	<artifactId>moduliths</artifactId>
-	<version>1.4.0-SNAPSHOT</version>
+	<groupId>org.springframework.experimental</groupId>
+	<artifactId>spring-modulith</artifactId>
+	<version>0.1.0-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 
-	<name>Moduliths</name>
+	<name>Spring Modulith</name>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
@@ -17,16 +17,16 @@
 	</parent>
 
 	<modules>
-		<module>moduliths-api</module>
-		<module>moduliths-core</module>
-		<module>moduliths-events</module>
-		<module>moduliths-test</module>
-		<module>moduliths-docs</module>
-		<module>moduliths-observability</module>
-		<module>moduliths-moments</module>
-		<module>moduliths-starter-jpa</module>
-		<module>moduliths-starter-jpa-jakarta</module>
-		<module>moduliths-starter-test</module>
+		<module>spring-modulith-api</module>
+		<module>spring-modulith-core</module>
+		<module>spring-modulith-events</module>
+		<module>spring-modulith-test</module>
+		<module>spring-modulith-docs</module>
+		<module>spring-modulith-observability</module>
+		<module>spring-modulith-moments</module>
+		<module>spring-modulith-starter-jpa</module>
+		<module>spring-modulith-starter-jpa-jakarta</module>
+		<module>spring-modulith-starter-test</module>
 	</modules>
 
 	<properties>
@@ -39,7 +39,7 @@
 	</properties>
 
 	<organization>
-		<name>Moduliths</name>
+		<name>Spring Modulith</name>
 		<url>http://moduliths.org</url>
 	</organization>
 
@@ -91,8 +91,8 @@ limitations under the License.
 			</activation>
 
 			<modules>
-				<module>moduliths-sample</module>
-				<module>moduliths-integration-test</module>
+				<module>spring-modulith-sample</module>
+				<module>spring-modulith-integration-test</module>
 			</modules>
 
 			<distributionManagement>
@@ -289,9 +289,9 @@ limitations under the License.
 	</build>
 
 	<scm>
-		<url>https://github.com/odrotbohm/moduliths</url>
-		<connection>scm:git:https://github.com/odrotbohm/moduliths</connection>
-		<developerConnection>scm:git:ssh://git@github.com/odrotbohm/moduliths.git</developerConnection>
+		<url>https://github.com/spring-projects-experimental/spring-modulith</url>
+		<connection>scm:git:https://github.com/spring-projects-experimental/spring-modulith</connection>
+		<developerConnection>scm:git:ssh://git@github.com/spring-projects-experimental/spring-modulith</developerConnection>
 		<tag>main</tag>
 	</scm>
 

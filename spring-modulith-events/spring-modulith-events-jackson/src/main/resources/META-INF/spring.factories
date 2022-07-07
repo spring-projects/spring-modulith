@@ -1,0 +1,5 @@
+org.springframework.modulith.events.config.EventSerializationConfigurationExtension=\
+  org.springframework.modulith.events.jackson.JacksonEventSerializationConfiguration
+
+org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
+  org.springframework.modulith.events.jackson.JacksonEventSerializationConfiguration

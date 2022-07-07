@@ -1,0 +1,19 @@
+{
+  "groups": [
+    {
+      "name": "org.springframework.modulith.sample",
+      "type": "com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties",
+      "sourceType": "com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties"
+    }
+  ],
+  "properties": [
+    {
+      "name": "org.springframework.modulith.sample.test",
+      "type": "java.lang.Boolean",
+      "description": "Some test property of type {@link java.lang.Boolean}.",
+      "sourceType": "com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties",
+      "defaultValue": false
+    }
+  ],
+  "hints": []
+}
