@@ -1,2 +1,2 @@
 org.springframework.boot.autoconfigure.EnableAutoConfiguration=\
-  org.springframework.modulith.moments.MomentsAutoConfiguration
+  org.springframework.modulith.moments.autoconfigure.MomentsAutoConfiguration
