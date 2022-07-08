@@ -15,15 +15,26 @@
  */
 package example;
 
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationContext;
+import org.springframework.modulith.observability.ModuleEventListener;
 
 /**
  * @author Oliver Drotbohm
  */
 @SpringBootTest
+@AutoConfigureObservability
 class ExampleApplicationIntegrationTests {
 
+	@Autowired ApplicationContext context;
+
 	@Test
-	void bootstrapsSuccessfully() {}
+	void bootstrapsSuccessfully() {
+		assertThat(context.getBean(ModuleEventListener.class)).isNotNull();
+	}
 }

@@ -22,7 +22,7 @@
 		<module>spring-modulith-events</module>
 		<module>spring-modulith-test</module>
 		<module>spring-modulith-docs</module>
-		<!--<module>spring-modulith-observability</module>-->
+		<module>spring-modulith-observability</module>
 		<module>spring-modulith-moments</module>
 		<module>spring-modulith-starter-jpa</module>
 		<module>spring-modulith-starter-test</module>
@@ -191,7 +191,6 @@ limitations under the License.
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<version>1.18.24</version>
 			<scope>provided</scope>
 		</dependency>
 

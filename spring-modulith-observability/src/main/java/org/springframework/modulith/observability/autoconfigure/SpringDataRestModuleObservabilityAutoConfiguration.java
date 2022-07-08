@@ -15,8 +15,9 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
+import io.micrometer.tracing.Tracer;
+
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.webmvc.RepositoryController;

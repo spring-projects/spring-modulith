@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.tracing.Tracer;
 import lombok.RequiredArgsConstructor;
 
 import org.aopalliance.aop.Advice;
@@ -24,7 +25,6 @@ import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;

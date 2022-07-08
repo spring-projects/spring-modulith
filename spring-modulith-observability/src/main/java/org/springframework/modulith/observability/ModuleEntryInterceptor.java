@@ -15,6 +15,10 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.tracing.BaggageInScope;
+import io.micrometer.tracing.Span;
+import io.micrometer.tracing.Tracer;
+import io.micrometer.tracing.Tracer.SpanInScope;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,10 +28,6 @@ import java.util.Map;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.cloud.sleuth.BaggageInScope;
-import org.springframework.cloud.sleuth.Span;
-import org.springframework.cloud.sleuth.Tracer;
-import org.springframework.cloud.sleuth.Tracer.SpanInScope;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

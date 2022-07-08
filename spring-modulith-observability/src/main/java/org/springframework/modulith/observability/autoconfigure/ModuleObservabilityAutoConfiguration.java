@@ -22,10 +22,11 @@ import brave.baggage.BaggagePropagationCustomizer;
 import brave.handler.MutableSpan;
 import brave.handler.SpanHandler;
 import brave.propagation.TraceContext;
+import io.micrometer.tracing.Tracer;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -38,6 +39,7 @@ import org.springframework.modulith.observability.ModulesRuntime;
  * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
+@ConditionalOnProperty(name = "management.tracing.enabled", havingValue = "true")
 class ModuleObservabilityAutoConfiguration {
 
 	@Bean

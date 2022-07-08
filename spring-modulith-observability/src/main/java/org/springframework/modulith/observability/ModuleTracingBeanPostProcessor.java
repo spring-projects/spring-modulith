@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.tracing.Tracer;
 import lombok.RequiredArgsConstructor;
 
 import java.lang.reflect.Method;
@@ -30,7 +31,6 @@ import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.modulith.model.Modules;
 
 /**
