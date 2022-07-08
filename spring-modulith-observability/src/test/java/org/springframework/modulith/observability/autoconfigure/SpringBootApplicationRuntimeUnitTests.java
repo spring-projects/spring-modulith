@@ -21,9 +21,9 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.modulith.observability.ApplicationRuntime;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.ApplicationContext;
+import org.springframework.modulith.observability.ApplicationRuntime;
 
 /**
  * Unit tests for {@link SpringBootApplicationRuntime}.

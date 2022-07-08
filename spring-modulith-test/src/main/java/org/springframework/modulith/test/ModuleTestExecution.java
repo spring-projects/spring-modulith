@@ -30,13 +30,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.test.context.AnnotatedClassFinder;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.model.JavaPackage;
 import org.springframework.modulith.model.Module;
 import org.springframework.modulith.model.Modules;
 import org.springframework.modulith.test.ModuleTest.BootstrapMode;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.AnnotatedClassFinder;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 
 import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;

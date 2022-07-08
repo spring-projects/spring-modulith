@@ -22,10 +22,10 @@ import static org.mockito.Mockito.*;
 import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.aop.framework.Advised;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.context.event.EventListener;
+import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 

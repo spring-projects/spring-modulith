@@ -42,12 +42,12 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.model.Module;
 import org.springframework.modulith.model.Module.DependencyDepth;
 import org.springframework.modulith.model.Module.DependencyType;
 import org.springframework.modulith.model.Modules;
 import org.springframework.modulith.model.SpringBean;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;

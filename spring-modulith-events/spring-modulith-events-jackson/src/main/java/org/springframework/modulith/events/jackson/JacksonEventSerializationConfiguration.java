@@ -17,10 +17,10 @@ package org.springframework.modulith.events.jackson;
 
 import lombok.RequiredArgsConstructor;
 
-import org.springframework.modulith.events.config.EventSerializationConfigurationExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.modulith.events.config.EventSerializationConfigurationExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;

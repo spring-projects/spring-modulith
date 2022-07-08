@@ -15,14 +15,14 @@
  */
 package org.springframework.modulith.events.config;
 
-import org.springframework.modulith.events.EventPublicationRegistry;
-import org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor;
-import org.springframework.modulith.events.support.MapEventPublicationRegistry;
-import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor;
+import org.springframework.modulith.events.support.MapEventPublicationRegistry;
+import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 
 /**
  * @author Oliver Drotbohm

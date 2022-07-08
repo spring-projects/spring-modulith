@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
 import org.springframework.modulith.docs.Documenter.CanvasOptions.Groupings;
@@ -34,7 +35,6 @@ import org.springframework.modulith.model.Module;
 import org.springframework.modulith.model.Modules;
 import org.springframework.modulith.model.Source;
 import org.springframework.modulith.model.SpringBean;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;

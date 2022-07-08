@@ -19,12 +19,12 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.function.Supplier;
 
-import org.springframework.modulith.model.Module;
 import org.springframework.cloud.sleuth.Span;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.modulith.model.Module;
 
 /**
  * @author Oliver Drotbohm

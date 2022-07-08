@@ -25,10 +25,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.model.Types.SpringTypes;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 
 /**

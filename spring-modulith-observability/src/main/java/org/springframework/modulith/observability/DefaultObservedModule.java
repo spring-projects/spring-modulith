@@ -21,12 +21,12 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.aop.ProxyMethodInvocation;
+import org.springframework.aop.framework.Advised;
 import org.springframework.modulith.model.FormatableJavaClass;
 import org.springframework.modulith.model.Module;
 import org.springframework.modulith.model.Modules;
 import org.springframework.modulith.model.SpringBean;
-import org.springframework.aop.ProxyMethodInvocation;
-import org.springframework.aop.framework.Advised;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 

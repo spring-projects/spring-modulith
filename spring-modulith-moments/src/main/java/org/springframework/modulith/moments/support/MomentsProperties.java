@@ -29,12 +29,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import org.springframework.modulith.moments.Quarter;
-import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.moments.Quarter;
+import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.util.Assert;
 
 /**

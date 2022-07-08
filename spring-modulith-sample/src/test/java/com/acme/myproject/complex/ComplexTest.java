@@ -18,10 +18,10 @@ package com.acme.myproject.complex;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.modulith.model.NamedInterface;
 import org.springframework.modulith.model.NamedInterfaces;
 import org.springframework.modulith.test.ModuleTestExecution;
-import org.springframework.beans.factory.annotation.Autowired;
 
 import com.acme.myproject.NonVerifyingModuleTest;
 

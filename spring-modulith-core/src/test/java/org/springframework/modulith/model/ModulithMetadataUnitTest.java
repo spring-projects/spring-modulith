@@ -20,9 +20,9 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 /**
  * Unit tests for {@link ModulithMetadata}.

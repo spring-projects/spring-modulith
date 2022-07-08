@@ -15,13 +15,13 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
-import org.springframework.modulith.observability.ApplicationRuntime;
-import org.springframework.modulith.observability.SpringDataRestModuleTracingBeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.rest.webmvc.RepositoryController;
+import org.springframework.modulith.observability.ApplicationRuntime;
+import org.springframework.modulith.observability.SpringDataRestModuleTracingBeanPostProcessor;
 
 /**
  * @author Oliver Drotbohm

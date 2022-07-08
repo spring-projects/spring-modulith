@@ -28,12 +28,12 @@ import java.lang.annotation.Target;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.springframework.modulith.events.config.EnablePersistentDomainEvents.PersistentDomainEventsImportSelector;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportSelector;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.modulith.events.config.EnablePersistentDomainEvents.PersistentDomainEventsImportSelector;
 
 /**
  * @author Oliver Gierke

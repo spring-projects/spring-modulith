@@ -23,8 +23,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.springframework.modulith.Modulithic;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.modulith.Modulithic;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 

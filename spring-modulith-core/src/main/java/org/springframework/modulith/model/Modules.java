@@ -31,10 +31,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jmolecules.archunit.JMoleculesDddRules;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.model.Types.JMoleculesTypes;
-import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.base.DescribedPredicate;

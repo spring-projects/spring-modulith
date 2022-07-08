@@ -20,8 +20,6 @@ import lombok.RequiredArgsConstructor;
 import org.aopalliance.aop.Advice;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.BeansException;
@@ -30,6 +28,8 @@ import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
+import org.springframework.modulith.model.Module;
+import org.springframework.modulith.model.Modules;
 
 /**
  * @author Oliver Drotbohm

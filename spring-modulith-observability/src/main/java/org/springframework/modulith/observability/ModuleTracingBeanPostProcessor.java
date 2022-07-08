@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.aopalliance.aop.Advice;
-import org.springframework.modulith.model.Modules;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
@@ -32,6 +31,7 @@ import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.cloud.sleuth.Tracer;
+import org.springframework.modulith.model.Modules;
 
 /**
  * @author Oliver Drotbohm

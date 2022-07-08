@@ -30,6 +30,7 @@ import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
 import org.springframework.modulith.moments.HourHasPassed;
 import org.springframework.modulith.moments.MonthHasPassed;
@@ -37,7 +38,6 @@ import org.springframework.modulith.moments.QuarterHasPassed;
 import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.scheduling.annotation.Scheduled;
 
 /**

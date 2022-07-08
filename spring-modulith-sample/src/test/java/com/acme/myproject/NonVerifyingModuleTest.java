@@ -20,9 +20,9 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.core.annotation.AliasFor;
 import org.springframework.modulith.test.ModuleTest;
 import org.springframework.modulith.test.ModuleTest.BootstrapMode;
-import org.springframework.core.annotation.AliasFor;
 
 /**
  * @author Oliver Gierke

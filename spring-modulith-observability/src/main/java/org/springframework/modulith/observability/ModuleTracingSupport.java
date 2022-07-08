@@ -18,11 +18,11 @@ package org.springframework.modulith.observability;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-import org.springframework.modulith.model.Modules;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.modulith.model.Modules;
 import org.springframework.util.Assert;
 
 /**

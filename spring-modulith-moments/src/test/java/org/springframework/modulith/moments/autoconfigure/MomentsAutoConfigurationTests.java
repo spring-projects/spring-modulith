@@ -21,12 +21,12 @@ import java.time.LocalDate;
 import java.time.ZoneId;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.moments.Quarter;
 import org.springframework.modulith.moments.support.Moments;
 import org.springframework.modulith.moments.support.MomentsProperties;
 import org.springframework.modulith.moments.support.TimeMachine;
-import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 /**
  * Integration tests for {@link MomentsAutoConfiguration}.

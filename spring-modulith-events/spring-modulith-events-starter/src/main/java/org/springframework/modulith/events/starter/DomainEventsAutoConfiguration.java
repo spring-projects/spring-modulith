@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.events.starter;
 
-import org.springframework.modulith.events.EventPublication;
-import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
@@ -25,6 +23,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
 
 /**
  * Enables auto-configuration for the events package.

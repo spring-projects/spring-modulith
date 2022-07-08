@@ -29,6 +29,7 @@ import java.time.temporal.WeekFields;
 import java.util.Locale;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
 import org.springframework.modulith.moments.HourHasPassed;
 import org.springframework.modulith.moments.MonthHasPassed;
@@ -37,7 +38,6 @@ import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
 import org.springframework.modulith.moments.support.MomentsProperties.Granularity;
-import org.springframework.context.ApplicationEventPublisher;
 
 /**
  * Unit tests for {@link Moments}.

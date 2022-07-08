@@ -35,11 +35,11 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.data.repository.core.RepositoryMetadata;
+import org.springframework.data.repository.core.support.AbstractRepositoryMetadata;
 import org.springframework.modulith.model.Types.JMoleculesTypes;
 import org.springframework.modulith.model.Types.SpringDataTypes;
 import org.springframework.modulith.model.Types.SpringTypes;
-import org.springframework.data.repository.core.RepositoryMetadata;
-import org.springframework.data.repository.core.support.AbstractRepositoryMetadata;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;

@@ -23,16 +23,16 @@ import brave.handler.MutableSpan;
 import brave.handler.SpanHandler;
 import brave.propagation.TraceContext;
 
-import org.springframework.modulith.observability.ApplicationRuntime;
-import org.springframework.modulith.observability.ModuleEventListener;
-import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor;
-import org.springframework.modulith.observability.ModulesRuntime;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.cloud.sleuth.Tracer;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.modulith.observability.ApplicationRuntime;
+import org.springframework.modulith.observability.ModuleEventListener;
+import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor;
+import org.springframework.modulith.observability.ModulesRuntime;
 
 /**
  * @author Oliver Drotbohm

@@ -20,10 +20,10 @@ import lombok.RequiredArgsConstructor;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.springframework.modulith.observability.ApplicationRuntime;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
+import org.springframework.modulith.observability.ApplicationRuntime;
 import org.springframework.util.ClassUtils;
 
 /**
