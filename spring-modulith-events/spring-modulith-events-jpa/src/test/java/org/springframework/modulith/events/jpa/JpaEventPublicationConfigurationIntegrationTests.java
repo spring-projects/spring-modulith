@@ -40,7 +40,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(SpringExtension.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
 @RequiredArgsConstructor
-public class JpaEventPublicationConfigurationIntegrationTests {
+class JpaEventPublicationConfigurationIntegrationTests {
 
 	private final ApplicationContext context;
 

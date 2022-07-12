@@ -16,11 +16,17 @@
 package org.springframework.modulith.events.jpa;
 
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.context.annotation.Configuration;
 
 /**
+ * Auto-configuration for JPA based event publication. Registers this class' package as auto-configuration package, so
+ * that it gets picked up for entity scanning by default.
+ *
  * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
+@AutoConfigureBefore(HibernateJpaAutoConfiguration.class)
 @AutoConfigurationPackage
 class JpaEventPublicationAutoConfiguration {}
