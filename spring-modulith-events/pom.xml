@@ -16,6 +16,7 @@
 	<modules>
 		<module>spring-modulith-events-core</module>
 		<module>spring-modulith-events-jpa</module>
+		<module>spring-modulith-events-jdbc</module>
 		<module>spring-modulith-events-jackson</module>
 		<module>spring-modulith-events-tests</module>
 		<module>spring-modulith-events-starter</module>
