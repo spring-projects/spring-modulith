@@ -19,26 +19,37 @@ import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.modulith.events.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor;
-import org.springframework.modulith.events.support.MapEventPublicationRegistry;
+import org.springframework.modulith.events.support.MapBackedEventPublicationRepository;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 
 /**
- * @author Oliver Drotbohm
+ * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
  */
 @Configuration(proxyBeanMethods = false)
 class EventPublicationConfiguration {
 
-	@Bean
-	PersistentApplicationEventMulticaster applicationEventMulticaster(ObjectProvider<EventPublicationRegistry> registry) {
+    @Bean
+    EventPublicationRegistry eventPublicationRegistry(
+            ObjectProvider<EventPublicationRepository> repositoryProvider) {
 
-		return new PersistentApplicationEventMulticaster(
-				() -> registry.getIfAvailable(() -> new MapEventPublicationRegistry()));
-	}
+        return new DefaultEventPublicationRegistry(
+                repositoryProvider.getIfAvailable(MapBackedEventPublicationRepository::new)
+        );
+    }
 
-	@Bean
-	static CompletionRegisteringBeanPostProcessor bpp(ObjectFactory<EventPublicationRegistry> store) {
-		return new CompletionRegisteringBeanPostProcessor(() -> store.getObject());
-	}
+    @Bean
+    PersistentApplicationEventMulticaster applicationEventMulticaster(
+            EventPublicationRegistry eventPublicationRegistry) {
+
+        return new PersistentApplicationEventMulticaster(() -> eventPublicationRegistry);
+    }
+
+    @Bean
+    static CompletionRegisteringBeanPostProcessor bpp(ObjectFactory<EventPublicationRegistry> store) {
+        return new CompletionRegisteringBeanPostProcessor(store::getObject);
+    }
 }

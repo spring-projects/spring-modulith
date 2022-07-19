@@ -52,7 +52,7 @@ class JacksonEventSerializer implements EventSerializer {
 	 * @see de.oliverDrotbohm.events.EventSerializer#deserialize(java.lang.Object, java.lang.Class)
 	 */
 	@Override
-	public Object deserialize(Object serialized, Class<?> type) {
+	public <T> T deserialize(Object serialized, Class<T> type) {
 
 		try {
 			return mapper.get().readerFor(type).readValue(serialized.toString());

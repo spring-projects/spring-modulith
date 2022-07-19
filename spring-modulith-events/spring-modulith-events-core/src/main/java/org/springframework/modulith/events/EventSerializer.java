@@ -35,5 +35,5 @@ public interface EventSerializer {
 	 * @param type must not be {@literal null}.
 	 * @return
 	 */
-	Object deserialize(Object serialized, Class<?> type);
+	<T> T deserialize(Object serialized, Class<T> type);
 }

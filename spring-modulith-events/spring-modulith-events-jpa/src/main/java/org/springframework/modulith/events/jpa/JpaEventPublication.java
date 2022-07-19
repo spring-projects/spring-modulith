@@ -15,25 +15,26 @@
  */
 package org.springframework.modulith.events.jpa;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
-
 import java.time.Instant;
 import java.util.UUID;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 /**
- * @author Oliver Drotbohm
+ * @author Oliver Drotbohm, Dmitry Belyaev, Björn Kieling
  */
 @Data
 @Entity
 @NoArgsConstructor(force = true)
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 class JpaEventPublication {
 
 	private final @Id @Column(length = 16) UUID id;
@@ -45,10 +46,10 @@ class JpaEventPublication {
 	private Instant completionDate;
 
 	@Builder
-	static JpaEventPublication of(Instant publicationDate, String listenerId, Object serializedEvent,
-			Class<?> eventType) {
-		return new JpaEventPublication(UUID.randomUUID(), publicationDate, listenerId, serializedEvent.toString(),
-				eventType);
+	static JpaEventPublication of(UUID id, Instant publicationDate, String listenerId, Object serializedEvent,
+			Class<?> eventType, Instant completionDate) {
+		return new JpaEventPublication(id, publicationDate, listenerId, serializedEvent.toString(), eventType,
+				completionDate);
 	}
 
 	JpaEventPublication markCompleted() {

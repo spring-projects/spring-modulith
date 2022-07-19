@@ -15,14 +15,14 @@
  */
 package org.springframework.modulith.events.jpa;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import lombok.RequiredArgsConstructor;
-
-import java.time.Instant;
 
 import javax.sql.DataSource;
 
@@ -34,7 +34,10 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.modulith.events.CompletableEventPublication;
+import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventSerializer;
+import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
@@ -45,8 +48,10 @@ import org.springframework.test.context.TestConstructor.AutowireMode;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+
 /**
- * @author Oliver Drotbohm
+ * @author Oliver Drotbohm, Dmitry Belyaev, Björn Kieling
  */
 @ExtendWith(SpringExtension.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
@@ -54,13 +59,17 @@ import org.springframework.transaction.annotation.Transactional;
 @RequiredArgsConstructor
 class JpaEventPublicationRepositoryIntegrationTests {
 
+	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
+
+	private static final EventSerializer eventSerializer = mock(EventSerializer.class);
+
 	@Configuration
 	@Import(JpaEventPublicationConfiguration.class)
 	static class TestConfig {
 
 		@Bean
 		EventSerializer eventSerializer() {
-			return mock(EventSerializer.class);
+			return eventSerializer;
 		}
 
 		// Database
@@ -102,17 +111,34 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	@Test
 	void persistsJpaEventPublication() {
 
-		JpaEventPublication publication = JpaEventPublication.of(Instant.now(), "listener", "", Object.class);
+		TestEvent testEvent = new TestEvent("abc");
+		String serializedEvent = "{\"eventId\":\"abc\"}";
+
+		when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
+		when(eventSerializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+
+		CompletableEventPublication publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
 
 		// Store publication
 		repository.create(publication);
 
-		assertThat(repository.findByCompletionDateIsNull()).containsExactly(publication);
-		assertThat(repository.findBySerializedEventAndListenerId("", "listener")).isPresent();
+		List<EventPublication> eventPublications = repository.findByCompletionDateIsNull();
+		assertThat(eventPublications).hasSize(1);
+		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
+		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
+		assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
 
 		// Complete publication
-		repository.update(publication.markCompleted());
+		repository.updateCompletionDate(publication.markCompleted());
 
 		assertThat(repository.findByCompletionDateIsNull()).isEmpty();
+	}
+
+	private static final class TestEvent {
+		private final String eventId;
+
+		private TestEvent(String eventId) {
+			this.eventId = eventId;
+		}
 	}
 }

@@ -16,60 +16,36 @@
 package org.springframework.modulith.events.jpa;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
+import example.ExampleApplication;
 import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
 import org.springframework.modulith.events.EventSerializer;
+import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.TestConstructor.AutowireMode;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * @author Oliver Drotbohm
+ * @author Oliver Drotbohm, Dmitry Belyaev, Björn Kieling
  */
-@ExtendWith(SpringExtension.class)
+@SpringBootTest(classes = ExampleApplication.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
 @RequiredArgsConstructor
 class JpaEventPublicationConfigurationIntegrationTests {
 
 	private final ApplicationContext context;
 
-	@Configuration
-	@Import(JpaEventPublicationConfiguration.class)
-	static class TestConfig {
-
-		@Bean
-		EventSerializer eventSerializer() {
-			return mock(EventSerializer.class);
-		}
-
-		@Bean
-		EntityManager entityManager() {
-
-			EntityManager em = mock(EntityManager.class);
-
-			// Mock API for query executed at bootstrap time
-			TypedQuery<?> query = mock(TypedQuery.class);
-			doReturn(query).when(em).createQuery(any(String.class), any());
-
-			return em;
-		}
-	}
+	@MockBean
+	private EventSerializer serializer;
 
 	@Test
 	void bootstrapsApplicationComponents() {
 
-		assertThat(context.getBean(JpaEventPublicationRegistry.class)).isNotNull();
+		assertThat(context.getBean(EventPublicationRegistry.class)).isNotNull();
 		assertThat(context.getBean(JpaEventPublicationRepository.class)).isNotNull();
 	}
 }

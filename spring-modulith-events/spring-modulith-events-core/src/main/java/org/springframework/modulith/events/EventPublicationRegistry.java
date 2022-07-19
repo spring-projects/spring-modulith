@@ -18,13 +18,12 @@ package org.springframework.modulith.events;
 import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationListener;
-import org.springframework.util.Assert;
 
 /**
  * A registry to capture event publications to {@link ApplicationListener}s. Allows to register those publications, mark
  * them as completed and lookup incomplete publications.
  *
- * @author Oliver Drotbohm
+ * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
  */
 public interface EventPublicationRegistry {
 
@@ -37,29 +36,17 @@ public interface EventPublicationRegistry {
 	void store(Object event, Stream<PublicationTargetIdentifier> listeners);
 
 	/**
-	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as completed.
-	 *
-	 * @param event must not be {@literal null}.
-	 * @param listener must not be {@literal null}.
-	 */
-	void markCompleted(Object event, PublicationTargetIdentifier listener);
-
-	/**
-	 * Marks the given {@link EventPublication} as completed.
-	 *
-	 * @param publication must not be {@literal null}.
-	 */
-	default void markCompleted(EventPublication publication) {
-
-		Assert.notNull(publication, "Publication must not be null!");
-
-		markCompleted(publication.getEvent(), publication.getTargetIdentifier());
-	}
-
-	/**
 	 * Returns all {@link EventPublication}s that have not been completed yet.
 	 *
 	 * @return will never be {@literal null}.
 	 */
 	Iterable<EventPublication> findIncompletePublications();
+
+	/**
+	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as completed.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param targetIdentifier must not be {@literal null}.
+	 */
+	void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier);
 }

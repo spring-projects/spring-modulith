@@ -24,11 +24,9 @@ import org.springframework.util.Assert;
 /**
  * An event publication.
  *
- * @author Oliver Drotbohm
- * @see CompletableEventPublication#of(Object, PublicationTargetIdentifier)
+ * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
  */
 public interface EventPublication extends Comparable<EventPublication> {
-
 	/**
 	 * Returns the event that is published.
 	 *
@@ -78,10 +76,6 @@ public interface EventPublication extends Comparable<EventPublication> {
 		return this.getTargetIdentifier().equals(identifier);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see java.lang.Comparable#compareTo(java.lang.Object)
-	 */
 	@Override
 	public default int compareTo(EventPublication that) {
 		return this.getPublicationDate().compareTo(that.getPublicationDate());

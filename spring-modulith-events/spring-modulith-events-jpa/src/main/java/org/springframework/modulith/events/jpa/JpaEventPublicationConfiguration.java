@@ -16,28 +16,25 @@
 package org.springframework.modulith.events.jpa;
 
 import jakarta.persistence.EntityManager;
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 
+import lombok.RequiredArgsConstructor;
+
 /**
- * @author Oliver Drotbohm
+ * @author Oliver Drotbohm, Dmitry Belyaev, Björn Kieling
  */
 @Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor
 class JpaEventPublicationConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean
-	public JpaEventPublicationRegistry jpaEventPublicationRegistry(JpaEventPublicationRepository repository,
-			EventSerializer serializer) {
-		return new JpaEventPublicationRegistry(repository, serializer);
-	}
-
-	@Bean
-	public JpaEventPublicationRepository jpaEventPublicationRepository(EntityManager em) {
-		return new JpaEventPublicationRepository(em);
+	public JpaEventPublicationRepository jpaEventPublicationRepository(EntityManager em, EventSerializer serializer) {
+		// TODO Why do we want to instantiate the serializer here and what
+		// happens if no serializer is available?
+		return new JpaEventPublicationRepository(em, serializer);
 	}
 }
