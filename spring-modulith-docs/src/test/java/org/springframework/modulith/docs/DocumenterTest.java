@@ -27,8 +27,8 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.docs.Documenter.Options;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Module.DependencyType;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModule.DependencyType;
 
 import com.acme.myproject.Application;
 
@@ -49,7 +49,7 @@ class DocumenterTest {
 	@Test
 	void writesSingleModuleDocumentation() throws IOException {
 
-		Module module = documenter.getModules().getModuleByName("moduleB") //
+		ApplicationModule module = documenter.getModules().getModuleByName("moduleB") //
 				.orElseThrow(() -> new IllegalArgumentException());
 
 		documenter.writeModuleAsPlantUml(module, Options.defaults() //

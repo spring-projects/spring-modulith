@@ -34,9 +34,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.AnnotatedClassFinder;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.model.JavaPackage;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
-import org.springframework.modulith.test.ModuleTest.BootstrapMode;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 
 import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
@@ -46,7 +46,7 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
  */
 @Slf4j
 @EqualsAndHashCode(of = "key")
-public class ModuleTestExecution implements Iterable<Module> {
+public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 	private static Map<Class<?>, Class<?>> MODULITH_TYPES = new HashMap<>();
 	private static Map<Key, ModuleTestExecution> EXECUTIONS = new HashMap<>();
@@ -54,14 +54,14 @@ public class ModuleTestExecution implements Iterable<Module> {
 	private final Key key;
 
 	private final @Getter BootstrapMode bootstrapMode;
-	private final @Getter Module module;
-	private final @Getter Modules modules;
-	private final @Getter List<Module> extraIncludes;
+	private final @Getter ApplicationModule module;
+	private final @Getter ApplicationModules modules;
+	private final @Getter List<ApplicationModule> extraIncludes;
 
 	private final Supplier<List<JavaPackage>> basePackages;
-	private final Supplier<List<Module>> dependencies;
+	private final Supplier<List<ApplicationModule>> dependencies;
 
-	private ModuleTestExecution(ModuleTest annotation, Modules modules, Module module) {
+	private ModuleTestExecution(ApplicationModuleTest annotation, ApplicationModules modules, ApplicationModule module) {
 
 		this.key = Key.of(module.getBasePackage().getName(), annotation);
 		this.modules = modules;
@@ -74,7 +74,7 @@ public class ModuleTestExecution implements Iterable<Module> {
 
 			Stream<JavaPackage> moduleBasePackages = module.getBasePackages(modules, bootstrapMode.getDepth());
 			Stream<JavaPackage> sharedBasePackages = modules.getSharedModules().stream().map(it -> it.getBasePackage());
-			Stream<JavaPackage> extraPackages = extraIncludes.stream().map(Module::getBasePackage);
+			Stream<JavaPackage> extraPackages = extraIncludes.stream().map(ApplicationModule::getBasePackage);
 
 			Stream<JavaPackage> intermediate = Stream.concat(moduleBasePackages, extraPackages);
 
@@ -83,7 +83,7 @@ public class ModuleTestExecution implements Iterable<Module> {
 
 		this.dependencies = Suppliers.memoize(() -> {
 
-			Stream<Module> bootstrapDependencies = module.getBootstrapDependencies(modules, bootstrapMode.getDepth());
+			Stream<ApplicationModule> bootstrapDependencies = module.getBootstrapDependencies(modules, bootstrapMode.getDepth());
 			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).collect(Collectors.toList());
 		});
 
@@ -96,13 +96,13 @@ public class ModuleTestExecution implements Iterable<Module> {
 
 		return () -> {
 
-			ModuleTest annotation = AnnotatedElementUtils.findMergedAnnotation(type, ModuleTest.class);
+			ApplicationModuleTest annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
 			String packageName = type.getPackage().getName();
 
 			Class<?> modulithType = MODULITH_TYPES.computeIfAbsent(type,
 					it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromPackage(packageName));
-			Modules modules = Modules.of(modulithType);
-			Module module = modules.getModuleForPackage(packageName) //
+			ApplicationModules modules = ApplicationModules.of(modulithType);
+			ApplicationModule module = modules.getModuleForPackage(packageName) //
 					.orElseThrow(
 							() -> new IllegalStateException(String.format("Package %s is not part of any module!", packageName)));
 
@@ -133,11 +133,11 @@ public class ModuleTestExecution implements Iterable<Module> {
 	}
 
 	/**
-	 * Returns all module dependencies, based on the current {@link ModuleTest.BootstrapMode}.
+	 * Returns all module dependencies, based on the current {@link ApplicationModuleTest.BootstrapMode}.
 	 *
 	 * @return
 	 */
-	public List<Module> getDependencies() {
+	public List<ApplicationModule> getDependencies() {
 		return dependencies.get();
 	}
 
@@ -160,11 +160,11 @@ public class ModuleTestExecution implements Iterable<Module> {
 	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
-	public Iterator<Module> iterator() {
+	public Iterator<ApplicationModule> iterator() {
 		return modules.iterator();
 	}
 
-	private static Stream<Module> getExtraModules(ModuleTest annotation, Modules modules) {
+	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation, ApplicationModules modules) {
 
 		return Arrays.stream(annotation.extraIncludes()) //
 				.map(modules::getModuleByName) //
@@ -176,6 +176,6 @@ public class ModuleTestExecution implements Iterable<Module> {
 	private static class Key {
 
 		String moduleBasePackage;
-		ModuleTest annotation;
+		ApplicationModuleTest annotation;
 	}
 }

@@ -22,7 +22,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotation to mark a package as named interface of a {@link Module} (either implicit or explicitly annotated).
+ * Annotation to mark a package as named interface of a {@link ApplicationModule} (either implicit or explicitly annotated).
  *
  * @author Oliver Drotbohm
  */

@@ -28,14 +28,14 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.filter.TypeExcludeFilters;
 import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.modulith.model.Module.DependencyDepth;
+import org.springframework.modulith.model.ApplicationModule.DependencyDepth;
 import org.springframework.test.context.BootstrapWith;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.TestConstructor.AutowireMode;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Bootstraps the module containing the package of the test class annotated with {@link ModuleTest}. Will apply the
+ * Bootstraps the module containing the package of the test class annotated with {@link ApplicationModuleTest}. Will apply the
  * following modifications to the Spring Boot configuration:
  * <ul>
  * <li>Restricts the component scanning to the module's package.
@@ -54,7 +54,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @ExtendWith(PublishedEventsParameterResolver.class)
 @TestInstance(Lifecycle.PER_CLASS)
 @TestConstructor(autowireMode = AutowireMode.ALL)
-public @interface ModuleTest {
+public @interface ApplicationModuleTest {
 
 	@AliasFor("mode")
 	BootstrapMode value() default BootstrapMode.STANDALONE;

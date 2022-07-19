@@ -30,7 +30,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.docs.ConfigurationProperties.ConfigurationProperty;
-import org.springframework.modulith.model.Module;
+import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -42,7 +42,6 @@ import com.tngtech.archunit.core.domain.JavaType;
  * Represents all {@link ConfigurationProperty} instances found for the current project.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 
@@ -71,12 +70,12 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 	}
 
 	/**
-	 * Returns all {@link ModuleProperty} instances for the given {@link Module}.
+	 * Returns all {@link ModuleProperty} instances for the given {@link ApplicationModule}.
 	 *
 	 * @param module must not be {@literal null}.
 	 * @return
 	 */
-	public List<ModuleProperty> getModuleProperties(Module module) {
+	public List<ModuleProperty> getModuleProperties(ApplicationModule module) {
 
 		Assert.notNull(module, "Module must not be null!");
 
@@ -94,7 +93,7 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 		return properties.iterator();
 	}
 
-	private Stream<ModuleProperty> getModuleProperty(Module module,
+	private Stream<ModuleProperty> getModuleProperty(ApplicationModule module,
 			ConfigurationProperty property) {
 
 		return module.getType(property.getSourceType())

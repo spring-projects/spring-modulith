@@ -33,7 +33,6 @@ import org.jmolecules.event.types.DomainEvent;
  * {@link Locale} provided.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 @Value(staticConstructor = "of")
 public class WeekHasPassed implements DomainEvent {

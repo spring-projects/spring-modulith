@@ -41,7 +41,6 @@ import org.springframework.util.Assert;
  * Configuration properties for {@link Moments}.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 @ConfigurationProperties(prefix = "moduliths.moments")
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

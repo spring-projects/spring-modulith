@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.test.ModuleTestExecution;
 
 import com.acme.myproject.NonVerifyingModuleTest;
@@ -41,7 +41,7 @@ class FieldInjectedIntegrationTest {
 	@Test
 	void rejectsFieldInjection() {
 
-		Modules modules = execution.getModules();
+		ApplicationModules modules = execution.getModules();
 
 		assertThat(execution.getModule().detectDependencies(modules)) //
 				.hasMessageContaining("field injection") //

@@ -1,2 +1,2 @@
-org.springframework.modulith.model.ModuleDetectionStrategy=\
+org.springframework.modulith.model.ApplicationModuleDetectionStrategy=\
   org.springframework.modulith.model.TestModuleDetectionStrategy

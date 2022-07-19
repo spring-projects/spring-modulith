@@ -20,9 +20,9 @@ import java.util.stream.Stream;
 /**
  * @author Oliver Drotbohm
  */
-class TestModuleDetectionStrategy implements ModuleDetectionStrategy {
+class TestModuleDetectionStrategy implements ApplicationModuleDetectionStrategy {
 
-	private final ModuleDetectionStrategy delegate = ModuleDetectionStrategy.directSubPackage();
+	private final ApplicationModuleDetectionStrategy delegate = ApplicationModuleDetectionStrategy.directSubPackage();
 
 	static boolean used;
 

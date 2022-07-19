@@ -22,7 +22,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.model.Module.DependencyType;
+import org.springframework.modulith.model.ApplicationModule.DependencyType;
 
 import com.acme.myproject.Application;
 import com.acme.myproject.complex.internal.FirstTypeBasedPort;
@@ -35,7 +35,7 @@ import com.acme.myproject.moduleA.SomeConfigurationA.SomeAtBeanComponentA;
  */
 class ModulesIntegrationTest {
 
-	Modules modules = Modules.of(Application.class);
+	ApplicationModules modules = ApplicationModules.of(Application.class);
 
 	@Test
 	void moduleDetectionUsesStrategyDefinedInSpringFactories() {
@@ -45,7 +45,7 @@ class ModulesIntegrationTest {
 	@Test
 	void exposesModulesForPrimaryPackages() {
 
-		Optional<Module> module = modules.getModuleByName("moduleB");
+		Optional<ApplicationModule> module = modules.getModuleByName("moduleB");
 
 		assertThat(module).hasValueSatisfying(it -> {
 			assertThat(it.getBootstrapDependencies(modules)).anySatisfy(dep -> {
@@ -57,7 +57,7 @@ class ModulesIntegrationTest {
 	@Test
 	public void usesExplicitlyAnnotatedDisplayName() {
 
-		Optional<Module> module = modules.getModuleByName("moduleC");
+		Optional<ApplicationModule> module = modules.getModuleByName("moduleC");
 
 		assertThat(module).hasValueSatisfying(it -> {
 			assertThat(it.getDisplayName()).isEqualTo("MyModule C");
@@ -67,7 +67,7 @@ class ModulesIntegrationTest {
 	@Test
 	public void rejectsDependencyIntoInternalPackage() {
 
-		Optional<Module> module = modules.getModuleByName("invalid");
+		Optional<ApplicationModule> module = modules.getModuleByName("invalid");
 
 		assertThat(module).hasValueSatisfying(it -> {
 			assertThatExceptionOfType(Violations.class) //
@@ -78,7 +78,7 @@ class ModulesIntegrationTest {
 	@Test
 	public void complexModuleExposesNamedInterfaces() {
 
-		Optional<Module> module = modules.getModuleByName("complex");
+		Optional<ApplicationModule> module = modules.getModuleByName("complex");
 
 		assertThat(module).hasValueSatisfying(it -> {
 
@@ -105,7 +105,7 @@ class ModulesIntegrationTest {
 	@Test
 	public void discoversAtBeanComponent() {
 
-		Optional<Module> module = modules.getModuleByName("moduleA");
+		Optional<ApplicationModule> module = modules.getModuleByName("moduleA");
 
 		assertThat(module).hasValueSatisfying(it -> {
 			assertThat(it.getSpringBeansInternal().contains(SomeAtBeanComponentA.class.getName())).isTrue();
@@ -115,8 +115,8 @@ class ModulesIntegrationTest {
 	@Test
 	public void moduleBListensToModuleA() {
 
-		Optional<Module> module = modules.getModuleByName("moduleB");
-		Module moduleA = modules.getModuleByName("moduleA").orElseThrow(IllegalStateException::new);
+		Optional<ApplicationModule> module = modules.getModuleByName("moduleB");
+		ApplicationModule moduleA = modules.getModuleByName("moduleA").orElseThrow(IllegalStateException::new);
 
 		assertThat(module).hasValueSatisfying(it -> {
 			assertThat(it.getDependencies(modules, DependencyType.EVENT_LISTENER)) //
@@ -127,7 +127,7 @@ class ModulesIntegrationTest {
 	@Test
 	public void rejectsNotExplicitlyListedDependency() {
 
-		Optional<Module> moduleByName = modules.getModuleByName("invalid2");
+		Optional<ApplicationModule> moduleByName = modules.getModuleByName("invalid2");
 
 		assertThat(moduleByName).hasValueSatisfying(it -> {
 
@@ -147,9 +147,9 @@ class ModulesIntegrationTest {
 	@Test
 	void createsModulesFromJavaPackage() {
 
-		Modules fromPackage = Modules.of(Application.class.getPackage().getName());
+		ApplicationModules fromPackage = ApplicationModules.of(Application.class.getPackage().getName());
 
-		assertThat(fromPackage.stream().map(Module::getName)) //
-				.containsExactlyInAnyOrderElementsOf(modules.stream().map(Module::getName).collect(Collectors.toList()));
+		assertThat(fromPackage.stream().map(ApplicationModule::getName)) //
+				.containsExactlyInAnyOrderElementsOf(modules.stream().map(ApplicationModule::getName).collect(Collectors.toList()));
 	}
 }

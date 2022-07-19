@@ -18,7 +18,7 @@ package org.springframework.modulith.test;
 import org.junit.jupiter.api.extension.Extension;
 
 /**
- * JUnit 5 {@link Extension} for standalone usage without {@link ModuleTest}.
+ * JUnit 5 {@link Extension} for standalone usage without {@link ApplicationModuleTest}.
  *
  * @author Oliver Drotbohm
  */

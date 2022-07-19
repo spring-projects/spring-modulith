@@ -31,7 +31,7 @@ import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModules;
 
 /**
  * @author Oliver Drotbohm
@@ -65,7 +65,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 			return bean;
 		}
 
-		Modules modules = getModules();
+		ApplicationModules modules = getModules();
 
 		return modules.getModuleByType(type.getName())
 				.map(DefaultObservedModule::new)

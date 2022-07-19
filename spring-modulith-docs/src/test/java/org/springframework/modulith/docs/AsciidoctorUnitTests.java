@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModules;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -29,7 +29,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
  */
 class AsciidoctorUnitTests {
 
-	Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(Modules.of("org.springframework.modulith"), "{javadoc}");
+	Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(ApplicationModules.of("org.springframework.modulith"), "{javadoc}");
 
 	@Test
 	void formatsInlineCode() {

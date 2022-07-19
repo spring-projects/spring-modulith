@@ -22,7 +22,7 @@ import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.util.Assert;
 
 /**
@@ -30,7 +30,7 @@ import org.springframework.util.Assert;
  */
 class ModuleTracingSupport implements BeanClassLoaderAware {
 
-	private final Supplier<Modules> modules;
+	private final Supplier<ApplicationModules> modules;
 	private final ApplicationRuntime context;
 	private ClassLoader classLoader;
 
@@ -51,7 +51,7 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 		this.classLoader = classLoader;
 	}
 
-	protected final Modules getModules() {
+	protected final ApplicationModules getModules() {
 
 		try {
 			return modules.get();

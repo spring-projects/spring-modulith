@@ -43,10 +43,10 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Module.DependencyDepth;
-import org.springframework.modulith.model.Module.DependencyType;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModule.DependencyDepth;
+import org.springframework.modulith.model.ApplicationModule.DependencyType;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.SpringBean;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
@@ -72,7 +72,7 @@ import com.structurizr.view.View;
 import com.tngtech.archunit.core.domain.JavaClass;
 
 /**
- * API to create documentation for {@link Modules}.
+ * API to create documentation for {@link ApplicationModules}.
  *
  * @author Oliver Drotbohm
  */
@@ -88,33 +88,33 @@ public class Documenter {
 		DEPENDENCY_DESCRIPTIONS.put(DependencyType.DEFAULT, "depends on");
 	}
 
-	private final @Getter Modules modules;
+	private final @Getter ApplicationModules modules;
 	private final Workspace workspace;
 	private final Container container;
 	private final ConfigurationProperties properties;
 	private final String outputFolder;
 
-	private Map<Module, Component> components;
+	private Map<ApplicationModule, Component> components;
 
 	/**
-	 * Creates a new {@link Documenter} for the {@link Modules} created for the given modulith type.
+	 * Creates a new {@link Documenter} for the {@link ApplicationModules} created for the given modulith type.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 */
 	public Documenter(Class<?> modulithType) {
-		this(Modules.of(modulithType));
+		this(ApplicationModules.of(modulithType));
 	}
 
 	/**
-	 * Creates a new {@link Documenter} for the given {@link Modules} instance.
+	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} instance.
 	 *
 	 * @param modules must not be {@literal null}.
 	 */
-	public Documenter(Modules modules) {
+	public Documenter(ApplicationModules modules) {
 		this(modules, getDefaultOutputDirectory());
 	}
 
-	private Documenter(Modules modules, String outputFolder) {
+	private Documenter(ApplicationModules modules, String outputFolder) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 		Assert.hasText(outputFolder, "Output folder must not be null or empty!");
@@ -137,7 +137,7 @@ public class Documenter {
 		this.properties = new ConfigurationProperties();
 	}
 
-	private Map<Module, Component> getComponents(Options options) {
+	private Map<ApplicationModule, Component> getComponents(Options options) {
 
 		if (components == null) {
 
@@ -174,7 +174,6 @@ public class Documenter {
 	 * @param canvasOptions must not be {@literal null}, use {@link CanvasOptions#defaults()} for default.
 	 * @return the current instance, will never be {@literal null}.
 	 * @throws IOException
-	 * @since 1.1
 	 */
 	public Documenter writeDocumentation(Options options, CanvasOptions canvasOptions) throws IOException {
 
@@ -184,7 +183,7 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes the PlantUML component diagram for all {@link Modules}.
+	 * Writes the PlantUML component diagram for all {@link ApplicationModules}.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @throws IOException
@@ -207,7 +206,6 @@ public class Documenter {
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
-	 * @since 1.1
 	 */
 	public Documenter writeIndividualModulesAsPlantUml(Options options) {
 
@@ -217,12 +215,12 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes the PlantUML component diagram for the given {@link Module}.
+	 * Writes the PlantUML component diagram for the given {@link ApplicationModule}.
 	 *
 	 * @param module must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeModuleAsPlantUml(Module module) {
+	public Documenter writeModuleAsPlantUml(ApplicationModule module) {
 
 		Assert.notNull(module, "Module must not be null!");
 
@@ -230,13 +228,13 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes the PlantUML component diagram for the given {@link Module} with the given rendering {@link Options}.
+	 * Writes the PlantUML component diagram for the given {@link ApplicationModule} with the given rendering {@link Options}.
 	 *
 	 * @param module must not be {@literal null}.
 	 * @param options must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeModuleAsPlantUml(Module module, Options options) {
+	public Documenter writeModuleAsPlantUml(ApplicationModule module, Options options) {
 
 		Assert.notNull(module, "Module must not be null!");
 		Assert.notNull(options, "Options must not be null!");
@@ -281,24 +279,15 @@ public class Documenter {
 		return this;
 	}
 
-	/**
-	 * @param javadocBase
-	 * @deprecated since 1.1, use {@link #writeModuleCanvases(CanvasOptions)} instead.
-	 */
-	@Deprecated
-	public Documenter writeModuleCanvases(String javadocBase) {
-		return writeModuleCanvases(CanvasOptions.defaults().withApiBase(javadocBase));
-	}
-
-	public String toModuleCanvas(Module module) {
+	public String toModuleCanvas(ApplicationModule module) {
 		return toModuleCanvas(module, CanvasOptions.defaults());
 	}
 
-	public String toModuleCanvas(Module module, String apiBase) {
+	public String toModuleCanvas(ApplicationModule module, String apiBase) {
 		return toModuleCanvas(module, CanvasOptions.defaults().withApiBase(apiBase));
 	}
 
-	public String toModuleCanvas(Module module, CanvasOptions options) {
+	public String toModuleCanvas(ApplicationModule module, CanvasOptions options) {
 
 		Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(modules, options.getApiBase());
 		Function<List<JavaClass>, String> mapper = asciidoctor::typesToBulletPoints;
@@ -325,7 +314,7 @@ public class Documenter {
 		return createPlantUml(Options.defaults());
 	}
 
-	private void addDependencies(Module module, Component component, Options options) {
+	private void addDependencies(ApplicationModule module, Component component, Options options) {
 
 		DEPENDENCY_DESCRIPTIONS.entrySet().stream().forEach(entry -> {
 
@@ -346,23 +335,23 @@ public class Documenter {
 				});
 	}
 
-	private void addComponentsToView(Module module, ComponentView view, Options options) {
+	private void addComponentsToView(ApplicationModule module, ComponentView view, Options options) {
 
-		Supplier<Stream<Module>> bootstrapDependencies = () -> module.getBootstrapDependencies(modules,
+		Supplier<Stream<ApplicationModule>> bootstrapDependencies = () -> module.getBootstrapDependencies(modules,
 				options.getDependencyDepth());
-		Supplier<Stream<Module>> otherDependencies = () -> options.getDependencyTypes()
+		Supplier<Stream<ApplicationModule>> otherDependencies = () -> options.getDependencyTypes()
 				.flatMap(it -> module.getDependencies(modules, it).stream());
 
-		Supplier<Stream<Module>> dependencies = () -> Stream.concat(bootstrapDependencies.get(), otherDependencies.get());
+		Supplier<Stream<ApplicationModule>> dependencies = () -> Stream.concat(bootstrapDependencies.get(), otherDependencies.get());
 
 		addComponentsToView(dependencies, view, options, it -> it.add(getComponents(options).get(module)));
 	}
 
-	private void addComponentsToView(Supplier<Stream<Module>> modules, ComponentView view, Options options,
+	private void addComponentsToView(Supplier<Stream<ApplicationModule>> modules, ComponentView view, Options options,
 			Consumer<ComponentView> afterCleanup) {
 
 		Styles styles = view.getViewSet().getConfiguration().getStyles();
-		Map<Module, Component> components = getComponents(options);
+		Map<ApplicationModule, Component> components = getComponents(options);
 
 		modules.get() //
 				.distinct()
@@ -417,11 +406,11 @@ public class Documenter {
 				.findFirst().ifPresent(view::remove);
 	}
 
-	private static Component applyBackgroundColor(Module module, Map<Module, Component> components, Options options,
+	private static Component applyBackgroundColor(ApplicationModule module, Map<ApplicationModule, Component> components, Options options,
 			Styles styles) {
 
 		Component component = components.get(module);
-		Function<Module, Optional<String>> selector = options.getColorSelector();
+		Function<ApplicationModule, Optional<String>> selector = options.getColorSelector();
 
 		// Apply custom color if configured
 		selector.apply(module).ifPresent(color -> {
@@ -491,7 +480,7 @@ public class Documenter {
 		return createComponentView(options, null);
 	}
 
-	private ComponentView createComponentView(Options options, @Nullable Module module) {
+	private ComponentView createComponentView(Options options, @Nullable ApplicationModule module) {
 
 		String prefix = module == null ? "modules-" : module.getName();
 
@@ -554,7 +543,7 @@ public class Documenter {
 		/**
 		 * A {@link Predicate} to define the which modules to exclude from the diagram to be created.
 		 */
-		private final @With Predicate<Module> exclusions;
+		private final @With Predicate<ApplicationModule> exclusions;
 
 		/**
 		 * A {@link Predicate} to define which Structurizr {@link Component}s to be included in the diagram to be created.
@@ -566,7 +555,7 @@ public class Documenter {
 		 * relationships are going to be hidden from the rendered view. Modules that have no incoming relationships will
 		 * entirely be removed from the view.
 		 */
-		private final @With Predicate<Module> targetOnly;
+		private final @With Predicate<ApplicationModule> targetOnly;
 
 		/**
 		 * The target file name to be used for the diagram to be created. For individual module diagrams this needs to
@@ -575,15 +564,15 @@ public class Documenter {
 		private final @With @Nullable String targetFileName;
 
 		/**
-		 * A callback to return a hex-encoded color per {@link Module}.
+		 * A callback to return a hex-encoded color per {@link ApplicationModule}.
 		 */
-		private final @With Function<Module, Optional<String>> colorSelector;
+		private final @With Function<ApplicationModule, Optional<String>> colorSelector;
 
 		/**
-		 * A callback to return a default display names for a given {@link Module}. Default implementation just forwards to
-		 * {@link Module#getDisplayName()}.
+		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation just forwards to
+		 * {@link ApplicationModule#getDisplayName()}.
 		 */
-		private final @With Function<Module, String> defaultDisplayName;
+		private final @With Function<ApplicationModule, String> defaultDisplayName;
 
 		/**
 		 * Which style to render the diagram in. Defaults to {@value DiagramStyle#UML}.
@@ -602,7 +591,7 @@ public class Documenter {
 
 		/**
 		 * Creates a new default {@link Options} instance configured to use all dependency types, list immediate
-		 * dependencies for individual module instances, not applying any kind of {@link Module} or {@link Component}
+		 * dependencies for individual module instances, not applying any kind of {@link ApplicationModule} or {@link Component}
 		 * filters and default file names.
 		 *
 		 * @return will never be {@literal null}.
@@ -711,7 +700,7 @@ public class Documenter {
 			return groupingBy(Grouping.of(name, null, filter));
 		}
 
-		Groupings groupBeans(Module module) {
+		Groupings groupBeans(ApplicationModule module) {
 
 			List<Grouping> sources = new ArrayList<>(groupers);
 			sources.add(FALLBACK_GROUP);
@@ -741,7 +730,7 @@ public class Documenter {
 			return Optional.ofNullable(targetFileName);
 		}
 
-		private static List<SpringBean> getMatchingBeans(Module module, Grouping filter, List<SpringBean> alreadyMapped) {
+		private static List<SpringBean> getMatchingBeans(ApplicationModule module, Grouping filter, List<SpringBean> alreadyMapped) {
 
 			return module.getSpringBeans().stream()
 					.filter(it -> !alreadyMapped.contains(it))

@@ -35,7 +35,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 public class SpringBean {
 
 	private final @Getter JavaClass type;
-	private final Module module;
+	private final ApplicationModule module;
 
 	/**
 	 * Returns the fully-qualified name of the Spring bean type.

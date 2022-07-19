@@ -18,8 +18,8 @@ package org.springframework.modulith.observability;
 import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInvocation;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 
@@ -48,14 +48,14 @@ interface ObservedModule {
 	 */
 	boolean exposes(JavaClass type);
 
-	boolean isObservedModule(Module module);
+	boolean isObservedModule(ApplicationModule module);
 
 	/**
-	 * Returns the {@link ObservedModuleType} for the given type and {@link Modules}.
+	 * Returns the {@link ObservedModuleType} for the given type and {@link ApplicationModules}.
 	 *
 	 * @param type
 	 * @param modules
 	 * @return
 	 */
-	ObservedModuleType getObservedModuleType(Class<?> type, Modules modules);
+	ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules);
 }

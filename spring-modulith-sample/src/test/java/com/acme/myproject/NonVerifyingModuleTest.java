@@ -21,17 +21,17 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.modulith.test.ModuleTest;
-import org.springframework.modulith.test.ModuleTest.BootstrapMode;
+import org.springframework.modulith.test.ApplicationModuleTest;
+import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 
 /**
  * @author Oliver Drotbohm
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-@ModuleTest(verifyAutomatically = false)
+@ApplicationModuleTest(verifyAutomatically = false)
 public @interface NonVerifyingModuleTest {
 
-	@AliasFor(annotation = ModuleTest.class, attribute = "mode")
+	@AliasFor(annotation = ApplicationModuleTest.class, attribute = "mode")
 	BootstrapMode value() default BootstrapMode.STANDALONE;
 }

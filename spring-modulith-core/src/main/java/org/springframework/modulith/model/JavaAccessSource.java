@@ -25,7 +25,6 @@ import com.tngtech.archunit.core.domain.JavaCodeUnit;
  * A {@link Source} backed by an ArchUnit {@link JavaAccess}.
  *
  * @author Oliver Drotbohm
- * @since 1.1
  */
 class JavaAccessSource implements Source {
 
@@ -56,7 +55,7 @@ class JavaAccessSource implements Source {
 	 * @see org.springframework.modulith.model.Source#toString(org.springframework.modulith.model.Module)
 	 */
 	@Override
-	public String toString(Module module) {
+	public String toString(ApplicationModule module) {
 
 		boolean noParameters = method.getRawParameterTypes().isEmpty();
 

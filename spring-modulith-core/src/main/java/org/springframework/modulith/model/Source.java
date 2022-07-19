@@ -19,7 +19,6 @@ package org.springframework.modulith.model;
  * A {@link Source} of some type, bean definition etc. Essentially describes the origin of that bean, event etc.
  *
  * @author Oliver Drotbohm
- * @since 1.1
  */
 public interface Source {
 
@@ -29,5 +28,5 @@ public interface Source {
 	 * @param module must not be {@literal null}.
 	 * @return
 	 */
-	String toString(Module module);
+	String toString(ApplicationModule module);
 }

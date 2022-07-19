@@ -32,7 +32,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  * Auto-configuration for {@link Moments}.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 @EnableScheduling
 @EnableConfigurationProperties(MomentsProperties.class)

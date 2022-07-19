@@ -28,7 +28,6 @@ import java.time.MonthDay;
  * A logical {@link Quarter} of the year.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum Quarter {

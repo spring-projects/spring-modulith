@@ -25,7 +25,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.modulith.Module;
+import org.springframework.modulith.ApplicationModule;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -35,11 +35,11 @@ import org.springframework.util.StringUtils;
  *
  * @author Oliver Drotbohm
  */
-interface ModuleInformation {
+interface ApplicationModuleInformation {
 
-	public static ModuleInformation of(JavaPackage javaPackage) {
+	public static ApplicationModuleInformation of(JavaPackage javaPackage) {
 
-		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module", ModuleInformation.class.getClassLoader())
+		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module", ApplicationModuleInformation.class.getClassLoader())
 				&& MoleculesModule.supports(javaPackage)) {
 			return new MoleculesModule(javaPackage);
 		}
@@ -52,7 +52,7 @@ interface ModuleInformation {
 	List<String> getAllowedDependencies();
 
 	@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-	static abstract class AbstractModuleInformation implements ModuleInformation {
+	static abstract class AbstractModuleInformation implements ApplicationModuleInformation {
 
 		private final JavaPackage javaPackage;
 
@@ -109,17 +109,17 @@ interface ModuleInformation {
 
 	static class ModulithsModule extends AbstractModuleInformation {
 
-		private final Optional<Module> annotation;
+		private final Optional<ApplicationModule> annotation;
 
 		public static boolean supports(JavaPackage javaPackage) {
-			return javaPackage.getAnnotation(Module.class).isPresent();
+			return javaPackage.getAnnotation(ApplicationModule.class).isPresent();
 		}
 
 		public ModulithsModule(JavaPackage javaPackage) {
 
 			super(javaPackage);
 
-			this.annotation = javaPackage.getAnnotation(Module.class);
+			this.annotation = javaPackage.getAnnotation(ApplicationModule.class);
 		}
 
 		/*
@@ -130,7 +130,7 @@ interface ModuleInformation {
 		public String getDisplayName() {
 
 			return annotation //
-					.map(Module::displayName) //
+					.map(ApplicationModule::displayName) //
 					.filter(StringUtils::hasText) //
 					.orElseGet(super::getDisplayName);
 		}

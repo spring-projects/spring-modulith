@@ -18,17 +18,17 @@ package org.springframework.modulith.model;
 import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.springframework.modulith.Module;
+import org.springframework.modulith.ApplicationModule;
 import org.springframework.modulith.model.Types.JMoleculesTypes;
 
 /**
- * Default implementations of {@link ModuleDetectionStrategy}.
+ * Default implementations of {@link ApplicationModuleDetectionStrategy}.
  *
  * @author Oliver Drotbohm
- * @see ModuleDetectionStrategy#directSubPackage()
- * @see ModuleDetectionStrategy#explictlyAnnotated()
+ * @see ApplicationModuleDetectionStrategy#directSubPackage()
+ * @see ApplicationModuleDetectionStrategy#explictlyAnnotated()
  */
-enum ModuleDetectionStrategies implements ModuleDetectionStrategy {
+enum ApplicationModuleDetectionStrategies implements ApplicationModuleDetectionStrategy {
 
 	DIRECT_SUB_PACKAGES {
 
@@ -52,7 +52,7 @@ enum ModuleDetectionStrategies implements ModuleDetectionStrategy {
 		@Override
 		public Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage) {
 
-			return Stream.of(Module.class, JMoleculesTypes.getModuleAnnotationTypeIfPresent())
+			return Stream.of(ApplicationModule.class, JMoleculesTypes.getModuleAnnotationTypeIfPresent())
 					.filter(Objects::nonNull)
 					.flatMap(basePackage::getSubPackagesAnnotatedWith);
 		}

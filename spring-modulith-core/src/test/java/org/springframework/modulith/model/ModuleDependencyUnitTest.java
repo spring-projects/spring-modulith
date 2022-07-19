@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.modulith.model.Module.ModuleDependency;
+import org.springframework.modulith.model.ApplicationModule.ModuleDependency;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ClassFileImporter;

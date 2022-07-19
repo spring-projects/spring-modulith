@@ -32,7 +32,6 @@ import org.springframework.util.Assert;
  * A quarter that can be shifted to start at a configurable {@link Month}.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 @Value(staticConstructor = "of")
 public class ShiftedQuarter {

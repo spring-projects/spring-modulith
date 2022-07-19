@@ -24,7 +24,7 @@ import java.util.function.Supplier;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
-import org.springframework.modulith.model.Module;
+import org.springframework.modulith.model.ApplicationModule;
 
 /**
  * @author Oliver Drotbohm
@@ -54,7 +54,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		Module moduleByType = modules.get()
+		ApplicationModule moduleByType = modules.get()
 				.getModuleByType(payloadType.getSimpleName())
 				.orElse(null);
 

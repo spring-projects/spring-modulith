@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.ContextCustomizerFactory;
@@ -48,7 +48,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	public ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
-		ModuleTest moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass, ModuleTest.class);
+		ApplicationModuleTest moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass, ApplicationModuleTest.class);
 
 		return moduleTest == null ? null : new ModuleContextCustomizer(testClass);
 	}
@@ -86,8 +86,8 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 		private static void logModules(ModuleTestExecution execution) {
 
-			Module module = execution.getModule();
-			Modules modules = execution.getModules();
+			ApplicationModule module = execution.getModule();
+			ApplicationModules modules = execution.getModules();
 			String moduleName = module.getDisplayName();
 			String bootstrapMode = execution.getBootstrapMode().name();
 
@@ -99,7 +99,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 			Arrays.stream(module.toString(modules).split("\n")).forEach(LOG::info);
 
-			List<Module> extraIncludes = execution.getExtraIncludes();
+			List<ApplicationModule> extraIncludes = execution.getExtraIncludes();
 
 			if (!extraIncludes.isEmpty()) {
 
@@ -108,7 +108,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 				extraIncludes.forEach(it -> LOG.info("> ".concat(it.getName())));
 			}
 
-			Set<Module> sharedModules = modules.getSharedModules();
+			Set<ApplicationModule> sharedModules = modules.getSharedModules();
 
 			if (!sharedModules.isEmpty()) {
 
@@ -117,13 +117,13 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 				sharedModules.forEach(it -> LOG.info("> ".concat(it.getName())));
 			}
 
-			List<Module> dependencies = execution.getDependencies();
+			List<ApplicationModule> dependencies = execution.getDependencies();
 
 			if (!dependencies.isEmpty() || !sharedModules.isEmpty()) {
 
 				logHeadline("Included dependencies:", message);
 
-				Stream<Module> dependenciesPlusMissingSharedOnes = //
+				Stream<ApplicationModule> dependenciesPlusMissingSharedOnes = //
 						Stream.concat(dependencies.stream(), sharedModules.stream() //
 								.filter(it -> !dependencies.contains(it)));
 

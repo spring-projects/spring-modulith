@@ -23,7 +23,6 @@ import com.tngtech.archunit.core.domain.JavaMethod;
  * Interface to abstract different ways of looking up documentation for code abstractions.
  *
  * @author Oliver Drotbohm
- * @since 1.1
  */
 interface DocumentationSource {
 

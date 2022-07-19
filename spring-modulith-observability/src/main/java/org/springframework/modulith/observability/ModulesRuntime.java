@@ -23,20 +23,20 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModules;
 
 /**
- * Bootstrap type to make sure we only bootstrap the initialization of a {@link Modules} instance per application class
+ * Bootstrap type to make sure we only bootstrap the initialization of a {@link ApplicationModules} instance per application class
  * once.
  *
  * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor
-public class ModulesRuntime implements Supplier<Modules> {
+public class ModulesRuntime implements Supplier<ApplicationModules> {
 
 	private static final Map<String, ModulesRuntime> MODULES = new HashMap<>();
 
-	private final Supplier<Modules> modules;
+	private final Supplier<ApplicationModules> modules;
 	private final ApplicationRuntime runtime;
 
 	/*
@@ -44,7 +44,7 @@ public class ModulesRuntime implements Supplier<Modules> {
 	 * @see java.util.function.Supplier#get()
 	 */
 	@Override
-	public Modules get() {
+	public ApplicationModules get() {
 		return modules.get();
 	}
 
@@ -57,13 +57,13 @@ public class ModulesRuntime implements Supplier<Modules> {
 		return MODULES.computeIfAbsent(runtime.getId(), it -> {
 
 			Class<?> mainClass = runtime.getMainApplicationClass();
-			Future<Modules> modules = Executors.newFixedThreadPool(1).submit(() -> Modules.of(mainClass));
+			Future<ApplicationModules> modules = Executors.newFixedThreadPool(1).submit(() -> ApplicationModules.of(mainClass));
 
 			return new ModulesRuntime(toSupplier(modules), runtime);
 		});
 	}
 
-	private static Supplier<Modules> toSupplier(Future<Modules> modules) {
+	private static Supplier<ApplicationModules> toSupplier(Future<ApplicationModules> modules) {
 
 		return () -> {
 			try {

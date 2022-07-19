@@ -51,16 +51,16 @@ import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
  * @author Peter Gafert
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public class Modules implements Iterable<Module> {
+public class ApplicationModules implements Iterable<ApplicationModule> {
 
-	private static final Map<CacheKey, Modules> CACHE = new HashMap<>();
+	private static final Map<CacheKey, ApplicationModules> CACHE = new HashMap<>();
 
-	private static final ModuleDetectionStrategy DETECTION_STRATEGY;
+	private static final ApplicationModuleDetectionStrategy DETECTION_STRATEGY;
 
 	static {
 
-		List<ModuleDetectionStrategy> loadFactories = SpringFactoriesLoader.loadFactories(ModuleDetectionStrategy.class,
-				Modules.class.getClassLoader());
+		List<ApplicationModuleDetectionStrategy> loadFactories = SpringFactoriesLoader.loadFactories(ApplicationModuleDetectionStrategy.class,
+				ApplicationModules.class.getClassLoader());
 
 		if (loadFactories.size() > 1) {
 
@@ -69,18 +69,18 @@ public class Modules implements Iterable<Module> {
 							loadFactories));
 		}
 
-		DETECTION_STRATEGY = loadFactories.isEmpty() ? ModuleDetectionStrategies.DIRECT_SUB_PACKAGES : loadFactories.get(0);
+		DETECTION_STRATEGY = loadFactories.isEmpty() ? ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES : loadFactories.get(0);
 	}
 
 	private final ModulithMetadata metadata;
-	private final Map<String, Module> modules;
+	private final Map<String, ApplicationModule> modules;
 	private final JavaClasses allClasses;
 	private final List<JavaPackage> rootPackages;
-	private final @With(AccessLevel.PRIVATE) @Getter Set<Module> sharedModules;
+	private final @With(AccessLevel.PRIVATE) @Getter Set<ApplicationModule> sharedModules;
 
 	private boolean verified;
 
-	private Modules(ModulithMetadata metadata, Collection<String> packages, DescribedPredicate<JavaClass> ignored,
+	private ApplicationModules(ModulithMetadata metadata, Collection<String> packages, DescribedPredicate<JavaClass> ignored,
 			boolean useFullyQualifiedModuleNames) {
 
 		this.metadata = metadata;
@@ -94,8 +94,8 @@ public class Modules implements Iterable<Module> {
 		this.modules = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it))
 				.flatMap(DETECTION_STRATEGY::getModuleBasePackages) //
-				.map(it -> new Module(it, useFullyQualifiedModuleNames)) //
-				.collect(toMap(Module::getName, Function.identity()));
+				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
+				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
 		this.rootPackages = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
@@ -105,18 +105,18 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * Creates a new {@link Modules} relative to the given modulith type. Will inspect the {@link Modulith} annotation on
+	 * Creates a new {@link ApplicationModules} relative to the given modulith type. Will inspect the {@link Modulith} annotation on
 	 * the class given for advanced customizations of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @return
 	 */
-	public static Modules of(Class<?> modulithType) {
+	public static ApplicationModules of(Class<?> modulithType) {
 		return of(modulithType, alwaysFalse());
 	}
 
 	/**
-	 * Creates a new {@link Modules} relative to the given modulith type, a {@link ModuleDetectionStrategy} and a
+	 * Creates a new {@link ApplicationModules} relative to the given modulith type, a {@link ApplicationModuleDetectionStrategy} and a
 	 * {@link DescribedPredicate} which types and packages to ignore. Will inspect the {@link Modulith} and
 	 * {@link Modulithic} annotations on the class given for advanced customizations of the module setup.
 	 *
@@ -125,7 +125,7 @@ public class Modules implements Iterable<Module> {
 	 * @param ignored must not be {@literal null}.
 	 * @return
 	 */
-	public static Modules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
+	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
 
 		CacheKey key = TypeKey.of(modulithType, ignored);
 
@@ -139,25 +139,23 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * Creates a new {@link Modules} instance for the given package name.
+	 * Creates a new {@link ApplicationModules} instance for the given package name.
 	 *
 	 * @param javaPackage must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
-	 * @since 1.1
 	 */
-	public static Modules of(String javaPackage) {
+	public static ApplicationModules of(String javaPackage) {
 		return of(javaPackage, alwaysFalse());
 	}
 
 	/**
-	 * Creates a new {@link Modules} instance for the given package name and ignored classes.
+	 * Creates a new {@link ApplicationModules} instance for the given package name and ignored classes.
 	 *
 	 * @param javaPackage must not be {@literal null} or empty.
 	 * @param ignored must not be {@literal null}.
 	 * @return will never be {@literal null}.
-	 * @since 1.1
 	 */
-	public static Modules of(String javaPackage, DescribedPredicate<JavaClass> ignored) {
+	public static ApplicationModules of(String javaPackage, DescribedPredicate<JavaClass> ignored) {
 
 		CacheKey key = PackageKey.of(javaPackage, ignored);
 
@@ -171,12 +169,12 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * Creates a new {@link Modules} instance for the given {@link CacheKey}.
+	 * Creates a new {@link ApplicationModules} instance for the given {@link CacheKey}.
 	 *
 	 * @param key must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	private static Modules of(CacheKey key) {
+	private static ApplicationModules of(CacheKey key) {
 
 		Assert.notNull(key, "Cache key must not be null!");
 
@@ -186,10 +184,10 @@ public class Modules implements Iterable<Module> {
 		basePackages.add(key.getBasePackage());
 		basePackages.addAll(metadata.getAdditionalPackages());
 
-		Modules modules = new Modules(metadata, basePackages, key.getIgnored(),
+		ApplicationModules modules = new ApplicationModules(metadata, basePackages, key.getIgnored(),
 				metadata.useFullyQualifiedModuleNames());
 
-		Set<Module> sharedModules = metadata.getSharedModuleNames() //
+		Set<ApplicationModule> sharedModules = metadata.getSharedModuleNames() //
 				.map(modules::getRequiredModule) //
 				.collect(Collectors.toSet());
 
@@ -201,24 +199,7 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * @return
-	 * @deprecated since 1.1, as a {@link Modules} instance doesn't have to be created from a class in the first place.
-	 *             For generic use, use {@link #getModulithSource()} instead.
-	 */
-	@Deprecated
-	public Class<?> getModulithType() {
-
-		Object source = getModulithSource();
-
-		if (!Class.class.isInstance(source)) {
-			throw new IllegalStateException(String.format("Moduliths not created from a type but %s!", source));
-		}
-
-		return (Class<?>) source;
-	}
-
-	/**
-	 * Returns whether the given {@link JavaClass} is contained within the {@link Modules}.
+	 * Returns whether the given {@link JavaClass} is contained within the {@link ApplicationModules}.
 	 *
 	 * @param type must not be {@literal null}.
 	 * @return
@@ -246,12 +227,12 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * Returns the {@link Module} with the given name.
+	 * Returns the {@link ApplicationModule} with the given name.
 	 *
 	 * @param name must not be {@literal null} or empty.
 	 * @return
 	 */
-	public Optional<Module> getModuleByName(String name) {
+	public Optional<ApplicationModule> getModuleByName(String name) {
 
 		Assert.hasText(name, "Module name must not be null or empty!");
 
@@ -264,7 +245,7 @@ public class Modules implements Iterable<Module> {
 	 * @param type must not be {@literal null}.
 	 * @return
 	 */
-	public Optional<Module> getModuleByType(JavaClass type) {
+	public Optional<ApplicationModule> getModuleByType(JavaClass type) {
 
 		Assert.notNull(type, "Type must not be null!");
 
@@ -274,13 +255,12 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * Returns the {@link Module} containing the type with the given simple or fully-qualified name.
+	 * Returns the {@link ApplicationModule} containing the type with the given simple or fully-qualified name.
 	 *
 	 * @param candidate must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
-	 * @since 1.1
 	 */
-	public Optional<Module> getModuleByType(String candidate) {
+	public Optional<ApplicationModule> getModuleByType(String candidate) {
 
 		Assert.hasText(candidate, "Candidate must not be null or empty!");
 
@@ -289,7 +269,7 @@ public class Modules implements Iterable<Module> {
 				.findFirst();
 	}
 
-	public Optional<Module> getModuleForPackage(String name) {
+	public Optional<ApplicationModule> getModuleForPackage(String name) {
 
 		return modules.values().stream() //
 				.filter(it -> name.startsWith(it.getBasePackage().getName())) //
@@ -342,11 +322,11 @@ public class Modules implements Iterable<Module> {
 	}
 
 	/**
-	 * Returns all {@link Module}s.
+	 * Returns all {@link ApplicationModule}s.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	public Stream<Module> stream() {
+	public Stream<ApplicationModule> stream() {
 		return modules.values().stream();
 	}
 
@@ -364,7 +344,7 @@ public class Modules implements Iterable<Module> {
 	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
-	public Iterator<Module> iterator() {
+	public Iterator<ApplicationModule> iterator() {
 		return modules.values().iterator();
 	}
 
@@ -374,9 +354,9 @@ public class Modules implements Iterable<Module> {
 	 * @param moduleName must not be {@literal null}.
 	 * @return
 	 */
-	private Module getRequiredModule(String moduleName) {
+	private ApplicationModule getRequiredModule(String moduleName) {
 
-		Module module = modules.get(moduleName);
+		ApplicationModule module = modules.get(moduleName);
 
 		if (module == null) {
 			throw new IllegalArgumentException(String.format("Module %s does not exist!", moduleName));

@@ -76,7 +76,7 @@ public class FormatableJavaClass {
 		return abbreviatedName.get();
 	}
 
-	public String getAbbreviatedFullName(@Nullable Module module) {
+	public String getAbbreviatedFullName(@Nullable ApplicationModule module) {
 
 		if (module == null) {
 			return getAbbreviatedFullName();

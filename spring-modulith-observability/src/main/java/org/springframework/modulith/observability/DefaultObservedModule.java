@@ -24,8 +24,8 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
 import org.springframework.modulith.model.FormatableJavaClass;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.SpringBean;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -33,7 +33,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 @RequiredArgsConstructor
 class DefaultObservedModule implements ObservedModule {
 
-	private final Module module;
+	private final ApplicationModule module;
 
 	/*
 	 * (non-Javadoc)
@@ -106,7 +106,7 @@ class DefaultObservedModule implements ObservedModule {
 	 * @see org.springframework.modulith.observability.ObservedModule#isObservedModule(org.springframework.modulith.model.Module)
 	 */
 	@Override
-	public boolean isObservedModule(Module module) {
+	public boolean isObservedModule(ApplicationModule module) {
 		return this.module.equals(module);
 	}
 
@@ -114,7 +114,7 @@ class DefaultObservedModule implements ObservedModule {
 	 * (non-Javadoc)
 	 * @see org.springframework.modulith.observability.ObservedModule#getInterceptionConfiguration(java.lang.Class, org.springframework.modulith.model.Modules)
 	 */
-	public ObservedModuleType getObservedModuleType(Class<?> type, Modules modules) {
+	public ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules) {
 
 		return module.getSpringBeans().stream()
 				.filter(it -> it.getFullyQualifiedTypeName().equals(type.getName()))
@@ -125,11 +125,11 @@ class DefaultObservedModule implements ObservedModule {
 				.orElse(null);
 	}
 
-	private static String toString(Method method, Module module) {
+	private static String toString(Method method, ApplicationModule module) {
 		return toString(method.getDeclaringClass(), method, module);
 	}
 
-	private static String toString(Class<?> type, Method method, Module module) {
+	private static String toString(Class<?> type, Method method, ApplicationModule module) {
 
 		String typeName = module.getType(type.getName())
 				.map(FormatableJavaClass::of)

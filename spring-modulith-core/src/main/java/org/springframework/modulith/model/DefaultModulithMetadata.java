@@ -66,7 +66,6 @@ class DefaultModulithMetadata implements ModulithMetadata {
 	 *
 	 * @param javaPackage must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
-	 * @since 1.1
 	 */
 	public static ModulithMetadata of(String javaPackage) {
 

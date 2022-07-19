@@ -31,8 +31,8 @@ import org.springframework.modulith.docs.Documenter.CanvasOptions.Groupings;
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
 import org.springframework.modulith.model.EventType;
 import org.springframework.modulith.model.FormatableJavaClass;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.Source;
 import org.springframework.modulith.model.SpringBean;
 import org.springframework.util.Assert;
@@ -51,11 +51,11 @@ class Asciidoctor {
 	private static String PLACEHOLDER = "¯\\_(ツ)_/¯";
 	private static final Pattern JAVADOC_CODE = Pattern.compile("\\{\\@(?>link|code|literal)\\s(.*)\\}");
 
-	private final Modules modules;
+	private final ApplicationModules modules;
 	private final String javaDocBase;
 	private final Optional<DocumentationSource> docSource;
 
-	private Asciidoctor(Modules modules, String javaDocBase) {
+	private Asciidoctor(ApplicationModules modules, String javaDocBase) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 		Assert.hasText(javaDocBase, "Javadoc base must not be null or empty!");
@@ -69,23 +69,23 @@ class Asciidoctor {
 	}
 
 	/**
-	 * Creates a new {@link Asciidoctor} instance for the given {@link Modules} and Javadoc base URI.
+	 * Creates a new {@link Asciidoctor} instance for the given {@link ApplicationModules} and Javadoc base URI.
 	 *
 	 * @param modules must not be {@literal null}.
 	 * @param javadocBase can be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static Asciidoctor withJavadocBase(Modules modules, @Nullable String javadocBase) {
+	public static Asciidoctor withJavadocBase(ApplicationModules modules, @Nullable String javadocBase) {
 		return new Asciidoctor(modules, javadocBase == null ? PLACEHOLDER : javadocBase);
 	}
 
 	/**
-	 * Creates a new {@link Asciidoctor} instance for the given {@link Modules}.
+	 * Creates a new {@link Asciidoctor} instance for the given {@link ApplicationModules}.
 	 *
 	 * @param modules must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static Asciidoctor withoutJavadocBase(Modules modules) {
+	public static Asciidoctor withoutJavadocBase(ApplicationModules modules) {
 		return new Asciidoctor(modules, PLACEHOLDER);
 	}
 
@@ -129,7 +129,7 @@ class Asciidoctor {
 		return String.format("%s implementing %s", base, interfacesAsString);
 	}
 
-	public String renderSpringBeans(CanvasOptions options, Module module) {
+	public String renderSpringBeans(CanvasOptions options, ApplicationModule module) {
 
 		StringBuilder builder = new StringBuilder();
 		Groupings groupings = options.groupBeans(module);
@@ -162,7 +162,7 @@ class Asciidoctor {
 		return builder.length() == 0 ? "None" : builder.toString();
 	}
 
-	public String renderEvents(Module module) {
+	public String renderEvents(ApplicationModule module) {
 
 		List<EventType> events = module.getPublishedEvents();
 
@@ -194,7 +194,7 @@ class Asciidoctor {
 		return builder.toString();
 	}
 
-	public String renderConfigurationProperties(Module module, List<ModuleProperty> properties) {
+	public String renderConfigurationProperties(ApplicationModule module, List<ModuleProperty> properties) {
 
 		if (properties.isEmpty()) {
 			return "none";
@@ -255,7 +255,7 @@ class Asciidoctor {
 
 	private String toOptionalLink(JavaClass source, Optional<String> methodSignature) {
 
-		Module module = modules.getModuleByType(source).orElse(null);
+		ApplicationModule module = modules.getModuleByType(source).orElse(null);
 		String typeAndMethod = toCode(
 				toTypeAndMethod(FormatableJavaClass.of(source).getAbbreviatedFullName(module), methodSignature));
 

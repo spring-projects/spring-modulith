@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
 import org.springframework.modulith.model.ArchitecturallyEvidentType.ReferenceMethod;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModules;
 
 /**
  * Represents a type in an {@link ObservedModule}.
@@ -33,7 +33,7 @@ import org.springframework.modulith.model.Modules;
 @RequiredArgsConstructor
 public class ObservedModuleType {
 
-	private final Modules modules;
+	private final ApplicationModules modules;
 	private final ObservedModule module;
 	private final ArchitecturallyEvidentType type;
 

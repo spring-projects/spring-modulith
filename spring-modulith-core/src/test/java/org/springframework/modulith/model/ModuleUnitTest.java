@@ -32,7 +32,7 @@ import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 
 /**
- * Unit tests for {@link Module}.
+ * Unit tests for {@link ApplicationModule}.
  *
  * @author Oliver Drotbohm
  */
@@ -43,7 +43,7 @@ class ModuleUnitTest {
 	JavaClasses classes = importer.importPackages("com.acme.withatbean"); //
 	JavaPackage javaPackage = JavaPackage.of(Classes.of(classes), "");
 
-	Module module = new Module(javaPackage, false);
+	ApplicationModule module = new ApplicationModule(javaPackage, false);
 
 	@Test
 	public void considersExternalSpringBeans() {

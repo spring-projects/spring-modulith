@@ -31,7 +31,6 @@ import com.tngtech.archunit.core.domain.JavaModifier;
  * A type that represents an event in a system.
  *
  * @author Oliver Drotbohm
- * @since 1.1
  */
 @Value
 public class EventType {

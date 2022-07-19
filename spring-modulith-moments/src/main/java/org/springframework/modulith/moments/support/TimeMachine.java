@@ -27,7 +27,6 @@ import org.springframework.context.ApplicationEventPublisher;
  * @author Oliver Drotbohm
  * @see #now()
  * @see #shiftBy(Duration)
- * @since 1.3
  */
 public class TimeMachine extends Moments {
 

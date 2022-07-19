@@ -24,7 +24,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 
 /**
- * Unit tests for {@link ModuleDetectionStrategy}.
+ * Unit tests for {@link ApplicationModuleDetectionStrategy}.
  *
  * @author Oliver Drotbohm
  */
@@ -33,15 +33,15 @@ class ModuleDetectionStrategyUnitTest {
 	@Test
 	void usesExplicitlyAnnotatedConstant() {
 
-		assertThat(ModuleDetectionStrategy.explictlyAnnotated())
-				.isEqualTo(ModuleDetectionStrategies.EXPLICITLY_ANNOTATED);
+		assertThat(ApplicationModuleDetectionStrategy.explictlyAnnotated())
+				.isEqualTo(ApplicationModuleDetectionStrategies.EXPLICITLY_ANNOTATED);
 	}
 
 	@Test
 	void usesDirectSubPackages() {
 
-		assertThat(ModuleDetectionStrategy.directSubPackage())
-				.isEqualTo(ModuleDetectionStrategies.DIRECT_SUB_PACKAGES);
+		assertThat(ApplicationModuleDetectionStrategy.directSubPackage())
+				.isEqualTo(ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES);
 	}
 
 	@Test
@@ -53,7 +53,7 @@ class ModuleDetectionStrategyUnitTest {
 
 		JavaPackage javaPackage = JavaPackage.of(Classes.of(classes), "jmolecules");
 
-		assertThat(ModuleDetectionStrategy.explictlyAnnotated().getModuleBasePackages(javaPackage))
+		assertThat(ApplicationModuleDetectionStrategy.explictlyAnnotated().getModuleBasePackages(javaPackage))
 				.containsExactly(javaPackage);
 	}
 }

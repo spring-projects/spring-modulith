@@ -18,8 +18,8 @@ package com.acme.myproject;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.model.Modules;
-import org.springframework.modulith.model.Modules.Filters;
+import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.model.ApplicationModules.Filters;
 import org.springframework.modulith.model.Violations;
 
 import com.acme.myproject.invalid.InvalidComponent;
@@ -44,7 +44,7 @@ class ModulithTest {
 		String componentName = InternalComponentB.class.getSimpleName();
 
 		assertThatExceptionOfType(Violations.class) //
-				.isThrownBy(() -> Modules.of(Application.class, DEFAULT_EXCLUSIONS).verify()) //
+				.isThrownBy(() -> ApplicationModules.of(Application.class, DEFAULT_EXCLUSIONS).verify()) //
 				.withMessageContaining(String.format("Module '%s' depends on non-exposed type %s within module 'moduleB'",
 						"invalid", InternalComponentB.class.getName()))
 				.withMessageContaining(String.format("%s declares constructor %s(%s)", InvalidComponent.class.getSimpleName(),
@@ -53,14 +53,14 @@ class ModulithTest {
 
 	@Test
 	void verifyModulesWithoutInvalid() {
-		Modules.of(Application.class, DEFAULT_EXCLUSIONS.or(Filters.withoutModule("invalid"))).verify();
+		ApplicationModules.of(Application.class, DEFAULT_EXCLUSIONS.or(Filters.withoutModule("invalid"))).verify();
 	}
 
 	@Test
 	void detectsCycleBetweenModules() {
 
 		assertThatExceptionOfType(Violations.class) //
-				.isThrownBy(() -> Modules.of(Application.class, Filters.withoutModules("invalid", "invalid2")).verify()) //
+				.isThrownBy(() -> ApplicationModules.of(Application.class, Filters.withoutModules("invalid", "invalid2")).verify()) //
 
 				// mentions modules
 				.withMessageContaining("cycleA") //

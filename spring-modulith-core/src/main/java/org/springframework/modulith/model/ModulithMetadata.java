@@ -55,7 +55,6 @@ interface ModulithMetadata {
 	 *
 	 * @param javaPackage must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
-	 * @since 1.1
 	 */
 	public static ModulithMetadata of(String javaPackage) {
 		return DefaultModulithMetadata.of(javaPackage);
@@ -65,7 +64,6 @@ interface ModulithMetadata {
 	 * Returns the source of the Moduliths setup. Either a type or a package.
 	 *
 	 * @return will never be {@literal null}.
-	 * @since 1.1
 	 */
 	Object getModulithSource();
 

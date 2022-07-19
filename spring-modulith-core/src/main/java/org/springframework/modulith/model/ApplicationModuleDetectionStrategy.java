@@ -17,14 +17,14 @@ package org.springframework.modulith.model;
 
 import java.util.stream.Stream;
 
-import org.springframework.modulith.Module;
+import org.springframework.modulith.ApplicationModule;
 
 /**
  * Strategy interface to customize which packages are considered module base packages.
  *
  * @author Oliver Drotbohm
  */
-public interface ModuleDetectionStrategy {
+public interface ApplicationModuleDetectionStrategy {
 
 	/**
 	 * Given the {@link JavaPackage} that Moduliths was initialized with, return the base packages for all modules in the
@@ -36,22 +36,22 @@ public interface ModuleDetectionStrategy {
 	Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage);
 
 	/**
-	 * A {@link ModuleDetectionStrategy} that considers all direct sub-packages of the Moduliths base package to be module
+	 * A {@link ApplicationModuleDetectionStrategy} that considers all direct sub-packages of the Moduliths base package to be module
 	 * base packages.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static ModuleDetectionStrategy directSubPackage() {
-		return ModuleDetectionStrategies.DIRECT_SUB_PACKAGES;
+	static ApplicationModuleDetectionStrategy directSubPackage() {
+		return ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES;
 	}
 
 	/**
-	 * A {@link ModuleDetectionStrategy} that considers packages explicitly annotated with {@link Module} module base
+	 * A {@link ApplicationModuleDetectionStrategy} that considers packages explicitly annotated with {@link ApplicationModule} module base
 	 * packages.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static ModuleDetectionStrategy explictlyAnnotated() {
-		return ModuleDetectionStrategies.EXPLICITLY_ANNOTATED;
+	static ApplicationModuleDetectionStrategy explictlyAnnotated() {
+		return ApplicationModuleDetectionStrategies.EXPLICITLY_ANNOTATED;
 	}
 }

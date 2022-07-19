@@ -26,7 +26,6 @@ import com.tngtech.archunit.core.domain.JavaMethod;
  * references
  *
  * @author Oliver Drotbohm
- * @since 1.1
  */
 @RequiredArgsConstructor
 class CodeReplacingDocumentationSource implements DocumentationSource {

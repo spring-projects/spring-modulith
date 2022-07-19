@@ -143,7 +143,6 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 * implement {@link TransactionalEventListenerMetadata}.
 	 *
 	 * @author Oliver Drotbohm
-	 * @since 1.1
 	 * @see TransactionalEventListener
 	 * @see TransactionalEventListenerMetadata
 	 */

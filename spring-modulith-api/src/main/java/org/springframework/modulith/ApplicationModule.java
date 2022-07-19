@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  */
 @Target({ ElementType.PACKAGE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Module {
+public @interface ApplicationModule {
 
 	String displayName() default "";
 

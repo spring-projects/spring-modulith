@@ -28,8 +28,8 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
-import org.springframework.modulith.model.Module;
-import org.springframework.modulith.model.Modules;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
 
 /**
  * @author Oliver Drotbohm
@@ -69,7 +69,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 	@RequiredArgsConstructor
 	private static class DataRestControllerInterceptor implements MethodInterceptor {
 
-		private final Modules modules;
+		private final ApplicationModules modules;
 		private final Tracer tracer;
 
 		/*
@@ -79,7 +79,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 		@Override
 		public Object invoke(MethodInvocation invocation) throws Throwable {
 
-			Module module = getModuleFrom(invocation.getArguments());
+			ApplicationModule module = getModuleFrom(invocation.getArguments());
 
 			if (module == null) {
 				return invocation.proceed();
@@ -90,7 +90,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 			return ModuleEntryInterceptor.of(observed, tracer).invoke(invocation);
 		}
 
-		private Module getModuleFrom(Object[] arguments) {
+		private ApplicationModule getModuleFrom(Object[] arguments) {
 
 			for (Object argument : arguments) {
 

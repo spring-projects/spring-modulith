@@ -25,7 +25,6 @@ import org.jmolecules.event.types.DomainEvent;
  * A {@link DomainEvent} published on each day.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
 @Value(staticConstructor = "of")
 public class DayHasPassed implements DomainEvent {
