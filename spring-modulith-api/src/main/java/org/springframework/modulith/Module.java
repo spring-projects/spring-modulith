@@ -23,7 +23,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation to customize information of a {@link Modulith} module.
  * 
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Target({ ElementType.PACKAGE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)

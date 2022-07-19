@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
 import com.acme.myproject.moduleA.SomeEventA;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Component
 class SomeEventListenerB {

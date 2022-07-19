@@ -18,7 +18,7 @@ package com.acme.myproject.invalid;
 import com.acme.myproject.moduleB.internal.InternalComponentB;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public class InvalidComponent {
 

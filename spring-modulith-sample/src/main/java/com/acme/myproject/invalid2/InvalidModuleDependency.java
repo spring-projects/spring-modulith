@@ -18,7 +18,7 @@ package com.acme.myproject.invalid2;
 import com.acme.myproject.moduleA.ServiceComponentA;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public class InvalidModuleDependency {
 

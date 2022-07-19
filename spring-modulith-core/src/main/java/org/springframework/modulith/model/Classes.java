@@ -44,7 +44,7 @@ import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.HasName;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @ToString
 @EqualsAndHashCode

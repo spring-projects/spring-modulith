@@ -30,7 +30,7 @@ import com.acme.myproject.complex.internal.SecondTypeBasePort;
 import com.acme.myproject.moduleA.SomeConfigurationA.SomeAtBeanComponentA;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  * @author Peter Gafert
  */
 class ModulesIntegrationTest {

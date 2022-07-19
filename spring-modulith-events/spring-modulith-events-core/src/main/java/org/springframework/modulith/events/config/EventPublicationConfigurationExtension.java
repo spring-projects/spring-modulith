@@ -16,6 +16,6 @@
 package org.springframework.modulith.events.config;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public interface EventPublicationConfigurationExtension {}

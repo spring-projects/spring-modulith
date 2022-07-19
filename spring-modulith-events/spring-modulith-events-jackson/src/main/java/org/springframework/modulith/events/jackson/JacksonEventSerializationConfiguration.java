@@ -26,7 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor

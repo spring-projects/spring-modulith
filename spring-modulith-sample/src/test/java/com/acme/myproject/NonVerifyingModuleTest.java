@@ -25,7 +25,7 @@ import org.springframework.modulith.test.ModuleTest;
 import org.springframework.modulith.test.ModuleTest.BootstrapMode;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

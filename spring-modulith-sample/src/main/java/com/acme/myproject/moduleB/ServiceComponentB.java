@@ -23,7 +23,7 @@ import com.acme.myproject.moduleA.ServiceComponentA;
 import com.acme.myproject.moduleB.internal.InternalComponentB;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Component
 @RequiredArgsConstructor

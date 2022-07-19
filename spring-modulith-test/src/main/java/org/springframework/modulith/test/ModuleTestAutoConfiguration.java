@@ -40,7 +40,7 @@ import org.springframework.util.StringUtils;
  * scan and auto-configuration packages to the packages defined by the {@link ModuleTestExecution} in the application
  * context.
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Configuration
 @Import(ModuleTestAutoConfiguration.AutoConfigurationAndEntityScanPackageCustomizer.class)

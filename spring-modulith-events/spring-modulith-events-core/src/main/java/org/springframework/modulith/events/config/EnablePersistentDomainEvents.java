@@ -36,7 +36,7 @@ import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.modulith.events.config.EnablePersistentDomainEvents.PersistentDomainEventsImportSelector;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

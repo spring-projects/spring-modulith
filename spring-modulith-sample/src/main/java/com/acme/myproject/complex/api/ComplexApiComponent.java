@@ -17,7 +17,7 @@ package com.acme.myproject.complex.api;
 
 /**
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public class ComplexApiComponent {
 

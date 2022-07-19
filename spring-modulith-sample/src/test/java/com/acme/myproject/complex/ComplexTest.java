@@ -26,7 +26,7 @@ import org.springframework.modulith.test.ModuleTestExecution;
 import com.acme.myproject.NonVerifyingModuleTest;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @NonVerifyingModuleTest
 class ComplexTest {

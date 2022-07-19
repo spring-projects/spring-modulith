@@ -18,7 +18,7 @@ package com.acme.myproject.moduleB.internal;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Component
 public class InternalComponentB {

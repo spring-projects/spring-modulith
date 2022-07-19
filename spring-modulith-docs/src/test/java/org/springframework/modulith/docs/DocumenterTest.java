@@ -35,7 +35,7 @@ import com.acme.myproject.Application;
 /**
  * Unit tests for {@link Documenter}.
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 class DocumenterTest {
 

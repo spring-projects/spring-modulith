@@ -24,7 +24,7 @@ import java.lang.annotation.Target;
 /**
  * Annotation to mark a package as named interface of a {@link Module} (either implicit or explicitly annotated).
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Documented
 @Target({ ElementType.PACKAGE, ElementType.TYPE })

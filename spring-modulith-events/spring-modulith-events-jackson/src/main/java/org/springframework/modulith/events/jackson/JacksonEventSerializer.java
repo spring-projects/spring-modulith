@@ -26,7 +26,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor
 class JacksonEventSerializer implements EventSerializer {
@@ -35,7 +35,7 @@ class JacksonEventSerializer implements EventSerializer {
 
 	/*
 	 * (non-Javadoc)
-	 * @see de.olivergierke.events.EventSerializer#serialize(java.lang.Object)
+	 * @see de.oliverDrotbohm.events.EventSerializer#serialize(java.lang.Object)
 	 */
 	@Override
 	public Object serialize(Object event) {
@@ -49,7 +49,7 @@ class JacksonEventSerializer implements EventSerializer {
 
 	/*
 	 * (non-Javadoc)
-	 * @see de.olivergierke.events.EventSerializer#deserialize(java.lang.Object, java.lang.Class)
+	 * @see de.oliverDrotbohm.events.EventSerializer#deserialize(java.lang.Object, java.lang.Class)
 	 */
 	@Override
 	public Object deserialize(Object serialized, Class<?> type) {

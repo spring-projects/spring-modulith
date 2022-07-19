@@ -74,7 +74,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 /**
  * API to create documentation for {@link Modules}.
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Documenter {
@@ -536,7 +536,7 @@ public class Documenter {
 	/**
 	 * Options to tweak the rendering of diagrams.
 	 *
-	 * @author Oliver Gierke
+	 * @author Oliver Drotbohm
 	 */
 	@Getter(AccessLevel.PRIVATE)
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)

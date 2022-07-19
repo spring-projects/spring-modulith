@@ -29,7 +29,7 @@ import com.acme.myproject.moduleA.ServiceComponentA;
 import com.acme.myproject.moduleB.ServiceComponentB;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 class ModuleCTest {
 

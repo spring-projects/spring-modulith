@@ -18,7 +18,7 @@ package com.acme.myproject;
 import org.springframework.modulith.Modulith;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Modulith
 public class Application {

@@ -33,7 +33,7 @@ import org.springframework.core.annotation.AliasFor;
 /**
  * Defines a Spring Boot application to follow the Modulith structuring conventions.
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Documented
 @Target(ElementType.TYPE)

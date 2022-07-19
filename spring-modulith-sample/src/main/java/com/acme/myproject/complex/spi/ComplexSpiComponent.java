@@ -17,7 +17,7 @@ package com.acme.myproject.complex.spi;
 
 /**
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public class ComplexSpiComponent {
 

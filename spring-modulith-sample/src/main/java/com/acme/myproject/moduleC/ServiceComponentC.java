@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 import com.acme.myproject.moduleB.ServiceComponentB;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Component
 @RequiredArgsConstructor

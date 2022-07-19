@@ -25,7 +25,7 @@ import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @EqualsAndHashCode(callSuper = false)
 class ModuleTypeExcludeFilter extends TypeExcludeFilter {

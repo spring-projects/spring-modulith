@@ -36,7 +36,7 @@ import org.springframework.test.context.ContextCustomizerFactory;
 import org.springframework.test.context.MergedContextConfiguration;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 

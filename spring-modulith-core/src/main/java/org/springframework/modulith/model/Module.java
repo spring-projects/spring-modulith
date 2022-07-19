@@ -58,7 +58,7 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @EqualsAndHashCode(doNotUseGetters = true)
 public class Module {

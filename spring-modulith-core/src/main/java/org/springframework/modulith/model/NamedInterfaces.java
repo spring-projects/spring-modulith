@@ -33,7 +33,7 @@ import org.springframework.util.MultiValueMap;
 import com.tngtech.archunit.core.domain.JavaClass;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class NamedInterfaces implements Iterable<NamedInterface> {

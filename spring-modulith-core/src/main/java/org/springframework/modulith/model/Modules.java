@@ -47,7 +47,7 @@ import com.tngtech.archunit.lang.FailureReport;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  * @author Peter Gafert
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)

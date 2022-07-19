@@ -30,7 +30,7 @@ import org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDele
 import org.springframework.test.context.support.DefaultBootstrapContext;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public class TestUtils {
 

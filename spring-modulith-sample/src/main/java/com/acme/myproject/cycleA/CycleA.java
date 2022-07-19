@@ -18,7 +18,7 @@ package com.acme.myproject.cycleA;
 import com.acme.myproject.cycleB.CycleB;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 public class CycleA {
 	CycleB cycleB;

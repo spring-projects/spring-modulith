@@ -30,7 +30,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 /**
  * Test cases to verify the validity of the overall modulith rules
  *
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  * @author Peter Gafert
  */
 class ModulithTest {

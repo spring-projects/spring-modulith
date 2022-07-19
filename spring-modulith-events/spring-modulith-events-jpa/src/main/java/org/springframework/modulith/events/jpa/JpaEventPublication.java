@@ -28,7 +28,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Data
 @Entity

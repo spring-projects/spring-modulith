@@ -29,7 +29,7 @@ import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
 /**
  * Enables auto-configuration for the events package.
  * 
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Configuration
 @AutoConfigureBefore(HibernateJpaAutoConfiguration.class)

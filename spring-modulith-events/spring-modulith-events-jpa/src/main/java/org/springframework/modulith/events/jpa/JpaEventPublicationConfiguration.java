@@ -24,7 +24,7 @@ import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
 @RequiredArgsConstructor

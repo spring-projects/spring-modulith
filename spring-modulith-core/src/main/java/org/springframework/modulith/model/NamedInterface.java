@@ -33,7 +33,7 @@ import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.properties.HasModifiers;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class NamedInterface implements Iterable<JavaClass> {

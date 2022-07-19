@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 class CompletableEventPublicationUnitTest {
 

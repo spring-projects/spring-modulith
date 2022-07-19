@@ -18,7 +18,7 @@ package com.acme.myproject.complex.internal;
 import org.springframework.stereotype.Component;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 @Component
 class ComplextInternalComponent {

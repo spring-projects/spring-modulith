@@ -37,7 +37,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * @author Oliver Gierke
+ * @author Oliver Drotbohm
  */
 class PersistentDomainEventIntegrationTest {
 
