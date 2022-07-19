@@ -35,12 +35,13 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  */
 @EnableScheduling
 @EnableConfigurationProperties(MomentsProperties.class)
-@ConditionalOnProperty(name = "moduliths.moments.enabled", havingValue = "true", matchIfMissing = true)
+@ConditionalOnProperty(name = "spring.modulith.moments.enabled", havingValue = "true", matchIfMissing = true)
 @Configuration(proxyBeanMethods = false)
 class MomentsAutoConfiguration {
 
 	@Bean
-	@ConditionalOnProperty(name = "moduliths.moments.enable-time-machine", havingValue = "false", matchIfMissing = true)
+	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "false",
+			matchIfMissing = true)
 	Moments moments(ObjectProvider<Clock> clockProvider, ApplicationEventPublisher events, MomentsProperties properties) {
 
 		Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
@@ -49,7 +50,8 @@ class MomentsAutoConfiguration {
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "moduliths.moments.enable-time-machine", havingValue = "true", matchIfMissing = false)
+	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "true",
+			matchIfMissing = false)
 	TimeMachine timeMachine(ObjectProvider<Clock> clockProvider, ApplicationEventPublisher events,
 			MomentsProperties properties) {
 

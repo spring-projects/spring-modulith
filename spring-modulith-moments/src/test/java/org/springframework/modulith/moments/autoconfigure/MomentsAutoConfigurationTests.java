@@ -51,7 +51,7 @@ class MomentsAutoConfigurationTests {
 
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
-				.withPropertyValues("moduliths.moments.zone-id:Europe/Berlin")
+				.withPropertyValues("spring.modulith.moments.zone-id:Europe/Berlin")
 				.run(it -> {
 					assertThat(it).getBean(MomentsProperties.class)
 							.extracting(MomentsProperties::getZoneId)
@@ -64,7 +64,7 @@ class MomentsAutoConfigurationTests {
 
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
-				.withPropertyValues("moduliths.moments.quarter-start-month=February")
+				.withPropertyValues("spring.modulith.moments.quarter-start-month=February")
 				.run(it -> {
 					assertThat(it).getBean(MomentsProperties.class).satisfies(props -> {
 						assertThat(props.getShiftedQuarter(LocalDate.of(2022, 1, 1)).getQuarter()).isEqualTo(Quarter.Q4);
@@ -77,7 +77,7 @@ class MomentsAutoConfigurationTests {
 
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
-				.withPropertyValues("moduliths.moments.enabled=false")
+				.withPropertyValues("spring.modulith.moments.enabled=false")
 				.run(it -> {
 					assertThat(it).doesNotHaveBean(Moments.class);
 					assertThat(it).doesNotHaveBean(MomentsProperties.class);
@@ -89,7 +89,7 @@ class MomentsAutoConfigurationTests {
 
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
-				.withPropertyValues("moduliths.moments.enable-time-machine=true")
+				.withPropertyValues("spring.modulith.moments.enable-time-machine=true")
 				.run(it -> {
 					assertThat(it).hasSingleBean(TimeMachine.class);
 				});

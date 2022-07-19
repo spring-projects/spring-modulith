@@ -42,7 +42,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-@ConfigurationProperties(prefix = "moduliths.moments")
+@ConfigurationProperties(prefix = "spring.modulith.moments")
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MomentsProperties {
 
