@@ -34,6 +34,9 @@ jobs:
         ./mvnw -B clean install -DskipTests
         ./mvnw -B clean deploy -Psonatype -s settings.xml -Dgpg.passphrase='${{ secrets.GPG_PASSPHRASE }}'
 
+    - name: Setup Graphviz
+      uses: ts-graphviz/setup-graphviz@v1
+
     - name: Deploy documentation
       env:
         ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}

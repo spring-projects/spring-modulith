@@ -34,9 +34,11 @@
 	<properties>
 
 		<archunit.version>0.23.1</archunit.version>
+		<artifactory-maven-plugin.version>3.4.0</artifactory-maven-plugin.version>
 		<jmolecules-bom.version>2021.2.4</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<spring-doc-resources.version>0.2.5</spring-doc-resources.version>
 
 	</properties>
 
@@ -157,7 +159,7 @@ limitations under the License.
 					<plugin>
 						<groupId>org.jfrog.buildinfo</groupId>
 						<artifactId>artifactory-maven-plugin</artifactId>
-						<version>3.4.0</version>
+						<version>${artifactory-maven-plugin.version}</version>
 						<inherited>false</inherited>
 						<executions>
 							<execution>
@@ -216,47 +218,217 @@ limitations under the License.
 		</profile>
 
 		<profile>
+
 			<id>documentation</id>
+
+			<modules>
+				<module>spring-modulith-distribution</module>
+			</modules>
+
 			<properties>
+				<shared.resources>${project.build.directory}/shared-resources</shared.resources>
+				<generated-asciidoc-sources.directory>${project.build.directory}/docs-source</generated-asciidoc-sources.directory>
+				<generated-docs.directory>${project.build.directory}/generated-docs</generated-docs.directory>
+				<maven.main.skip>true</maven.main.skip>
 				<maven.test.skip>true</maven.test.skip>
+				<maven.install.skip>true</maven.install.skip>
+				<maven.deploy.skip>true</maven.deploy.skip>
 			</properties>
+
 			<build>
+
 				<plugins>
+
+					<!--
+						Unpacks the content of spring-doc-resources into the shared resources folder.
+					-->
+
 					<plugin>
-						<groupId>org.jfrog.buildinfo</groupId>
-						<artifactId>artifactory-maven-plugin</artifactId>
-						<version>3.4.0</version>
-						<inherited>false</inherited>
+						<groupId>com.googlecode.maven-download-plugin</groupId>
+						<artifactId>download-maven-plugin</artifactId>
+						<version>1.6.8</version>
 						<executions>
 							<execution>
-								<id>deploy-docs-to-artifactory</id>
+								<id>unpack-doc-resources</id>
+								<phase>generate-resources</phase>
 								<goals>
-									<goal>publish</goal>
+									<goal>wget</goal>
 								</goals>
 								<configuration>
-									<publisher>
-										<contextUrl>https://repo.spring.io</contextUrl>
-										<includePatterns>*-docs.zip</includePatterns>
-										<username>${env.ARTIFACTORY_USERNAME}</username>
-										<password>${env.ARTIFACTORY_PASSWORD}</password>
-										<repoKey>temp-private-local</repoKey>
-										<snapshotRepoKey>temp-private-local</snapshotRepoKey>
-									</publisher>
-									<buildInfo>
-										<buildName>Documentation build for Spring Modulith ${project.version}</buildName>
-										<buildRetentionCount>1</buildRetentionCount>
-									</buildInfo>
-									<deployProperties>
-										<zip.name>spring-modulith-docs</zip.name>
-										<zip.displayname>spring-modulith-docs</zip.displayname>
-										<zip.deployed>false</zip.deployed>
-										<zip.type>docs</zip.type>
-									</deployProperties>
+									<url>https://repo.spring.io/release/io/spring/docresources/spring-doc-resources/${spring-doc-resources.version}/spring-doc-resources-${spring-doc-resources.version}.zip</url>
+									<unpack>true</unpack>
+									<outputDirectory>${generated-asciidoc-sources.directory}</outputDirectory>
 								</configuration>
 							</execution>
 						</executions>
 					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-antrun-plugin</artifactId>
+						<version>1.8</version>
+						<executions>
+							<execution>
+								<id>create-generated-docs-resources</id>
+								<phase>generate-resources</phase>
+								<goals>
+									<goal>run</goal>
+								</goals>
+								<configuration>
+									<target>
+
+										<!-- All Asciidoctor files to the source directory -->
+										<copy failonerror="false" todir="${generated-asciidoc-sources.directory}/">
+											<fileset dir="${project.root}/src/docs/asciidoc" includes="**/*.adoc"/>
+										</copy>
+
+										<!-- All images, too -->
+										<copy failonerror="false"
+										      todir="${generated-asciidoc-sources.directory}/images/">
+											<fileset dir="${project.root}/src/docs/asciidoc/images"/>
+										</copy>
+
+									</target>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+					</plugin>
+
 				</plugins>
+
+				<pluginManagement>
+					<plugins>
+
+						<!--
+							Asciidoctor
+						-->
+
+						<plugin>
+							<groupId>org.asciidoctor</groupId>
+							<artifactId>asciidoctor-maven-plugin</artifactId>
+							<version>2.2.2</version>
+							<dependencies>
+								<dependency>
+									<groupId>org.jruby</groupId>
+									<artifactId>jruby</artifactId>
+									<version>9.2.6.0</version>
+								</dependency>
+							</dependencies>
+
+							<executions>
+
+								<execution>
+									<id>html</id>
+									<phase>generate-resources</phase>
+									<goals>
+										<goal>process-asciidoc</goal>
+									</goals>
+									<configuration>
+										<sourceDirectory>${generated-asciidoc-sources.directory}</sourceDirectory>
+										<sourceDocumentName>index.adoc</sourceDocumentName>
+										<outputDirectory>${generated-docs.directory}</outputDirectory>
+										<sourceHighlighter>highlight.js</sourceHighlighter>
+										<attributes>
+											<highlightjsdir>js/highlight</highlightjsdir>
+											<highlightjs-theme>github</highlightjs-theme>
+											<linkcss>true</linkcss>
+											<sectanchors>true</sectanchors>
+											<stylesdir>./css</stylesdir>
+											<stylesheet>spring.css</stylesheet>
+											<toc>left</toc>
+										</attributes>
+									</configuration>
+								</execution>
+							</executions>
+
+							<configuration>
+								<doctype>book</doctype>
+								<attributes>
+									<docinfo>shared</docinfo>
+									<icons>font</icons>
+									<sectids>false</sectids>
+									<imagesdir>images</imagesdir>
+									<version>${project.version}</version>
+									<projectName>${project.name}</projectName>
+									<projectVersion>${project.version}</projectVersion>
+									<springVersion>${spring.version}</springVersion>
+									<toclevels>4</toclevels>
+									<numbered>true</numbered>
+								</attributes>
+							</configuration>
+
+						</plugin>
+
+						<!--
+							Creates two zip files for download as well as API and reference documentation distribution.
+						-->
+						<plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-assembly-plugin</artifactId>
+							<executions>
+								<execution>
+									<id>docs</id>
+									<goals>
+										<goal>single</goal>
+									</goals>
+									<phase>package</phase>
+									<configuration>
+										<descriptors>
+											<descriptor>src/docs/resources/assemblies/docs.xml</descriptor>
+										</descriptors>
+										<finalName>spring-modulith-${project.version}</finalName>
+										<appendAssemblyId>true</appendAssemblyId>
+									</configuration>
+								</execution>
+							</executions>
+						</plugin>
+
+						<!-- Deploy to Artifactory -->
+
+						<plugin>
+							<groupId>org.jfrog.buildinfo</groupId>
+							<artifactId>artifactory-maven-plugin</artifactId>
+							<version>${artifactory-maven-plugin.version}</version>
+							<inherited>false</inherited>
+							<executions>
+								<execution>
+									<id>deploy-docs-to-artifactory</id>
+									<goals>
+										<goal>publish</goal>
+									</goals>
+									<phase>deploy</phase>
+									<configuration>
+										<publisher>
+											<contextUrl>https://repo.spring.io</contextUrl>
+											<includePatterns>*-docs.zip</includePatterns>
+											<username>${env.ARTIFACTORY_USERNAME}</username>
+											<password>${env.ARTIFACTORY_PASSWORD}</password>
+											<repoKey>temp-private-local</repoKey>
+											<snapshotRepoKey>temp-private-local</snapshotRepoKey>
+										</publisher>
+										<buildInfo>
+											<buildName>Documentation publication build for Spring Modulith ${project.version}</buildName>
+											<buildRetentionCount>1</buildRetentionCount>
+										</buildInfo>
+										<deployProperties>
+											<zip.name>spring-modulith-docs</zip.name>
+											<zip.displayname>spring-modulith-docs</zip.displayname>
+											<zip.deployed>false</zip.deployed>
+											<zip.type>docs</zip.type>
+											<archives>*:*:*:*@zip</archives>
+										</deployProperties>
+									</configuration>
+								</execution>
+							</executions>
+						</plugin>
+
+					</plugins>
+				</pluginManagement>
 			</build>
 		</profile>
 

@@ -1,0 +1,27 @@
+= Spring Modulith -- Reference documentation
+Oliver Drotbohm
+:revnumber: {version}
+:revdate: {localdate}
+:toc: left
+
+© 2022 The original authors.
+
+NOTE: Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.
+
+:leveloffset: +1
+
+include::00-preface.adoc[]
+
+include::10-fundamentals.adoc[]
+
+include::20-verification.adoc[]
+
+include::30-testing.adoc[]
+
+include::40-events.adoc[]
+
+include::50-moments.adoc[]
+
+include::60-documentation.adoc[]
+
+:leveloffset: -1

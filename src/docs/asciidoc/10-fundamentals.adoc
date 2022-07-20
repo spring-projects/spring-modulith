@@ -1,0 +1,28 @@
+[[fundamentals]]
+= Fundamentals
+
+Spring Modulith supports developers implementing logical modules in Spring Boot applications.
+I allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules interaction at runtime and generally implement module interaction in a loosely-coupled way.
+This section will discuss the fundamental concepts that developers need to understand before diving into the technical support.
+
+[[fundamentals.modules]]
+== Application modules
+
+In a Spring Boot application, an application module is a unit of functionality that consists of the following parts:
+
+* An API exposed to other modules implemented by Spring bean instances and application events published by the module, usually referred to as _provided interface_.
+* Internal implementation components that are not supposed to be accessed by other modules.
+* References to API exposed by other modules in the form of Spring bean dependencies, application events listened to and configuration properties exposed.
+
+Spring Moduliths provides different ways of expressing modules, primarily differing in the level of complexity involved in the overall arrangement.
+This allows developers to start simple and naturally move to more sophisticated means as and if needed.
+
+
+
+=== Simple Application Modules
+
+
+
+=== Advanced Application Modules
+
+=== Named Interfaces

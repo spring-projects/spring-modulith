@@ -21,6 +21,9 @@ jobs:
         java-version: 17
         cache: 'maven'
 
+    - name: Setup Graphviz
+      uses: ts-graphviz/setup-graphviz@v1
+
     - name: Deploy documentation
       env:
         ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
