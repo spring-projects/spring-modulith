@@ -194,6 +194,7 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
+						<version>3.0.1</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -212,6 +213,51 @@ limitations under the License.
 					<url>https://s01.oss.sonatype.org/service/local/staging/deploy/maven2</url>
 				</repository>
 			</distributionManagement>
+		</profile>
+
+		<profile>
+			<id>documentation</id>
+			<properties>
+				<maven.test.skip>true</maven.test.skip>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+						<version>3.4.0</version>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>deploy-docs-to-artifactory</id>
+								<goals>
+									<goal>publish</goal>
+								</goals>
+								<configuration>
+									<publisher>
+										<contextUrl>https://repo.spring.io</contextUrl>
+										<includePatterns>*-docs.zip</includePatterns>
+										<username>${env.ARTIFACTORY_USERNAME}</username>
+										<password>${env.ARTIFACTORY_PASSWORD}</password>
+										<repoKey>temp-private-local</repoKey>
+										<snapshotRepoKey>temp-private-local</snapshotRepoKey>
+									</publisher>
+									<buildInfo>
+										<buildName>Documentation build for Spring Modulith ${project.version}</buildName>
+										<buildRetentionCount>1</buildRetentionCount>
+									</buildInfo>
+									<deployProperties>
+										<zip.name>spring-modulith-docs</zip.name>
+										<zip.displayname>spring-modulith-docs</zip.displayname>
+										<zip.deployed>false</zip.deployed>
+										<zip.type>docs</zip.type>
+									</deployProperties>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 
 	</profiles>
