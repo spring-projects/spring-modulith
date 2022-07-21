@@ -18,6 +18,7 @@
 
 	<modules>
 		<module>spring-modulith-api</module>
+		<module>spring-modulith-bom</module>
 		<module>spring-modulith-core</module>
 		<module>spring-modulith-events</module>
 		<module>spring-modulith-test</module>
