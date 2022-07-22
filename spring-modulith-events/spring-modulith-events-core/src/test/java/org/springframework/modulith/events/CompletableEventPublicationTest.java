@@ -15,15 +15,16 @@
  */
 package org.springframework.modulith.events;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
 /**
- * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
+ * @author Oliver Drotbohm
+ * @author Björn Kieling
+ * @author Dmitry Belyaev
  */
-class CompletableEventPublicationTest {
+class CompletableEventPublicationUnitTests {
 
 	@Test
 	void rejectsNullEvent() {

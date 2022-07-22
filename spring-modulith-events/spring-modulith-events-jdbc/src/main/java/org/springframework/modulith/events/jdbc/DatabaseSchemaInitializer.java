@@ -15,62 +15,65 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import java.io.IOException;
+import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.MetaDataAccessException;
-import org.springframework.util.FileCopyUtils;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.io.UncheckedIOException;
-import java.nio.charset.StandardCharsets;
+import org.springframework.util.StreamUtils;
 
 /**
  * Initializes the DB schema used to store events
  *
- * @author Dmitry Belyaev, Björn Kieling
+ * @author Dmitry Belyaev
+ * @author Björn Kieling
+ * @author Oliver Drotbohm
  */
-public class DatabaseSchemaInitializer implements ResourceLoaderAware, InitializingBean {
+class DatabaseSchemaInitializer implements ResourceLoaderAware, InitializingBean {
 
-    private final JdbcTemplate jdbcTemplate;
+	private final JdbcTemplate jdbcTemplate;
 
-    private ResourceLoader resourceLoader;
+	private ResourceLoader resourceLoader;
 
-    @Value("${spring.modulith.events.schema-initialization.enabled:false}")
-    private boolean initEnabled;
+	/**
+	 * Creates a new {@link DatabaseSchemaInitializer} for the given {@link JdbcTemplate} and ini
+	 *
+	 * @param jdbcTemplate
+	 * @param initEnabled
+	 */
+	public DatabaseSchemaInitializer(JdbcTemplate jdbcTemplate) {
 
-    public DatabaseSchemaInitializer(JdbcTemplate jdbcTemplate) {
-        this.jdbcTemplate = jdbcTemplate;
-    }
+		this.jdbcTemplate = jdbcTemplate;
+	}
 
-    @Override
-    public void setResourceLoader(ResourceLoader resourceLoader) {
-        this.resourceLoader = resourceLoader;
-    }
+	@Override
+	public void setResourceLoader(ResourceLoader resourceLoader) {
+		this.resourceLoader = resourceLoader;
+	}
 
-    @Override
-    public void afterPropertiesSet() throws MetaDataAccessException {
-        if (!initEnabled) {
-            return;
-        }
+	@Override
+	public void afterPropertiesSet() throws MetaDataAccessException {
 
-        DatabaseType databaseType = DatabaseType.fromMetaData(jdbcTemplate.getDataSource());
-        String databaseName = databaseType.name().toLowerCase();
-        var schemaDdlResource = resourceLoader.getResource("/schema-" + databaseName + ".sql");
-        var schemaDdl = asString(schemaDdlResource);
-        jdbcTemplate.execute(schemaDdl);
-    }
+		var fromDataSource = DatabaseDriver.fromDataSource(jdbcTemplate.getDataSource());
+		var databaseName = fromDataSource.name().toLowerCase();
+		var schemaDdlResource = resourceLoader.getResource("/schema-" + databaseName + ".sql");
+		var schemaDdl = asString(schemaDdlResource);
 
-    private String asString(Resource resource) {
-        try (Reader reader = new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)) {
-            return FileCopyUtils.copyToString(reader);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
+		jdbcTemplate.execute(schemaDdl);
+	}
+
+	private String asString(Resource resource) {
+
+		try {
+			return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);
+		} catch (IOException e) {
+			throw new UncheckedIOException(e);
+		}
+	}
 }

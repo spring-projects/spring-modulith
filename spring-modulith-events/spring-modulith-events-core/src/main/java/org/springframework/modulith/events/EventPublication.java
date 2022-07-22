@@ -24,9 +24,12 @@ import org.springframework.util.Assert;
 /**
  * An event publication.
  *
- * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
+ * @author Oliver Drotbohm
+ * @author Björn Kieling
+ * @author Dmitry Belyaev
  */
 public interface EventPublication extends Comparable<EventPublication> {
+
 	/**
 	 * Returns the event that is published.
 	 *

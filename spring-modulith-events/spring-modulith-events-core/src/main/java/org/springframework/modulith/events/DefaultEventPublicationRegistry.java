@@ -15,6 +15,10 @@
  */
 package org.springframework.modulith.events;
 
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -24,15 +28,13 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 /**
  * A registry to capture event publications to {@link ApplicationListener}s. Allows to register those publications, mark
  * them as completed and lookup incomplete publications.
  *
- * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
+ * @author Oliver Drotbohm
+ * @author Björn Kieling
+ * @author Dmitry Belyaev
  */
 @Slf4j
 @RequiredArgsConstructor
@@ -40,33 +42,19 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 	private final @NonNull EventPublicationRepository events;
 
-	/**
-	 * Stores {@link EventPublication}s for the given event and {@link ApplicationListener}s.
-	 *
-	 * @param event must not be {@literal null}.
-	 * @param listeners must not be {@literal null}.
-	 */
+	@Override
 	public void store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
 		listeners.map(it -> map(event, it))
 				.forEach(events::create);
 	}
 
-	/**
-	 * Returns all {@link EventPublication}s that have not been completed yet.
-	 *
-	 * @return will never be {@literal null}.
-	 */
+	@Override
 	public Iterable<EventPublication> findIncompletePublications() {
-		return events.findByCompletionDateIsNull();
+		return events.findIncompletePublications();
 	}
 
-	/**
-	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as completed.
-	 *
-	 * @param event must not be {@literal null}.
-	 * @param targetIdentifier must not be {@literal null}.
-	 */
+	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier) {
 
@@ -74,15 +62,15 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 		Assert.notNull(targetIdentifier, "Listener identifier must not be null!");
 
 		events.findByEventAndTargetIdentifier(event, targetIdentifier) //
-				.map(DefaultEventPublicationRegistry::LOGCompleted) //
+				.map(DefaultEventPublicationRegistry::logCompleted) //
 				.map(e -> CompletableEventPublication.of(e.getEvent(), e.getTargetIdentifier()))
-				.ifPresent(it -> events.updateCompletionDate(it.markCompleted()));
+				.ifPresent(it -> events.update(it.markCompleted()));
 	}
 
 	@Override
 	public void destroy() {
 
-		List<EventPublication> publications = events.findByCompletionDateIsNull();
+		List<EventPublication> publications = events.findIncompletePublications();
 
 		if (publications.isEmpty()) {
 
@@ -111,7 +99,7 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 		return result;
 	}
 
-	private static EventPublication LOGCompleted(EventPublication publication) {
+	private static EventPublication logCompleted(EventPublication publication) {
 
 		LOG.debug("Marking publication of event {} to listener {} completed.", //
 				publication.getEvent().getClass().getName(), publication.getTargetIdentifier().getValue());

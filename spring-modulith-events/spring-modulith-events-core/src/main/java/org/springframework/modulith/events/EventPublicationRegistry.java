@@ -23,7 +23,9 @@ import org.springframework.context.ApplicationListener;
  * A registry to capture event publications to {@link ApplicationListener}s. Allows to register those publications, mark
  * them as completed and lookup incomplete publications.
  *
- * @author Oliver Drotbohm, Björn Kieling, Dmitry Belyaev
+ * @author Oliver Drotbohm
+ * @author Björn Kieling
+ * @author Dmitry Belyaev
  */
 public interface EventPublicationRegistry {
 

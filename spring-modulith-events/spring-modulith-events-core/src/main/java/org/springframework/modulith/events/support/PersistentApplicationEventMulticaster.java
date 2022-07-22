@@ -123,8 +123,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				});
 	}
 
-	private ApplicationListener<ApplicationEvent> executeListenerWithCompletion(
-			EventPublication publication, TransactionalApplicationListener<ApplicationEvent> listener) {
+	private ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
+			TransactionalApplicationListener<ApplicationEvent> listener) {
 
 		listener.processEvent(publication.getApplicationEvent());
 

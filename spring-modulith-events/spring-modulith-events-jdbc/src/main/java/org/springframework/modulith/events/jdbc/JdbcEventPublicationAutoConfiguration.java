@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,22 +23,21 @@ import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 
 /**
- * @author Dmitry Belyaev, Björn Kieling
+ * @author Dmitry Belyaev
+ * @author Björn Kieling
+ * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
 class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
-    @Bean
-    public JdbcEventPublicationRepository jpaEventPublicationRepository(
-            JdbcTemplate jdbcTemplate, EventSerializer serializer) {
-        // TODO Why do we want to instantiate the serializer here and what
-        // happens if no serializer is available or is not compatible to
-        // JDBC serialization?
-        return new JdbcEventPublicationRepository(jdbcTemplate, serializer);
-    }
+	@Bean
+	JdbcEventPublicationRepository jpaEventPublicationRepository(JdbcTemplate jdbcTemplate, EventSerializer serializer) {
+		return new JdbcEventPublicationRepository(jdbcTemplate, serializer);
+	}
 
-    @Bean
-    public DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate) {
-        return new DatabaseSchemaInitializer(jdbcTemplate);
-    }
+	@Bean
+	@ConditionalOnProperty(name = "spring.modulith.events.schema-initialization.enabled", havingValue = "true")
+	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate) {
+		return new DatabaseSchemaInitializer(jdbcTemplate);
+	}
 }

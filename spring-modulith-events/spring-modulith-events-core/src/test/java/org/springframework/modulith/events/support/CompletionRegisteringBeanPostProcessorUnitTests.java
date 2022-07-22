@@ -34,7 +34,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
  *
  * @author Oliver Drotbohm
  */
-class CompletionRegisteringBeanPostProcessorUnitTest {
+class CompletionRegisteringBeanPostProcessorUnitTests {
 
 	EventPublicationRegistry registry = mock(EventPublicationRegistry.class);
 	BeanPostProcessor processor = new CompletionRegisteringBeanPostProcessor(() -> registry);

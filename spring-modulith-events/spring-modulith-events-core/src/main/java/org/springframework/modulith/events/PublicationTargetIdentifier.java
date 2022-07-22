@@ -27,7 +27,7 @@ import lombok.Value;
 @RequiredArgsConstructor(staticName = "of")
 public class PublicationTargetIdentifier {
 
-	private String value;
+	String value;
 
 	/*
 	 * (non-Javadoc)

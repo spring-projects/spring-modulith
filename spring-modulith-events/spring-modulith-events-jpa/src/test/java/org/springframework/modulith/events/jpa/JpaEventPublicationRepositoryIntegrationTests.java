@@ -15,14 +15,15 @@
  */
 package org.springframework.modulith.events.jpa;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-
-import java.util.List;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
+
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -48,10 +49,10 @@ import org.springframework.test.context.TestConstructor.AutowireMode;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.Transactional;
 
-import lombok.RequiredArgsConstructor;
-
 /**
- * @author Oliver Drotbohm, Dmitry Belyaev, Björn Kieling
+ * @author Oliver Drotbohm
+ * @author Dmitry Belyaev
+ * @author Björn Kieling
  */
 @ExtendWith(SpringExtension.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
@@ -122,23 +123,20 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		// Store publication
 		repository.create(publication);
 
-		List<EventPublication> eventPublications = repository.findByCompletionDateIsNull();
+		List<EventPublication> eventPublications = repository.findIncompletePublications();
 		assertThat(eventPublications).hasSize(1);
 		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
 		assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
 
 		// Complete publication
-		repository.updateCompletionDate(publication.markCompleted());
+		repository.update(publication.markCompleted());
 
-		assertThat(repository.findByCompletionDateIsNull()).isEmpty();
+		assertThat(repository.findIncompletePublications()).isEmpty();
 	}
 
+	@Value
 	private static final class TestEvent {
-		private final String eventId;
-
-		private TestEvent(String eventId) {
-			this.eventId = eventId;
-		}
+		String eventId;
 	}
 }

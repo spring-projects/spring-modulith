@@ -24,6 +24,7 @@ import java.util.Optional;
  * @author Oliver Drotbohm
  */
 public interface CompletableEventPublication extends EventPublication {
+
 	/**
 	 * Returns the completion date of the publication.
 	 *

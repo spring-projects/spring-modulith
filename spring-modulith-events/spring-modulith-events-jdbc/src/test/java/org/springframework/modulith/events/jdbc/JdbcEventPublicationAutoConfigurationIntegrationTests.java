@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -24,24 +26,21 @@ import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.testapp.TestApplication;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
- * @author Dmitry Belyaev, Björn Kieling
+ * @author Dmitry Belyaev
+ * @author Björn Kieling
+ * @author Oliver Drotbohm
  */
 @SpringBootTest(
 		classes = TestApplication.class,
-		properties = "spring.modulith.events.schema-initialization.enabled=true"
-)
-public class JdbcEventPublicationAutoConfigurationIntegrationTests {
+		properties = "spring.modulith.events.schema-initialization.enabled=true")
+class JdbcEventPublicationAutoConfigurationIntegrationTests {
 
-	@Autowired
-	private ApplicationContext context;
+	@Autowired ApplicationContext context;
 
-	@MockBean
-	private EventSerializer serializer;
+	@MockBean EventSerializer serializer;
 
-	@Test
+	@Test // GH-3
 	void bootstrapsApplicationComponents() {
 
 		assertThat(context.getBean(EventPublicationRegistry.class)).isNotNull();

@@ -24,13 +24,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.EventSerializer;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.TestConstructor.AutowireMode;
 
 /**
- * @author Oliver Drotbohm, Dmitry Belyaev, Björn Kieling
+ * @author Oliver Drotbohm
+ * @author Dmitry Belyaev
+ * @author Björn Kieling
  */
 @SpringBootTest(classes = ExampleApplication.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
@@ -39,8 +41,7 @@ class JpaEventPublicationConfigurationIntegrationTests {
 
 	private final ApplicationContext context;
 
-	@MockBean
-	private EventSerializer serializer;
+	@MockBean EventSerializer serializer;
 
 	@Test
 	void bootstrapsApplicationComponents() {

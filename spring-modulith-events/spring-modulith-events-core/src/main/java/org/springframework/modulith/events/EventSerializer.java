@@ -24,7 +24,7 @@ public interface EventSerializer {
 	 * Serializes the given event into a storable format.
 	 *
 	 * @param event must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	Object serialize(Object event);
 
@@ -33,7 +33,7 @@ public interface EventSerializer {
 	 *
 	 * @param serialized must not be {@literal null}.
 	 * @param type must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	<T> T deserialize(Object serialized, Class<T> type);
 }
