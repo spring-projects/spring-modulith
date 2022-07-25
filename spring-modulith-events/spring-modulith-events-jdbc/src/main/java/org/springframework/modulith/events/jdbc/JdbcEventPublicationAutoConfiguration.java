@@ -31,7 +31,7 @@ import org.springframework.modulith.events.config.EventPublicationConfigurationE
 class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean
-	JdbcEventPublicationRepository jpaEventPublicationRepository(JdbcTemplate jdbcTemplate, EventSerializer serializer) {
+	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate, EventSerializer serializer) {
 		return new JdbcEventPublicationRepository(jdbcTemplate, serializer);
 	}
 

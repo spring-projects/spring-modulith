@@ -21,7 +21,6 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,10 +43,10 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	private static final String COUNT_PUBLICATIONS = "SELECT COUNT(*) FROM EVENT_PUBLICATION";
 
-	@JdbcTest
 	@ImportAutoConfiguration(JdbcEventPublicationAutoConfiguration.class)
 	@ContextConfiguration(classes = TestApplication.class)
 	static class TestBase {
+
 		@MockBean EventSerializer serializer;
 	}
 
@@ -88,6 +87,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	}
 
 	@Nested
+	@JdbcTest
 	class InitializationDisabledByDefault extends TestBase {
 
 		@SpyBean JdbcOperations operations;
@@ -106,16 +106,13 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@Nested
 	@ActiveProfiles("hsqldb")
-	class HSQLDB extends WithInitEnabled {
-
-	}
+	class HSQLDB extends WithInitEnabled {}
 
 	@Nested
 	@ActiveProfiles("h2")
 	class H2 extends WithInitEnabled {}
 
 	@Nested
-	@Disabled
 	@ActiveProfiles("postgres")
 	class Postgres extends WithInitEnabled {}
 }

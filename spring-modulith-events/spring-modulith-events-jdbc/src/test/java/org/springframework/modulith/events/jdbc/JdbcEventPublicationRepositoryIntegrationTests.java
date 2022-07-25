@@ -21,7 +21,6 @@ import static org.mockito.Mockito.*;
 import lombok.Value;
 
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,6 +35,8 @@ import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+
+import java.time.temporal.ChronoUnit;
 
 /**
  * Integration tests for {@link JdbcEventPublicationRepository}.
@@ -161,7 +162,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 				var actual = repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
 				assertThat(actual).hasValueSatisfying(it -> {
-					assertThat(it.getPublicationDate()).isEqualTo(publicationOld.getPublicationDate());
+					assertThat(it.getPublicationDate()) //
+						.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
 				});
 			}
 
@@ -194,7 +196,6 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	class H2 extends TestBase {}
 
 	@Nested
-	@Disabled
 	@ActiveProfiles("postgres")
 	class Postgres extends TestBase {}
 

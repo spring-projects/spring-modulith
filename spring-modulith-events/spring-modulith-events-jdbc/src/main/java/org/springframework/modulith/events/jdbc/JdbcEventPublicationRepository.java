@@ -22,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -81,7 +82,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 				UUID.randomUUID(), //
 				publication.getEvent().getClass().getName(), //
 				publication.getTargetIdentifier().getValue(), //
-				publication.getPublicationDate(), //
+				Timestamp.from(publication.getPublicationDate()), //
 				serializeEvent(publication.getEvent()));
 
 		return publication;
@@ -96,7 +97,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 				(rs, rowNum) -> rs.getObject("ID", UUID.class), serializedEvent, publication.getTargetIdentifier().getValue());
 
 		if (!results.isEmpty()) {
-			operations.update(SQL_STATEMENT_UPDATE, publication.getCompletionDate().orElse(null), results.get(0));
+			operations.update(
+					SQL_STATEMENT_UPDATE,
+					publication.getCompletionDate().map(Timestamp::from).orElse(null),
+					results.get(0));
 		}
 
 		return publication;
