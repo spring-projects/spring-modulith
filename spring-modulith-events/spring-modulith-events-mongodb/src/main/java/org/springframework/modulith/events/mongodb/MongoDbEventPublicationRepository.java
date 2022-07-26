@@ -15,6 +15,14 @@
  */
 package org.springframework.modulith.events.mongodb;
 
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
@@ -24,50 +32,56 @@ import org.springframework.modulith.events.CompletableEventPublication;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
-
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
-
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
+import org.springframework.util.Assert;
 
 /**
  * Repository to store {@link EventPublication}s in a MongoDB.
  *
  * @author Björn Kieling
  * @author Dmitry Belyaev
+ * @author Oliver Drotbohm
  */
-public class MongoDbEventPublicationRepository implements EventPublicationRepository {
+class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	private final MongoTemplate mongoTemplate;
 
+	/**
+	 * Creates a new {@link MongoDbEventPublicationRepository} for the given {@link MongoTemplate}.
+	 *
+	 * @param mongoTemplate must not be {@literal null}.
+	 */
 	public MongoDbEventPublicationRepository(MongoTemplate mongoTemplate) {
+
+		Assert.notNull(mongoTemplate, "MongoTemplate must not be null!");
+
 		this.mongoTemplate = mongoTemplate;
 	}
 
 	@Override
 	public EventPublication create(EventPublication publication) {
+
 		mongoTemplate.save(domainToDocument(publication));
+
 		return publication;
 	}
 
 	@Override
 	public EventPublication update(CompletableEventPublication publication) {
-		findDocumentsByEventAndTargetIdentifier(publication.getEvent(), publication.getTargetIdentifier())
+
+		return findDocumentsByEventAndTargetIdentifier(publication.getEvent(), publication.getTargetIdentifier())
 				.stream()
 				.findFirst()
-				.ifPresent(document -> {
-					document.setCompletionDate(publication.getCompletionDate().orElse(null));
-					mongoTemplate.save(document);
-				});
-		return publication;
+				.map(document -> document.setCompletionDate(publication.getCompletionDate().orElse(null)))
+				.map(mongoTemplate::save)
+				.map(this::documentToDomain)
+				.orElse(publication);
 	}
 
 	@Override
 	public List<EventPublication> findIncompletePublications() {
+
 		var query = Query.query(Criteria.where("completionDate").isNull());
+
 		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
 				.map(this::documentToDomain) //
 				.collect(Collectors.toList());
@@ -97,10 +111,12 @@ public class MongoDbEventPublicationRepository implements EventPublicationReposi
 						.where("event").is(eventAsMongoType) //
 						.and("listenerId").is(targetIdentifier.getValue())) //
 				.with(Sort.by("publicationDate").ascending());
+
 		return mongoTemplate.find(query, MongoDbEventPublication.class);
 	}
 
 	private MongoDbEventPublication domainToDocument(EventPublication publication) {
+
 		return new MongoDbEventPublication( //
 				publication.getPublicationDate(), //
 				publication.getTargetIdentifier().getValue(), //
@@ -148,5 +164,4 @@ public class MongoDbEventPublicationRepository implements EventPublicationReposi
 			return this;
 		}
 	}
-
 }

@@ -15,21 +15,17 @@
  */
 package org.springframework.modulith.events.mongodb;
 
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.within;
+import static org.assertj.core.api.Assertions.*;
 
-import java.io.IOException;
+import lombok.Value;
+
 import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
 
-import lombok.Getter;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.CompletableEventPublication;
@@ -38,60 +34,22 @@ import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
 
-import com.mongodb.client.MongoClients;
-
-import de.flapdoodle.embed.mongo.MongodExecutable;
-import de.flapdoodle.embed.mongo.MongodStarter;
-import de.flapdoodle.embed.mongo.config.ImmutableMongodConfig;
-import de.flapdoodle.embed.mongo.config.MongodConfig;
-import de.flapdoodle.embed.mongo.config.Net;
-import de.flapdoodle.embed.mongo.distribution.Version;
-import de.flapdoodle.embed.process.runtime.Network;
-import lombok.EqualsAndHashCode;
-
 /**
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
 @DataMongoTest
 @ContextConfiguration(classes = TestApplication.class)
-class MongoDbEventPublicationRepositoryTest {
+class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
-	private static final String CONNECTION_STRING = "mongodb://%s:%d";
 
-	private static String ip;
-	private static int port;
-	private static MongodExecutable mongodExecutable;
+	@Autowired MongoTemplate mongoTemplate;
 
-	private MongoTemplate mongoTemplate;
-
-	private MongoDbEventPublicationRepository repository;
-
-	@BeforeAll
-	static void startupMongoDb() throws IOException {
-
-		// Refer to https://www.baeldung.com/spring-boot-embedded-mongodb
-		ip = "localhost";
-		port = Network.freeServerPort(Network.getLocalHost());
-
-		ImmutableMongodConfig mongodConfig = MongodConfig.builder().version(Version.Main.PRODUCTION)
-				.net(new Net(ip, port, Network.localhostIsIPv6())).build();
-
-		MongodStarter starter = MongodStarter.getDefaultInstance();
-		mongodExecutable = starter.prepare(mongodConfig);
-		mongodExecutable.start();
-	}
-
-	@AfterAll
-	static void shutdownMongoDb() {
-		mongodExecutable.stop();
-	}
+	MongoDbEventPublicationRepository repository;
 
 	@BeforeEach
 	void setUp() {
-		mongoTemplate = new MongoTemplate(MongoClients.create(String.format(CONNECTION_STRING, ip, port)), "test");
-
 		repository = new MongoDbEventPublicationRepository(mongoTemplate);
 	}
 
@@ -100,17 +58,18 @@ class MongoDbEventPublicationRepositoryTest {
 		mongoTemplate.remove(MongoDbEventPublication.class).all();
 	}
 
-	@Test
+	@Test // GH-4
 	void shouldPersistAndUpdateEventPublication() {
 
-		TestEvent testEvent = new TestEvent("abc");
+		var testEvent = new TestEvent("abc");
 
-		CompletableEventPublication publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+		var publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
 
 		// Store publication
 		repository.create(publication);
 
-		List<EventPublication> eventPublications = repository.findIncompletePublications();
+		var eventPublications = repository.findIncompletePublications();
+
 		assertThat(eventPublications).hasSize(1);
 		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
@@ -123,84 +82,74 @@ class MongoDbEventPublicationRepositoryTest {
 		assertThat(repository.findIncompletePublications()).isEmpty();
 	}
 
-	@Test
+	@Test // GH-4
 	void shouldUpdateSingleEventPublication() {
-		TestEvent testEvent1 = new TestEvent("id1");
-		TestEvent testEvent2 = new TestEvent("id2");
 
-		CompletableEventPublication publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
-		CompletableEventPublication publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+		var testEvent1 = new TestEvent("id1");
+		var testEvent2 = new TestEvent("id2");
+
+		var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
+		var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
 
 		repository.create(publication1);
 		repository.create(publication2);
-
 		repository.update(publication2.markCompleted());
 
-		List<EventPublication> withCompletionDateNull = repository.findIncompletePublications();
-		assertThat(withCompletionDateNull).hasSize(1);
-		assertThat(withCompletionDateNull.get(0).getEvent()).isEqualTo(testEvent1);
+		assertThat(repository.findIncompletePublications()).hasSize(1)
+				.element(0).extracting(EventPublication::getEvent).isEqualTo(testEvent1);
 	}
 
 	@Nested
 	class FindByEventAndTargetIdentifier {
-		@Test
+
+		@Test // GH-4
 		void shouldFindEventPublicationByEventAndTargetIdentifier() {
-			TestEvent testEvent1 = new TestEvent("abc");
-			TestEvent testEvent2 = new TestEvent("def");
 
-			CompletableEventPublication publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
-			repository.create(publication2);
+			var testEvent1 = new TestEvent("abc");
+			var testEvent2 = new TestEvent("def");
 
-			CompletableEventPublication publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
-			repository.create(publication1);
+			repository.create(CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+			repository.create(CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+			repository.create(CompletableEventPublication.of(
+					testEvent1, PublicationTargetIdentifier.of(TARGET_IDENTIFIER.getValue() + "!")));
 
-			CompletableEventPublication publication3 = CompletableEventPublication.of(
-					testEvent1, PublicationTargetIdentifier.of(TARGET_IDENTIFIER.getValue() + "!"));
-			repository.create(publication3);
+			var actual = repository.findByEventAndTargetIdentifier(testEvent1, TARGET_IDENTIFIER);
 
-			Optional<EventPublication> actual = repository.findByEventAndTargetIdentifier(testEvent1, TARGET_IDENTIFIER);
-			assertThat(actual).isPresent();
-			assertThat(actual.get().getEvent()).isEqualTo(testEvent1);
-			assertThat(actual.get().getTargetIdentifier()).isEqualTo(TARGET_IDENTIFIER);
+			assertThat(actual).hasValueSatisfying(it -> {
+				assertThat(it.getEvent()).isEqualTo(testEvent1);
+				assertThat(it.getTargetIdentifier()).isEqualTo(TARGET_IDENTIFIER);
+			});
 		}
 
-		@Test
+		@Test // GH-4
 		void shouldTolerateEmptyResultTest() {
-			TestEvent testEvent = new TestEvent("id");
 
-			Optional<EventPublication> actual =
-					repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+			var testEvent = new TestEvent("id");
 
-			assertThat(actual).isEmpty();
+			assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
 		}
 
-		@Test
+		@Test // GH-4
 		void shouldReturnTheOldestEventTest() throws InterruptedException {
-			TestEvent testEvent = new TestEvent("id");
 
-			CompletableEventPublication publicationOld = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+			var testEvent = new TestEvent("id");
+
+			var publicationOld = repository
+					.create(CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER));
 			Thread.sleep(10);
-			CompletableEventPublication publicationNew = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+			repository.create(CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			repository.create(publicationNew);
-			repository.create(publicationOld);
+			var actual = repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
-			Optional<EventPublication> actual =
-					repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
-
-			assertThat(actual).isNotEmpty();
-			assertThat(actual.get().getPublicationDate())
-					.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
+			assertThat(actual).hasValueSatisfying(it -> {
+				assertThat(it.getPublicationDate()) //
+						.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
+			});
 		}
 	}
 
-	@EqualsAndHashCode
-	@Getter
+	@Value
 	private static final class TestEvent {
-		private final String eventId;
-
-		private TestEvent(String eventId) {
-			this.eventId = eventId;
-		}
+		String eventId;
 	}
 }
