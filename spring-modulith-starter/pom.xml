@@ -8,23 +8,36 @@
 		<version>0.1.0-SNAPSHOT</version>
 	</parent>
 
-	<artifactId>spring-modulith-starter-jpa</artifactId>
-	<name>Spring Modulith - Starter JPA</name>
+	<artifactId>spring-modulith-starter</artifactId>
+	<name>Spring Modulith - Starter Core</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.starter.jpa</module.name>
+		<module.name>org.springframework.modulith.starter</module.name>
 	</properties>
 
 	<dependencies>
 
 		<dependency>
 			<groupId>org.springframework.experimental</groupId>
-			<artifactId>spring-modulith-starter</artifactId>
+			<artifactId>spring-modulith-api</artifactId>
 			<version>0.1.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.experimental</groupId>
-			<artifactId>spring-modulith-events-jpa</artifactId>
+			<artifactId>spring-modulith-moments</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
+		</dependency>
+
+		<!-- Events -->
+
+		<dependency>
+			<groupId>org.springframework.experimental</groupId>
+			<artifactId>spring-modulith-events-core</artifactId>
+			<version>0.1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.experimental</groupId>
+			<artifactId>spring-modulith-events-jackson</artifactId>
 			<version>0.1.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
