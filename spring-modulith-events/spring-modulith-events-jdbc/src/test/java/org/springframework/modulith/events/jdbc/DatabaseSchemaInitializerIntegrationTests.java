@@ -114,4 +114,8 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("postgres")
 	class Postgres extends WithInitEnabled {}
+
+	@Nested
+	@ActiveProfiles("mysql")
+	class MySQL extends WithInitEnabled {}
 }

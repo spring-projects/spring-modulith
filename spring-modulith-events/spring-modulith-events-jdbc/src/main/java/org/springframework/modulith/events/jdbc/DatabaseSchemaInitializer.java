@@ -19,6 +19,8 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.ResourceLoaderAware;
@@ -35,22 +37,13 @@ import org.springframework.util.StreamUtils;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  */
+@RequiredArgsConstructor
 class DatabaseSchemaInitializer implements ResourceLoaderAware, InitializingBean {
 
 	private final JdbcTemplate jdbcTemplate;
+	private final DatabaseType databaseType;
 
 	private ResourceLoader resourceLoader;
-
-	/**
-	 * Creates a new {@link DatabaseSchemaInitializer} for the given {@link JdbcTemplate} and ini
-	 *
-	 * @param jdbcTemplate
-	 * @param initEnabled
-	 */
-	public DatabaseSchemaInitializer(JdbcTemplate jdbcTemplate) {
-
-		this.jdbcTemplate = jdbcTemplate;
-	}
 
 	@Override
 	public void setResourceLoader(ResourceLoader resourceLoader) {
@@ -58,11 +51,9 @@ class DatabaseSchemaInitializer implements ResourceLoaderAware, InitializingBean
 	}
 
 	@Override
-	public void afterPropertiesSet() throws MetaDataAccessException {
-
-		var fromDataSource = DatabaseDriver.fromDataSource(jdbcTemplate.getDataSource());
-		var databaseName = fromDataSource.name().toLowerCase();
-		var schemaDdlResource = resourceLoader.getResource("/schema-" + databaseName + ".sql");
+	public void afterPropertiesSet() {
+		var schemaResourceFilename = databaseType.getSchemaResourceFilename();
+		var schemaDdlResource = resourceLoader.getResource(schemaResourceFilename);
 		var schemaDdl = asString(schemaDdlResource);
 
 		jdbcTemplate.execute(schemaDdl);
