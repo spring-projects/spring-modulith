@@ -68,7 +68,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public EventPublication update(CompletableEventPublication publication) {
 
-		return findDocumentsByEventAndTargetIdentifier(publication.getEvent(), publication.getTargetIdentifier())
+		return findDocumentsByEventAndTargetIdentifierAndCompletionDateNull(publication.getEvent(), publication.getTargetIdentifier())
 				.stream()
 				.findFirst()
 				.map(document -> document.setCompletionDate(publication.getCompletionDate().orElse(null)))
@@ -88,10 +88,11 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	}
 
 	@Override
-	public Optional<EventPublication> findByEventAndTargetIdentifier(
+	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		var documents = findDocumentsByEventAndTargetIdentifier(event, targetIdentifier);
+		var documents = findDocumentsByEventAndTargetIdentifierAndCompletionDateNull( //
+				event, targetIdentifier);
 		var results = documents
 				.stream() //
 				.map(this::documentToDomain) //
@@ -101,7 +102,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
 	}
 
-	private List<MongoDbEventPublication> findDocumentsByEventAndTargetIdentifier(
+	private List<MongoDbEventPublication> findDocumentsByEventAndTargetIdentifierAndCompletionDateNull( //
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		// we need to enforce writing of the type information
@@ -109,7 +110,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		var query = Query //
 				.query(Criteria //
 						.where("event").is(eventAsMongoType) //
-						.and("listenerId").is(targetIdentifier.getValue())) //
+						.and("listenerId").is(targetIdentifier.getValue()) //
+						.and("completionDate").isNull()) //
 				.with(Sort.by("publicationDate").ascending());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class);

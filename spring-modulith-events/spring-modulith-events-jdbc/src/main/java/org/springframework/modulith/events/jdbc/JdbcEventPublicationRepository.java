@@ -67,7 +67,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			""";
 	private static final String SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID = """
 			SELECT * FROM EVENT_PUBLICATION
-			WHERE SERIALIZED_EVENT = ? AND LISTENER_ID = ?
+			WHERE
+					SERIALIZED_EVENT = ?
+					AND LISTENER_ID = ?
+					AND COMPLETION_DATE IS NULL
 			ORDER BY PUBLICATION_DATE
 			""";
 
@@ -109,8 +112,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 
 	@Override
 	@Transactional(readOnly = true)
-	public Optional<EventPublication> findByEventAndTargetIdentifier(Object event,
-			PublicationTargetIdentifier targetIdentifier) {
+	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
+			Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		var results = operations.query(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, this::resultSetToPublications,
 				serializeEvent(event), targetIdentifier.getValue());

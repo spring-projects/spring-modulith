@@ -69,8 +69,8 @@ public class MapEventPublicationRepository implements EventPublicationRepository
 	}
 
 	@Override
-	public Optional<EventPublication> findByEventAndTargetIdentifier(Object event,
-			PublicationTargetIdentifier targetIdentifier) {
+	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
+			Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		return Optional.ofNullable(events.get(new Key(event, targetIdentifier)));
 	}

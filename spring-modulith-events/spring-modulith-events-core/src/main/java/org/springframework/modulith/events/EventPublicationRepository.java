@@ -51,11 +51,12 @@ public interface EventPublicationRepository {
 	List<EventPublication> findIncompletePublications();
 
 	/**
-	 * Return the {@link EventPublication} for the given serialized event and listener identifier.
+	 * Return the incomplete {@link EventPublication} for the given serialized event and listener identifier.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param targetIdentifier must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	Optional<EventPublication> findByEventAndTargetIdentifier(Object event, PublicationTargetIdentifier targetIdentifier);
+	Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
+			Object event, PublicationTargetIdentifier targetIdentifier);
 }

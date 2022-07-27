@@ -86,7 +86,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 				assertThat(it.getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
 			});
 
-			assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
 					.isPresent();
 
 			// Complete publication
@@ -130,8 +130,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 		@Nested
 		class FindByEventAndTargetIdentifier {
 
-			@Test
-				// GH-3
+			@Test // GH-3
 			void shouldTolerateEmptyResult() {
 
 				var testEvent = new TestEvent("id");
@@ -139,11 +138,29 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 
-				assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
 			}
 
-			@Test
-				// GH-3
+			@Test // GH-3
+			void shouldNotReturnCompletedEvents() {
+
+				var testEvent = new TestEvent("id1");
+				var serializedEvent = "{\"eventId\":\"id1\"}";
+
+				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+				when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+
+				var publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+
+				repository.create(publication);
+				repository.update(publication.markCompleted());
+
+				var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+
+				assertThat(actual).isEmpty();
+			}
+
+			@Test // GH-3 //
 			void shouldReturnTheOldestEvent() throws Exception {
 
 				var testEvent = new TestEvent("id");
@@ -159,7 +176,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 				repository.create(publicationNew);
 				repository.create(publicationOld);
 
-				var actual = repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+				var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
 				assertThat(actual).hasValueSatisfying(it -> {
 					assertThat(it.getPublicationDate()) //
@@ -182,7 +199,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 				operations.update("UPDATE EVENT_PUBLICATION SET EVENT_TYPE='abc'");
 
-				assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
 			}
 		}
 	}

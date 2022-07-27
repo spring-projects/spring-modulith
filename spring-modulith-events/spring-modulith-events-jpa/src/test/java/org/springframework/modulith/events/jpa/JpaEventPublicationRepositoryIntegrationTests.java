@@ -127,12 +127,43 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		assertThat(eventPublications).hasSize(1);
 		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
-		assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
+		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
 
 		// Complete publication
 		repository.update(publication.markCompleted());
 
 		assertThat(repository.findIncompletePublications()).isEmpty();
+	}
+
+	@Test
+	void shouldTolerateEmptyResult() {
+
+		var testEvent = new TestEvent("id");
+		var serializedEvent = "{\"eventId\":\"id\"}";
+
+		when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
+
+		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+	}
+
+	@Test
+	void shouldNotReturnCompletedEvents() {
+
+		TestEvent testEvent = new TestEvent("abc");
+		String serializedEvent = "{\"eventId\":\"abc\"}";
+
+		when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
+		when(eventSerializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+
+		CompletableEventPublication publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+
+		// Store publication
+		repository.create(publication);
+		repository.update(publication.markCompleted());
+
+		var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+
+		assertThat(actual).isEmpty();
 	}
 
 	@Value
