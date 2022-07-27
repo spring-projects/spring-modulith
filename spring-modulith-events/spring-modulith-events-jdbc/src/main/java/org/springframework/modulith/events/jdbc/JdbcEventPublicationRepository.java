@@ -15,11 +15,6 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -39,6 +34,11 @@ import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.transaction.annotation.Transactional;
+
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * JDBC-based repository to store {@link EventPublication}s.
@@ -74,19 +74,23 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			ORDER BY PUBLICATION_DATE
 			""";
 
-	private final JdbcOperations operations;
+	protected final JdbcOperations operations;
 	private final EventSerializer serializer;
+
+	private final DatabaseType databaseType;
 
 	@Override
 	@Transactional
 	public EventPublication create(EventPublication publication) {
 
-		operations.update(SQL_STATEMENT_INSERT, //
-				UUID.randomUUID(), //
+		String serializedEvent = serializeEvent(publication.getEvent());
+		operations.update( //
+				SQL_STATEMENT_INSERT, //
+				uuidToDatabase(UUID.randomUUID()), //
 				publication.getEvent().getClass().getName(), //
 				publication.getTargetIdentifier().getValue(), //
 				Timestamp.from(publication.getPublicationDate()), //
-				serializeEvent(publication.getEvent()));
+				serializedEvent);
 
 		return publication;
 	}
@@ -96,16 +100,16 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	public EventPublication update(CompletableEventPublication publication) {
 
 		var serializedEvent = serializeEvent(publication.getEvent());
-		var results = operations.query(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID,
-				(rs, rowNum) -> rs.getObject("ID", UUID.class), serializedEvent, publication.getTargetIdentifier().getValue());
+		var listenerId = publication.getTargetIdentifier().getValue();
+		var potentialPublicationIdsToBeUpdated = operations.query( //
+				SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, //
+				(rs, rowNum) -> getUUIDFromResultSet(rs), //
+				serializedEvent, //
+				listenerId);
 
-		if (!results.isEmpty()) {
-
-			operations.update( //
-					SQL_STATEMENT_UPDATE, //
-					publication.getCompletionDate().map(Timestamp::from).orElse(null), //
-					results.get(0));
-		}
+		potentialPublicationIdsToBeUpdated.stream()
+				.findFirst()
+				.ifPresent(id -> update(id, publication));
 
 		return publication;
 	}
@@ -115,17 +119,36 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		var results = operations.query(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, this::resultSetToPublications,
-				serializeEvent(event), targetIdentifier.getValue());
-
-		return Optional.ofNullable(results == null || results.isEmpty() ? null : results.get(0));
+		String serializedEvent = serializeEvent(event);
+		String listenerId = targetIdentifier.getValue();
+		return findAllIncompletePublicationsByEventAndListenerId(serializedEvent, listenerId).stream() //
+				.findFirst();
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	@SuppressWarnings("null")
 	public List<EventPublication> findIncompletePublications() {
-		return operations.query(SQL_STATEMENT_FIND_UNCOMPLETED, this::resultSetToPublications);
+		return operations.query( //
+				SQL_STATEMENT_FIND_UNCOMPLETED, //
+				this::resultSetToPublications);
+	}
+
+	private void update(UUID id, CompletableEventPublication publication) {
+		Timestamp timestamp = publication.getCompletionDate().map(Timestamp::from).orElse(null);
+		operations.update( //
+				SQL_STATEMENT_UPDATE, //
+				timestamp, //
+				uuidToDatabase(id));
+	}
+
+	private List<EventPublication> findAllIncompletePublicationsByEventAndListenerId(
+			String serializedEvent, String listenerId) {
+		return operations.query( //
+				SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, //
+				this::resultSetToPublications, //
+				serializedEvent, //
+				listenerId);
 	}
 
 	private String serializeEvent(Object event) {
@@ -142,11 +165,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private List<EventPublication> resultSetToPublications(ResultSet resultSet) throws SQLException {
 
 		List<EventPublication> result = new ArrayList<>();
-
 		while (resultSet.next()) {
-
 			EventPublication publication = resultSetToPublication(resultSet);
-
 			if (publication != null) {
 				result.add(publication);
 			}
@@ -165,23 +185,31 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	@Nullable
 	private EventPublication resultSetToPublication(ResultSet rs) throws SQLException {
 
-		var id = rs.getObject("ID", UUID.class);
-		var eventClass = loadClass(id, rs.getString("EVENT_TYPE"));
+		UUID id = getUUIDFromResultSet(rs);
 
+		var eventClass = loadClass(id, rs.getString("EVENT_TYPE"));
 		if (eventClass == null) {
 			return null;
 		}
 
 		var completionDate = rs.getTimestamp("COMPLETION_DATE");
 
-		return JdbcEventPublication.builder()
-				.completionDate(completionDate == null ? null : completionDate.toInstant())
+		return JdbcEventPublication.builder().completionDate(completionDate == null ? null : completionDate.toInstant())
 				.eventType(eventClass) //
 				.listenerId(rs.getString("LISTENER_ID")) //
 				.publicationDate(rs.getTimestamp("PUBLICATION_DATE").toInstant()) //
 				.serializedEvent(rs.getString("SERIALIZED_EVENT")) //
 				.serializer(serializer) //
 				.build();
+	}
+
+	private Object uuidToDatabase(UUID id) {
+		return databaseType.uuidToDatabase(id);
+	}
+
+	private UUID getUUIDFromResultSet(ResultSet rs) throws SQLException {
+		Object id = rs.getObject("ID");
+		return databaseType.databaseToUUID(id);
 	}
 
 	@Nullable

@@ -217,6 +217,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@ActiveProfiles("postgres")
 	class Postgres extends TestBase {}
 
+	@Nested
+	@ActiveProfiles("mysql")
+	class MySQL extends TestBase {}
+
 	@Value
 	private static final class TestEvent {
 		String eventId;
