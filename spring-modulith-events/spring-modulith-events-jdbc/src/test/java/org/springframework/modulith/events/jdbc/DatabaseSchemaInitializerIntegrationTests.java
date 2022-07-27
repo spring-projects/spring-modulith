@@ -46,7 +46,6 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@ImportAutoConfiguration(JdbcEventPublicationAutoConfiguration.class)
 	@ContextConfiguration(classes = TestApplication.class)
 	static class TestBase {
-
 		@MockBean EventSerializer serializer;
 	}
 

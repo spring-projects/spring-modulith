@@ -97,9 +97,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 				(rs, rowNum) -> rs.getObject("ID", UUID.class), serializedEvent, publication.getTargetIdentifier().getValue());
 
 		if (!results.isEmpty()) {
-			operations.update(
-					SQL_STATEMENT_UPDATE,
-					publication.getCompletionDate().map(Timestamp::from).orElse(null),
+
+			operations.update( //
+					SQL_STATEMENT_UPDATE, //
+					publication.getCompletionDate().map(Timestamp::from).orElse(null), //
 					results.get(0));
 		}
 
@@ -114,11 +115,12 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		var results = operations.query(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, this::resultSetToPublications,
 				serializeEvent(event), targetIdentifier.getValue());
 
-		return Optional.ofNullable((results == null) || results.isEmpty() ? null : results.get(0));
+		return Optional.ofNullable(results == null || results.isEmpty() ? null : results.get(0));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
+	@SuppressWarnings("null")
 	public List<EventPublication> findIncompletePublications() {
 		return operations.query(SQL_STATEMENT_FIND_UNCOMPLETED, this::resultSetToPublications);
 	}
@@ -195,13 +197,13 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private static class JdbcEventPublication implements CompletableEventPublication {
 
 		private final UUID id;
-		private final @Nullable Instant publicationDate;
+		private final Instant publicationDate;
 		private final String listenerId;
 		private final String serializedEvent;
 		private final Class<?> eventType;
 
 		private final EventSerializer serializer;
-		private Instant completionDate;
+		private @Nullable Instant completionDate;
 
 		@Override
 		public Object getEvent() {
