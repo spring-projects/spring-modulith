@@ -93,7 +93,6 @@ limitations under the License.
 			</activation>
 
 			<modules>
-				<module>spring-modulith-sample</module>
 				<module>spring-modulith-integration-test</module>
 			</modules>
 

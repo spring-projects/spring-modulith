@@ -59,7 +59,7 @@
 			<artifactId>micrometer-tracing</artifactId>
 			<optional>true</optional>
 		</dependency>
-		
+
 		<!-- Testing -->
 
 		<dependency>

@@ -25,13 +25,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>${project.groupId}</groupId>
-			<artifactId>spring-modulith-sample</artifactId>
-			<version>${project.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
 			<groupId>com.structurizr</groupId>
 			<artifactId>structurizr-core</artifactId>
 			<version>1.9.7</version>
