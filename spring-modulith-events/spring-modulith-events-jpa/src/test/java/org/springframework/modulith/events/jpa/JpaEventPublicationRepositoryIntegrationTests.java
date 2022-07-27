@@ -127,7 +127,8 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		assertThat(eventPublications).hasSize(1);
 		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
-		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
+		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+				.isPresent();
 
 		// Complete publication
 		repository.update(publication.markCompleted());
@@ -135,7 +136,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		assertThat(repository.findIncompletePublications()).isEmpty();
 	}
 
-	@Test
+	@Test // GH-25
 	void shouldTolerateEmptyResult() {
 
 		var testEvent = new TestEvent("id");
@@ -146,7 +147,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
 	}
 
-	@Test
+	@Test // GH-25
 	void shouldNotReturnCompletedEvents() {
 
 		TestEvent testEvent = new TestEvent("abc");

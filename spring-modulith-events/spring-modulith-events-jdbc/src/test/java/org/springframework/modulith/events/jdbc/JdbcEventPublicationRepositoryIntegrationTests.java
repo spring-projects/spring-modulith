@@ -20,6 +20,8 @@ import static org.mockito.Mockito.*;
 
 import lombok.Value;
 
+import java.time.temporal.ChronoUnit;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -35,8 +37,6 @@ import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-
-import java.time.temporal.ChronoUnit;
 
 /**
  * Integration tests for {@link JdbcEventPublicationRepository}.
@@ -98,8 +98,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 		@Nested
 		class Update {
 
-			@Test
-				// GH-3
+			@Test // GH-3
 			void shouldUpdateSingleEventPublication() {
 
 				var testEvent1 = new TestEvent("id1");
@@ -138,7 +137,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 
-				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+						.isEmpty();
 			}
 
 			@Test // GH-3
@@ -160,7 +160,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 				assertThat(actual).isEmpty();
 			}
 
-			@Test // GH-3 //
+			@Test // GH-3
 			void shouldReturnTheOldestEvent() throws Exception {
 
 				var testEvent = new TestEvent("id");
@@ -180,12 +180,12 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 				assertThat(actual).hasValueSatisfying(it -> {
 					assertThat(it.getPublicationDate()) //
-						.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
+							.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
 				});
 			}
 
 			@Test
-				// GH-3
+			// GH-3
 			void shouldSilentlyIgnoreNotSerializableEvents() {
 
 				var testEvent = new TestEvent("id");
@@ -199,7 +199,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 				operations.update("UPDATE EVENT_PUBLICATION SET EVENT_TYPE='abc'");
 
-				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+						.isEmpty();
 			}
 		}
 	}
