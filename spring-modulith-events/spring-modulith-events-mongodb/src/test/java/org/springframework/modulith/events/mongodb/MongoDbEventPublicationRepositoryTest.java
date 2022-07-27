@@ -74,7 +74,7 @@ class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
 		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
 
-		assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
+		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isPresent();
 
 		// Complete publication
 		repository.update(publication.markCompleted());
@@ -113,7 +113,7 @@ class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
 			repository.create(CompletableEventPublication.of(
 					testEvent1, PublicationTargetIdentifier.of(TARGET_IDENTIFIER.getValue() + "!")));
 
-			var actual = repository.findByEventAndTargetIdentifier(testEvent1, TARGET_IDENTIFIER);
+			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent1, TARGET_IDENTIFIER);
 
 			assertThat(actual).hasValueSatisfying(it -> {
 				assertThat(it.getEvent()).isEqualTo(testEvent1);
@@ -126,7 +126,23 @@ class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
 
 			var testEvent = new TestEvent("id");
 
-			assertThat(repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+		}
+
+		@Test
+		void shouldNotReturnCompletedEvents() {
+
+			TestEvent testEvent = new TestEvent("abc");
+
+			CompletableEventPublication publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+
+			// Store publication
+			repository.create(publication);
+			repository.update(publication.markCompleted());
+
+			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+
+			assertThat(actual).isEmpty();
 		}
 
 		@Test // GH-4
@@ -139,12 +155,11 @@ class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
 			Thread.sleep(10);
 			repository.create(CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			var actual = repository.findByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
-			assertThat(actual).hasValueSatisfying(it -> {
-				assertThat(it.getPublicationDate()) //
-						.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
-			});
+			assertThat(actual).hasValueSatisfying(it -> //
+					assertThat(it.getPublicationDate()) //
+							.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS)));
 		}
 	}
 

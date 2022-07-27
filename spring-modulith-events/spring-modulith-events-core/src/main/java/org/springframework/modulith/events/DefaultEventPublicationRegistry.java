@@ -61,7 +61,7 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 		Assert.notNull(event, "Domain event must not be null!");
 		Assert.notNull(targetIdentifier, "Listener identifier must not be null!");
 
-		events.findByEventAndTargetIdentifier(event, targetIdentifier) //
+		events.findIncompletePublicationsByEventAndTargetIdentifier(event, targetIdentifier) //
 				.map(DefaultEventPublicationRegistry::logCompleted) //
 				.map(e -> CompletableEventPublication.of(e.getEvent(), e.getTargetIdentifier()))
 				.ifPresent(it -> events.update(it.markCompleted()));
