@@ -1,10 +1,13 @@
 
+[[appendix]]
 = Appendix
 :jdbc-schema-base: ../../../spring-modulith-events/spring-modulith-events-jdbc/src/main/resources
 
 [appendix]
+[[appendix.schemas]]
 == Event publication registry schemas
 
+[[appendix.schemas.h2]]
 === H2
 
 [source, sql]
@@ -12,6 +15,7 @@
 include::{jdbc-schema-base}/schema-h2.sql[]
 ----
 
+[[appendix.schemas.hsqldb]]
 === HSQLDB
 
 [source, sql]
@@ -19,6 +23,7 @@ include::{jdbc-schema-base}/schema-h2.sql[]
 include::{jdbc-schema-base}/schema-hsqldb.sql[]
 ----
 
+[[appendix.schemas.mysql]]
 === MySQL
 
 [source, sql]
@@ -26,6 +31,7 @@ include::{jdbc-schema-base}/schema-hsqldb.sql[]
 include::{jdbc-schema-base}/schema-mysql.sql[]
 ----
 
+[[appendix.schemas.postgresql]]
 === PostgreSQL
 
 [source, sql]
