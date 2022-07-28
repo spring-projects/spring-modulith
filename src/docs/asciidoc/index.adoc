@@ -24,4 +24,6 @@ include::50-moments.adoc[]
 
 include::60-documentation.adoc[]
 
+include::90-appendix.adoc[]
+
 :leveloffset: -1
