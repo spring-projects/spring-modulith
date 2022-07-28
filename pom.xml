@@ -334,7 +334,7 @@ limitations under the License.
 									<configuration>
 										<sourceDirectory>${generated-asciidoc-sources.directory}</sourceDirectory>
 										<sourceDocumentName>index.adoc</sourceDocumentName>
-										<outputDirectory>${generated-docs.directory}</outputDirectory>
+										<outputDirectory>${generated-docs.directory}/html</outputDirectory>
 										<attributes>
 											<source-highlighter>highlight.js</source-highlighter>
 											<highlightjsdir>js/highlight</highlightjsdir>
