@@ -73,8 +73,8 @@ class MomentsUnitTests {
 	@Test
 	void emitsMonthHasPassedForShiftAcrossMonths() {
 
-		LocalDate now = LocalDate.now();
-		int numberOfDaysIntoNextMonth = (now.lengthOfMonth() - now.getDayOfMonth()) + 1;
+		LocalDate now = LocalDate.now(clock);
+		int numberOfDaysIntoNextMonth = now.lengthOfMonth() - now.getDayOfMonth() + 1;
 		Duration shift = Duration.ofDays(numberOfDaysIntoNextMonth);
 
 		daily.shiftBy(shift);
@@ -110,7 +110,7 @@ class MomentsUnitTests {
 	@Test
 	void emitsWeekHasPassedIfWeekIsExceeded() {
 
-		LocalDate now = LocalDate.now();
+		LocalDate now = LocalDate.now(clock);
 		int weekOfYear = now.get(WeekFields.of(Locale.getDefault()).weekOfYear());
 
 		daily.shiftBy(Duration.ofDays(7));
@@ -126,7 +126,7 @@ class MomentsUnitTests {
 		Locale locale = Locale.GERMAN;
 		MomentsProperties properties = MomentsProperties.DEFAULTS.withLocale(locale);
 
-		LocalDate now = LocalDate.now();
+		LocalDate now = LocalDate.now(clock);
 		int weekOfYear = now.get(WeekFields.of(locale).weekOfYear());
 
 		new Moments(clock, events, properties).shiftBy(Duration.ofDays(7));
@@ -139,7 +139,7 @@ class MomentsUnitTests {
 	@Test
 	void emitsQuarterHasPassed() {
 
-		LocalDate now = LocalDate.now();
+		LocalDate now = LocalDate.now(clock);
 		Duration duration = getNumberOfDaysForThreeMonth(now);
 
 		ShiftedQuarter quarter = MomentsProperties.DEFAULTS //
