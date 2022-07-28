@@ -1,10 +1,17 @@
 [[verification]]
 = Verifying Application Module Structure
 
-[[verification.subheadline]]
-== Subheadline
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+We can verify whether our code arrangement adheres to the intended constraints by calling the `….verify()` method on our `ApplicationModules` instance:
 
+[source, java]
+----
+ApplicationModules.of(Application.class).verify();
+----
+
+The verification includes the following rules:
+
+* _No cycles on the application module level_ -- the dependencies between modules have to form directed, acyclic graph.
+* _Efferent module access via API packages only_ -- All references to types that reside in application module internal packages are rejected. See <<fundamentals.modules.advanced>> for details.
+* _Explicitly allowed application module dependencies only_ (optional) -- An application module can optionally define allowed dependencies via  `@ApplicationModule(allowedDependencies = …)`. If those are configured, dependencies to other application modules are rejected.
+
+Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].
