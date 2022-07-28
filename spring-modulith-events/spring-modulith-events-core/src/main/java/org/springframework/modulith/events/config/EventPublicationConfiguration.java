@@ -16,14 +16,12 @@
 package org.springframework.modulith.events.config;
 
 import org.springframework.beans.factory.ObjectFactory;
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor;
-import org.springframework.modulith.events.support.MapEventPublicationRepository;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 
 /**
@@ -35,11 +33,8 @@ import org.springframework.modulith.events.support.PersistentApplicationEventMul
 class EventPublicationConfiguration {
 
 	@Bean
-	EventPublicationRegistry eventPublicationRegistry(
-			ObjectProvider<EventPublicationRepository> repositoryProvider) {
-
-		return new DefaultEventPublicationRegistry(
-				repositoryProvider.getIfAvailable(MapEventPublicationRepository::new));
+	EventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository) {
+		return new DefaultEventPublicationRegistry(repository);
 	}
 
 	@Bean
