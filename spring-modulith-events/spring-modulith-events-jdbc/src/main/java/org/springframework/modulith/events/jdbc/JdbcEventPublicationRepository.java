@@ -55,16 +55,19 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			INSERT INTO EVENT_PUBLICATION (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
 			VALUES (?, ?, ?, ?, ?)
 			""";
+
 	private static final String SQL_STATEMENT_FIND_UNCOMPLETED = """
 			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
 			FROM EVENT_PUBLICATION
 			WHERE COMPLETION_DATE IS NULL
 			""";
+
 	private static final String SQL_STATEMENT_UPDATE = """
 			UPDATE EVENT_PUBLICATION
 			SET COMPLETION_DATE = ?
 			WHERE ID = ?
 			""";
+
 	private static final String SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID = """
 			SELECT *
 			FROM EVENT_PUBLICATION
@@ -74,13 +77,13 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 					AND COMPLETION_DATE IS NULL
 			ORDER BY PUBLICATION_DATE
 			""";
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
-   		DELETE
-   		FROM EVENT_PUBLICATION
-   		WHERE
-   				COMPLETION_DATE IS NOT NULL
-			""";
 
+	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
+					DELETE
+					FROM EVENT_PUBLICATION
+					WHERE
+							COMPLETION_DATE IS NOT NULL
+			""";
 
 	private final JdbcOperations operations;
 	private final EventSerializer serializer;
