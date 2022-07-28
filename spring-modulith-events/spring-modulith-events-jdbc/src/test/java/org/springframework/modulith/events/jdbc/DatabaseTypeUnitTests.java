@@ -5,12 +5,13 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.jdbc.DatabaseDriver;
 
-class DatabaseTypeTest {
+class DatabaseTypeUnitTests {
 
-	@Test
+	@Test // GH-29
 	void shouldThrowExceptionOnUnsupportedDatabaseType() {
-		assertThatThrownBy(() -> DatabaseType.from(DatabaseDriver.UNKNOWN))
-				.isInstanceOf(IllegalArgumentException.class)
-				.hasMessageContaining("UNKNOWN");
+
+		assertThatExceptionOfType(IllegalArgumentException.class)
+				.isThrownBy(() -> DatabaseType.from(DatabaseDriver.UNKNOWN))
+				.withMessageContaining("UNKNOWN");
 	}
 }

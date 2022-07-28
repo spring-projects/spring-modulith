@@ -15,19 +15,16 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import lombok.RequiredArgsConstructor;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.boot.jdbc.DatabaseDriver;
-import org.springframework.context.ResourceLoaderAware;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.support.MetaDataAccessException;
 import org.springframework.util.StreamUtils;
 
 /**
@@ -38,20 +35,15 @@ import org.springframework.util.StreamUtils;
  * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor
-class DatabaseSchemaInitializer implements ResourceLoaderAware, InitializingBean {
+class DatabaseSchemaInitializer implements InitializingBean {
 
 	private final JdbcTemplate jdbcTemplate;
+	private final ResourceLoader resourceLoader;
 	private final DatabaseType databaseType;
-
-	private ResourceLoader resourceLoader;
-
-	@Override
-	public void setResourceLoader(ResourceLoader resourceLoader) {
-		this.resourceLoader = resourceLoader;
-	}
 
 	@Override
 	public void afterPropertiesSet() {
+
 		var schemaResourceFilename = databaseType.getSchemaResourceFilename();
 		var schemaDdlResource = resourceLoader.getResource(schemaResourceFilename);
 		var schemaDdl = asString(schemaDdlResource);

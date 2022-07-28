@@ -19,10 +19,12 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.boot.jdbc.DatabaseDriver;
+import org.springframework.util.Assert;
 
 /**
  * @author Dmitry Belyaev
  * @author Björn Kieling
+ * @author Oliver Drotbohm
  */
 enum DatabaseType {
 
@@ -31,10 +33,13 @@ enum DatabaseType {
 	H2("h2"),
 
 	MYSQL("mysql") {
+
+		@Override
 		Object uuidToDatabase(UUID id) {
 			return id.toString();
 		}
 
+		@Override
 		UUID databaseToUUID(Object id) {
 			return UUID.fromString(id.toString());
 		}
@@ -50,10 +55,13 @@ enum DatabaseType {
 					DatabaseDriver.MYSQL, MYSQL);
 
 	static DatabaseType from(DatabaseDriver databaseDriver) {
+
 		var databaseType = DATABASE_DRIVER_TO_DATABASE_TYPE_MAP.get(databaseDriver);
+
 		if (databaseType == null) {
 			throw new IllegalArgumentException("Unsupported database type: " + databaseDriver);
 		}
+
 		return databaseType;
 	}
 
@@ -68,6 +76,9 @@ enum DatabaseType {
 	}
 
 	UUID databaseToUUID(Object id) {
+
+		Assert.isInstanceOf(UUID.class, id, "Database value not of type UUID!");
+
 		return (UUID) id;
 	}
 

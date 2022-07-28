@@ -21,6 +21,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
@@ -35,18 +36,21 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 
 	@Bean
 	DatabaseType databaseType(DataSource dataSource) {
-		var databaseDriver = DatabaseDriver.fromDataSource(dataSource);
-		return DatabaseType.from(databaseDriver);
+		return DatabaseType.from(DatabaseDriver.fromDataSource(dataSource));
 	}
+
 	@Bean
 	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
 			EventSerializer serializer, DatabaseType databaseType) {
+
 		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, databaseType);
 	}
 
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.events.schema-initialization.enabled", havingValue = "true")
-	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, DatabaseType databaseType) {
-		return new DatabaseSchemaInitializer(jdbcTemplate, databaseType);
+	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, ResourceLoader resourceLoader,
+			DatabaseType databaseType) {
+
+		return new DatabaseSchemaInitializer(jdbcTemplate, resourceLoader, databaseType);
 	}
 }

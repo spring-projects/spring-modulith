@@ -15,6 +15,11 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import lombok.Builder;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
@@ -34,11 +39,6 @@ import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.transaction.annotation.Transactional;
-
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * JDBC-based repository to store {@link EventPublication}s.
@@ -74,16 +74,16 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			ORDER BY PUBLICATION_DATE
 			""";
 
-	protected final JdbcOperations operations;
+	private final JdbcOperations operations;
 	private final EventSerializer serializer;
-
 	private final DatabaseType databaseType;
 
 	@Override
 	@Transactional
 	public EventPublication create(EventPublication publication) {
 
-		String serializedEvent = serializeEvent(publication.getEvent());
+		var serializedEvent = serializeEvent(publication.getEvent());
+
 		operations.update( //
 				SQL_STATEMENT_INSERT, //
 				uuidToDatabase(UUID.randomUUID()), //
@@ -103,7 +103,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		var listenerId = publication.getTargetIdentifier().getValue();
 		var potentialPublicationIdsToBeUpdated = operations.query( //
 				SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, //
-				(rs, rowNum) -> getUUIDFromResultSet(rs), //
+				(rs, rowNum) -> getUuidFromResultSet(rs), //
 				serializedEvent, //
 				listenerId);
 
@@ -119,8 +119,9 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		String serializedEvent = serializeEvent(event);
-		String listenerId = targetIdentifier.getValue();
+		var serializedEvent = serializeEvent(event);
+		var listenerId = targetIdentifier.getValue();
+
 		return findAllIncompletePublicationsByEventAndListenerId(serializedEvent, listenerId).stream() //
 				.findFirst();
 	}
@@ -129,21 +130,26 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	@Transactional(readOnly = true)
 	@SuppressWarnings("null")
 	public List<EventPublication> findIncompletePublications() {
+
 		return operations.query( //
 				SQL_STATEMENT_FIND_UNCOMPLETED, //
 				this::resultSetToPublications);
 	}
 
 	private void update(UUID id, CompletableEventPublication publication) {
-		Timestamp timestamp = publication.getCompletionDate().map(Timestamp::from).orElse(null);
+
+		var timestamp = publication.getCompletionDate().map(Timestamp::from).orElse(null);
+
 		operations.update( //
 				SQL_STATEMENT_UPDATE, //
 				timestamp, //
 				uuidToDatabase(id));
 	}
 
+	@SuppressWarnings("null")
 	private List<EventPublication> findAllIncompletePublicationsByEventAndListenerId(
 			String serializedEvent, String listenerId) {
+
 		return operations.query( //
 				SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID, //
 				this::resultSetToPublications, //
@@ -165,8 +171,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private List<EventPublication> resultSetToPublications(ResultSet resultSet) throws SQLException {
 
 		List<EventPublication> result = new ArrayList<>();
+
 		while (resultSet.next()) {
-			EventPublication publication = resultSetToPublication(resultSet);
+
+			var publication = resultSetToPublication(resultSet);
+
 			if (publication != null) {
 				result.add(publication);
 			}
@@ -185,9 +194,9 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	@Nullable
 	private EventPublication resultSetToPublication(ResultSet rs) throws SQLException {
 
-		UUID id = getUUIDFromResultSet(rs);
-
+		var id = getUuidFromResultSet(rs);
 		var eventClass = loadClass(id, rs.getString("EVENT_TYPE"));
+
 		if (eventClass == null) {
 			return null;
 		}
@@ -207,9 +216,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		return databaseType.uuidToDatabase(id);
 	}
 
-	private UUID getUUIDFromResultSet(ResultSet rs) throws SQLException {
-		Object id = rs.getObject("ID");
-		return databaseType.databaseToUUID(id);
+	private UUID getUuidFromResultSet(ResultSet rs) throws SQLException {
+		return databaseType.databaseToUUID(rs.getObject("ID"));
 	}
 
 	@Nullable
