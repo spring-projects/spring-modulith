@@ -39,7 +39,6 @@ import org.springframework.transaction.annotation.Transactional;
  */
 @RequiredArgsConstructor
 public class JpaEventPublicationRepository implements EventPublicationRepository {
-
 	private static String BY_EVENT_AND_LISTENER_ID = """
  			select p
 			from JpaEventPublication p
@@ -55,6 +54,13 @@ public class JpaEventPublicationRepository implements EventPublicationRepository
 			where
 				p.completionDate is null
 			""";
+
+	private static final String DELETE_COMPLETED = """
+ 			delete
+ 			from JpaEventPublication p
+ 			where
+ 				p.completionDate is not null
+ 			""";
 
 	private final EntityManager entityManager;
 	private final EventSerializer serializer;
@@ -98,6 +104,12 @@ public class JpaEventPublicationRepository implements EventPublicationRepository
 
 		return findEntityBySerializedEventAndListenerIdAndCompletionDateNull(event, targetIdentifier.getValue())
 				.map(this::entityToDomain);
+	}
+
+	@Override
+	@Transactional
+	public void deleteCompletedPublications() {
+		entityManager.createQuery(DELETE_COMPLETED).executeUpdate();
 	}
 
 	private Optional<JpaEventPublication> findEntityBySerializedEventAndListenerIdAndCompletionDateNull( //

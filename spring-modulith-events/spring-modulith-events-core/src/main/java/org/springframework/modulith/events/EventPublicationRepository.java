@@ -59,4 +59,9 @@ public interface EventPublicationRepository {
 	 */
 	Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
 			Object event, PublicationTargetIdentifier targetIdentifier);
+
+	/**
+	 * Deletes all publications that were already marked as completed.
+	 */
+	void deleteCompletedPublications();
 }

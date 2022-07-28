@@ -102,6 +102,12 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
 	}
 
+	@Override
+	public void deleteCompletedPublications() {
+		var query = Query.query(Criteria.where("completionDate").ne(null));
+		mongoTemplate.remove(query, MongoDbEventPublication.class);
+	}
+
 	private List<MongoDbEventPublication> findDocumentsByEventAndTargetIdentifierAndCompletionDateNull( //
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 

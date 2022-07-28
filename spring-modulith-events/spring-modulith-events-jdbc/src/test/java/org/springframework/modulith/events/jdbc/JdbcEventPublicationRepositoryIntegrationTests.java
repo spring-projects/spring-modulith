@@ -203,6 +203,39 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 						.isEmpty();
 			}
 		}
+
+		@Nested
+		class DeleteCompletedPublications {
+
+			@Test
+				// GH-20
+			void shouldDeleteCompletedEvents() {
+				TestEvent testEvent1 = new TestEvent("abc");
+				String serializedEvent1 = "{\"eventId\":\"abc\"}";
+				TestEvent testEvent2 = new TestEvent("def");
+				String serializedEvent2 = "{\"eventId\":\"def\"}";
+
+				when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+				when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+				when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+				when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+
+				CompletableEventPublication publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
+				CompletableEventPublication publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+
+				repository.create(publication1);
+				repository.create(publication2);
+
+				repository.update(publication1.markCompleted());
+
+				repository.deleteCompletedPublications();
+
+				var eventPublications = operations.query(
+						"SELECT * FROM EVENT_PUBLICATION", (rs, __) -> rs.getString("SERIALIZED_EVENT"));
+				assertThat(eventPublications).hasSize(1);
+				assertThat(eventPublications.get(0)).isEqualTo(serializedEvent2);
+			}
+		}
 	}
 
 	@Nested

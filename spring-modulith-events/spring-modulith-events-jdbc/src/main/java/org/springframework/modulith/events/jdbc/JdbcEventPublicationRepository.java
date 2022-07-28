@@ -66,13 +66,21 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			WHERE ID = ?
 			""";
 	private static final String SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID = """
-			SELECT * FROM EVENT_PUBLICATION
+			SELECT *
+			FROM EVENT_PUBLICATION
 			WHERE
 					SERIALIZED_EVENT = ?
 					AND LISTENER_ID = ?
 					AND COMPLETION_DATE IS NULL
 			ORDER BY PUBLICATION_DATE
 			""";
+	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
+   		DELETE
+   		FROM EVENT_PUBLICATION
+   		WHERE
+   				COMPLETION_DATE IS NOT NULL
+			""";
+
 
 	private final JdbcOperations operations;
 	private final EventSerializer serializer;
@@ -134,6 +142,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		return operations.query( //
 				SQL_STATEMENT_FIND_UNCOMPLETED, //
 				this::resultSetToPublications);
+	}
+
+	@Override
+	public void deleteCompletedPublications() {
+		operations.execute(SQL_STATEMENT_DELETE_UNCOMPLETED);
 	}
 
 	private void update(UUID id, CompletableEventPublication publication) {

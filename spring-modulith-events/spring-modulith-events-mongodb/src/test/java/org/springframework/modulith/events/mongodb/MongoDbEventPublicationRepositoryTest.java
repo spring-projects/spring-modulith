@@ -28,6 +28,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.modulith.events.CompletableEventPublication;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
@@ -160,6 +162,31 @@ class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
 			assertThat(actual).hasValueSatisfying(it -> //
 					assertThat(it.getPublicationDate()) //
 							.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS)));
+		}
+	}
+
+	@Nested
+	class DeleteCompletedPublications {
+
+		@Test // GH-20
+		void shouldDeleteCompletedEvents() {
+			TestEvent testEvent1 = new TestEvent("abc");
+			TestEvent testEvent2 = new TestEvent("def");
+
+			CompletableEventPublication publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
+			CompletableEventPublication publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+
+			repository.create(publication1);
+			repository.create(publication2);
+
+			repository.update(publication1.markCompleted());
+
+			repository.deleteCompletedPublications();
+
+			var eventPublications = mongoTemplate.findAll(MongoDbEventPublication.class);
+
+			assertThat(eventPublications).hasSize(1);
+			assertThat(eventPublications.get(0).getEvent()).isEqualTo(testEvent2);
 		}
 	}
 
