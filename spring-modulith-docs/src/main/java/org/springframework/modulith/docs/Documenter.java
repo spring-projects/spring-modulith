@@ -173,9 +173,8 @@ public class Documenter {
 	 * @param options must not be {@literal null}, use {@link Options#defaults()} for default.
 	 * @param canvasOptions must not be {@literal null}, use {@link CanvasOptions#defaults()} for default.
 	 * @return the current instance, will never be {@literal null}.
-	 * @throws IOException
 	 */
-	public Documenter writeDocumentation(Options options, CanvasOptions canvasOptions) throws IOException {
+	public Documenter writeDocumentation(Options options, CanvasOptions canvasOptions) {
 
 		return writeModulesAsPlantUml(options)
 				.writeIndividualModulesAsPlantUml(options) //
@@ -186,9 +185,8 @@ public class Documenter {
 	 * Writes the PlantUML component diagram for all {@link ApplicationModules}.
 	 *
 	 * @param options must not be {@literal null}.
-	 * @throws IOException
 	 */
-	public Documenter writeModulesAsPlantUml(Options options) throws IOException {
+	public Documenter writeModulesAsPlantUml(Options options) {
 
 		Assert.notNull(options, "Options must not be null!");
 
@@ -196,6 +194,8 @@ public class Documenter {
 
 		try (Writer writer = new FileWriter(file.toFile())) {
 			writer.write(createPlantUml(options));
+		} catch (IOException o_O) {
+			throw new RuntimeException(o_O);
 		}
 
 		return this;
@@ -228,7 +228,8 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes the PlantUML component diagram for the given {@link ApplicationModule} with the given rendering {@link Options}.
+	 * Writes the PlantUML component diagram for the given {@link ApplicationModule} with the given rendering
+	 * {@link Options}.
 	 *
 	 * @param module must not be {@literal null}.
 	 * @param options must not be {@literal null}.
@@ -310,7 +311,7 @@ public class Documenter {
 		return types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
 	}
 
-	public String toPlantUml() throws IOException {
+	public String toPlantUml() {
 		return createPlantUml(Options.defaults());
 	}
 
@@ -342,7 +343,8 @@ public class Documenter {
 		Supplier<Stream<ApplicationModule>> otherDependencies = () -> options.getDependencyTypes()
 				.flatMap(it -> module.getDependencies(modules, it).stream());
 
-		Supplier<Stream<ApplicationModule>> dependencies = () -> Stream.concat(bootstrapDependencies.get(), otherDependencies.get());
+		Supplier<Stream<ApplicationModule>> dependencies = () -> Stream.concat(bootstrapDependencies.get(),
+				otherDependencies.get());
 
 		addComponentsToView(dependencies, view, options, it -> it.add(getComponents(options).get(module)));
 	}
@@ -406,7 +408,8 @@ public class Documenter {
 				.findFirst().ifPresent(view::remove);
 	}
 
-	private static Component applyBackgroundColor(ApplicationModule module, Map<ApplicationModule, Component> components, Options options,
+	private static Component applyBackgroundColor(ApplicationModule module, Map<ApplicationModule, Component> components,
+			Options options,
 			Styles styles) {
 
 		Component component = components.get(module);
@@ -466,7 +469,7 @@ public class Documenter {
 		}
 	}
 
-	private String createPlantUml(Options options) throws IOException {
+	private String createPlantUml(Options options) {
 
 		ComponentView componentView = createComponentView(options);
 		componentView.setTitle(modules.getSystemName().orElse("Modules"));
@@ -531,7 +534,8 @@ public class Documenter {
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 	public static class Options {
 
-		private static final Set<DependencyType> ALL_TYPES = Arrays.stream(DependencyType.values()).collect(Collectors.toSet());
+		private static final Set<DependencyType> ALL_TYPES = Arrays.stream(DependencyType.values())
+				.collect(Collectors.toSet());
 
 		private final Set<DependencyType> dependencyTypes;
 
@@ -569,8 +573,8 @@ public class Documenter {
 		private final @With Function<ApplicationModule, Optional<String>> colorSelector;
 
 		/**
-		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation just forwards to
-		 * {@link ApplicationModule#getDisplayName()}.
+		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation just
+		 * forwards to {@link ApplicationModule#getDisplayName()}.
 		 */
 		private final @With Function<ApplicationModule, String> defaultDisplayName;
 
@@ -591,8 +595,8 @@ public class Documenter {
 
 		/**
 		 * Creates a new default {@link Options} instance configured to use all dependency types, list immediate
-		 * dependencies for individual module instances, not applying any kind of {@link ApplicationModule} or {@link Component}
-		 * filters and default file names.
+		 * dependencies for individual module instances, not applying any kind of {@link ApplicationModule} or
+		 * {@link Component} filters and default file names.
 		 *
 		 * @return will never be {@literal null}.
 		 */
@@ -730,7 +734,8 @@ public class Documenter {
 			return Optional.ofNullable(targetFileName);
 		}
 
-		private static List<SpringBean> getMatchingBeans(ApplicationModule module, Grouping filter, List<SpringBean> alreadyMapped) {
+		private static List<SpringBean> getMatchingBeans(ApplicationModule module, Grouping filter,
+				List<SpringBean> alreadyMapped) {
 
 			return module.getSpringBeans().stream()
 					.filter(it -> !alreadyMapped.contains(it))
