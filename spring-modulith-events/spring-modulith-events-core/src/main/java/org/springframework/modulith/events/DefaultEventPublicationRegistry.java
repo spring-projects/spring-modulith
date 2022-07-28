@@ -82,10 +82,10 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 		for (int i = 0; i < publications.size(); i++) {
 
-			String prefix = (i + 1) == publications.size() ? "└─" : "├─";
+			String prefix = i + 1 == publications.size() ? "└─" : "├─";
 			EventPublication it = publications.get(i);
 
-			LOG.info("{} - {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
+			LOG.info("{} {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
 		}
 	}
 
