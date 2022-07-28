@@ -38,14 +38,15 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Björn Kieling
  */
 @RequiredArgsConstructor
-public class JpaEventPublicationRepository implements EventPublicationRepository {
+class JpaEventPublicationRepository implements EventPublicationRepository {
+
 	private static String BY_EVENT_AND_LISTENER_ID = """
- 			select p
+			select p
 			from JpaEventPublication p
- 			where
- 				p.serializedEvent = ?1
- 				and p.listenerId = ?2
- 				and p.completionDate is null
+				where
+					p.serializedEvent = ?1
+					and p.listenerId = ?2
+					and p.completionDate is null
 			""";
 
 	private static String INCOMPLETE = """
@@ -56,11 +57,11 @@ public class JpaEventPublicationRepository implements EventPublicationRepository
 			""";
 
 	private static final String DELETE_COMPLETED = """
- 			delete
- 			from JpaEventPublication p
- 			where
- 				p.completionDate is not null
- 			""";
+			delete
+			from JpaEventPublication p
+			where
+				p.completionDate is not null
+			""";
 
 	private final EntityManager entityManager;
 	private final EventSerializer serializer;

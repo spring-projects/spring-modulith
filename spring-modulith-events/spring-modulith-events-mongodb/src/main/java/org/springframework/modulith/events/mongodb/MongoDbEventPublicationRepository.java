@@ -15,6 +15,9 @@
  */
 package org.springframework.modulith.events.mongodb;
 
+import static org.springframework.data.mongodb.core.query.Criteria.*;
+import static org.springframework.data.mongodb.core.query.Query.*;
+
 import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 
@@ -25,8 +28,6 @@ import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.modulith.events.CompletableEventPublication;
 import org.springframework.modulith.events.EventPublication;
@@ -68,19 +69,20 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public EventPublication update(CompletableEventPublication publication) {
 
-		return findDocumentsByEventAndTargetIdentifierAndCompletionDateNull(publication.getEvent(), publication.getTargetIdentifier())
-				.stream()
-				.findFirst()
-				.map(document -> document.setCompletionDate(publication.getCompletionDate().orElse(null)))
-				.map(mongoTemplate::save)
-				.map(this::documentToDomain)
-				.orElse(publication);
+		return findDocumentsByEventAndTargetIdentifierAndCompletionDateNull(publication.getEvent(),
+				publication.getTargetIdentifier()) //
+						.stream() //
+						.findFirst() //
+						.map(document -> document.setCompletionDate(publication.getCompletionDate().orElse(null))) //
+						.map(mongoTemplate::save) //
+						.map(this::documentToDomain) //
+						.orElse(publication);
 	}
 
 	@Override
 	public List<EventPublication> findIncompletePublications() {
 
-		var query = Query.query(Criteria.where("completionDate").isNull());
+		var query = query(where("completionDate").isNull());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
 				.map(this::documentToDomain) //
@@ -104,8 +106,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	@Override
 	public void deleteCompletedPublications() {
-		var query = Query.query(Criteria.where("completionDate").ne(null));
-		mongoTemplate.remove(query, MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where("completionDate").ne(null)), MongoDbEventPublication.class);
 	}
 
 	private List<MongoDbEventPublication> findDocumentsByEventAndTargetIdentifierAndCompletionDateNull( //
@@ -113,12 +114,11 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		// we need to enforce writing of the type information
 		var eventAsMongoType = mongoTemplate.getConverter().convertToMongoType(event, TypeInformation.of(Object.class));
-		var query = Query //
-				.query(Criteria //
-						.where("event").is(eventAsMongoType) //
+		var query = query(
+				where("event").is(eventAsMongoType) //
 						.and("listenerId").is(targetIdentifier.getValue()) //
 						.and("completionDate").isNull()) //
-				.with(Sort.by("publicationDate").ascending());
+								.with(Sort.by("publicationDate").ascending());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class);
 	}

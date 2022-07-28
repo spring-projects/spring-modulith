@@ -18,11 +18,10 @@ package org.springframework.modulith.events.jpa;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 import java.util.List;
 
@@ -30,7 +29,6 @@ import javax.sql.DataSource;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -65,8 +63,6 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
 	private static final EventSerializer eventSerializer = mock(EventSerializer.class);
-
-	@Autowired EntityManager entityManager;
 
 	@Configuration
 	@Import(JpaEventPublicationConfiguration.class)
@@ -112,6 +108,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	}
 
 	private final JpaEventPublicationRepository repository;
+	private final EntityManager em;
 
 	@Test
 	void persistsJpaEventPublication() {
@@ -173,18 +170,19 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 	@Test // GH-20
 	void shouldDeleteCompletedEvents() {
-		TestEvent testEvent1 = new TestEvent("abc");
-		String serializedEvent1 = "{\"eventId\":\"abc\"}";
-		TestEvent testEvent2 = new TestEvent("def");
-		String serializedEvent2 = "{\"eventId\":\"def\"}";
+
+		var testEvent1 = new TestEvent("abc");
+		var serializedEvent1 = "{\"eventId\":\"abc\"}";
+		var testEvent2 = new TestEvent("def");
+		var serializedEvent2 = "{\"eventId\":\"def\"}";
 
 		when(eventSerializer.serialize(testEvent1)).thenReturn(serializedEvent1);
 		when(eventSerializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
 		when(eventSerializer.serialize(testEvent2)).thenReturn(serializedEvent2);
 		when(eventSerializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-		CompletableEventPublication publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
-		CompletableEventPublication publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+		var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
+		var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
 
 		repository.create(publication1);
 		repository.create(publication2);
@@ -193,10 +191,9 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 		repository.deleteCompletedPublications();
 
-		var eventPublications = entityManager.createQuery(
-				"select p from JpaEventPublication p", JpaEventPublication.class).getResultList();
-		assertThat(eventPublications).hasSize(1);
-		assertThat(eventPublications.get(0).getSerializedEvent()).isEqualTo(serializedEvent2);
+		assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
+				.hasSize(1) //
+				.element(0).extracting(JpaEventPublication::getSerializedEvent).isEqualTo(serializedEvent2);
 	}
 
 	@Value
