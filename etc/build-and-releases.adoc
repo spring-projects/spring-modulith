@@ -1,0 +1,45 @@
+= Build and Releases
+
+== Build profiles
+
+* `ci` - Adds Javadoc creation (after delombokization of the source code)
+* `artifactory` - Adds the Artifactory plugin to deploy artifacts to the Spring Artifactory server
+** `env.ARTIFACTORY_USERNAME` -- the Artifactory username with deployment permissions
+** `env.ARTIFACTORY_PASSWORD` -- the Artifactory password (needs to be encrypted itself, i.e. a token obtained via the web UI)
+* `sonatype` -- adds GPG signing
+** `env.GPG_PASSPHRASE` -- the GPG passphrase for the key to be used to sign the artifacts (usually just one deployed)
+** `env.SONATYPE_USER` -- the username to authenticate with Sonatype's OSSRH Nexus (via `settings.xml`)
+** `env.SONATYPE_PASSWORD` -- the password to authenticate with Sonatype's OSSRH Nexus (via `settings.xml`)
+* `documentation` - Creates and packages the reference documentation for publication.
+** `env.ARTIFACTORY_USERNAME` -- the Artifactory username with deployment permissions
+** `env.ARTIFACTORY_PASSWORD` -- the Artifactory password (needs to be encrypted itself, i.e. a token obtained via the web UI)
+
+== Workflows
+
+* `build.yml` (`main`) -- Runs default build and deploys snapshots to Artifactory.
+* `docs.yml` (every midnight) -- Runs documentation publication.
+* `milestone.yml` (`release/milestone`) -- Runs Artifactory deployment of artifacts and documentation.
+* `release.yml` (`release/release`) -- Runs Maven Central deployment of artifacts and Artifactory deployment of documentation.
+
+== Release procedure
+
+* On the version branch (`main`, `….x`) run:
++
+[source]
+----
+./mvnw release:prepare \
+  -DreleaseVersion="${version}" \
+  -DdevelopmentVersion="${devVersion}" \
+  -DscmReleaseCommitComment="${ticketId} - Release version ${version}." \
+  -DscmDevelopmentCommitComment="${ticketId} - Prepare next development iteration." \
+  -Dtag="${version}"
+----
+* `git push && git push --tags`
+* For milestones: `git checkout release/milestone`, for GA releases: `git checkout release/release`.
+* `git reset --hard $version`
+* `git push --force-with-lease` -- The `milestone.yml`/`release.yml` workflow will be triggered by the branches seeing a new commit and deploy to Artifactory / Maven Central.
+
+* For GA releases, promote the https://s01.oss.sonatype.org/[release repository].
+
+* Create release on GitHub. Generate https://github.com/spring-io/github-changelog-generator[changelog].
+* Update project versions on https://spring.io/admin.

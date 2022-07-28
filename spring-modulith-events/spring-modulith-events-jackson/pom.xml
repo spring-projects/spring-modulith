@@ -14,7 +14,6 @@
 	<properties>
 		<module.name>org.springframework.modulith.events.jackson</module.name>
 	</properties>
-	
 
 	<dependencies>
 

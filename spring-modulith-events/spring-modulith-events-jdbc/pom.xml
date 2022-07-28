@@ -35,7 +35,7 @@
 			<artifactId>spring-modulith-events-core</artifactId>
 			<version>${project.version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-jdbc</artifactId>
@@ -61,7 +61,7 @@
 		</dependency>
 
 		<!-- Testcontainers -->
-		
+
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
