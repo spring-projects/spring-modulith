@@ -1,0 +1,43 @@
+# Editor configuration, see https://editorconfig.org
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+indent_size = 4
+indent_style = tab
+max_line_length = 120
+tab_width = 4
+ij_continuation_indent_size = 8
+
+[*.java]
+ij_java_align_multiline_parameters = false
+ij_java_align_multiline_resources = false
+ij_java_array_initializer_wrap = normal
+ij_java_binary_operation_sign_on_next_line = true
+ij_java_binary_operation_wrap = normal
+ij_java_call_parameters_wrap = normal
+ij_java_class_annotation_wrap = split_into_lines
+ij_java_doc_keep_empty_lines = false
+ij_java_extends_keyword_wrap = normal
+ij_java_extends_list_wrap = normal
+ij_java_field_annotation_wrap = normal
+ij_java_keep_blank_lines_before_right_brace = 1
+ij_java_keep_blank_lines_in_code = 1
+ij_java_keep_blank_lines_in_declarations = 1
+ij_java_keep_control_statement_in_one_line = false
+ij_java_keep_first_column_comment = false
+ij_java_keep_line_breaks = false
+ij_java_method_annotation_wrap = split_into_lines
+ij_java_method_call_chain_wrap = normal
+ij_java_method_parameters_wrap = normal
+ij_java_parameter_annotation_wrap = normal
+ij_java_resource_list_wrap = on_every_item
+ij_java_space_before_annotation_array_initializer_left_brace = false
+ij_java_spaces_within_array_initializer_braces = true
+ij_java_ternary_operation_wrap = on_every_item
+ij_java_throws_keyword_wrap = normal
+ij_java_throws_list_wrap = normal
+ij_java_variable_annotation_wrap = normal
+ij_java_imports_layout = $*,|,*,|,java.**,|,javax.**,|,org.**,|,com.**
+ij_java_doc_align_param_comments = false
