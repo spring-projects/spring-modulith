@@ -49,15 +49,14 @@ class DatabaseSchemaInitializerIntegrationTests {
 		@MockBean EventSerializer serializer;
 	}
 
-	@Nested
 	@JdbcTest(properties = "spring.modulith.events.schema-initialization.enabled=true")
-	static class WithInitEnabled extends TestBase {
+	abstract static class WithInitEnabled extends TestBase {
 
 		@Autowired JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
 
 		@Test // GH-3
-		void doesNotRegisterAnInitializerBean() {
+		void doesRegisterAnInitializerBean() {
 			assertThat(initializer).isPresent();
 		}
 
@@ -69,7 +68,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@Nested
 	@JdbcTest(properties = "spring.modulith.events.schema-initialization.enabled=false")
-	static class WithInitDisabled extends TestBase {
+	class WithInitDisabled extends TestBase {
 
 		@SpyBean JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
@@ -85,9 +84,8 @@ class DatabaseSchemaInitializerIntegrationTests {
 		}
 	}
 
-	@Nested
 	@JdbcTest
-	class InitializationDisabledByDefault extends TestBase {
+	abstract static class InitializationDisabledByDefault extends TestBase {
 
 		@SpyBean JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
@@ -100,6 +98,23 @@ class DatabaseSchemaInitializerIntegrationTests {
 		@Test // GH-3
 		void shouldNotCreateDatabaseSchemaOnStartUp() {
 			verify(operations, never()).execute(anyString());
+		}
+	}
+
+	@JdbcTest
+	abstract static class InitializationEnabledByDefault extends TestBase {
+
+		@SpyBean JdbcOperations operations;
+		@Autowired Optional<DatabaseSchemaInitializer> initializer;
+
+		@Test // GH-3
+		void doesRegisterAnInitializerBean() {
+			assertThat(initializer).isPresent();
+		}
+
+		@Test // GH-3
+		void shouldCreateDatabaseSchemaOnStartUp() {
+			assertThat(operations.queryForObject(COUNT_PUBLICATIONS, Long.class)).isEqualTo(0);
 		}
 	}
 
@@ -118,4 +133,12 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("mysql")
 	class MySQL extends WithInitEnabled {}
+
+	@Nested
+	@ActiveProfiles("h2")
+	class H2EnabledByDefault extends InitializationEnabledByDefault {}
+
+	@Nested
+	@ActiveProfiles("postgres")
+	class PostgresDisabledByDefault extends InitializationDisabledByDefault {}
 }

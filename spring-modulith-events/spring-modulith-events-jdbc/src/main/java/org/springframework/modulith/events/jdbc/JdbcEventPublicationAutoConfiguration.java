@@ -15,14 +15,21 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import java.util.Arrays;
+
 import javax.sql.DataSource;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Condition;
+import org.springframework.context.annotation.ConditionContext;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 
@@ -47,10 +54,25 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.events.schema-initialization.enabled", havingValue = "true")
+	@ConditionalOnProperty(name = "spring.modulith.events.schema-initialization.enabled", havingValue = "true", matchIfMissing = true)
+	@Conditional(EmbeddedDatabaseCondition.class)
 	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, ResourceLoader resourceLoader,
 			DatabaseType databaseType) {
-
 		return new DatabaseSchemaInitializer(jdbcTemplate, resourceLoader, databaseType);
+	}
+
+	static class EmbeddedDatabaseCondition implements Condition {
+
+		@Override
+		public boolean matches(ConditionContext context, AnnotatedTypeMetadata metadata) {
+			DatabaseType databaseType = context.getBeanFactory().getBean(DatabaseType.class);
+			return isEmbedded(databaseType);
+		}
+
+		private boolean isEmbedded(DatabaseType databaseType) {
+			boolean isEmbedded = Arrays.stream(EmbeddedDatabaseType.values())
+					.anyMatch(e -> e.name().equals(databaseType.name()));
+			return isEmbedded;
+		}
 	}
 }
