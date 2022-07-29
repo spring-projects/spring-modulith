@@ -1,9 +1,73 @@
 [[testing]]
 = Integration Testing Application Modules
 
-[[testing.subheadline]]
-== Subheadline
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+Spring Modulith allows to run integration tests bootstrapping individual application modules in isolation or combination with others.
+To achieve this, place JUnit test class in an application module package or any sub-package of that and annotate it with `@ApplicationModuleTest`:
+
+[source, java]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  // Individual test cases go here
+}
+----
+
+If you configure the log level for `org.springframework.modulith` to `DEBUG`, you will see detailed information about how the test execution customizes the Spring Boot bootstrap:
+
+[source]
+----
+  .   ____          _            __ _ _
+ /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
+( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
+ \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
+  '  |____| .__|_| |_|_| |_\__, | / / / /
+ =========|_|==============|___/=/_/_/_/
+ :: Spring Boot ::       (v3.0.0-SNAPSHOT)
+
+… - Bootstrapping @ApplicationModuleTest for example.order in mode STANDALONE (class example.Application)…
+… - ======================================================================================================
+… - ## example.order ##
+… - > Logical name: order
+… - > Base package: example.order
+… - > Direct module dependencies: none
+… - > Spring beans:
+… -       + ….OrderManagement
+… -       + ….internal.OrderInternal
+… - Starting OrderIntegrationTests using Java 17.0.3 …
+… - No active profile set, falling back to 1 default profile: "default"
+… - Re-configuring auto-configuration and entity scan packages to: example.order.
+----
+
+Note, how the output contains the detailed information about the module included in the test run.
+
+[[testing.bootstrap-modes]]
+== Bootstrap Modes
+
+The application module test can be bootstrapped in a variety of modes:
+
+* `STANDALONE` (default) -- Runs the current module only.
+* `DIRECT_DEPENDENCIES` -- Runs the current module as well as all modules the current one directly depends on.
+* `ALL_DEPENDENCIES` -- Runs the current module and the entire tree of modules depended on.
+
+[[testing.efferent-dependencies]]
+== Dealing with Efferent Dependencies
+
+When an application module is bootstrapped, the Spring beans it contains will be instantiated.
+If those contain bean references that cross module boundaries, the bootstrap will fail if those other modules are not included in the test run (see <<testing.bootstrap-modes>> for details).
+While a natural reaction might be to expand the scope of the application modules included, it is usually a better option to mock the target beans.
+
+[source, java]
+----
+@ApplicationModuleTest
+class InventoryIntegrationTests {
+
+  @MockBean SomeOtherComponent someOtherComponent;
+}
+----
+
+Spring Boot will create bean definitions and instances for the types defined as `@MockBean` and add them to the `ApplicationContext` bootstrapped for the test run.
+
+If you find your application module depending on too many beans of other ones, that is usually a sign of high coupling between them.
+The dependencies should be reviewed for whether they are candidates for replacement by publishing a domain event (see <<events>>).
+

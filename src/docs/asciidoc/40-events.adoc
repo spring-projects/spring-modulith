@@ -1,9 +1,76 @@
 [[events]]
 = Working with Application Events
 
-[[events.subheadline]]
-== Subheadline
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+To keep application modules as decoupled as possible from each other, their primary means of interaction should be event publication and consumption.
+This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see <<testing>>).
+
+Often we will find application components defined like this:
+
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class OrderManagement {
+
+  private final InventoryManagement inventory;
+
+  @Transactional
+  public void complete(Order order) {
+
+    // State transition on the order aggregate go here
+
+    // Invoke related functionality
+    inventory.updateStockFor(order);
+  }
+}
+----
+
+The `complete(…)` method creates functional gravity in the sense that it attracts related functionality and thus interaction with Spring beans defined in other application modules.
+This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see <<testing.efferent-dependencies>>).
+It also means that we will have to touch the class whenever we would like to integrate further functionality with the business event order completion.
+
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class OrderManagement {
+
+  private final ApplicationEventPublisher events;
+  private final OrderInternal dependency;
+
+  @Transactional
+  public void complete(Order order) {
+
+    // State transition on the order aggregate go here
+
+    events.publishEvent(new OrderCompleted(order.getId()));
+  }
+}
+----
+
+Note, how we use Spring's `ApplicationEventPublisher` to publish a domain event, once we have completed the state transitions on the primary aggregate.
+As event publication happens synchronously by default, the transactional semantics of the overall arrangement stay the same as in the example above.
+Both for the good, as we get to a very simple consistency model (either both the status change of the order _and_ the inventory update succeed or none of them does), but also for the bad as more triggered related functionality will widen the transaction boundary and potentially cause the entire transaction to fail, even if the functionality that is causing the error is not crucial.
+
+A different way of approaching this is by moving the event consumption to asynchronous handling at transaction commit and treat secondary functionaly exactly as that:
+
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class InventoryManagement {
+
+  @Async
+  @TransactionalEventListener
+  void on(OrderCompleted event) {
+
+  }
+}
+----
+
+This now effectively decouples the original transaction from the execution of the listener.
+While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
+Even worse, that doesn't fully work, as the system might fail before the method is even invoked.
+
+Spring Modulith ships with an event publication registry that hooks into the core event publication mechanism of Spring Framework.
+On event publication, it finds out about the transactional event listeners that will get the event delivered and writes entries for each of them into an event publication log as part of the original business transaction.
