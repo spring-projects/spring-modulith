@@ -50,7 +50,7 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 	public static List<PackageBasedNamedInterface> of(JavaPackage javaPackage) {
 
 		String[] name = javaPackage.getAnnotation(org.springframework.modulith.NamedInterface.class) //
-				.map(it -> it.value()) //
+				.map(it -> it.name()) //
 				.orElseThrow(() -> new IllegalArgumentException(
 						String.format("Couldn't find NamedInterface annotation on package %s!", javaPackage)));
 

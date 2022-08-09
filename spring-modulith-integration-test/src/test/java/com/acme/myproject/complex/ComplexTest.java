@@ -17,10 +17,11 @@ package com.acme.myproject.complex;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.modulith.model.NamedInterface;
-import org.springframework.modulith.model.NamedInterfaces;
 import org.springframework.modulith.test.ModuleTestExecution;
 
 import com.acme.myproject.NonVerifyingModuleTest;
@@ -36,9 +37,14 @@ class ComplexTest {
 	@Test
 	void exposesNamedInterfaces() {
 
-		NamedInterfaces interfaces = moduleTest.getModule().getNamedInterfaces();
+		var interfaces = moduleTest.getModule().getNamedInterfaces();
+		var expectedNames = List.of("API", "SPI", "Port 1", "Port 2", "Port 3");
 
-		assertThat(interfaces.stream().map(NamedInterface::getName)) //
-				.containsExactlyInAnyOrder("API", "SPI", "Port 1", "Port 2", "Port 3");
+		assertThat(interfaces) //
+				.extracting(NamedInterface::getName) //
+				.hasSize(expectedNames.size() + 1)
+				.containsAll(expectedNames);
+
+		assertThatNoException().isThrownBy(() -> interfaces.getUnnamedInterface());
 	}
 }

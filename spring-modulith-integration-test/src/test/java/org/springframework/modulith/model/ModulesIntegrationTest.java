@@ -17,6 +17,7 @@ package org.springframework.modulith.model;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -45,9 +46,7 @@ class ModulesIntegrationTest {
 	@Test
 	void exposesModulesForPrimaryPackages() {
 
-		Optional<ApplicationModule> module = modules.getModuleByName("moduleB");
-
-		assertThat(module).hasValueSatisfying(it -> {
+		assertThat(modules.getModuleByName("moduleB")).hasValueSatisfying(it -> {
 			assertThat(it.getBootstrapDependencies(modules)).anySatisfy(dep -> {
 				assertThat(dep.getName()).isEqualTo("moduleA");
 			});
@@ -55,17 +54,15 @@ class ModulesIntegrationTest {
 	}
 
 	@Test
-	public void usesExplicitlyAnnotatedDisplayName() {
+	void usesExplicitlyAnnotatedDisplayName() {
 
-		Optional<ApplicationModule> module = modules.getModuleByName("moduleC");
-
-		assertThat(module).hasValueSatisfying(it -> {
+		assertThat(modules.getModuleByName("moduleC")).hasValueSatisfying(it -> {
 			assertThat(it.getDisplayName()).isEqualTo("MyModule C");
 		});
 	}
 
 	@Test
-	public void rejectsDependencyIntoInternalPackage() {
+	void rejectsDependencyIntoInternalPackage() {
 
 		Optional<ApplicationModule> module = modules.getModuleByName("invalid");
 
@@ -76,16 +73,16 @@ class ModulesIntegrationTest {
 	}
 
 	@Test
-	public void complexModuleExposesNamedInterfaces() {
+	void complexModuleExposesNamedInterfaces() {
 
-		Optional<ApplicationModule> module = modules.getModuleByName("complex");
+		assertThat(modules.getModuleByName("complex")).hasValueSatisfying(it -> {
 
-		assertThat(module).hasValueSatisfying(it -> {
+			var interfaces = it.getNamedInterfaces();
+			var reference = List.of("API", "SPI", "Port 1", "Port 2", "Port 3");
 
-			NamedInterfaces interfaces = it.getNamedInterfaces();
-
-			assertThat(interfaces.stream().map(NamedInterface::getName)) //
-					.containsExactlyInAnyOrder("API", "SPI", "Port 1", "Port 2", "Port 3");
+			assertThat(interfaces).extracting(NamedInterface::getName) //
+					.hasSize(reference.size() + 1) //
+					.containsAll(reference);
 
 			verifyNamedInterfaces(interfaces, "Port 1", FirstTypeBasedPort.class, SecondTypeBasePort.class);
 			verifyNamedInterfaces(interfaces, "Port 2", FirstTypeBasedPort.class, SecondTypeBasePort.class);
@@ -93,17 +90,18 @@ class ModulesIntegrationTest {
 		});
 	}
 
-	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {
+	@Test
+	void detectsReferenceToUndeclaredNamedInterface() {
 
-		Optional<NamedInterface> byName = interfaces.getByName(name);
-
-		Stream.of(types).forEach(type -> {
-			assertThat(byName).hasValueSatisfying(named -> named.contains(type));
+		assertThat(modules.getModuleByName("invalid3")).hasValueSatisfying(it -> {
+			assertThatExceptionOfType(Violations.class).isThrownBy(() -> it.verifyDependencies(modules))
+					.withMessageContaining("Allowed targets")
+					.withMessageContaining("complex::API");
 		});
 	}
 
 	@Test
-	public void discoversAtBeanComponent() {
+	void discoversAtBeanComponent() {
 
 		Optional<ApplicationModule> module = modules.getModuleByName("moduleA");
 
@@ -113,7 +111,7 @@ class ModulesIntegrationTest {
 	}
 
 	@Test
-	public void moduleBListensToModuleA() {
+	void moduleBListensToModuleA() {
 
 		Optional<ApplicationModule> module = modules.getModuleByName("moduleB");
 		ApplicationModule moduleA = modules.getModuleByName("moduleA").orElseThrow(IllegalStateException::new);
@@ -125,7 +123,7 @@ class ModulesIntegrationTest {
 	}
 
 	@Test
-	public void rejectsNotExplicitlyListedDependency() {
+	void rejectsNotExplicitlyListedDependency() {
 
 		Optional<ApplicationModule> moduleByName = modules.getModuleByName("invalid2");
 
@@ -150,6 +148,14 @@ class ModulesIntegrationTest {
 		ApplicationModules fromPackage = ApplicationModules.of(Application.class.getPackage().getName());
 
 		assertThat(fromPackage.stream().map(ApplicationModule::getName)) //
-				.containsExactlyInAnyOrderElementsOf(modules.stream().map(ApplicationModule::getName).collect(Collectors.toList()));
+				.containsExactlyInAnyOrderElementsOf(
+						modules.stream().map(ApplicationModule::getName).collect(Collectors.toList()));
+	}
+
+	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {
+
+		Stream.of(types).forEach(type -> {
+			assertThat(interfaces.getByName(name)).hasValueSatisfying(named -> named.contains(type));
+		});
 	}
 }

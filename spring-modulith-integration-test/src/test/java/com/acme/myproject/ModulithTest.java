@@ -36,7 +36,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 class ModulithTest {
 
 	static final DescribedPredicate<JavaClass> DEFAULT_EXCLUSIONS = Filters.withoutModules("cycleA", "cycleB", "invalid2",
-			"fieldinjected");
+			"invalid3", "fieldinjected");
 
 	@Test
 	void verifyModules() {
@@ -60,7 +60,8 @@ class ModulithTest {
 	void detectsCycleBetweenModules() {
 
 		assertThatExceptionOfType(Violations.class) //
-				.isThrownBy(() -> ApplicationModules.of(Application.class, Filters.withoutModules("invalid", "invalid2")).verify()) //
+				.isThrownBy(
+						() -> ApplicationModules.of(Application.class, Filters.withoutModules("invalid", "invalid2")).verify()) //
 
 				// mentions modules
 				.withMessageContaining("cycleA") //

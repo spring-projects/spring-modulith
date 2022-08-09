@@ -23,10 +23,12 @@ import static org.springframework.modulith.model.Types.JavaXTypes.*;
 import static org.springframework.modulith.model.Types.SpringDataTypes.*;
 import static org.springframework.modulith.model.Types.SpringTypes.*;
 
+import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Value;
 
 import java.util.Arrays;
 import java.util.Collection;
@@ -197,7 +199,7 @@ public class ApplicationModule {
 	}
 
 	public boolean contains(@Nullable Class<?> type) {
-		return (type != null) && getType(type.getName()).isPresent();
+		return type != null && getType(type.getName()).isPresent();
 	}
 
 	/**
@@ -298,23 +300,25 @@ public class ApplicationModule {
 	 * @param modules must not be {@literal null}.
 	 * @return
 	 */
-	List<ApplicationModule> getAllowedDependencies(ApplicationModules modules) {
+	ApplicationModuleDependencies getAllowedDependencies(ApplicationModules modules) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 
-		List<String> allowedDependencyNames = information.getAllowedDependencies();
+		var allowedDependencyNames = information.getAllowedDependencies();
 
 		if (allowedDependencyNames.isEmpty()) {
-			return Collections.emptyList();
+			return new ApplicationModuleDependencies(Collections.emptyList());
 		}
 
-		Stream<ApplicationModule> explicitlyDeclaredModules = allowedDependencyNames.stream() //
-				.map(modules::getModuleByName) //
-				.flatMap(it -> it.map(Stream::of).orElse(Stream.empty()));
+		var explicitlyDeclaredModules = allowedDependencyNames.stream() //
+				.map(it -> ApplicationModuleDependency.of(it, modules));
 
-		return Stream.concat(explicitlyDeclaredModules, modules.getSharedModules().stream()) //
+		var sharedDependencies = modules.getSharedModules().stream()
+				.map(ApplicationModuleDependency::to);
+
+		return Stream.concat(explicitlyDeclaredModules, sharedDependencies) //
 				.distinct() //
-				.collect(Collectors.toList());
+				.collect(Collectors.collectingAndThen(Collectors.toList(), ApplicationModuleDependencies::new));
 	}
 
 	/**
@@ -444,6 +448,106 @@ public class ApplicationModule {
 		ALL;
 	}
 
+	@Value
+	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+	static class ApplicationModuleDependency {
+
+		@NonNull ApplicationModule target;
+		@NonNull NamedInterface namedInterface;
+
+		/**
+		 * Creates an {@link ApplicationModuleDependency} to the module and optionally named interface defined by the given
+		 * identifier.
+		 *
+		 * @param identifier must not be {@literal null} or empty. Follows the
+		 *          {@code ${moduleName}(::${namedInterfaceName})} pattern.
+		 * @param modules must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @throws IllegalArgumentException in case the given identifier is invalid, i.e. does not refer to an existing
+		 *           module or named interface.
+		 */
+		public static ApplicationModuleDependency of(String identifier, ApplicationModules modules) {
+
+			Assert.hasText(identifier, "Module dependency identifier must not be null or empty!");
+
+			var segments = identifier.split("::");
+			var moduleName = segments[0].trim();
+			var namedInterfacename = segments.length > 1 ? segments[1].trim() : null;
+
+			var module = modules.getModuleByName(moduleName)
+					.orElseThrow(() -> new IllegalArgumentException("No module named %s found!".formatted(moduleName)));
+
+			var namedInterface = namedInterfacename == null
+					? module.getNamedInterfaces().getUnnamedInterface()
+					: module.getNamedInterfaces().getByName(segments[1])
+							.orElseThrow(
+									() -> new IllegalArgumentException(
+											"No named interface named %s found!".formatted(namedInterfacename)));
+
+			return new ApplicationModuleDependency(module, namedInterface);
+		}
+
+		/**
+		 * Creates a new {@link ApplicationModuleDependency} to the unnamed interface of the given
+		 * {@link ApplicationModule}.
+		 *
+		 * @param module must not be {@literal null}.
+		 * @return
+		 */
+		public static ApplicationModuleDependency to(ApplicationModule module) {
+			return new ApplicationModuleDependency(module, module.getNamedInterfaces().getUnnamedInterface());
+		}
+
+		public boolean contains(JavaClass type) {
+			return namedInterface.contains(type);
+		}
+
+		@Override
+		public String toString() {
+
+			return namedInterface.isUnnamed() //
+					? target.getName() //
+					: target.getName() + "::" + namedInterface.getName();
+		}
+	}
+
+	/**
+	 * A collection wrapper for {@link ApplicationModuleDependency} instances.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	@Value
+	static class ApplicationModuleDependencies {
+
+		List<ApplicationModuleDependency> dependencies;
+
+		/**
+		 * Returns whether any of the dependencies contains the given {@link JavaClass}.
+		 *
+		 * @param type must not be {@literal null}.
+		 * @return
+		 */
+		public boolean contains(JavaClass type) {
+
+			Assert.notNull(type, "JavaClass must not be null!");
+
+			return dependencies.stream() //
+					.anyMatch(it -> it.contains(type));
+		}
+
+		public boolean isEmpty() {
+			return dependencies.isEmpty();
+		}
+
+		@Override
+		public String toString() {
+
+			return dependencies.stream() //
+					.map(ApplicationModuleDependency::toString)
+					.collect(Collectors.joining(", "));
+		}
+	}
+
 	@EqualsAndHashCode
 	@RequiredArgsConstructor
 	static class ModuleDependency {
@@ -468,30 +572,31 @@ public class ApplicationModule {
 
 		Violations isValidDependencyWithin(ApplicationModules modules) {
 
-			ApplicationModule originModule = getExistingModuleOf(origin, modules);
-			ApplicationModule targetModule = getExistingModuleOf(target, modules);
+			var originModule = getExistingModuleOf(origin, modules);
+			var targetModule = getExistingModuleOf(target, modules);
 
-			List<ApplicationModule> allowedTargets = originModule.getAllowedDependencies(modules);
+			ApplicationModuleDependencies allowedTargets = originModule.getAllowedDependencies(modules);
 			Violations violations = Violations.NONE;
 
-			if (!allowedTargets.isEmpty() && !allowedTargets.contains(targetModule)) {
+			// Check explicitly defined allowed targets
 
-				String allowedTargetsString = allowedTargets.stream() //
-						.map(ApplicationModule::getName) //
-						.collect(Collectors.joining(", "));
+			if (!allowedTargets.isEmpty() && !allowedTargets.contains(target)) {
 
-				String message = String.format("Module '%s' depends on module '%s' via %s -> %s. Allowed target modules: %s.",
-						originModule.getName(), targetModule.getName(), origin.getName(), target.getName(), allowedTargetsString);
+				var message = "Module '%s' depends on module '%s' via %s -> %s. Allowed targets: %s." //
+						.formatted(originModule.getName(), targetModule.getName(), origin.getName(), target.getName(),
+								allowedTargets.toString());
 
-				violations = violations.and(new IllegalStateException(message));
+				return violations.and(new IllegalStateException(message));
 			}
+
+			// No explicitly allowed dependencies - check for general access
 
 			if (!targetModule.isExposed(target)) {
 
-				String violationText = String.format("Module '%s' depends on non-exposed type %s within module '%s'!",
-						originModule.getName(), target.getName(), targetModule.getName());
+				var violationText = "Module '%s' depends on non-exposed type %s within module '%s'!"
+						.formatted(originModule.getName(), target.getName(), targetModule.getName());
 
-				violations = violations.and(new IllegalStateException(violationText + lineSeparator() + description));
+				return violations.and(new IllegalStateException(violationText + lineSeparator() + description));
 			}
 
 			return violations;
@@ -533,7 +638,7 @@ public class ApplicationModule {
 			Set<JavaConstructor> constructors = source.getConstructors();
 
 			return constructors.stream() //
-					.filter(it -> (constructors.size() == 1) || isInjectionPoint(it)) //
+					.filter(it -> constructors.size() == 1 || isInjectionPoint(it)) //
 					.flatMap(it -> it.getRawParameterTypes().stream() //
 							.map(parameter -> new InjectionModuleDependency(source, parameter, it)));
 		}

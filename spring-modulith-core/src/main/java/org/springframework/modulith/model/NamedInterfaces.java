@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.model.NamedInterface.TypeBasedNamedInterface;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -46,7 +47,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		return NamedInterfaces.ofAnnotatedPackages(basePackage) //
 				.and(NamedInterfaces.ofAnnotatedTypes(basePackage)) //
-				.orUnnamed(basePackage);
+				.and(NamedInterface.unnamed(basePackage));
 	}
 
 	public static NamedInterfaces of(List<NamedInterface> interfaces) {
@@ -73,10 +74,10 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 						return;
 					}
 
-					org.springframework.modulith.NamedInterface annotation = it
-							.getAnnotationOfType(org.springframework.modulith.NamedInterface.class);
+					org.springframework.modulith.NamedInterface annotation = AnnotatedElementUtils
+							.getMergedAnnotation(it.reflect(), org.springframework.modulith.NamedInterface.class);
 
-					for (String name : annotation.value()) {
+					for (String name : annotation.name()) {
 						mappings.add(name, it);
 					}
 				});
@@ -84,6 +85,15 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		return mappings.entrySet().stream() //
 				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()), basePackage)) //
 				.collect(Collectors.toList());
+	}
+
+	private NamedInterfaces and(NamedInterface namedInterface) {
+
+		List<NamedInterface> result = new ArrayList<>(namedInterfaces.size() + 1);
+		result.addAll(namedInterfaces);
+		result.add(namedInterface);
+
+		return new NamedInterfaces(result);
 	}
 
 	public boolean hasExplicitInterfaces() {
@@ -123,14 +133,21 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		return new NamedInterfaces(namedInterfaces);
 	}
 
-	public NamedInterfaces orUnnamed(JavaPackage basePackage) {
-		return namedInterfaces.isEmpty() //
-				? of(Collections.singletonList(NamedInterface.unnamed(basePackage))) //
-				: this;
-	}
-
 	public Optional<NamedInterface> getByName(String name) {
 		return namedInterfaces.stream().filter(it -> it.getName().equals(name)).findFirst();
+	}
+
+	/**
+	 * Returns the unnamed {@link NamedInterface} of the module.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public NamedInterface getUnnamedInterface() {
+
+		return namedInterfaces.stream() //
+				.filter(NamedInterface::isUnnamed) //
+				.findFirst() //
+				.orElseThrow(() -> new IllegalStateException("No unnamed interface found!"));
 	}
 
 	/*

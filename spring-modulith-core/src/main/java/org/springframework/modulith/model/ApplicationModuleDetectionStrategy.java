@@ -17,8 +17,6 @@ package org.springframework.modulith.model;
 
 import java.util.stream.Stream;
 
-import org.springframework.modulith.ApplicationModule;
-
 /**
  * Strategy interface to customize which packages are considered module base packages.
  *

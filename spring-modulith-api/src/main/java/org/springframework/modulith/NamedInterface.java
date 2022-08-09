@@ -21,8 +21,11 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.core.annotation.AliasFor;
+
 /**
- * Annotation to mark a package as named interface of a {@link ApplicationModule} (either implicit or explicitly annotated).
+ * Annotation to mark a package as named interface of a {@link ApplicationModule} (either implicit or explicitly
+ * annotated).
  *
  * @author Oliver Drotbohm
  */
@@ -32,9 +35,20 @@ import java.lang.annotation.Target;
 public @interface NamedInterface {
 
 	/**
-	 * The name of the interface.
+	 * The name(s) of the named interface. Declaring multiple values here is useful in case named interfaces are defined
+	 * based on types and a particular type is supposed to be part of multiple named interfaces.
 	 *
 	 * @return
 	 */
-	String[] value();
+	@AliasFor("name")
+	String[] value() default {};
+
+	/**
+	 * The name(s) of the named interface. Declaring multiple values here is useful in case named interfaces are defined
+	 * based on types and a particular type is supposed to be part of multiple named interfaces.
+	 *
+	 * @return
+	 */
+	@AliasFor("value")
+	String[] name() default {};
 }

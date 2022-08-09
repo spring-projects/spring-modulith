@@ -22,20 +22,29 @@ import java.lang.annotation.Target;
 
 /**
  * Annotation to customize information of a {@link Modulith} module.
- * 
+ *
  * @author Oliver Drotbohm
  */
 @Target({ ElementType.PACKAGE, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApplicationModule {
 
+	/**
+	 * The human readable name of the module to be used for display and documentation purposes.
+	 *
+	 * @return
+	 */
 	String displayName() default "";
 
 	/**
 	 * List the names of modules that the module is allowed to depend on. Shared modules defined in {@link Modulith} will
-	 * be allowed, too.
-	 * 
+	 * be allowed, too. Names listed are local ones, unless the application has configured
+	 * {@link Modulithic#useFullyQualifiedModuleNames()} to {@literal true}. Explicit references to
+	 * {@link NamedInterface}s need to be separated by a double colon {@code ::}, e.g. {@code module::API} if
+	 * {@code module} is the logical module name and {@code API} is the name of the named interface.
+	 *
 	 * @return
+	 * @see NamedInterface
 	 */
 	String[] allowedDependencies() default {};
 }

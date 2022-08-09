@@ -30,6 +30,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
+
 import com.tngtech.archunit.base.DescribedIterable;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -143,7 +145,8 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 		return packageClasses.that(JavaClass.Predicates.simpleName(PACKAGE_INFO_NAME) //
 				.and(CanBeAnnotated.Predicates.annotatedWith(annotationType))) //
 				.toOptional() //
-				.map(it -> it.getAnnotationOfType(annotationType));
+				.map(it -> it.reflect())
+				.map(it -> AnnotatedElementUtils.getMergedAnnotation(it, annotationType));
 	}
 
 	/*
