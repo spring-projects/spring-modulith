@@ -311,7 +311,7 @@ public class ApplicationModule {
 		}
 
 		var explicitlyDeclaredModules = allowedDependencyNames.stream() //
-				.map(it -> ApplicationModuleDependency.of(it, modules));
+				.map(it -> ApplicationModuleDependency.of(it, this, modules));
 
 		var sharedDependencies = modules.getSharedModules().stream()
 				.map(ApplicationModuleDependency::to);
@@ -452,6 +452,8 @@ public class ApplicationModule {
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 	static class ApplicationModuleDependency {
 
+		private static final String INVALID_EXPLICIT_MODULE_DEPENDENCY = "Invalid explicit module dependency in %s! No module found with name '%s'.";
+
 		@NonNull ApplicationModule target;
 		@NonNull NamedInterface namedInterface;
 
@@ -466,16 +468,18 @@ public class ApplicationModule {
 		 * @throws IllegalArgumentException in case the given identifier is invalid, i.e. does not refer to an existing
 		 *           module or named interface.
 		 */
-		public static ApplicationModuleDependency of(String identifier, ApplicationModules modules) {
+		public static ApplicationModuleDependency of(String identifier, ApplicationModule module,
+				ApplicationModules modules) {
 
 			Assert.hasText(identifier, "Module dependency identifier must not be null or empty!");
 
 			var segments = identifier.split("::");
-			var moduleName = segments[0].trim();
+			var targetModuleName = segments[0].trim();
 			var namedInterfacename = segments.length > 1 ? segments[1].trim() : null;
 
-			var module = modules.getModuleByName(moduleName)
-					.orElseThrow(() -> new IllegalArgumentException("No module named %s found!".formatted(moduleName)));
+			var target = modules.getModuleByName(targetModuleName)
+					.orElseThrow(() -> new IllegalArgumentException(
+							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(module.getName(), targetModuleName)));
 
 			var namedInterface = namedInterfacename == null
 					? module.getNamedInterfaces().getUnnamedInterface()
@@ -484,7 +488,7 @@ public class ApplicationModule {
 									() -> new IllegalArgumentException(
 											"No named interface named %s found!".formatted(namedInterfacename)));
 
-			return new ApplicationModuleDependency(module, namedInterface);
+			return new ApplicationModuleDependency(target, namedInterface);
 		}
 
 		/**
