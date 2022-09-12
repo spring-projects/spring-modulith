@@ -18,14 +18,19 @@ package org.springframework.modulith.events.jackson;
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventSerializationConfigurationExtension;
 
+import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
+ * Application configuration to register a Jackson-based {@link EventSerializer}.
+ *
  * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
@@ -33,16 +38,19 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 class JacksonEventSerializationConfiguration implements EventSerializationConfigurationExtension {
 
 	private final ObjectProvider<ObjectMapper> mapper;
+	private final ApplicationContext context;
 
 	@Bean
 	public JacksonEventSerializer jacksonEventSerializer() {
 		return new JacksonEventSerializer(() -> mapper.getIfAvailable(() -> defaultObjectMapper()));
 	}
 
-	private static ObjectMapper defaultObjectMapper() {
+	private ObjectMapper defaultObjectMapper() {
 
 		ObjectMapper mapper = new ObjectMapper();
+
 		mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+		mapper.registerModules(context.getBeansOfType(Module.class).values());
 
 		return mapper;
 	}
