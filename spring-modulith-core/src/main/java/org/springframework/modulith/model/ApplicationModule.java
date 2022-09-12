@@ -453,6 +453,7 @@ public class ApplicationModule {
 	static class ApplicationModuleDependency {
 
 		private static final String INVALID_EXPLICIT_MODULE_DEPENDENCY = "Invalid explicit module dependency in %s! No module found with name '%s'.";
+		private static final String INVALID_NAMED_INTERFACE_DECLARATION = "No named interface named '%s' found! Original dependency declaration: %s -> %s.";
 
 		@NonNull ApplicationModule target;
 		@NonNull NamedInterface namedInterface;
@@ -463,12 +464,13 @@ public class ApplicationModule {
 		 *
 		 * @param identifier must not be {@literal null} or empty. Follows the
 		 *          {@code ${moduleName}(::${namedInterfaceName})} pattern.
+		 * @param source the source module of the dependency, must not be {@literal null}.
 		 * @param modules must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 * @throws IllegalArgumentException in case the given identifier is invalid, i.e. does not refer to an existing
 		 *           module or named interface.
 		 */
-		public static ApplicationModuleDependency of(String identifier, ApplicationModule module,
+		public static ApplicationModuleDependency of(String identifier, ApplicationModule source,
 				ApplicationModules modules) {
 
 			Assert.hasText(identifier, "Module dependency identifier must not be null or empty!");
@@ -479,14 +481,13 @@ public class ApplicationModule {
 
 			var target = modules.getModuleByName(targetModuleName)
 					.orElseThrow(() -> new IllegalArgumentException(
-							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(module.getName(), targetModuleName)));
+							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(source.getName(), targetModuleName)));
 
 			var namedInterface = namedInterfacename == null
-					? module.getNamedInterfaces().getUnnamedInterface()
-					: module.getNamedInterfaces().getByName(segments[1])
-							.orElseThrow(
-									() -> new IllegalArgumentException(
-											"No named interface named %s found!".formatted(namedInterfacename)));
+					? target.getNamedInterfaces().getUnnamedInterface()
+					: target.getNamedInterfaces().getByName(segments[1])
+							.orElseThrow(() -> new IllegalArgumentException(
+									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfacename, source.getName(), identifier)));
 
 			return new ApplicationModuleDependency(target, namedInterface);
 		}
