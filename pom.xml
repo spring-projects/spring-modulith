@@ -38,7 +38,7 @@
 		<jmolecules-bom.version>2021.2.4</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring-doc-resources.version>0.2.5</spring-doc-resources.version>
+		<spring-asciidoctor-backends.version>0.0.3</spring-asciidoctor-backends.version>
 
 	</properties>
 
@@ -230,8 +230,6 @@ limitations under the License.
 			</modules>
 
 			<properties>
-				<shared.resources>${project.build.directory}/shared-resources</shared.resources>
-				<generated-asciidoc-sources.directory>${project.build.directory}/docs-source</generated-asciidoc-sources.directory>
 				<generated-docs.directory>${project.build.directory}/generated-docs</generated-docs.directory>
 				<maven.main.skip>true</maven.main.skip>
 				<maven.test.skip>true</maven.test.skip>
@@ -242,61 +240,6 @@ limitations under the License.
 			<build>
 
 				<plugins>
-
-					<!--
-						Unpacks the content of spring-doc-resources into the shared resources folder.
-					-->
-
-					<plugin>
-						<groupId>com.googlecode.maven-download-plugin</groupId>
-						<artifactId>download-maven-plugin</artifactId>
-						<version>1.6.8</version>
-						<executions>
-							<execution>
-								<id>unpack-doc-resources</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>wget</goal>
-								</goals>
-								<configuration>
-									<url>https://repo.spring.io/release/io/spring/docresources/spring-doc-resources/${spring-doc-resources.version}/spring-doc-resources-${spring-doc-resources.version}.zip</url>
-									<unpack>true</unpack>
-									<outputDirectory>${generated-asciidoc-sources.directory}</outputDirectory>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.8</version>
-						<executions>
-							<execution>
-								<id>create-generated-docs-resources</id>
-								<phase>generate-resources</phase>
-								<goals>
-									<goal>run</goal>
-								</goals>
-								<configuration>
-									<target>
-
-										<!-- All Asciidoctor files to the source directory -->
-										<copy failonerror="false" todir="${generated-asciidoc-sources.directory}/">
-											<fileset dir="${project.root}/src/docs/asciidoc" includes="**/*.adoc"/>
-										</copy>
-
-										<!-- All images, too -->
-										<copy failonerror="false"
-										      todir="${generated-asciidoc-sources.directory}/images/">
-											<fileset dir="${project.root}/src/docs/asciidoc/images"/>
-										</copy>
-
-									</target>
-								</configuration>
-							</execution>
-						</executions>
-					</plugin>
 
 					<plugin>
 						<groupId>org.jfrog.buildinfo</groupId>
@@ -320,7 +263,17 @@ limitations under the License.
 								<dependency>
 									<groupId>org.jruby</groupId>
 									<artifactId>jruby</artifactId>
-									<version>9.2.6.0</version>
+									<version>9.3.7.0</version>
+								</dependency>
+								<dependency>
+									<groupId>org.asciidoctor</groupId>
+									<artifactId>asciidoctorj</artifactId>
+									<version>2.5.3</version>
+								</dependency>
+								<dependency>
+									<groupId>io.spring.asciidoctor.backends</groupId>
+									<artifactId>spring-asciidoctor-backends</artifactId>
+									<version>${spring-asciidoctor-backends.version}</version>
 								</dependency>
 							</dependencies>
 
@@ -333,7 +286,8 @@ limitations under the License.
 										<goal>process-asciidoc</goal>
 									</goals>
 									<configuration>
-										<sourceDirectory>${generated-asciidoc-sources.directory}</sourceDirectory>
+										<backend>spring-html</backend>
+										<sourceDirectory>../src/docs/asciidoc</sourceDirectory>
 										<sourceDocumentName>index.adoc</sourceDocumentName>
 										<outputDirectory>${generated-docs.directory}/html</outputDirectory>
 										<attributes>
@@ -343,7 +297,7 @@ limitations under the License.
 											<linkcss>true</linkcss>
 											<sectanchors>true</sectanchors>
 											<stylesdir>./css</stylesdir>
-											<stylesheet>spring.css</stylesheet>
+											<stylesheet>site.css</stylesheet>
 											<toc>left</toc>
 										</attributes>
 									</configuration>
@@ -580,5 +534,12 @@ limitations under the License.
 			</snapshots>
 		</repository>
 	</repositories>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<id>spring-plugins-release</id>
+			<url>https://repo.spring.io/plugins-release</url>
+		</pluginRepository>
+	</pluginRepositories>
 
 </project>
