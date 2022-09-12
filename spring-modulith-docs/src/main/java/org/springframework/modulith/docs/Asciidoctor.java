@@ -28,11 +28,11 @@ import org.springframework.lang.Nullable;
 import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
 import org.springframework.modulith.docs.Documenter.CanvasOptions.Groupings;
+import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
 import org.springframework.modulith.model.EventType;
 import org.springframework.modulith.model.FormatableJavaClass;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.Source;
 import org.springframework.modulith.model.SpringBean;
 import org.springframework.util.Assert;
@@ -126,7 +126,7 @@ class Asciidoctor {
 				.map(this::toInlineCode) //
 				.collect(Collectors.joining(", "));
 
-		return String.format("%s implementing %s", base, interfacesAsString);
+		return String.format("%s (via %s)", interfacesAsString, base);
 	}
 
 	public String renderSpringBeans(CanvasOptions options, ApplicationModule module) {

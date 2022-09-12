@@ -47,6 +47,16 @@ public class SpringBean {
 	}
 
 	/**
+	 * Returns whether the bean is considered to be an API bean, which means it is either a public type exposed in an API
+	 * package of the module or implements a public API interface.
+	 *
+	 * @return
+	 */
+	public boolean isApiBean() {
+		return module.isExposed(type) || !getInterfacesWithinModule().isEmpty();
+	}
+
+	/**
 	 * Returns all interfaces implemented by the bean that are part of the same module.
 	 *
 	 * @return

@@ -20,6 +20,8 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.docs.Documenter.CanvasOptions;
+import org.springframework.modulith.docs.Documenter.CanvasOptions.Grouping;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.SpringBean;
 
@@ -39,13 +41,14 @@ class DocumenterUnitTests {
 	@Test
 	void groupsSpringBeansByArchitecturallyEvidentType() {
 
-		Documenter.CanvasOptions.Groupings result = Documenter.CanvasOptions.defaults()
-				.groupingBy(Documenter.CanvasOptions.Grouping.of("Representations", Documenter.CanvasOptions.Grouping.nameMatching(".*Representations")))
-				.groupingBy(Documenter.CanvasOptions.Grouping.of("Interface implementations", Documenter.CanvasOptions.Grouping.subtypeOf(Stereotypes.SomeAppInterface.class)))
+		CanvasOptions.Groupings result = CanvasOptions.defaults()
+				.revealInternals() //
+				.groupingBy(Grouping.of("Representations", Grouping.nameMatching(".*Representations")))
+				.groupingBy(Grouping.of("Interface implementations", Grouping.subtypeOf(Stereotypes.SomeAppInterface.class)))
 				.groupBeans(modules.getModuleByName("stereotypes").orElseThrow(RuntimeException::new));
 
 		assertThat(result.keySet())
-				.extracting(Documenter.CanvasOptions.Grouping::getName)
+				.extracting(CanvasOptions.Grouping::getName)
 				.containsExactlyInAnyOrder("Controllers", "Services", "Repositories", "Event listeners",
 						"Configuration properties", "Representations", "Interface implementations", "Others");
 
@@ -69,8 +72,8 @@ class DocumenterUnitTests {
 
 		Documenter documenter = new Documenter(modules);
 
-		Documenter.CanvasOptions options = Documenter.CanvasOptions.defaults() //
-				.groupingBy(Documenter.CanvasOptions.Grouping.of("Representations", Documenter.CanvasOptions.Grouping.nameMatching(".*Representations")));
+		CanvasOptions options = CanvasOptions.defaults() //
+				.groupingBy(Grouping.of("Representations", Grouping.nameMatching(".*Representations")));
 
 		assertThatNoException().isThrownBy(() -> {
 			modules.forEach(it -> documenter.toModuleCanvas(it, options));
