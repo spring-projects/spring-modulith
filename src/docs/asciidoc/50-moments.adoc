@@ -1,9 +1,49 @@
 [[moments]]
 = Moments -- a Passage of Time Events API
 
-[[moments.subheadline]]
-== Subheadline
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+`modulith-moments` is a Passage of Time Events implementation heavily inspired by Matthias Verraes https://verraes.net/2019/05/patterns-for-decoupling-distsys-passage-of-time-event/[blog post].
+It's an event-based approach to time to trigger actions that are tied to a particular period of time having passed.
+
+To use the abstraction, include the following dependency in your project:
+
+[source, xml]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>modulith-moments</artifactId>
+</dependency>
+----
+
+The dependency added to the project's classpath causes the following things in your application:
+
+* Application code can refer to `HourHasPassed`, `DayHasPassed`, `WeekHasPassed`, `MonthHasPassed`, `QuarterHasPassed`, `YearHasPassed` types in Spring event listeners to get notified if a certain amount of time has passed.
+* A bean of type `org.springframework.modulith.Moments` is available in the `ApplicationContext` that contains the logic to trigger these events.
+* If `spring.modulith.moments.enable-time-machine` is set to `true`, that instance will be a `org.springframework.modulith.TimeMachine` which allows to "shift" time and by that triggers all intermediate events, which is useful to integration test functionality that is triggered by the events.
+
+By default, Moments uses a `Clock.systemUTC()` instance. To customize this, declare a bean of type `Clock`.
+
+[source, java]
+----
+@Configuration
+class MyConfiguration {
+
+  @Bean
+  Clock myCustomClock() {
+    // Create a custom Clock here
+  }
+}
+----
+
+Moments exposes the following application properties for advanced customization:
+
+.Available application properties
+[%header, cols="3,1,2"]
+|===
+|Property|Default value|Description
+|`spring.modulith.moments.enable-time-machine`|false|If set to `true`, the `Moments` instance will be a `TimeMachine`, that exposes API to shift time forward. Useful for integration tests that expect functionality triggered by the Passage of Time Events.
+|`spring.modulith.moments.granularity`|hours|The minimum granularity of events to be fired. Alternative value `days` to avoid hourly events.
+|`spring.modulith.moments.locale`|`Locale.getDefault()`|The `Locale` to use when determining week boundaries.
+|`spring.modulith.moments.quarter-start-month`|`Months.JANUARY`|The month at which quarters start.
+|`spring.modulith.moments.zone-id`|`ZoneOffset#UTC`|The `ZoneId` to determine times which are attached to the events published.
+|===
+

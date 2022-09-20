@@ -1,4 +1,5 @@
 [[events]]
+:imagesdir: images
 = Working with Application Events
 
 To keep application modules as decoupled as possible from each other, their primary means of interaction should be event publication and consumption.
@@ -52,7 +53,7 @@ Note, how we use Spring's `ApplicationEventPublisher` to publish a domain event,
 As event publication happens synchronously by default, the transactional semantics of the overall arrangement stay the same as in the example above.
 Both for the good, as we get to a very simple consistency model (either both the status change of the order _and_ the inventory update succeed or none of them does), but also for the bad as more triggered related functionality will widen the transaction boundary and potentially cause the entire transaction to fail, even if the functionality that is causing the error is not crucial.
 
-A different way of approaching this is by moving the event consumption to asynchronous handling at transaction commit and treat secondary functionaly exactly as that:
+A different way of approaching this is by moving the event consumption to asynchronous handling at transaction commit and treat secondary functionality exactly as that:
 
 [source, java]
 ----
@@ -70,7 +71,49 @@ public class InventoryManagement {
 
 This now effectively decouples the original transaction from the execution of the listener.
 While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
-Even worse, that doesn't fully work, as the system might fail before the method is even invoked.
+Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
+
+[[events.publication-registry]]
+== The Event Publication Registry
 
 Spring Modulith ships with an event publication registry that hooks into the core event publication mechanism of Spring Framework.
-On event publication, it finds out about the transactional event listeners that will get the event delivered and writes entries for each of them into an event publication log as part of the original business transaction.
+On event publication, it finds out about the transactional event listeners that will get the event delivered and writes entries for each of them (dark blue) into an event publication log as part of the original business transaction.
+
+.The transactional event listener arrangement before execution
+image::event-publication-registry-start.png[]
+
+Each transactional event listener is wrapped into an aspect that marks that log entry as completed if the execution of the listener succeeds.
+In case the listener fails, the log entry stays untouched so that retry mechanisms can be deployed depending on the application's needs.
+By default, all incomplete event publications are resubmitted at application startup.
+
+.The transactional event listener arrangement after execution
+image::event-publication-registry-end.png[]
+
+[[events.publication-repositories]]
+== Event Publication Repositories
+
+To actually write the event publication log, Spring Modulith exposes an `EventPublicationRepository` SPI and implementations for popular persistence technologies that support transactions, like JPA, JDBC and MongoDB.
+You select the persistence technology to be used by adding the corresponding JAR to your Spring Modulith application.
+We have prepared dedicated <<events.starters, starters>> to ease that task.
+
+The JDBC-based implementation will create a dedicated table for the event publication log, unless a table with a particular name already exists.
+For details, please consult the <<appendix.schemas, schema overview>> in the appendix.
+
+[[events.serialization]]
+== Event Serializer
+
+Each log entry contains the original event in serialized form.
+The `EventSerializer` abstraction contained in `spring-modulith-events-core` allows plugging different strategies for how to turn the event instances into a format suitable for the datastore.
+Spring Modulith provides a Jackson based implementation through the `spring-modulith-events-jackson` artifact, which registers a `JacksonEventSerializer` consuming an `ObjectMapper` through standard Spring Boot auto-configuration by default.
+
+[[events.starters]]
+== Spring Boot Event Registry Starters
+
+Using the transactional event publication log requires a combination of artifacts added to your application.
+To ease that task, Spring Modulith provides starter POMs that are centered around the <<events.publication-repositories, persistence technology>> to be used and default to the Jackson-based `EventSerializer` implementation.
+The following starters are available:
+
+* `spring-modulith-starter-jpa` -- Using JPA as persistence technology.
+* `spring-modulith-starter-jdbc` -- Using JDBC as persistence technology. Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
+* `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
+
