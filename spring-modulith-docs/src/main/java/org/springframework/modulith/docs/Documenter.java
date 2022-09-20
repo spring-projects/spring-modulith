@@ -53,9 +53,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.structurizr.Workspace;
-import com.structurizr.io.Diagram;
+import com.structurizr.export.Diagram;
+import com.structurizr.export.plantuml.C4PlantUMLExporter;
 import com.structurizr.io.plantuml.BasicPlantUMLWriter;
-import com.structurizr.io.plantuml.C4PlantUMLExporter;
 import com.structurizr.io.plantuml.PlantUMLWriter;
 import com.structurizr.model.Component;
 import com.structurizr.model.Container;
