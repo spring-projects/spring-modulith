@@ -15,13 +15,11 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,7 +37,8 @@ interface ApplicationModuleInformation {
 
 	public static ApplicationModuleInformation of(JavaPackage javaPackage) {
 
-		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module", ApplicationModuleInformation.class.getClassLoader())
+		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module",
+				ApplicationModuleInformation.class.getClassLoader())
 				&& MoleculesModule.supports(javaPackage)) {
 			return new MoleculesModule(javaPackage);
 		}
@@ -47,26 +46,13 @@ interface ApplicationModuleInformation {
 		return new ModulithsModule(javaPackage);
 	}
 
-	String getDisplayName();
+	default Optional<String> getDisplayName() {
+		return Optional.empty();
+	}
 
 	List<String> getAllowedDependencies();
 
-	@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-	static abstract class AbstractModuleInformation implements ApplicationModuleInformation {
-
-		private final JavaPackage javaPackage;
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ModuleInformation#getName()
-		 */
-		@Override
-		public String getDisplayName() {
-			return javaPackage.getName();
-		}
-	}
-
-	static class MoleculesModule extends AbstractModuleInformation {
+	static class MoleculesModule implements ApplicationModuleInformation {
 
 		private final Optional<org.jmolecules.ddd.annotation.Module> annotation;
 
@@ -75,31 +61,29 @@ interface ApplicationModuleInformation {
 		}
 
 		public MoleculesModule(JavaPackage javaPackage) {
-
-			super(javaPackage);
-
 			this.annotation = javaPackage.getAnnotation(org.jmolecules.ddd.annotation.Module.class);
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ModuleInformation#getName()
+		 * @see org.springframework.modulith.model.ApplicationModuleInformation#getDisplayName()
 		 */
 		@Override
-		public String getDisplayName() {
+		public Optional<String> getDisplayName() {
+
+			Supplier<Optional<String>> fallback = () -> annotation //
+					.map(org.jmolecules.ddd.annotation.Module::value) //
+					.filter(StringUtils::hasText);
 
 			return annotation //
 					.map(org.jmolecules.ddd.annotation.Module::name) //
 					.filter(StringUtils::hasText)
-					.orElseGet(() -> annotation //
-							.map(org.jmolecules.ddd.annotation.Module::value) //
-							.filter(StringUtils::hasText) //
-							.orElseGet(super::getDisplayName));
+					.or(fallback);
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ModuleInformation#getAllowedDependencies()
+		 * @see org.springframework.modulith.model.ApplicationModuleInformation#getAllowedDependencies()
 		 */
 		@Override
 		public List<String> getAllowedDependencies() {
@@ -107,7 +91,7 @@ interface ApplicationModuleInformation {
 		}
 	}
 
-	static class ModulithsModule extends AbstractModuleInformation {
+	static class ModulithsModule implements ApplicationModuleInformation {
 
 		private final Optional<ApplicationModule> annotation;
 
@@ -116,28 +100,24 @@ interface ApplicationModuleInformation {
 		}
 
 		public ModulithsModule(JavaPackage javaPackage) {
-
-			super(javaPackage);
-
 			this.annotation = javaPackage.getAnnotation(ApplicationModule.class);
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ModuleInformation.AbstractModuleInformation#getName()
+		 * @see org.springframework.modulith.model.ApplicationModuleInformation#getDisplayName()
 		 */
 		@Override
-		public String getDisplayName() {
+		public Optional<String> getDisplayName() {
 
 			return annotation //
 					.map(ApplicationModule::displayName) //
-					.filter(StringUtils::hasText) //
-					.orElseGet(super::getDisplayName);
+					.filter(StringUtils::hasText);
 		}
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ModuleInformation#getAllowedDependencies()
+		 * @see org.springframework.modulith.model.ApplicationModuleInformation#getAllowedDependencies()
 		 */
 		@Override
 		public List<String> getAllowedDependencies() {

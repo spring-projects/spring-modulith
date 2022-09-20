@@ -60,6 +60,8 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
+ * An application module.
+ *
  * @author Oliver Drotbohm
  */
 @EqualsAndHashCode(doNotUseGetters = true)
@@ -86,12 +88,24 @@ public class ApplicationModule {
 		this.publishedEvents = Suppliers.memoize(() -> findPublishedEvents());
 	}
 
+	/**
+	 * Returns the logical name of the module.
+	 *
+	 * @return will never be {@literal null} or empty.
+	 */
 	public String getName() {
 		return useFullyQualifiedModuleNames ? basePackage.getName() : basePackage.getLocalName();
 	}
 
+	/**
+	 * Returns the name of the {@link ApplicationModule} for display purposes.
+	 *
+	 * @return will never be {@literal null} or empty.
+	 */
 	public String getDisplayName() {
-		return information.getDisplayName();
+
+		return information.getDisplayName()
+				.orElseGet(() -> getName());
 	}
 
 	public List<ApplicationModule> getDependencies(ApplicationModules modules, DependencyType... type) {

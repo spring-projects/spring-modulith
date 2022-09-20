@@ -365,8 +365,6 @@ public class Documenter {
 				.filter(options.getComponentFilter()) //
 				.forEach(view::add);
 
-		// view.getViewSet().getConfiguration().getStyles().findElementStyle(element).getBackground()
-
 		// Remove filtered dependency types
 		DependencyType.allBut(options.getDependencyTypes()) //
 				.map(Object::toString) //
@@ -605,7 +603,7 @@ public class Documenter {
 		 */
 		public static Options defaults() {
 			return new Options(ALL_TYPES, DependencyDepth.IMMEDIATE, it -> false, it -> true, it -> false, null,
-					__ -> Optional.empty(), it -> it.getDisplayName(), DiagramStyle.UML, ElementsWithoutRelationships.HIDDEN);
+					__ -> Optional.empty(), it -> it.getDisplayName(), DiagramStyle.C4, ElementsWithoutRelationships.HIDDEN);
 		}
 
 		/**
