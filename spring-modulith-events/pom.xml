@@ -20,7 +20,6 @@
 		<module>spring-modulith-events-mongodb</module>
 		<module>spring-modulith-events-jackson</module>
 		<module>spring-modulith-events-tests</module>
-		<module>spring-modulith-events-starter</module>
 	</modules>
 
 	<dependencies>
