@@ -60,8 +60,8 @@ public abstract class ArchitecturallyEvidentType {
 	private final @Getter JavaClass type;
 
 	/**
-	 * Creates a new {@link ArchitecturallyEvidentType} for the given {@link JavaType} and {@link Classes} of
-	 * Spring components.
+	 * Creates a new {@link ArchitecturallyEvidentType} for the given {@link JavaType} and {@link Classes} of Spring
+	 * components.
 	 *
 	 * @param type must not be {@literal null}.
 	 * @param beanTypes must not be {@literal null}.
@@ -102,7 +102,7 @@ public abstract class ArchitecturallyEvidentType {
 	 * @return
 	 */
 	boolean isEntity() {
-		return isJpaEntity().apply(getType());
+		return isJpaEntity().test(getType());
 	}
 
 	/**
@@ -181,8 +181,8 @@ public abstract class ArchitecturallyEvidentType {
 		 * Methods (meta-)annotated with @EventListener.
 		 */
 		private static final Predicate<JavaMethod> IS_ANNOTATED_EVENT_LISTENER = it -> //
-		Types.isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).apply(it) //
-				|| Types.isAnnotatedWith(SpringTypes.AT_TX_EVENT_LISTENER).apply(it);
+		Types.isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).test(it) //
+				|| Types.isAnnotatedWith(SpringTypes.AT_TX_EVENT_LISTENER).test(it);
 
 		/**
 		 * {@code ApplicationListener.onApplicationEvent(…)}
@@ -214,7 +214,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isRepository() {
-			return Types.isAnnotatedWith(SpringTypes.AT_REPOSITORY).apply(getType());
+			return Types.isAnnotatedWith(SpringTypes.AT_REPOSITORY).test(getType());
 		}
 
 		/*
@@ -223,7 +223,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isService() {
-			return Types.isAnnotatedWith(SpringTypes.AT_SERVICE).apply(getType());
+			return Types.isAnnotatedWith(SpringTypes.AT_SERVICE).test(getType());
 		}
 
 		/*
@@ -232,7 +232,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isController() {
-			return Types.isAnnotatedWith(SpringTypes.AT_CONTROLLER).apply(getType());
+			return Types.isAnnotatedWith(SpringTypes.AT_CONTROLLER).test(getType());
 		}
 
 		/*
@@ -250,7 +250,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isConfigurationProperties() {
-			return Types.isAnnotatedWith(SpringTypes.AT_CONFIGURATION_PROPERTIES).apply(getType());
+			return Types.isAnnotatedWith(SpringTypes.AT_CONFIGURATION_PROPERTIES).test(getType());
 		}
 
 		/*
@@ -329,7 +329,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isRepository() {
-			return SpringDataTypes.isSpringDataRepository().apply(getType());
+			return SpringDataTypes.isSpringDataRepository().test(getType());
 		}
 
 		/*
@@ -338,14 +338,15 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isController() {
-			return Types.isAnnotatedWith("org.springframework.data.rest.webmvc.BasePathAwareController").apply(getType());
+			return Types.isAnnotatedWith("org.springframework.data.rest.webmvc.BasePathAwareController")
+					.test(getType());
 		}
 	}
 
 	static class JMoleculesArchitecturallyEvidentType extends ArchitecturallyEvidentType {
 
 		private static final Predicate<JavaMethod> IS_ANNOTATED_EVENT_LISTENER = Types
-				.isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER)::apply;
+				.isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER)::test;
 
 		JMoleculesArchitecturallyEvidentType(JavaClass type) {
 			super(type);
@@ -360,7 +361,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Entity.class).apply(type) || //
+			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Entity.class).test(type) || //
 					type.isAssignableTo(org.jmolecules.ddd.types.Entity.class);
 		}
 
@@ -373,7 +374,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class).apply(type) //
+			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class).test(type) //
 					|| type.isAssignableTo(org.jmolecules.ddd.types.AggregateRoot.class);
 		}
 
@@ -386,7 +387,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Repository.class).apply(type)
+			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Repository.class).test(type)
 					|| type.isAssignableTo(org.jmolecules.ddd.types.Repository.class);
 		}
 
@@ -399,7 +400,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Service.class).apply(type);
+			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Service.class).test(type);
 		}
 
 		/*
@@ -414,15 +415,18 @@ public abstract class ArchitecturallyEvidentType {
 
 	static class DelegatingType extends ArchitecturallyEvidentType {
 
-		private final Supplier<Boolean> isAggregateRoot, isRepository, isEntity, isService, isController, isEventListener,
+		private final Supplier<Boolean> isAggregateRoot, isRepository, isEntity, isService, isController,
+				isEventListener,
 				isConfigurationProperties;
 		private final Supplier<Collection<JavaClass>> referenceTypes;
 		private final Supplier<Collection<ReferenceMethod>> referenceMethods;
 
 		DelegatingType(JavaClass type, Supplier<Boolean> isAggregateRoot,
 				Supplier<Boolean> isRepository, Supplier<Boolean> isEntity, Supplier<Boolean> isService,
-				Supplier<Boolean> isController, Supplier<Boolean> isEventListener, Supplier<Boolean> isConfigurationProperties,
-				Supplier<Collection<JavaClass>> referenceTypes, Supplier<Collection<ReferenceMethod>> referenceMethods) {
+				Supplier<Boolean> isController, Supplier<Boolean> isEventListener,
+				Supplier<Boolean> isConfigurationProperties,
+				Supplier<Collection<JavaClass>> referenceTypes,
+				Supplier<Collection<ReferenceMethod>> referenceMethods) {
 
 			super(type);
 

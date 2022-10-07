@@ -772,7 +772,7 @@ public class ApplicationModule {
 					DependencyType.USES_COMPONENT);
 
 			this.member = member;
-			this.isConfigurationClass = isConfiguration().apply(origin);
+			this.isConfigurationClass = isConfiguration().test(origin);
 		}
 
 		/*
@@ -887,8 +887,8 @@ public class ApplicationModule {
 		}
 
 		public static DependencyType forCodeUnit(JavaCodeUnit codeUnit) {
-			return Types.isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).apply(codeUnit) //
-					|| Types.isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER).apply(codeUnit) //
+			return Types.isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).test(codeUnit) //
+					|| Types.isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER).test(codeUnit) //
 							? EVENT_LISTENER
 							: DEFAULT;
 		}

@@ -108,7 +108,7 @@ public class Classes implements DescribedIterable<JavaClass> {
 		Assert.notNull(predicate, "Predicate must not be null!");
 
 		return classes.stream() //
-				.filter((Predicate<JavaClass>) it -> predicate.apply(it)) //
+				.filter((Predicate<JavaClass>) it -> predicate.test(it)) //
 				.collect(Collectors.collectingAndThen(Collectors.toList(), Classes::new));
 	}
 
@@ -166,7 +166,8 @@ public class Classes implements DescribedIterable<JavaClass> {
 		return classes.stream() //
 				.filter(it -> it.isEquivalentTo(type)) //
 				.findFirst() //
-				.orElseThrow(() -> new IllegalArgumentException(String.format("No JavaClass found for type %s!", type)));
+				.orElseThrow(
+						() -> new IllegalArgumentException(String.format("No JavaClass found for type %s!", type)));
 	}
 
 	/*
@@ -227,10 +228,10 @@ public class Classes implements DescribedIterable<JavaClass> {
 
 		/*
 		 * (non-Javadoc)
-		 * @see com.tngtech.archunit.base.DescribedPredicate#apply(java.lang.Object)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
 		 */
 		@Override
-		public boolean apply(@Nullable JavaClass input) {
+		public boolean test(@Nullable JavaClass input) {
 			return input != null && reference.getName().equals(input.getName());
 		}
 	}

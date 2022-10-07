@@ -125,7 +125,7 @@ class Types {
 		}
 
 		static boolean isAtBeanMethod(JavaMethod method) {
-			return isAnnotatedWith(SpringTypes.AT_BEAN).apply(method);
+			return isAnnotatedWith(SpringTypes.AT_BEAN).test(method);
 		}
 	}
 

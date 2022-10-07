@@ -59,7 +59,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	static {
 
-		List<ApplicationModuleDetectionStrategy> loadFactories = SpringFactoriesLoader.loadFactories(ApplicationModuleDetectionStrategy.class,
+		List<ApplicationModuleDetectionStrategy> loadFactories = SpringFactoriesLoader.loadFactories(
+				ApplicationModuleDetectionStrategy.class,
 				ApplicationModules.class.getClassLoader());
 
 		if (loadFactories.size() > 1) {
@@ -69,7 +70,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 							loadFactories));
 		}
 
-		DETECTION_STRATEGY = loadFactories.isEmpty() ? ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES : loadFactories.get(0);
+		DETECTION_STRATEGY = loadFactories.isEmpty() ? ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES
+				: loadFactories.get(0);
 	}
 
 	private final ModulithMetadata metadata;
@@ -80,7 +82,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private boolean verified;
 
-	private ApplicationModules(ModulithMetadata metadata, Collection<String> packages, DescribedPredicate<JavaClass> ignored,
+	private ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
+			DescribedPredicate<JavaClass> ignored,
 			boolean useFullyQualifiedModuleNames) {
 
 		this.metadata = metadata;
@@ -105,8 +108,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Creates a new {@link ApplicationModules} relative to the given modulith type. Will inspect the {@link Modulith} annotation on
-	 * the class given for advanced customizations of the module setup.
+	 * Creates a new {@link ApplicationModules} relative to the given modulith type. Will inspect the {@link Modulith}
+	 * annotation on the class given for advanced customizations of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @return
@@ -116,9 +119,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Creates a new {@link ApplicationModules} relative to the given modulith type, a {@link ApplicationModuleDetectionStrategy} and a
-	 * {@link DescribedPredicate} which types and packages to ignore. Will inspect the {@link Modulith} and
-	 * {@link Modulithic} annotations on the class given for advanced customizations of the module setup.
+	 * Creates a new {@link ApplicationModules} relative to the given modulith type, a
+	 * {@link ApplicationModuleDetectionStrategy} and a {@link DescribedPredicate} which types and packages to ignore.
+	 * Will inspect the {@link Modulith} and {@link Modulithic} annotations on the class given for advanced
+	 * customizations of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @param detection must not be {@literal null}.
@@ -371,7 +375,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 			return Arrays.stream(names) //
 					.map(it -> withoutModule(it)) //
-					.reduce(DescribedPredicate.alwaysFalse(), DescribedPredicate::or, (__, right) -> right);
+					.reduce(DescribedPredicate.alwaysFalse(), (left, right) -> left.or(right), (__, right) -> right);
 		}
 
 		public static DescribedPredicate<JavaClass> withoutModule(String name) {

@@ -69,7 +69,7 @@ public class SpringBean {
 	}
 
 	public boolean isAnnotatedWith(Class<?> type) {
-		return Types.isAnnotatedWith(type).apply(this.type);
+		return Types.isAnnotatedWith(type).test(this.type);
 	}
 
 	public ArchitecturallyEvidentType toArchitecturallyEvidentType() {

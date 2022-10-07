@@ -22,15 +22,14 @@ import org.junit.jupiter.api.Test;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
-import com.tngtech.archunit.core.importer.ImportOptions;
 
 /**
  * @author Oliver Drotbohm
  */
 class JavaPackageUnitTests {
 
-	static final ImportOptions NO_TESTS = new ImportOptions().with(new ImportOption.DoNotIncludeTests());
-	static final JavaClasses ALL_CLASSES = new ClassFileImporter(NO_TESTS) //
+	static final JavaClasses ALL_CLASSES = new ClassFileImporter() //
+			.withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
 			.importPackages("com.acme.myproject");
 
 	@Test
