@@ -3,6 +3,7 @@ Oliver Drotbohm
 :revnumber: {version}
 :revdate: {localdate}
 :toc: left
+:iconfont-fontawesome:
 
 © 2022 The original authors.
 

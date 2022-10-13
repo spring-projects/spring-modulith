@@ -31,7 +31,7 @@
 		<jmolecules-bom.version>2021.2.4</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring-asciidoctor-backends.version>0.0.3</spring-asciidoctor-backends.version>
+		<spring-asciidoctor-backends.version>0.0.4-SNAPSHOT</spring-asciidoctor-backends.version>
 		<spring-boot.version>3.0.0-SNAPSHOT</spring-boot.version>
 
 	</properties>
@@ -543,6 +543,16 @@ limitations under the License.
 		<pluginRepository>
 			<id>spring-plugins-release</id>
 			<url>https://repo.spring.io/plugins-release</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
+			<id>spring-plugins-snaposhot</id>
+			<url>https://repo.spring.io/plugins-snapshot</url>
+			<releases>
+				<enabled>false</enabled>
+			</releases>
 		</pluginRepository>
 	</pluginRepositories>
 
