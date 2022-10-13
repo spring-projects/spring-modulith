@@ -11,7 +11,7 @@ NOTE: Copies of this document may be made for your own use and for distribution 
 
 :leveloffset: +1
 
-include::00-preface.adoc[]
+// include::00-preface.adoc[]
 
 include::10-fundamentals.adoc[]
 

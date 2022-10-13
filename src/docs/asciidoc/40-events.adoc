@@ -30,6 +30,9 @@ The `complete(…)` method creates functional gravity in the sense that it attra
 This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see <<testing.efferent-dependencies>>).
 It also means that we will have to touch the class whenever we would like to integrate further functionality with the business event order completion.
 
+We can change the application module interaction as follows:
+
+.Publishing an application event via Spring's `ApplicationEventListener`
 [source, java]
 ----
 @Service
@@ -49,12 +52,14 @@ public class OrderManagement {
 }
 ----
 
-Note, how we use Spring's `ApplicationEventPublisher` to publish a domain event, once we have completed the state transitions on the primary aggregate.
+Note, how, instead of depending on the other application module's Spring bean, we use Spring's `ApplicationEventPublisher` to publish a domain event, once we have completed the state transitions on the primary aggregate.
+For a more aggregate-driven approach to even publication, see https://docs.spring.io/spring-data/data-commons/docs/current/reference/html/#core.domain-events[Spring Data's application event publication mechanism] for details.
 As event publication happens synchronously by default, the transactional semantics of the overall arrangement stay the same as in the example above.
 Both for the good, as we get to a very simple consistency model (either both the status change of the order _and_ the inventory update succeed or none of them does), but also for the bad as more triggered related functionality will widen the transaction boundary and potentially cause the entire transaction to fail, even if the functionality that is causing the error is not crucial.
 
 A different way of approaching this is by moving the event consumption to asynchronous handling at transaction commit and treat secondary functionality exactly as that:
 
+.An async, transactional event listener
 [source, java]
 ----
 @Service
@@ -117,3 +122,46 @@ The following starters are available:
 * `spring-modulith-starter-jdbc` -- Using JDBC as persistence technology. Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
 * `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
 
+[[events.integration-testing]]
+== Integration Testing Application Modules Workting with Events
+
+Integration tests for application modules that interact with other modules' Spring beans usually have those mocked and the test cases verify the interaction by verifying that that mock bean was invoked in a particular way.
+
+.Traditional integration testing of the application module interaction
+[source, java, subs="quotes"]
+----
+@ApplicationModuleTest
+class InventoryIntegrationTests {
+
+  **@MockBean SomeOtherComponent someOtherComponent;**
+
+  @Test
+  void someTestMethod() {
+
+    // Given
+    // When
+    // Then
+    **verify(someOtherComponent).someMethodCall();**
+  }
+}
+----
+
+In an event-based application interaction model, the dependency to the other application module's Spring bean is gone and we have nothing to verify.
+Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `PublishedEvents` instance injected into the test method to verify a particular set of events has been published during the course of the business operation under test.
+
+.Event-based intergration testing of the application module arrangement
+[source, java, subs="quotes"]
+----
+@ApplicationModuleTest
+class InventoryIntegrationTests {
+
+  @Test
+  void someTestMethod(**PublishedEvents events**) {
+
+    // Given
+    // When
+    // Then
+    **assertThat(events.…).…;**
+  }
+}
+----

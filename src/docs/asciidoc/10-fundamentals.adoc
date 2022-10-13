@@ -30,6 +30,7 @@ Thus, naturally, the module's API consists of all public types in the package.
 
 Let us have a look at an example arrangement (icon:plus-circle[] denotes a public type, icon:minus-circle[] a package protected one).
 
+.A single inventory application module
 [source, subs="macros"]
 ----
 icon:cubes[] Example
@@ -48,7 +49,8 @@ icon:cubes[] Example
 
 If an application module package contains sub-packages, types in those might need to be made public so that it can be referred to from code of the very same module.
 
-[source, subs="macros"]
+.An inventory and order application module
+[source, subs="macros, quotes"]
 ----
 icon:cubes[] Example
 └─ icon:folder[] src/main/java
@@ -57,7 +59,7 @@ icon:cubes[] Example
    ├─ icon:cube[] example.inventory
    |  ├─ icon:plus-circle[] InventoryManagement.java
    |  └─ icon:minus-circle[] SomethingInventoryInternal.java
-   ├─ icon:cube[] example.order
+   ├─ **icon:cube[] example.order**
    |  └─ icon:plus-circle[] OrderManagement.java
    └─ icon:cube[] example.order.internal
       └─ icon:plus-circle[] SomethingOrderInternal.java
@@ -70,12 +72,29 @@ Code within those must not be referred to from other modules.
 Note, how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
 This unfortunately means, that it can also be referred to from other packages such as the `inventory` one.
 
+[[fundamentals.modules.explicit-dependencies]]
+=== Explicit Application Module Dependencies
+A module can opt into declaring its allowed dependencies by using the `@ApplicationModule` annotation on the `package-info.java` type.
+
+.Inventory explicitly configuring module dependencies
+[source, java]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order"
+)
+package example.inventory;
+----
+
+In this case code within the __inventory__ module was only allowed to refer to code in the __order__ module (and code not assigned to any module in the first place).
+Find out about how to monitor that in <<verification>>.
+
 [[fundamentals.modules.application-modules]]
 === The `ApplicationModules` Type
 
 Spring Moduliths allows to inspect a codebase to derive an application module model based on the given arrangement and optional configuration.
 The `spring-modulith-core` artifact contains `ApplicationModules` that can be pointed to a Spring Boot application class:
 
+.Creating an application module model
 [source, java]
 ----
 var modules = ApplicationModules.of(Application.class);
@@ -83,11 +102,13 @@ var modules = ApplicationModules.of(Application.class);
 
 To get an impression about what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
 
+.Writing the application module arranagement to the console
 [source, java]
 ----
 modules.forEach(System.out::println);
 ----
 
+.The console output of our application module arrangement
 [source]
 ----
 ## example.inventory ##
@@ -109,3 +130,49 @@ Note, how each module is listed and the contained Spring components are identifi
 
 [[fundamentals.modules.named-interface]]
 === Named Interfaces
+
+By default and as described in <<fundamentals.modules.advanced>>, an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
+In case you would like to expose additional packages to other modules, you need to use __named interfaces__.
+You achieve that by annotating the `package-info.java` file of those package with `@NamedInterface`.
+
+.A package arrangement to encapsulate an SPI named interface
+[source, text, subs="macros, quotes"]
+----
+icon:cubes[] Example
+└─ icon:folder[] src/main/java
+   ├─ icon:cube[] example
+   |  └─ icon:plus-circle[] Application.java
+   ├─ …
+   ├─ icon:cube[] example.order
+   |  └─ icon:plus-circle[] OrderManagement.java
+   ├─ **icon:cube[] example.order.spi**
+   |  ├— icon:coffee[] package-info.java
+   |  └─ icon:plus-circle[] SomeSpiInterface.java
+   └─ icon:cube[] example.order.internal
+      └─ icon:plus-circle[] SomethingOrderInternal.java
+----
+
+.`package-info.java` in `example.order.spi`
+[source, java]
+----
+@org.springframework.modulith.NamedInterface("spi")
+package example.order.spi;
+----
+
+The effect of that declaration is two fold: first, code in other application modules is allowed to refer to `SomeSpiInterface`.
+Application modules are able to refer to the named interface in explicit dependency declarations.
+Assume the __inventory__ module was making use of that, it could refer to the above declared named interface like this:
+
+[source, java]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order::spi"
+)
+package example.inventory;
+----
+
+Note how we concatenate the named interface's name `spi` via the double colon `::`.
+In this setup, code in __inventory__ would be allowed to depend on `SomeSpiInterface` and other code residing in the `order.spi` interface, but not on `OrderManagement` for example.
+For modules without explicitly described dependencies, both the application module root package *and* the SPI one are accessible.
+
+
