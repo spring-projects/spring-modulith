@@ -1,0 +1,74 @@
+= Spring Modulith
+:docs: https://docs.spring.io/spring-modulith/docs/current-SNAPSHOT/reference/html/
+
+Spring Modulith allows developers to build well-structured Spring Boot applications and guides developers in finding and working with link:{docs}#fundamentals.modules.application-modules[application modules] driven by the domain.
+It supports the link:{docs}#verification[verification] of such modular arrangements, link:{docs}#testing[integration testing] individual modules, link:{docs}#observability[observing] the application's behavior on the module level and creating link:{docs}#documentation[documentation snippets] based on the arrangement created.
+
+== Quickstart
+
+. Create a Spring Boot application on https://start.spring.io
+. Create a Java package arrangement that puts business modules as link:{docs}#fundamentals[direct sub-packages of the application's main package].
++
+[source, text, subs="macros"]
+----
+□ Example
+└─ □ src/main/java
+   ├─ □ example           <1>
+   |  └─ Application.java
+   ├─ □ example.inventory <2>
+   |  └─ …
+   └─ □ example.order     <2>
+      └─ …
+----
+<1> The application root package
+<2> Application module packages
+. Create link:{docs}#fundamentals.modules.application-modules[an `ApplicationModules` model], run link:{docs}#verification[verifications] and link:{docs}#documentation[create documentation snippets].
++
+[source, java]
+----
+class ApplicationTests {
+
+  @Test
+  void writeDocumentationSnippets() {
+
+    var modules = ApplicationModules.of(Application.class).verify(); <1>
+
+    new Documenter(modules) <2>
+      .writeModulesAsPlantUml()
+      .writeIndividualModulesAsPlantUml();
+  }
+}
+----
+<1> Creates application module model and link:{docs}#verification[verifies its structure].
+<2> Renders link:{docs}#documentation[Asciidoctor snippets] (component diagrams, application module canvas) to `target/modulith-docs`.
+. Run link:{docs}#testing[integration tests] for individual application modules.
++
+[source, text, subs="macros"]
+----
+□ Example
+└─ □ src/test/java
+   └─ □ example.order
+      └─ OrderModuleIntegrationTests.java
+----
++
+[source, java]
+----
+@ApplicationModuleTests
+class OrderModuleIntegrationTests {
+
+  @Test
+  void someTestMethod() { … }
+}
+----
+
+== Reference documentation
+
+Find the reference documentation link:{docs}[here].
+
+== Contributing
+
+https://help.github.com/articles/creating-a-pull-request[Pull requests] are welcome. Note, that we expect everyone to follow the https://github.com/spring-projects/.github/blob/main/CODE_OF_CONDUCT.md[code of conduct].
+
+== License
+Spring Modulith is Open Source software released under the
+https://www.apache.org/licenses/LICENSE-2.0.html[Apache 2.0 license].
