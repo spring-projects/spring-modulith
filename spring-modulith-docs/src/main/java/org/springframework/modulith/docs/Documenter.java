@@ -137,25 +137,11 @@ public class Documenter {
 		this.properties = new ConfigurationProperties();
 	}
 
-	private Map<ApplicationModule, Component> getComponents(Options options) {
-
-		if (components == null) {
-
-			this.components = modules.stream() //
-					.collect(Collectors.toMap(Function.identity(),
-							it -> container.addComponent(options.getDefaultDisplayName().apply(it), "", "Module")));
-
-			this.components.forEach((key, value) -> addDependencies(key, value, options));
-		}
-
-		return components;
-	}
-
 	/**
 	 * Customize the output folder to write the generated files to. Defaults to {@value #DEFAULT_LOCATION}.
 	 *
 	 * @param outputFolder must not be {@literal null} or empty.
-	 * @return
+	 * @return the current instance, will never be {@literal null}.
 	 * @see #DEFAULT_LOCATION
 	 */
 	public Documenter withOutputFolder(String outputFolder) {
@@ -169,12 +155,27 @@ public class Documenter {
 	 * <li>Individual component diagrams per module to include all upstream modules.</li>
 	 * <li>The Module Canvas for each module.</li>
 	 * </ul>
+	 * using {@link DiagramOptions#defaults()} and {@link CanvasOptions#defaults()}.
 	 *
-	 * @param options must not be {@literal null}, use {@link Options#defaults()} for default.
-	 * @param canvasOptions must not be {@literal null}, use {@link CanvasOptions#defaults()} for default.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeDocumentation(Options options, CanvasOptions canvasOptions) {
+	public Documenter writeDocumentation() {
+		return writeDocumentation(DiagramOptions.defaults(), CanvasOptions.defaults());
+	}
+
+	/**
+	 * Writes all available documentation:
+	 * <ul>
+	 * <li>The entire set of modules as overview component diagram.</li>
+	 * <li>Individual component diagrams per module to include all upstream modules.</li>
+	 * <li>The Module Canvas for each module.</li>
+	 * </ul>
+	 *
+	 * @param options must not be {@literal null}.
+	 * @param canvasOptions must not be {@literal null}.
+	 * @return the current instance, will never be {@literal null}.
+	 */
+	public Documenter writeDocumentation(DiagramOptions options, CanvasOptions canvasOptions) {
 
 		return writeModulesAsPlantUml(options)
 				.writeIndividualModulesAsPlantUml(options) //
@@ -182,11 +183,21 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes the PlantUML component diagram for all {@link ApplicationModules}.
+	 * Writes the PlantUML component diagram for all {@link ApplicationModules} using {@link DiagramOptions#defaults()}.
+	 *
+	 * @return the current instance, will never be {@literal null}.
+	 */
+	public Documenter writeModulesAsPlantUml() {
+		return writeModulesAsPlantUml(DiagramOptions.defaults());
+	}
+
+	/**
+	 * Writes the PlantUML component diagram for all {@link ApplicationModules} with the given {@link DiagramOptions}.
 	 *
 	 * @param options must not be {@literal null}.
+	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeModulesAsPlantUml(Options options) {
+	public Documenter writeModulesAsPlantUml(DiagramOptions options) {
 
 		Assert.notNull(options, "Options must not be null!");
 
@@ -201,13 +212,19 @@ public class Documenter {
 		return this;
 	}
 
+	public Documenter writeIndividualModulesAsPlantUml() {
+		return writeIndividualModulesAsPlantUml(DiagramOptions.defaults());
+	}
+
 	/**
 	 * Writes the component diagrams for all individual modules.
 	 *
 	 * @param options must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeIndividualModulesAsPlantUml(Options options) {
+	public Documenter writeIndividualModulesAsPlantUml(DiagramOptions options) {
+
+		Assert.notNull(options, "DiagramOptions must not be null!");
 
 		modules.forEach(it -> writeModuleAsPlantUml(it, options));
 
@@ -224,18 +241,18 @@ public class Documenter {
 
 		Assert.notNull(module, "Module must not be null!");
 
-		return writeModuleAsPlantUml(module, Options.defaults());
+		return writeModuleAsPlantUml(module, DiagramOptions.defaults());
 	}
 
 	/**
 	 * Writes the PlantUML component diagram for the given {@link ApplicationModule} with the given rendering
-	 * {@link Options}.
+	 * {@link DiagramOptions}.
 	 *
 	 * @param module must not be {@literal null}.
 	 * @param options must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeModuleAsPlantUml(ApplicationModule module, Options options) {
+	public Documenter writeModuleAsPlantUml(ApplicationModule module, DiagramOptions options) {
 
 		Assert.notNull(module, "Module must not be null!");
 		Assert.notNull(options, "Options must not be null!");
@@ -253,7 +270,7 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes all module canvases using {@link Options#defaults()}.
+	 * Writes all module canvases using {@link DiagramOptions#defaults()}.
 	 *
 	 * @return the current instance, will never be {@literal null}.
 	 */
@@ -261,7 +278,15 @@ public class Documenter {
 		return writeModuleCanvases(CanvasOptions.defaults());
 	}
 
+	/**
+	 * Writes all module canvases using the given {@link DiagramOptions}.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @return the current instance, will never be {@literal null}.
+	 */
 	public Documenter writeModuleCanvases(CanvasOptions options) {
+
+		Assert.notNull(options, "CanvasOptions must not be null!");
 
 		modules.forEach(module -> {
 
@@ -280,15 +305,15 @@ public class Documenter {
 		return this;
 	}
 
-	public String toModuleCanvas(ApplicationModule module) {
+	String toModuleCanvas(ApplicationModule module) {
 		return toModuleCanvas(module, CanvasOptions.defaults());
 	}
 
-	public String toModuleCanvas(ApplicationModule module, String apiBase) {
+	String toModuleCanvas(ApplicationModule module, String apiBase) {
 		return toModuleCanvas(module, CanvasOptions.defaults().withApiBase(apiBase));
 	}
 
-	public String toModuleCanvas(ApplicationModule module, CanvasOptions options) {
+	String toModuleCanvas(ApplicationModule module, CanvasOptions options) {
 
 		Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(modules, options.getApiBase());
 		Function<List<JavaClass>, String> mapper = asciidoctor::typesToBulletPoints;
@@ -314,11 +339,11 @@ public class Documenter {
 		return types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
 	}
 
-	public String toPlantUml() {
-		return createPlantUml(Options.defaults());
+	String toPlantUml() {
+		return createPlantUml(DiagramOptions.defaults());
 	}
 
-	private void addDependencies(ApplicationModule module, Component component, Options options) {
+	private void addDependencies(ApplicationModule module, Component component, DiagramOptions options) {
 
 		DEPENDENCY_DESCRIPTIONS.entrySet().stream().forEach(entry -> {
 
@@ -339,7 +364,21 @@ public class Documenter {
 				});
 	}
 
-	private void addComponentsToView(ApplicationModule module, ComponentView view, Options options) {
+	private Map<ApplicationModule, Component> getComponents(DiagramOptions options) {
+
+		if (components == null) {
+
+			this.components = modules.stream() //
+					.collect(Collectors.toMap(Function.identity(),
+							it -> container.addComponent(options.getDefaultDisplayName().apply(it), "", "Module")));
+
+			this.components.forEach((key, value) -> addDependencies(key, value, options));
+		}
+
+		return components;
+	}
+
+	private void addComponentsToView(ApplicationModule module, ComponentView view, DiagramOptions options) {
 
 		Supplier<Stream<ApplicationModule>> bootstrapDependencies = () -> module.getBootstrapDependencies(modules,
 				options.getDependencyDepth());
@@ -352,7 +391,8 @@ public class Documenter {
 		addComponentsToView(dependencies, view, options, it -> it.add(getComponents(options).get(module)));
 	}
 
-	private void addComponentsToView(Supplier<Stream<ApplicationModule>> modules, ComponentView view, Options options,
+	private void addComponentsToView(Supplier<Stream<ApplicationModule>> modules, ComponentView view,
+			DiagramOptions options,
 			Consumer<ComponentView> afterCleanup) {
 
 		Styles styles = view.getViewSet().getConfiguration().getStyles();
@@ -409,8 +449,9 @@ public class Documenter {
 				.findFirst().ifPresent(view::remove);
 	}
 
-	private static Component applyBackgroundColor(ApplicationModule module, Map<ApplicationModule, Component> components,
-			Options options,
+	private static Component applyBackgroundColor(ApplicationModule module,
+			Map<ApplicationModule, Component> components,
+			DiagramOptions options,
 			Styles styles) {
 
 		Component component = components.get(module);
@@ -433,7 +474,7 @@ public class Documenter {
 		return component;
 	}
 
-	private Documenter writeViewAsPlantUml(ComponentView view, String filename, Options options) {
+	private Documenter writeViewAsPlantUml(ComponentView view, String filename, DiagramOptions options) {
 
 		Path file = recreateFile(filename);
 
@@ -448,7 +489,7 @@ public class Documenter {
 		}
 	}
 
-	private String render(ComponentView view, Options options) {
+	private String render(ComponentView view, DiagramOptions options) {
 
 		switch (options.style) {
 
@@ -470,7 +511,7 @@ public class Documenter {
 		}
 	}
 
-	private String createPlantUml(Options options) {
+	private String createPlantUml(DiagramOptions options) {
 
 		ComponentView componentView = createComponentView(options);
 		componentView.setTitle(modules.getSystemName().orElse("Modules"));
@@ -480,11 +521,11 @@ public class Documenter {
 		return render(componentView, options);
 	}
 
-	private ComponentView createComponentView(Options options) {
+	private ComponentView createComponentView(DiagramOptions options) {
 		return createComponentView(options, null);
 	}
 
-	private ComponentView createComponentView(Options options, @Nullable ApplicationModule module) {
+	private ComponentView createComponentView(DiagramOptions options, @Nullable ApplicationModule module) {
 
 		String prefix = module == null ? "modules-" : module.getName();
 
@@ -533,7 +574,7 @@ public class Documenter {
 	 */
 	@Getter(AccessLevel.PRIVATE)
 	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-	public static class Options {
+	public static class DiagramOptions {
 
 		private static final Set<DependencyType> ALL_TYPES = Arrays.stream(DependencyType.values())
 				.collect(Collectors.toSet());
@@ -551,7 +592,8 @@ public class Documenter {
 		private final @With Predicate<ApplicationModule> exclusions;
 
 		/**
-		 * A {@link Predicate} to define which Structurizr {@link Component}s to be included in the diagram to be created.
+		 * A {@link Predicate} to define which Structurizr {@link Component}s to be included in the diagram to be
+		 * created.
 		 */
 		private final @With Predicate<Component> componentFilter;
 
@@ -574,8 +616,8 @@ public class Documenter {
 		private final @With Function<ApplicationModule, Optional<String>> colorSelector;
 
 		/**
-		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation just
-		 * forwards to {@link ApplicationModule#getDisplayName()}.
+		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation
+		 * just forwards to {@link ApplicationModule#getDisplayName()}.
 		 */
 		private final @With Function<ApplicationModule, String> defaultDisplayName;
 
@@ -587,23 +629,24 @@ public class Documenter {
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
 		 * retained in the diagrams created. The default is {@value ElementsWithoutRelationships#HIDDEN}. See
-		 * {@link Options#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude in
-		 * case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
+		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to
+		 * exclude in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *
 		 * @see #withExclusions(Predicate)
 		 */
 		private final @With ElementsWithoutRelationships elementsWithoutRelationships;
 
 		/**
-		 * Creates a new default {@link Options} instance configured to use all dependency types, list immediate
+		 * Creates a new default {@link DiagramOptions} instance configured to use all dependency types, list immediate
 		 * dependencies for individual module instances, not applying any kind of {@link ApplicationModule} or
 		 * {@link Component} filters and default file names.
 		 *
 		 * @return will never be {@literal null}.
 		 */
-		public static Options defaults() {
-			return new Options(ALL_TYPES, DependencyDepth.IMMEDIATE, it -> false, it -> true, it -> false, null,
-					__ -> Optional.empty(), it -> it.getDisplayName(), DiagramStyle.C4, ElementsWithoutRelationships.HIDDEN);
+		public static DiagramOptions defaults() {
+			return new DiagramOptions(ALL_TYPES, DependencyDepth.IMMEDIATE, it -> false, it -> true, it -> false, null,
+					__ -> Optional.empty(), it -> it.getDisplayName(), DiagramStyle.C4,
+					ElementsWithoutRelationships.HIDDEN);
 		}
 
 		/**
@@ -612,13 +655,14 @@ public class Documenter {
 		 * @param types must not be {@literal null}.
 		 * @return
 		 */
-		public Options withDependencyTypes(DependencyType... types) {
+		public DiagramOptions withDependencyTypes(DependencyType... types) {
 
 			Assert.notNull(types, "Dependency types must not be null!");
 
 			Set<DependencyType> dependencyTypes = Arrays.stream(types).collect(Collectors.toSet());
 
-			return new Options(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly, targetFileName,
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName,
 					colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
 		}
 
@@ -657,11 +701,11 @@ public class Documenter {
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
 		 * retained in the diagrams created. The default is {@value ElementsWithoutRelationships#HIDDEN}. See
-		 * {@link Options#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude in
-		 * case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
+		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to
+		 * exclude in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *
 		 * @author Oliver Drotbohm
-		 * @see Options#withExclusions(Predicate)
+		 * @see DiagramOptions#withExclusions(Predicate)
 		 */
 		public enum ElementsWithoutRelationships {
 			HIDDEN, VISIBLE;

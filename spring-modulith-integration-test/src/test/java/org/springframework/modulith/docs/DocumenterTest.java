@@ -26,7 +26,7 @@ import java.util.Comparator;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.docs.Documenter.Options;
+import org.springframework.modulith.docs.Documenter.DiagramOptions;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModule.DependencyType;
 
@@ -52,11 +52,11 @@ class DocumenterTest {
 		ApplicationModule module = documenter.getModules().getModuleByName("moduleB") //
 				.orElseThrow(() -> new IllegalArgumentException());
 
-		documenter.writeModuleAsPlantUml(module, Options.defaults() //
+		documenter.writeModuleAsPlantUml(module, DiagramOptions.defaults() //
 				.withColorSelector(it -> Optional.of("#ff0000")) //
 				.withDefaultDisplayName(it -> it.getDisplayName().toUpperCase()));
 
-		Options options = Options.defaults() //
+		DiagramOptions options = DiagramOptions.defaults() //
 				.withComponentFilter(component -> component.getRelationships().stream()
 						.anyMatch(it -> it.getTagsAsSet().contains(DependencyType.EVENT_LISTENER.toString())));
 

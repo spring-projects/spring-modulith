@@ -17,8 +17,6 @@ package example;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.docs.Documenter;
-import org.springframework.modulith.docs.Documenter.CanvasOptions;
-import org.springframework.modulith.docs.Documenter.Options;
 import org.springframework.modulith.model.ApplicationModules;
 
 /**
@@ -37,10 +35,6 @@ class ModularityTests {
 
 	@Test
 	void createModuleDocumentation() {
-
-		var canvasOptions = CanvasOptions.defaults();
-
-		new Documenter(modules) //
-				.writeDocumentation(Options.defaults(), canvasOptions);
+		new Documenter(modules).writeDocumentation();
 	}
 }
