@@ -121,8 +121,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	/**
 	 * Creates a new {@link ApplicationModules} relative to the given modulith type, a
 	 * {@link ApplicationModuleDetectionStrategy} and a {@link DescribedPredicate} which types and packages to ignore.
-	 * Will inspect the {@link Modulith} and {@link Modulithic} annotations on the class given for advanced
-	 * customizations of the module setup.
+	 * Will inspect the {@link Modulith} and {@link Modulithic} annotations on the class given for advanced customizations
+	 * of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @param detection must not be {@literal null}.
@@ -280,10 +280,15 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.findFirst();
 	}
 
-	public void verify() {
+	/**
+	 * Execute all verifications to be applied, unless the verifcation has been executed before.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public ApplicationModules verify() {
 
 		if (verified) {
-			return;
+			return this;
 		}
 
 		Violations violations = detectViolations();
@@ -291,8 +296,17 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.verified = true;
 
 		violations.throwIfPresent();
+
+		return this;
 	}
 
+	/**
+	 * Executes all verifications to be applied and returns {@link Violations} if any occured. Will always execute the
+	 * verifications in contrast to {@link #verify()} which just runs once.
+	 *
+	 * @return will never be {@literal null}.
+	 * @see Violations#throwIfPresent()
+	 */
 	public Violations detectViolations() {
 
 		Violations violations = rootPackages.stream() //
