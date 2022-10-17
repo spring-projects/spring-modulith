@@ -1,0 +1,26 @@
+[[observability]]
+= Observing Application Modules
+:imagesdir: images
+
+The interaction between application modules can be intercepted to create Micrometer spans to ultimately end up in traces you can visualize in tools like https://zipkin.io/[Zipkin].
+To activate the instrumentation add the following runtime dependency to your project:
+
+[source, xml]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>spring-modulith</artifactId>
+  <version>{projectVersion}</version>
+  <scope>runtime</scope
+</dependency
+----
+
+This will cause all Spring components that are part of the application module's API being decorated with an aspect that will intercept invocations and create Micrometer spans for them.
+A sample invocation trace can be seen below:
+
+.A sample module invocation trace
+image::observability.png[]
+
+In this particular case, triggering the payment changes the state of the order which then causes an order completion event being triggered.
+This gets picked up asynchronously by the engine that triggers another state change on the order, works for a couple of seconds and triggers the final state change on the order in turn.
+
