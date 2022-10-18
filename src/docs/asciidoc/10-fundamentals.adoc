@@ -12,17 +12,17 @@ In a Spring Boot application, an application module is a unit of functionality t
 
 * An API exposed to other modules implemented by Spring bean instances and application events published by the module, usually referred to as _provided interface_.
 * Internal implementation components that are not supposed to be accessed by other modules.
-* References to API exposed by other modules in the form of Spring bean dependencies, application events listened to and configuration properties exposed.
+* References to API exposed by other modules in the form of Spring bean dependencies, application events listened to and configuration properties exposed, usually referred to as _required interface_.
 
-Spring Moduliths provides different ways of expressing modules, primarily differing in the level of complexity involved in the overall arrangement.
+Spring Moduliths provides different ways of expressing modules within Spring Boot applications, primarily differing in the level of complexity involved in the overall arrangement.
 This allows developers to start simple and naturally move to more sophisticated means as and if needed.
 
 [[fundamentals.modules.simple]]
 === Simple Application Modules
 
-The application's main package is the one that the main application class resides in.
-The class, that is annotated with `@SpringBootApplication` and usually contains the `main(…)` method used to run it.
-By default, each direct sub-package of the main package is considered an application module package.
+The application's _main package_ is the one that the main application class resides in.
+That is the class, that is annotated with `@SpringBootApplication` and usually contains the `main(…)` method used to run it.
+By default, each direct sub-package of the main package is considered an _application module package_.
 
 If this package does not contain any sub-packages, it is considered a simple one.
 It allows to hide code inside it by using Java's package scope to hide types from being referred to by code residing in other packages and thus not subject for dependency injection into those.
@@ -31,13 +31,13 @@ Thus, naturally, the module's API consists of all public types in the package.
 Let us have a look at an example arrangement (icon:plus-circle[] denotes a public type, icon:minus-circle[] a package protected one).
 
 .A single inventory application module
-[source, subs="macros"]
+[source, subs="+specialchars, macros"]
 ----
 icon:cubes[] Example
 └─ icon:folder[] src/main/java
-   ├─ icon:cube[] example                      <1>
+   ├─ icon:cube[] example                        <1>
    |  └─ icon:plus-circle[] Application.java
-   └─ icon:cube[] example.inventory            <2>
+   └─ icon:cube[] example.inventory              <2>
       ├─ icon:plus-circle[] InventoryManagement.java
       └─ icon:minus-circle[] SomethingInventoryInternal.java
 ----
@@ -71,6 +71,7 @@ Code from other application modules is allowed to refer to types within that.
 Code within those must not be referred to from other modules.
 Note, how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
 This unfortunately means, that it can also be referred to from other packages such as the `inventory` one.
+In this case, the Java compiler is not of much use to prevent these illegal references.
 
 [[fundamentals.modules.explicit-dependencies]]
 === Explicit Application Module Dependencies
@@ -128,7 +129,7 @@ modules.forEach(System.out::println);
 
 Note, how each module is listed and the contained Spring components are identified and the respective visibility is rendered, too.
 
-[[fundamentals.modules.named-interface]]
+[[fundamentals.modules.named-interfaces]]
 === Named Interfaces
 
 By default and as described in <<fundamentals.modules.advanced>>, an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.

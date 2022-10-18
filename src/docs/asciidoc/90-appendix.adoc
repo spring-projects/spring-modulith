@@ -3,6 +3,43 @@
 :jdbc-schema-base: ../../../spring-modulith-events/spring-modulith-events-jdbc/src/main/resources
 
 [appendix]
+[[appendix.migrating-from-moduliths]]
+== Migrating from Moduliths
+
+* `Modules` -> `ApplicationModules`
+* `@ModuleTest`-> `ApplicationModuleTest`
+
+[appendix]
+[[appendix.artifacts]]
+== Spring Modulith modules
+
+.Spring Modulith starter POMs
+[cols="3,1,5", options="header, unbreakable"]
+|===
+|Starter|Typical scope|Description
+|`spring-modulith-starter-jdbc`|`compile`|Includes `spring-modulith-api`, `spring-modulith-moments` as well as `spring-modulith-events-jdbc`.
+|`spring-modulith-starter-jpa`|`compile`|Includes `spring-modulith-api`, `spring-modulith-moments` as well as `spring-modulith-events-jpa`.
+|`spring-modulith-starter-mongodb`|`compile`|Includes `spring-modulith-api`, `spring-modulith-moments` as well as `spring-modulith-events-mongodb`.
+|`spring-modulith-starter-test`|`compile`|Includes `spring-modulith-docs` and `spring-modulith-test`.
+|===
+
+.Individual Spring Modulith JARs
+[cols="3,1,5", options="header, unbreakable"]
+|===
+|Module|Typical scope|Description
+|`spring-modulith-api`|`compile`|The abstractions to be used in your production code to customize Spring Modulith's default behavior.
+|`spring-modulith-core`|`runtime`|The core application module model and API.
+|`spring-modulith-docs`|`test`|The `Documenter` API to create Asciidoctor and PlantUML documentation from the module model.
+|`spring-modulith-events-core`|`runtime`|The core implementation of the event publication registry as well as the integration abstractions `EventPublicationRegistry` and `EventPublicationSerializer`.
+|`spring-modulith-events-jackson`|`runtime`|A Jackson-based implementation of the `EventPublicationSerializer`.
+|`spring-modulith-events-jdbc`|`runtime`|A JDBC-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-moments`|`compile`|The Passage of Time events implementation described <<moments, here>>.
+|`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
+|===
+
+[appendix]
 [[appendix.schemas]]
 == Event publication registry schemas
 

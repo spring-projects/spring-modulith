@@ -267,6 +267,11 @@ limitations under the License.
 									<version>2.5.3</version>
 								</dependency>
 								<dependency>
+									<groupId>org.asciidoctor</groupId>
+									<artifactId>asciidoctorj-diagram</artifactId>
+									<version>2.2.3</version>
+								</dependency>
+								<dependency>
 									<groupId>io.spring.asciidoctor.backends</groupId>
 									<artifactId>spring-asciidoctor-backends</artifactId>
 									<version>${spring-asciidoctor-backends.version}</version>
@@ -309,6 +314,9 @@ limitations under the License.
 									<toclevels>4</toclevels>
 									<numbered>true</numbered>
 								</attributes>
+								<requires>
+									<require>asciidoctor-diagram</require>
+								</requires>
 							</configuration>
 
 						</plugin>

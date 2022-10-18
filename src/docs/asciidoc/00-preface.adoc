@@ -2,10 +2,35 @@
 [[preface]]
 = Preface
 
-[[preface.subheadline]]
-== Subheadline
-Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
-Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat.
-Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.
+[[preface.project-metadata]]
+== Project Metadata
 
+* Version control https://github.com/spring-projects-experimental/spring-modulith
+* Bug tracker: https://github.com/spring-projects-experimental/spring-modulith
+* Release repository: Maven central
+* Milestone repository: https://repo.spring.io/milestone
+* Snapshot repository: https://repo.spring.io/snapshot
+
+== Using Spring Modulith
+
+Spring Modulith consists of a set of libraries that can be used individually and depending on which features of it you would like to use.
+To ease the declaration of the individual modules, we recommend to declare the following BOM in you Maven POM:
+
+.Using the Spring Modulith  BOM
+[source, xml, subs="+attributes"]
+----
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.experimental</groupId>
+      <artifactId>spring-modulith-bom</artifactId>
+      <version>{projectVersion}</version>
+      <scope>import</scope>
+      <type>pom</type>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+----
+
+The individual sections describing Spring Modulith features will refer to the individual artifacts that are needed to make use of the feature.
+For an overview about all modules available, have a look at <<appendix.artifacts>>.

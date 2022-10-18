@@ -29,8 +29,62 @@ class DocumentationTests {
 }
 ----
 
-The first call on `Documenter` will generate a C4 component diagram containin all modules within the system.
+The first call on `Documenter` will generate a C4 component diagram containing all modules within the system.
+
+.All modules and their relationships rendered as C4 component diagram
+[plantuml, c4-all-modules, svg]
+....
+top to bottom direction
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary("Modulith.Application_boundary", "Application") {
+  Component(Modulith.Application.core, "core", "Module", "", $tags="")
+  Component(Modulith.Application.catalog, "catalog", "Module", "", $tags="")
+  Component(Modulith.Application.inventory, "inventory", "Module", "", $tags="")
+  Component(Modulith.Application.order, "order", "Module", "", $tags="")
+  Component(Modulith.Application.customer, "customer", "Module", "", $tags="")
+}
+
+Rel_D(Modulith.Application.order, Modulith.Application.core, "depends on", $tags="")
+Rel_D(Modulith.Application.order, Modulith.Application.customer, "uses", $tags="")
+Rel_D(Modulith.Application.catalog, Modulith.Application.core, "depends on", $tags="")
+Rel_D(Modulith.Application.inventory, Modulith.Application.order, "listens to", $tags="")
+Rel_D(Modulith.Application.inventory, Modulith.Application.catalog, "uses", $tags="")
+Rel_D(Modulith.Application.inventory, Modulith.Application.order, "uses", $tags="")
+Rel_D(Modulith.Application.inventory, Modulith.Application.core, "uses", $tags="")
+Rel_D(Modulith.Application.order, Modulith.Application.catalog, "depends on", $tags="")
+
+SHOW_LEGEND()
+....
+
 The second call will create additional diagrams that only include the individual module and the ones they directly depend on on the canvas.
+
+.A subset of application modules and their relationships starting from the order module rendered as C4 component diagram
+[plantuml, c4-individual-modules, svg]
+....
+top to bottom direction
+
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Context.puml
+!include https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Component.puml
+
+Container_Boundary("Modulith.Application_boundary", "Application") {
+  Component(Modulith.Application.core, "core", "Module", "", $tags="")
+  Component(Modulith.Application.catalog, "catalog", "Module", "", $tags="")
+  Component(Modulith.Application.order, "order", "Module", "", $tags="")
+  Component(Modulith.Application.customer, "customer", "Module", "", $tags="")
+}
+
+Rel_D(Modulith.Application.order, Modulith.Application.core, "depends on", $tags="")
+Rel_D(Modulith.Application.order, Modulith.Application.customer, "uses", $tags="")
+Rel_D(Modulith.Application.catalog, Modulith.Application.core, "depends on", $tags="")
+Rel_D(Modulith.Application.order, Modulith.Application.catalog, "depends on", $tags="")
+
+SHOW_LEGEND()
+....
 
 [[documentation.component-diagrams.uml]]
 === Using Traditional UML Component Diagrams
@@ -45,7 +99,84 @@ DiagramOptions.defaults()
 
 This will cause the diagrams to look like this:
 
-TODO: Add diagram
+.All modules and their relationships rendered as UML component diagram
+[plantuml, uml-all-modules, svg]
+....
+skinparam {
+  shadowing false
+  arrowColor #707070
+  actorBorderColor #707070
+  componentBorderColor #707070
+  rectangleBorderColor #707070
+  noteBackgroundColor #ffffff
+  noteBorderColor #707070
+  defaultTextAlignment center
+  wrapWidth 200
+  maxMessageSize 100
+  componentStyle uml1
+}
+package "Application" <<Container>> {
+  component 4 <<Component: Module>> #dddddd [
+    com.acme.commerce.catalog
+  ]
+  component 3 <<Component: Module>> #dddddd [
+    com.acme.commerce.core
+  ]
+  component 7 <<Component: Module>> #dddddd [
+    com.acme.commerce.customer
+  ]
+  component 5 <<Component: Module>> #dddddd [
+    com.acme.commerce.inventory
+  ]
+  component 6 <<Component: Module>> #dddddd [
+    com.acme.commerce.order
+  ]
+}
+4 .[#707070].> 3 : depends on
+5 .[#707070].> 4 : uses
+5 .[#707070].> 3 : uses
+5 .[#707070].> 6 : uses
+5 .[#707070].> 6 : listens to
+6 .[#707070].> 4 : depends on
+6 .[#707070].> 3 : depends on
+6 .[#707070].> 7 : uses
+....
+
+.A subset of application modules and their relationships starting from the order module rendered as UML component diagram
+[plantuml,uml-individiual-module, svg]
+....
+skinparam {
+  shadowing false
+  arrowColor #707070
+  actorBorderColor #707070
+  componentBorderColor #707070
+  rectangleBorderColor #707070
+  noteBackgroundColor #ffffff
+  noteBorderColor #707070
+  defaultTextAlignment center
+  wrapWidth 200
+  maxMessageSize 100
+  componentStyle uml1
+}
+package "Application" <<Container>> {
+  component 4 <<Component: Module>> #dddddd [
+    com.acme.commerce.catalog
+  ]
+  component 3 <<Component: Module>> #dddddd [
+    com.acme.commerce.core
+  ]
+  component 7 <<Component: Module>> #dddddd [
+    com.acme.commerce.customer
+  ]
+  component 6 <<Component: Module>> #dddddd [
+    com.acme.commerce.order
+  ]
+}
+4 .[#707070].> 3 : depends on
+6 .[#707070].> 4 : depends on
+6 .[#707070].> 3 : depends on
+6 .[#707070].> 7 : uses
+....
 
 [[documentation.application-module-canvas]]
 == Generating Application Module Canvases
@@ -70,12 +201,53 @@ class DocumentationTests {
 
 A canvas generated looks like this:
 
-TODO: Include generated canvas
+.A sample Application Module Canvas
+[cols="1h,4a"]
+|===
+|Base package
+|`com.acme.commerce.inventory`
+|Spring components
+|_Services_
+
+* `c.a.c.i.InventoryManagement`
+
+_Repositories_
+
+* `c.a.c.i.Inventory`
+
+_Event listeners_
+
+* `c.a.c.i.InternalInventoryListeners` listening to `o.s.m.m.DayHasPassed`, `c.a.c.i.QuantityReduced`
+* `c.a.c.i.InventoryOrderEventListener` listening to `c.a.c.o.OrderCanceled`, `c.a.c.o.OrderCompleted`
+
+_Configuration properties_
+
+* `c.a.c.i.InventoryProperties`
+
+_Others_
+
+* `c.a.c.i.InventoryItemCreationListener`
+|Aggregate roots
+|* `c.a.c.i.InventoryItem`
+|Published events
+|* `c.a.c.i.QuantityReduced` created by:
+** `c.a.c.i.InventoryItem.decreaseQuantity(…)`
+* `c.a.c.i.StockShort` created by:
+** `c.a.c.i.InternalInventoryListeners.on(…)`
+
+|Events listened to
+|* `c.a.c.o.OrderCompleted`
+* `c.a.c.o.OrderCanceled`
+|Properties
+|* `acme.commerce.inventory.restock-threshold` -- `c.a.c.c.Quantity`. The threshold at which a `InventoryEvents.StockShort` is supposed to be triggered during inventory updates.
+|===
 
 It consists of the following sections:
-* __The application module's name and base package.__
-* __The Spring beans exposed by the application module, grouped by stereotype.__ -- In other words beans that are located in either the API package or any <<fundamentals.modules.named-interface, named interface package>>.
-* __Exposed aggregate roots__
+
+* __The application module's base package.__
+* __The Spring beans exposed by the application module, grouped by stereotype.__ -- In other words beans that are located in either the API package or any <<fundamentals.modules.named-interfaces, named interface package>>.
+* __Exposed aggregate roots__ -- Any entities that we find repositories for or explicitly declared as aggregate via jMolecules.
 * __Application events published by the module__ -- Those event types need to be demarcated using jMolecules `@DomainEvent` or implement its `DomainEvent` interface.
-* __Application events listened to by the module__ -- Derived from methods annotated with Spring's `@EventListener`, `@TransactionalEventListener` or beans implementing `ApplicationListener`.
-* __Configuration properties__ -- Requires the usage of the `spring-boot-configuration-processor` artifact to extract the metadata attached to the properties.
+* __Application events listened to by the module__ -- Derived from methods annotated with Spring's `@EventListener`, `@TransactionalEventListener`, jMolecules' `@DomainEventHandler` or beans implementing `ApplicationListener`.
+* __Configuration properties__ -- Spring Boot Configuration properties exposed by the application module.
+Requires the usage of the `spring-boot-configuration-processor` artifact to extract the metadata attached to the properties.
