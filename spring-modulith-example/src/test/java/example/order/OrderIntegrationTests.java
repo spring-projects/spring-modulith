@@ -39,9 +39,9 @@ class OrderIntegrationTests {
 
 		orders.complete(reference);
 
-		assertThat(events.ofType(OrderCompleted.class))
-				.hasSize(1)
-				.element(0)
-				.extracting(OrderCompleted::getOrderId).isEqualTo(reference.getId());
+		var matchingMapped = events.ofType(OrderCompleted.class)
+				.matchingMapped(OrderCompleted::getOrderId, reference.getId()::equals);
+
+		assertThat(matchingMapped).hasSize(1);
 	}
 }
