@@ -176,4 +176,32 @@ Note how we concatenate the named interface's name `spi` via the double colon `:
 In this setup, code in __inventory__ would be allowed to depend on `SomeSpiInterface` and other code residing in the `order.spi` interface, but not on `OrderManagement` for example.
 For modules without explicitly described dependencies, both the application module root package *and* the SPI one are accessible.
 
+[[fundamentals.customizing-modules]]
+=== Customizing Module Detection
 
+If the default application module model does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
+That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package, the Spring Boot application class resides in.
+You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
+
+Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:
+
+[source, java]
+----
+package example;
+
+class CustomApplicationModuleDetectionStrategy implements ApplicationModuleDetectionStrategy {
+
+  @Override
+  public Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage) {
+    // Your module detection goes here
+  }
+}
+----
+
+This class needs to be registered in `META-INF/spring.factories` as follows:
+
+[source, text]
+----
+org.springframework.modulith.model.ApplicationModuleDetectionStrategy=\
+  example.CustomApplicationModuleDetectionStrategy
+----
