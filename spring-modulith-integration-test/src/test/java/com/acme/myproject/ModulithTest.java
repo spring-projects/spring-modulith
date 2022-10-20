@@ -18,6 +18,7 @@ package com.acme.myproject;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ApplicationModules.Filters;
 import org.springframework.modulith.model.Violations;
@@ -70,5 +71,17 @@ class ModulithTest {
 				// mentions offending types
 				.withMessageContaining("CycleA") //
 				.withMessageContaining("CycleB");
+	}
+
+	@Test // GH-46
+	void doesNotIncludeEventListenerDependencyInBootstrapOnes() {
+
+		var modules = ApplicationModules.of(Application.class, DEFAULT_EXCLUSIONS);
+
+		assertThat(modules.getModuleByName("moduleD")).hasValueSatisfying(it -> {
+			assertThat(it.getBootstrapDependencies(modules))
+					.map(ApplicationModule::getName)
+					.doesNotContain("moduleA");
+		});
 	}
 }

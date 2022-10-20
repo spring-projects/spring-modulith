@@ -72,7 +72,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		this.basePackages = Suppliers.memoize(() -> {
 
-			Stream<JavaPackage> moduleBasePackages = module.getBasePackages(modules, bootstrapMode.getDepth());
+			Stream<JavaPackage> moduleBasePackages = module.getBootstrapBasePackages(modules, bootstrapMode.getDepth());
 			Stream<JavaPackage> sharedBasePackages = modules.getSharedModules().stream().map(it -> it.getBasePackage());
 			Stream<JavaPackage> extraPackages = extraIncludes.stream().map(ApplicationModule::getBasePackage);
 

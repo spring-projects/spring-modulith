@@ -177,7 +177,7 @@ public class ApplicationModule {
 		Assert.notNull(modules, "Modules must not be null!");
 		Assert.notNull(depth, "Dependency depth must not be null!");
 
-		return streamDependencies(modules, depth);
+		return streamBootstrapDependencies(modules, depth);
 	}
 
 	/**
@@ -187,12 +187,12 @@ public class ApplicationModule {
 	 * @param depth must not be {@literal null}.
 	 * @return
 	 */
-	public Stream<JavaPackage> getBasePackages(ApplicationModules modules, DependencyDepth depth) {
+	public Stream<JavaPackage> getBootstrapBasePackages(ApplicationModules modules, DependencyDepth depth) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 		Assert.notNull(depth, "Dependency depth must not be null!");
 
-		Stream<ApplicationModule> dependencies = streamDependencies(modules, depth);
+		Stream<ApplicationModule> dependencies = streamBootstrapDependencies(modules, depth);
 
 		return Stream.concat(Stream.of(this), dependencies) //
 				.map(ApplicationModule::getBasePackage);
@@ -380,27 +380,28 @@ public class ApplicationModule {
 				.flatMap(it -> getModuleDependenciesOf(it, modules));
 	}
 
-	private Stream<ApplicationModule> streamDependencies(ApplicationModules modules, DependencyDepth depth) {
+	private Stream<ApplicationModule> streamBootstrapDependencies(ApplicationModules modules, DependencyDepth depth) {
 
 		switch (depth) {
 
 			case NONE:
 				return Stream.empty();
 			case IMMEDIATE:
-				return getDirectModuleDependencies(modules);
+				return getDirectModuleBootstrapDependencies(modules);
 			case ALL:
 			default:
-				return getDirectModuleDependencies(modules) //
-						.flatMap(it -> Stream.concat(Stream.of(it), it.streamDependencies(modules, DependencyDepth.ALL))) //
+				return getDirectModuleBootstrapDependencies(modules) //
+						.flatMap(it -> Stream.concat(Stream.of(it), it.streamBootstrapDependencies(modules, DependencyDepth.ALL))) //
 						.distinct();
 		}
 	}
 
-	private Stream<ApplicationModule> getDirectModuleDependencies(ApplicationModules modules) {
+	private Stream<ApplicationModule> getDirectModuleBootstrapDependencies(ApplicationModules modules) {
 
 		return getSpringBeansInternal().stream() //
 				.flatMap(it -> ModuleDependency.fromType(it)) //
 				.filter(it -> isDependencyToOtherModule(it.target, modules)) //
+				.filter(it -> it.hasType(DependencyType.USES_COMPONENT)) //
 				.map(it -> modules.getModuleByType(it.target)) //
 				.distinct() //
 				.flatMap(it -> it.map(Stream::of).orElseGet(Stream::empty));
