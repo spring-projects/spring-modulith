@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModule.DependencyType;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ApplicationModules.Filters;
 import org.springframework.modulith.model.Violations;
@@ -82,6 +83,22 @@ class ModulithTest {
 			assertThat(it.getBootstrapDependencies(modules))
 					.map(ApplicationModule::getName)
 					.doesNotContain("moduleA");
+		});
+	}
+
+	@Test // GH-47
+	void configrationPropertiesTypesEstablishSimpleDependency() {
+
+		var modules = ApplicationModules.of(Application.class, DEFAULT_EXCLUSIONS);
+
+		assertThat(modules.getModuleByName("moduleD")).hasValueSatisfying(it -> {
+
+			assertThat(it.getDependencies(modules, DependencyType.DEFAULT))
+					.map(ApplicationModule::getName)
+					.contains("moduleC"); // ConfigurationProperties -> Value
+
+			assertThat(it.getDependencies(modules, DependencyType.USES_COMPONENT))
+					.isEmpty();
 		});
 	}
 }

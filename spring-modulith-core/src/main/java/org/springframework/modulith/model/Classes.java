@@ -48,7 +48,9 @@ import com.tngtech.archunit.core.domain.properties.HasName;
  */
 @ToString
 @EqualsAndHashCode
-public class Classes implements DescribedIterable<JavaClass> {
+class Classes implements DescribedIterable<JavaClass> {
+
+	public static Classes NONE = Classes.of(Collections.emptyList());
 
 	private final List<JavaClass> classes;
 

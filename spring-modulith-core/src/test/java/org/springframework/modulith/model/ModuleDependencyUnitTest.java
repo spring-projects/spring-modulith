@@ -58,7 +58,10 @@ class ModuleDependencyUnitTest {
 
 	private Stream<Class<?>> findDependencies(Class<?> type) {
 
-		return ModuleDependency.fromType(importer.importClass(type)) //
+		var imported = importer.importClass(type);
+		var evidentType = ArchitecturallyEvidentType.of(imported, Classes.NONE);
+
+		return ModuleDependency.fromType(evidentType) //
 				.map(ModuleDependency::getTarget) //
 				.map(JavaClass::reflect);
 	}
