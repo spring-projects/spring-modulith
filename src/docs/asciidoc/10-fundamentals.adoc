@@ -2,7 +2,7 @@
 = Fundamentals
 
 Spring Modulith supports developers implementing logical modules in Spring Boot applications.
-I allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules interaction at runtime and generally implement module interaction in a loosely-coupled way.
+It allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules interaction at runtime and generally implement module interaction in a loosely-coupled way.
 This section will discuss the fundamental concepts that developers need to understand before diving into the technical support.
 
 [[fundamentals.modules]]
