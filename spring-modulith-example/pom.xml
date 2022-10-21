@@ -1,24 +1,24 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0"
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-	
+
 	<modelVersion>4.0.0</modelVersion>
-	
+
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.0-SNAPSHOT</version>
+		<version>3.0.0-RC1</version>
 		<relativePath />
 	</parent>
-	
+
 	<artifactId>spring-modulith-example</artifactId>
 	<name>Spring Modulith - Example</name>
 	<version>0.1.0-SNAPSHOT</version>
-	
+
 	<properties>
 		<java.version>17</java.version>
 	</properties>
-	
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -31,13 +31,13 @@
 			<dependency>
 				<groupId>org.jmolecules</groupId>
 				<artifactId>jmolecules-bom</artifactId>
-				<version>2022.2.0-SNAPSHOT</version>
+				<version>2022.2.1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
-	
+
 	<dependencies>
 
 		<dependency>
@@ -54,14 +54,14 @@
 			<groupId>org.springframework.experimental</groupId>
 			<artifactId>spring-modulith-starter-jpa</artifactId>
 		</dependency>
-		
+
 		<!-- jMolecules -->
-		
+
 		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-events</artifactId>
 		</dependency>
-		
+
 		<!-- Persistence -->
 
 		<dependency>
@@ -107,13 +107,6 @@
 
 	<repositories>
 		<repository>
-			<id>spring-snapshot</id>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-		<repository>
 			<id>spring-milestone</id>
 			<url>https://repo.spring.io/milestone</url>
 			<snapshots>
@@ -123,13 +116,6 @@
 	</repositories>
 
 	<pluginRepositories>
-		<pluginRepository>
-			<id>spring-snapshot</id>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</pluginRepository>
 		<pluginRepository>
 			<id>spring-milestone</id>
 			<url>https://repo.spring.io/milestone</url>
