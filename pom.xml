@@ -29,7 +29,7 @@
 		<archunit.version>1.0.0</archunit.version>
 		<artifactory-maven-plugin.version>3.4.0</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>3.5.0</flapdoodle-mongodb.version>
-		<jmolecules-bom.version>2021.2.4</jmolecules-bom.version>
+		<jmolecules-bom.version>2022.2.1</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-asciidoctor-backends.version>0.0.4-SNAPSHOT</spring-asciidoctor-backends.version>
