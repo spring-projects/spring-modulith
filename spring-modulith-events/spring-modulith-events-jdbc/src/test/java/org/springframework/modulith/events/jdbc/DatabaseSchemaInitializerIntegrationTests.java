@@ -63,7 +63,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 		@Test // GH-3
 		void shouldCreateDatabaseSchemaOnStartUp() {
-			assertThat(operations.queryForObject(COUNT_PUBLICATIONS, Long.class)).isEqualTo(0);
+			assertThatNoException().isThrownBy(() -> operations.queryForObject(COUNT_PUBLICATIONS, Long.class));
 		}
 	}
 
