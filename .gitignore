@@ -8,6 +8,7 @@ target/
 .springBeans
 target/
 .factorypath
+changelog.txt
 
 #IntelliJ Stuff
 .idea
