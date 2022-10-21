@@ -18,6 +18,8 @@ package example.order.internal;
 import org.springframework.stereotype.Component;
 
 /**
+ * Some order-internal application component.
+ *
  * @author Oliver Drotbohm
  */
 @Component

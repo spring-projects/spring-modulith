@@ -24,6 +24,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
+ * A Spring {@link Service} exposed by the inventory module.
+ *
  * @author Oliver Drotbohm
  */
 @Slf4j
