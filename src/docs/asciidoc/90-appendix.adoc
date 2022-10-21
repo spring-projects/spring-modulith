@@ -6,8 +6,17 @@
 [[appendix.migrating-from-moduliths]]
 == Migrating from Moduliths
 
-* `Modules` -> `ApplicationModules`
-* `@ModuleTest`-> `ApplicationModuleTest`
+
+* `o.m.model.Modules` has been renamed to `o.s.m.model.ApplicationModules`
+* `o.m.model.ModuleDetectionStrategy` has been renamed to `o.s.m.model.ApplicationModuleDetectionStrategy`
+
+* `@o.m.test.ModuleTest` has been renamed to `@o.s.m.test.ApplicationModuleTest`
+
+* `o.m.docs.Documenter.Options` has been renamed to `o.s.m.docs.Documenter.DiagramOptions`
+* The diagram style of component diagrams now defaults to `DiagramStyle.C4` (override by calling `DiagramOptions.withStyle(DiagramStyle.UML)`)
+* The module canvas hides non exposed types by default.
+To include application-module-internal types in the canvas, configure `CanvasOptions` to `….revealInternals()`.
+* The output folder for component diagrams and application module canvases has moved from `moduliths-docs` to `spring-modulith-docs` located in your build's target folder (such as `target` for Maven).
 
 [appendix]
 [[appendix.artifacts]]
