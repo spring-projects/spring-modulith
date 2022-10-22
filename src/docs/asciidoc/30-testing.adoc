@@ -16,7 +16,7 @@ class OrderIntegrationTests {
 }
 ----
 
-This will run you integration test similar to what `@SpringBootTest` would have achieved but with the bootstrap actually limited to the application module the test resides in.
+This will run your integration test similar to what `@SpringBootTest` would have achieved but with the bootstrap actually limited to the application module the test resides in.
 If you configure the log level for `org.springframework.modulith` to `DEBUG`, you will see detailed information about how the test execution customizes the Spring Boot bootstrap:
 
 .The log output of a application module integration test bootstrap
