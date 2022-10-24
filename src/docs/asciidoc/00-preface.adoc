@@ -14,7 +14,7 @@
 == Using Spring Modulith
 
 Spring Modulith consists of a set of libraries that can be used individually and depending on which features of it you would like to use.
-To ease the declaration of the individual modules, we recommend to declare the following BOM in you Maven POM:
+To ease the declaration of the individual modules, we recommend to declare the following BOM in your Maven POM:
 
 .Using the Spring Modulith  BOM
 [source, xml, subs="+attributes"]
