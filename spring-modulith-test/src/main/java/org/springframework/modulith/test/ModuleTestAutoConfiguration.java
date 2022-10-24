@@ -28,9 +28,11 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
+import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
+import org.springframework.core.Ordered;
 import org.springframework.core.type.AnnotationMetadata;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
@@ -44,6 +46,7 @@ import org.springframework.util.StringUtils;
  */
 @Configuration
 @Import(ModuleTestAutoConfiguration.AutoConfigurationAndEntityScanPackageCustomizer.class)
+@AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 class ModuleTestAutoConfiguration {
 
 	private static final String AUTOCONFIG_PACKAGES = "org.springframework.boot.autoconfigure.AutoConfigurationPackages";
@@ -106,7 +109,7 @@ class ModuleTestAutoConfiguration {
 						.forEach(packages::add);
 
 				// Fall back to customize the bean definition in a Boot 2.3 arrangement
-				definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packages);
+				definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packages.toArray(String[]::new));
 			}
 		}
 	}
