@@ -7,7 +7,7 @@
 		</encoder>
 	</appender>
 
-	<logger name="org.moduliths" level="info" />
+	<logger name="org.springframework.modulith" level="info" />
 	<logger name="example" level="info" />
 
 	<root level="error">
