@@ -11,7 +11,7 @@ To activate the instrumentation add the following runtime dependency to your pro
   <groupId>org.springframework.modulith</groupId>
   <artifactId>spring-modulith-observability</artifactId>
   <version>{projectVersion}</version>
-  <scope>runtime</scope
+  <scope>runtime</scope>
 </dependency>
 ----
 

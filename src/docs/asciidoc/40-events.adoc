@@ -32,7 +32,7 @@ It also means that we will have to touch the class whenever we would like to int
 
 We can change the application module interaction as follows:
 
-.Publishing an application event via Spring's `ApplicationEventListener`
+.Publishing an application event via Spring's `ApplicationEventPublisher`
 [source, java]
 ----
 @Service
@@ -109,7 +109,7 @@ For details, please consult the <<appendix.schemas, schema overview>> in the app
 
 Each log entry contains the original event in serialized form.
 The `EventSerializer` abstraction contained in `spring-modulith-events-core` allows plugging different strategies for how to turn the event instances into a format suitable for the datastore.
-Spring Modulith provides a Jackson based implementation through the `spring-modulith-events-jackson` artifact, which registers a `JacksonEventSerializer` consuming an `ObjectMapper` through standard Spring Boot auto-configuration by default.
+Spring Modulith provides a Jackson-based JSON implementation through the `spring-modulith-events-jackson` artifact, which registers a `JacksonEventSerializer` consuming an `ObjectMapper` through standard Spring Boot auto-configuration by default.
 
 [[events.starters]]
 == Spring Boot Event Registry Starters
