@@ -32,7 +32,7 @@ It also means that we will have to touch the class whenever we would like to int
 
 We can change the application module interaction as follows:
 
-.Publishing an application event via Spring's `ApplicationEventListener`
+.Publishing an application event via Spring's `ApplicationEventPublisher`
 [source, java]
 ----
 @Service
