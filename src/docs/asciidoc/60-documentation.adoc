@@ -5,7 +5,7 @@ The application module model created via `ApplicationModules` can be used to cre
 Spring Modulith's `Documenter` abstraction can produce two different kinds of snippets:
 
 * C4 and UML component diagrams describing the relationships between the individual application modules
-* A so called __Application Module Canvas__, a tabular overview about the module and the most relevant elements in those (Spring beans, aggregate roots, events published and listened to as well as configuration properties).
+* A so-called __Application Module Canvas__, a tabular overview about the module and the most relevant elements in those (Spring beans, aggregate roots, events published and listened to as well as configuration properties).
 
 [[documentation.component-diagrams]]
 == Generating Application Module Component diagrams
