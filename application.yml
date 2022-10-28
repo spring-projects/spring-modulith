@@ -5,5 +5,7 @@ changelog:
     labels: ["type: enhancement"]
   - title: ":beetle: Bugs"
     labels: ["type: bug"]
+  - title: ":book: Documentation"
+    labels: ["in: reference documentation"]
   - title: ":hammer: Dependency Upgrades"
     labels: ["type: dependency-upgrade"]
