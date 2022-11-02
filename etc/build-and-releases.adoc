@@ -28,6 +28,7 @@
 [source]
 ----
 ./mvnw release:prepare \
+  -Pprepare-release \
   -DreleaseVersion="${version}" \
   -DdevelopmentVersion="${devVersion}" \
   -DscmReleaseCommitComment="${ticketId} - Release version ${version}." \

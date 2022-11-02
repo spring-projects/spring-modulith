@@ -98,6 +98,18 @@ limitations under the License.
 
 		<profile>
 
+			<id>prepare-release</id>
+
+			<modules>
+				<module>spring-modulith-distribution</module>
+				<module>spring-modulith-example</module>
+				<module>spring-modulith-integration-test</module>
+			</modules>
+
+		</profile>
+
+		<profile>
+
 			<id>ci</id>
 
 			<build>
