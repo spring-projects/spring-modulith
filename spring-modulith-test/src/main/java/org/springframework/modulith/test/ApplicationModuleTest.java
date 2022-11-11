@@ -28,7 +28,7 @@ import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.filter.TypeExcludeFilters;
 import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
 import org.springframework.core.annotation.AliasFor;
-import org.springframework.modulith.model.ApplicationModule.DependencyDepth;
+import org.springframework.modulith.model.DependencyDepth;
 import org.springframework.test.context.BootstrapWith;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.TestConstructor.AutowireMode;

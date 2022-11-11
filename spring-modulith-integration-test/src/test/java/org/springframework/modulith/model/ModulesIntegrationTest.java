@@ -23,7 +23,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.model.ApplicationModule.DependencyType;
 
 import com.acme.myproject.Application;
 import com.acme.myproject.complex.internal.FirstTypeBasedPort;
@@ -117,8 +116,7 @@ class ModulesIntegrationTest {
 		ApplicationModule moduleA = modules.getModuleByName("moduleA").orElseThrow(IllegalStateException::new);
 
 		assertThat(module).hasValueSatisfying(it -> {
-			assertThat(it.getDependencies(modules, DependencyType.EVENT_LISTENER)) //
-					.contains(moduleA);
+			assertThat(it.getDependencies(modules, DependencyType.EVENT_LISTENER).contains(moduleA)).isTrue();
 		});
 	}
 

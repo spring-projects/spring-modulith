@@ -44,9 +44,10 @@ import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModule.DependencyDepth;
-import org.springframework.modulith.model.ApplicationModule.DependencyType;
+import org.springframework.modulith.model.ApplicationModuleDependency;
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.model.DependencyDepth;
+import org.springframework.modulith.model.DependencyType;
 import org.springframework.modulith.model.SpringBean;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
@@ -315,28 +316,47 @@ public class Documenter {
 
 	String toModuleCanvas(ApplicationModule module, CanvasOptions options) {
 
-		Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(modules, options.getApiBase());
+		var asciidoctor = Asciidoctor.withJavadocBase(modules, options.getApiBase());
+		var filter = options.hideInternalFilter(module);
+		var aggregates = module.getAggregateRoots().stream().filter(filter).toList();
+		var valueTypes = module.getValueTypes().stream().filter(filter).toList();
+
 		Function<List<JavaClass>, String> mapper = asciidoctor::typesToBulletPoints;
-		List<JavaClass> aggregates = options.hideInternals
-				? module.getAggregateRoots().stream().filter(module::isExposed).collect(Collectors.toList())
-				: module.getAggregateRoots();
 
-		StringBuilder builder = new StringBuilder();
-		builder.append(startTable("%autowidth.stretch, cols=\"h,a\""));
-		builder.append(writeTableRow("Base package", asciidoctor.toInlineCode(module.getBasePackage().getName())));
-		builder.append(writeTableRow("Spring components", asciidoctor.renderSpringBeans(options, module)));
-		builder.append(addTableRow(aggregates, "Aggregate roots", mapper));
-		builder.append(writeTableRow("Published events", asciidoctor.renderEvents(module)));
-		builder.append(addTableRow(module.getEventsListenedTo(modules), "Events listened to", mapper));
-		builder.append(writeTableRow("Properties",
-				asciidoctor.renderConfigurationProperties(module, properties.getModuleProperties(module))));
-		builder.append(startOrEndTable());
+		return new StringBuilder() //
 
-		return builder.toString();
+				.append(startTable("%autowidth.stretch, cols=\"h,a\""))
+				.append(addTableRow("Base package", asciidoctor.toInlineCode(module.getBasePackage().getName()), options))
+
+				// Spring components
+				.append(addTableRow("Spring components", asciidoctor.renderSpringBeans(module, options), options)) //
+				.append(addTableRow("Bean references", asciidoctor.renderBeanReferences(module), options)) //
+
+				// Aggregates
+				.append(addTableRow(aggregates, "Aggregate roots", mapper, options)) //
+				.append(addTableRow(valueTypes, "Value types", mapper, options)) //
+
+				// Events
+				.append(addTableRow("Published events", asciidoctor.renderEvents(module), options)) //
+				.append(addTableRow(module.getEventsListenedTo(modules), "Events listened to", mapper, options)) //
+
+				// Properties
+				.append(addTableRow("Properties",
+						asciidoctor.renderConfigurationProperties(module, properties.getModuleProperties(module)), options)) //
+				.append(startOrEndTable())
+				.toString();
 	}
 
-	private <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper) {
-		return types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
+	private static String addTableRow(String title, String content, CanvasOptions options) {
+
+		return options.hideEmptyLines && (content.isBlank() || content.equalsIgnoreCase("none"))
+				? ""
+				: writeTableRow(title, content);
+	}
+
+	private static <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper,
+			CanvasOptions options) {
+		return options.hideEmptyLines && types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
 	}
 
 	String toPlantUml() {
@@ -348,20 +368,17 @@ public class Documenter {
 		DEPENDENCY_DESCRIPTIONS.entrySet().stream().forEach(entry -> {
 
 			module.getDependencies(modules, entry.getKey()).stream() //
+					.map(ApplicationModuleDependency::getTargetModule) //
 					.map(it -> getComponents(options).get(it)) //
-					// .filter(it -> !component.hasEfferentRelationshipWith(it)) //
-					.forEach(it -> {
-
-						Relationship relationship = component.uses(it, entry.getValue());
-						relationship.addTags(entry.getKey().toString());
-					});
+					.map(it -> component.uses(it, entry.getValue())) //
+					.filter(it -> it != null) //
+					.forEach(it -> it.addTags(entry.getKey().toString()));
 		});
 
-		module.getBootstrapDependencies(modules) //
-				.forEach(it -> {
-					Relationship relationship = component.uses(getComponents(options).get(it), "uses");
-					relationship.addTags(DependencyType.USES_COMPONENT.toString());
-				});
+		module.getBootstrapDependencies(modules)
+				.map(it -> component.uses(getComponents(options).get(it), "uses"))
+				.filter(it -> it != null)
+				.forEach(it -> it.addTags(DependencyType.USES_COMPONENT.toString()));
 	}
 
 	private Map<ApplicationModule, Component> getComponents(DiagramOptions options) {
@@ -383,7 +400,8 @@ public class Documenter {
 		Supplier<Stream<ApplicationModule>> bootstrapDependencies = () -> module.getBootstrapDependencies(modules,
 				options.getDependencyDepth());
 		Supplier<Stream<ApplicationModule>> otherDependencies = () -> options.getDependencyTypes()
-				.flatMap(it -> module.getDependencies(modules, it).stream());
+				.flatMap(it -> module.getDependencies(modules, it).stream()
+						.map(ApplicationModuleDependency::getTargetModule));
 
 		Supplier<Stream<ApplicationModule>> dependencies = () -> Stream.concat(bootstrapDependencies.get(),
 				otherDependencies.get());
@@ -592,8 +610,7 @@ public class Documenter {
 		private final @With Predicate<ApplicationModule> exclusions;
 
 		/**
-		 * A {@link Predicate} to define which Structurizr {@link Component}s to be included in the diagram to be
-		 * created.
+		 * A {@link Predicate} to define which Structurizr {@link Component}s to be included in the diagram to be created.
 		 */
 		private final @With Predicate<Component> componentFilter;
 
@@ -616,8 +633,8 @@ public class Documenter {
 		private final @With Function<ApplicationModule, Optional<String>> colorSelector;
 
 		/**
-		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation
-		 * just forwards to {@link ApplicationModule#getDisplayName()}.
+		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation just
+		 * forwards to {@link ApplicationModule#getDisplayName()}.
 		 */
 		private final @With Function<ApplicationModule, String> defaultDisplayName;
 
@@ -629,8 +646,8 @@ public class Documenter {
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
 		 * retained in the diagrams created. The default is {@value ElementsWithoutRelationships#HIDDEN}. See
-		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to
-		 * exclude in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
+		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude
+		 * in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *
 		 * @see #withExclusions(Predicate)
 		 */
@@ -701,8 +718,8 @@ public class Documenter {
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
 		 * retained in the diagrams created. The default is {@value ElementsWithoutRelationships#HIDDEN}. See
-		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to
-		 * exclude in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
+		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude
+		 * in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *
 		 * @author Oliver Drotbohm
 		 * @see DiagramOptions#withExclusions(Predicate)
@@ -722,6 +739,7 @@ public class Documenter {
 		private final @With @Getter @Nullable String apiBase;
 		private final @With @Nullable String targetFileName;
 		private final boolean hideInternals;
+		private final boolean hideEmptyLines;
 
 		public static CanvasOptions defaults() {
 
@@ -735,7 +753,7 @@ public class Documenter {
 		}
 
 		public static CanvasOptions withoutDefaultGroupings() {
-			return new CanvasOptions(new ArrayList<>(), null, null, true);
+			return new CanvasOptions(new ArrayList<>(), null, null, true, true);
 		}
 
 		public CanvasOptions groupingBy(Grouping... groupings) {
@@ -743,7 +761,7 @@ public class Documenter {
 			List<Grouping> result = new ArrayList<>(groupers);
 			result.addAll(Arrays.asList(groupings));
 
-			return new CanvasOptions(result, apiBase, targetFileName, hideInternals);
+			return new CanvasOptions(result, apiBase, targetFileName, hideInternals, hideEmptyLines);
 		}
 
 		public CanvasOptions groupingBy(String name, Predicate<SpringBean> filter) {
@@ -756,7 +774,11 @@ public class Documenter {
 		 * @return will never be {@literal null}.
 		 */
 		public CanvasOptions revealInternals() {
-			return new CanvasOptions(groupers, apiBase, targetFileName, false);
+			return new CanvasOptions(groupers, apiBase, targetFileName, false, hideEmptyLines);
+		}
+
+		public CanvasOptions revealEmptyLines() {
+			return new CanvasOptions(groupers, apiBase, targetFileName, hideInternals, false);
 		}
 
 		Groupings groupBeans(ApplicationModule module) {
@@ -783,6 +805,10 @@ public class Documenter {
 			});
 
 			return Groupings.of(result);
+		}
+
+		Predicate<JavaClass> hideInternalFilter(ApplicationModule module) {
+			return hideInternals ? module::isExposed : __ -> true;
 		}
 
 		private Optional<String> getTargetFileName() {

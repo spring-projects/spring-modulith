@@ -32,7 +32,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.data.repository.core.RepositoryMetadata;
@@ -81,7 +80,7 @@ public abstract class ArchitecturallyEvidentType {
 				delegates.add(new SpringDataAwareArchitecturallyEvidentType(type, beanTypes));
 			}
 
-			delegates.add(new SpringAwareArchitecturallyEvidentType(type));
+			delegates.add(new SpringAwareArchitecturallyEvidentType(type, beanTypes));
 
 			return DelegatingType.of(type, delegates);
 		});
@@ -132,6 +131,14 @@ public abstract class ArchitecturallyEvidentType {
 	}
 
 	public boolean isConfigurationProperties() {
+		return false;
+	}
+
+	public boolean isInjectable() {
+		return isService() || isController() || isEventListener() || isConfigurationProperties();
+	}
+
+	public boolean isValueObject() {
 		return false;
 	}
 
@@ -195,8 +202,13 @@ public abstract class ArchitecturallyEvidentType {
 		private static final Predicate<JavaMethod> IS_EVENT_LISTENER = IS_ANNOTATED_EVENT_LISTENER
 				.or(IS_IMPLEMENTING_EVENT_LISTENER);
 
-		public SpringAwareArchitecturallyEvidentType(JavaClass type) {
+		private final boolean injectable;
+
+		public SpringAwareArchitecturallyEvidentType(JavaClass type, Classes beanTypes) {
+
 			super(type);
+
+			this.injectable = beanTypes.contains(type);
 		}
 
 		/*
@@ -251,6 +263,15 @@ public abstract class ArchitecturallyEvidentType {
 		@Override
 		public boolean isConfigurationProperties() {
 			return Types.isAnnotatedWith(SpringTypes.AT_CONFIGURATION_PROPERTIES).test(getType());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ArchitecturallyEvidentType#isInjectable()
+		 */
+		@Override
+		public boolean isInjectable() {
+			return injectable || SpringTypes.isComponent().test(getType()) || super.isInjectable();
 		}
 
 		/*
@@ -411,13 +432,26 @@ public abstract class ArchitecturallyEvidentType {
 		public boolean isEventListener() {
 			return getType().getMethods().stream().anyMatch(IS_ANNOTATED_EVENT_LISTENER);
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ArchitecturallyEvidentType#isValueObject()
+		 */
+		@Override
+		public boolean isValueObject() {
+
+			JavaClass type = getType();
+
+			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.ValueObject.class).test(type)
+					|| type.isAssignableTo(org.jmolecules.ddd.types.ValueObject.class);
+		}
 	}
 
 	static class DelegatingType extends ArchitecturallyEvidentType {
 
 		private final Supplier<Boolean> isAggregateRoot, isRepository, isEntity, isService, isController,
-				isEventListener,
-				isConfigurationProperties;
+				isEventListener, isConfigurationProperties, isInjectable, isValueObject;
+
 		private final Supplier<Collection<JavaClass>> referenceTypes;
 		private final Supplier<Collection<ReferenceMethod>> referenceMethods;
 
@@ -425,6 +459,8 @@ public abstract class ArchitecturallyEvidentType {
 				Supplier<Boolean> isRepository, Supplier<Boolean> isEntity, Supplier<Boolean> isService,
 				Supplier<Boolean> isController, Supplier<Boolean> isEventListener,
 				Supplier<Boolean> isConfigurationProperties,
+				Supplier<Boolean> isInjectable,
+				Supplier<Boolean> isValueObject,
 				Supplier<Collection<JavaClass>> referenceTypes,
 				Supplier<Collection<ReferenceMethod>> referenceMethods) {
 
@@ -437,43 +473,49 @@ public abstract class ArchitecturallyEvidentType {
 			this.isController = isController;
 			this.isEventListener = isEventListener;
 			this.isConfigurationProperties = isConfigurationProperties;
+			this.isInjectable = isInjectable;
+			this.isValueObject = isValueObject;
 			this.referenceTypes = referenceTypes;
 			this.referenceMethods = referenceMethods;
 		}
 
 		public static DelegatingType of(JavaClass type, List<ArchitecturallyEvidentType> types) {
 
-			Supplier<Boolean> isAggregateRoot = Suppliers
+			var isAggregateRoot = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isAggregateRoot));
 
-			Supplier<Boolean> isRepository = Suppliers
+			var isRepository = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isRepository));
 
-			Supplier<Boolean> isEntity = Suppliers
+			var isEntity = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isEntity));
 
-			Supplier<Boolean> isService = Suppliers
+			var isService = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isService));
 
-			Supplier<Boolean> isController = Suppliers
+			var isController = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isController));
 
-			Supplier<Boolean> isEventListener = Suppliers
+			var isEventListener = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isEventListener));
 
-			Supplier<Boolean> isConfigurationProperties = Suppliers
+			var isConfigurationProperties = Suppliers
 					.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isConfigurationProperties));
+
+			var isInjectable = Suppliers.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isInjectable));
+
+			var isValueObject = Suppliers.memoize(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isValueObject));
 
 			Supplier<Collection<JavaClass>> referenceTypes = Suppliers.memoize(() -> types.stream() //
 					.flatMap(ArchitecturallyEvidentType::getReferenceTypes) //
-					.collect(Collectors.toList()));
+					.toList());
 
 			Supplier<Collection<ReferenceMethod>> referenceMethods = Suppliers.memoize(() -> types.stream() //
 					.flatMap(ArchitecturallyEvidentType::getReferenceMethods) //
-					.collect(Collectors.toList()));
+					.toList());
 
 			return new DelegatingType(type, isAggregateRoot, isRepository, isEntity, isService, isController,
-					isEventListener, isConfigurationProperties, referenceTypes, referenceMethods);
+					isEventListener, isConfigurationProperties, isInjectable, isValueObject, referenceTypes, referenceMethods);
 		}
 
 		/*
@@ -539,6 +581,24 @@ public abstract class ArchitecturallyEvidentType {
 		@Override
 		public boolean isConfigurationProperties() {
 			return isConfigurationProperties.get();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ArchitecturallyEvidentType#isInjectable()
+		 */
+		@Override
+		public boolean isInjectable() {
+			return isInjectable.get();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ArchitecturallyEvidentType#isValueObject()
+		 */
+		@Override
+		public boolean isValueObject() {
+			return isValueObject.get();
 		}
 
 		/*

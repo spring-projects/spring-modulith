@@ -19,9 +19,10 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModule.DependencyType;
+import org.springframework.modulith.model.ApplicationModuleDependencies;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ApplicationModules.Filters;
+import org.springframework.modulith.model.DependencyType;
 import org.springframework.modulith.model.Violations;
 
 import com.acme.myproject.invalid.InvalidComponent;
@@ -43,14 +44,14 @@ class ModulithTest {
 	@Test
 	void verifyModules() {
 
-		String componentName = InternalComponentB.class.getSimpleName();
+		String componentName = InternalComponentB.class.getName();
 
 		assertThatExceptionOfType(Violations.class) //
 				.isThrownBy(() -> ApplicationModules.of(Application.class, DEFAULT_EXCLUSIONS).verify()) //
 				.withMessageContaining(String.format("Module '%s' depends on non-exposed type %s within module 'moduleB'",
 						"invalid", InternalComponentB.class.getName()))
-				.withMessageContaining(String.format("%s declares constructor %s(%s)", InvalidComponent.class.getSimpleName(),
-						InvalidComponent.class.getSimpleName(), componentName));
+				.withMessageContaining(
+						String.format("Constructor <%s.<init>(%s)>", InvalidComponent.class.getName(), componentName));
 	}
 
 	@Test
@@ -94,11 +95,10 @@ class ModulithTest {
 		assertThat(modules.getModuleByName("moduleD")).hasValueSatisfying(it -> {
 
 			assertThat(it.getDependencies(modules, DependencyType.DEFAULT))
-					.map(ApplicationModule::getName)
-					.contains("moduleC"); // ConfigurationProperties -> Value
+					.matches(inner -> inner.containsModuleNamed("moduleC"));
 
 			assertThat(it.getDependencies(modules, DependencyType.USES_COMPONENT))
-					.isEmpty();
+					.matches(ApplicationModuleDependencies::isEmpty);
 		});
 	}
 }

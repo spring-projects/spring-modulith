@@ -28,7 +28,7 @@ import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
 import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModule.DependencyType;
+import org.springframework.modulith.model.DependencyType;
 
 import com.acme.myproject.Application;
 

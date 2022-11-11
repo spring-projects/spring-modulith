@@ -21,13 +21,13 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.modulith.model.ApplicationModule.ModuleDependency;
+import org.springframework.modulith.model.ApplicationModule.QualifiedDependency;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 
 /**
- * Unit tests for {@link ModuleDependency}.
+ * Unit tests for {@link QualifiedDependency}.
  *
  * @author Oliver Drotbohm
  */
@@ -61,8 +61,8 @@ class ModuleDependencyUnitTest {
 		var imported = importer.importClass(type);
 		var evidentType = ArchitecturallyEvidentType.of(imported, Classes.NONE);
 
-		return ModuleDependency.fromType(evidentType) //
-				.map(ModuleDependency::getTarget) //
+		return QualifiedDependency.fromType(evidentType) //
+				.map(QualifiedDependency::getTarget) //
 				.map(JavaClass::reflect);
 	}
 

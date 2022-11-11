@@ -31,6 +31,7 @@ import org.springframework.modulith.docs.Documenter.CanvasOptions.Groupings;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
+import org.springframework.modulith.model.DependencyType;
 import org.springframework.modulith.model.EventType;
 import org.springframework.modulith.model.FormatableJavaClass;
 import org.springframework.modulith.model.Source;
@@ -129,7 +130,7 @@ class Asciidoctor {
 		return String.format("%s (via %s)", interfacesAsString, base);
 	}
 
-	public String renderSpringBeans(CanvasOptions options, ApplicationModule module) {
+	public String renderSpringBeans(ApplicationModule module, CanvasOptions options) {
 
 		StringBuilder builder = new StringBuilder();
 		Groupings groupings = options.groupBeans(module);
@@ -354,5 +355,19 @@ class Asciidoctor {
 		}
 
 		return source;
+	}
+
+	/**
+	 * @param module
+	 * @return
+	 */
+	public String renderBeanReferences(ApplicationModule module) {
+
+		var bullets = module.getDependencies(modules, DependencyType.USES_COMPONENT).stream()
+				.map(it -> "%s (in %s)".formatted(toInlineCode(it.getTargetType()), it.getTargetModule().getDisplayName()))
+				.map(this::toBulletPoint)
+				.collect(Collectors.joining("\n"));
+
+		return bullets.isBlank() ? "None" : bullets;
 	}
 }

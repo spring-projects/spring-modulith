@@ -71,7 +71,7 @@ class ArchitecturallyEvidentTypeUnitTest {
 	void detectsSpringAnnotatedRepositories() {
 
 		ArchitecturallyEvidentType type = new SpringAwareArchitecturallyEvidentType(
-				classes.getRequiredClass(SpringRepository.class));
+				classes.getRequiredClass(SpringRepository.class), Classes.NONE);
 
 		assertThat(type.isRepository()).isTrue();
 	}
@@ -80,7 +80,7 @@ class ArchitecturallyEvidentTypeUnitTest {
 	void doesNotConsiderEntityAggregateRoot() {
 
 		ArchitecturallyEvidentType type = new SpringAwareArchitecturallyEvidentType(
-				classes.getRequiredClass(SampleEntity.class));
+				classes.getRequiredClass(SampleEntity.class), Classes.NONE);
 
 		assertThat(type.isEntity()).isTrue();
 		assertThat(type.isAggregateRoot()).isFalse();
