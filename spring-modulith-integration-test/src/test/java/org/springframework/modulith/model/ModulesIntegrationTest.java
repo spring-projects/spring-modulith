@@ -147,7 +147,7 @@ class ModulesIntegrationTest {
 
 		assertThat(fromPackage.stream().map(ApplicationModule::getName)) //
 				.containsExactlyInAnyOrderElementsOf(
-						modules.stream().map(ApplicationModule::getName).collect(Collectors.toList()));
+						modules.stream().map(ApplicationModule::getName).toList());
 	}
 
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {

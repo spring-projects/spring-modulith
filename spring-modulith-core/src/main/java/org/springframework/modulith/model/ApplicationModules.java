@@ -102,7 +102,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.rootPackages = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
-				.collect(Collectors.toList());
+				.toList();
 
 		this.sharedModules = Collections.emptySet();
 	}

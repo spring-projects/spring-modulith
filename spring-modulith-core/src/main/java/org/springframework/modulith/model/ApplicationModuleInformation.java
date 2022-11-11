@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.modulith.ApplicationModule;
@@ -125,7 +124,7 @@ interface ApplicationModuleInformation {
 			return annotation //
 					.map(it -> Arrays.stream(it.allowedDependencies())) //
 					.orElse(Stream.empty()) //
-					.collect(Collectors.toList());
+					.toList();
 		}
 	}
 }

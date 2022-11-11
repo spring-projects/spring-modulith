@@ -62,7 +62,7 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 
 			this.properties = Arrays.stream(resources)
 					.flatMap(ConfigurationProperties::parseProperties)
-					.collect(Collectors.toList());
+					.toList();
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -81,7 +81,7 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 
 		return properties.stream()
 				.flatMap(it -> getModuleProperty(module, it))
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	/*

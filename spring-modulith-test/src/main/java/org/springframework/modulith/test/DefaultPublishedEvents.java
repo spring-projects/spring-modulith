@@ -94,7 +94,7 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 		private final List<T> events;
 
 		private static <T> SimpleTypedPublishedEvents<T> of(Stream<T> stream) {
-			return new SimpleTypedPublishedEvents<>(stream.collect(Collectors.toList()));
+			return new SimpleTypedPublishedEvents<>(stream.toList());
 		}
 
 		/*

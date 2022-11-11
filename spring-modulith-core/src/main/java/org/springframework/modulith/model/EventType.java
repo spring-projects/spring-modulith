@@ -18,12 +18,10 @@ package org.springframework.modulith.model;
 import lombok.Value;
 
 import java.util.List;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
 
-import com.tngtech.archunit.core.domain.JavaAccess;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaModifier;
 
@@ -54,18 +52,18 @@ public class EventType {
 
 		this.type = type;
 
-		Stream<JavaAccess<?>> factoryMethodCalls = type.getMethods().stream()
+		var factoryMethodCalls = type.getMethods().stream()
 				.filter(method -> method.getModifiers().contains(JavaModifier.STATIC))
 				.filter(method -> method.getRawReturnType().equals(type))
 				.flatMap(method -> method.getCallsOfSelf().stream());
 
-		Stream<JavaAccess<?>> constructorCalls = type.getConstructors().stream()
+		var constructorCalls = type.getConstructors().stream()
 				.flatMap(constructor -> constructor.getCallsOfSelf().stream());
 
 		this.sources = Stream.concat(constructorCalls, factoryMethodCalls)
 				.filter(call -> !call.getOriginOwner().equals(type))
-				.map(JavaAccessSource::new)
-				.collect(Collectors.toList());
+				.<Source> map(JavaAccessSource::new)
+				.toList();
 	}
 
 	public boolean hasSources() {

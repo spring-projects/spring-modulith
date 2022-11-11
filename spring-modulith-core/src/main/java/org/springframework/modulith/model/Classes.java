@@ -77,7 +77,7 @@ class Classes implements DescribedIterable<JavaClass> {
 	static Classes of(JavaClasses classes) {
 
 		return new Classes(StreamSupport.stream(classes.spliterator(), false) //
-				.collect(Collectors.toList()));
+				.toList());
 	}
 
 	/**

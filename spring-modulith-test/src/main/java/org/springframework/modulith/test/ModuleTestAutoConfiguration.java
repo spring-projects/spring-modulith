@@ -63,7 +63,7 @@ class ModuleTestAutoConfiguration {
 		public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 
 			ModuleTestExecution execution = ((BeanFactory) registry).getBean(ModuleTestExecution.class);
-			List<String> basePackages = execution.getBasePackages().collect(Collectors.toList());
+			List<String> basePackages = execution.getBasePackages().toList();
 
 			LOG.info("Re-configuring auto-configuration and entity scan packages to: {}.",
 					StringUtils.collectionToDelimitedString(basePackages, ", "));

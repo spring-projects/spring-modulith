@@ -84,7 +84,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		return mappings.entrySet().stream() //
 				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()), basePackage)) //
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	private NamedInterfaces and(NamedInterface namedInterface) {

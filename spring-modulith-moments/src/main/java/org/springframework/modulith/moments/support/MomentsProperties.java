@@ -130,7 +130,7 @@ public class MomentsProperties {
 
 			return new ShiftedQuarters(Arrays.stream(Quarter.values())
 					.map(it -> ShiftedQuarter.of(it, shift))
-					.collect(Collectors.toList()));
+					.toList());
 		}
 	}
 }

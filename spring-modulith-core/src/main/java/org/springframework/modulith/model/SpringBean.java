@@ -21,7 +21,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 
@@ -65,7 +64,7 @@ public class SpringBean {
 
 		return type.getRawInterfaces().stream() //
 				.filter(module::contains) //
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	public boolean isAnnotatedWith(Class<?> type) {

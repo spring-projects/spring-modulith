@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.springframework.util.Assert;
 
@@ -56,7 +55,7 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 
 		return Arrays.stream(name) //
 				.map(it -> new PackageBasedNamedInterface(it, javaPackage)) //
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	public static TypeBasedNamedInterface of(String name, Classes classes, JavaPackage basePackage) {

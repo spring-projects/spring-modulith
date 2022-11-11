@@ -822,7 +822,7 @@ public class Documenter {
 					.filter(it -> !hideInternals || it.isApiBean())
 					.filter(it -> !alreadyMapped.contains(it))
 					.filter(filter::matches)
-					.collect(Collectors.toList());
+					.toList();
 		}
 
 		@Value(staticConstructor = "of")

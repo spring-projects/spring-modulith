@@ -24,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -85,16 +84,15 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		var query = query(where("completionDate").isNull());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
-				.map(this::documentToDomain) //
-				.collect(Collectors.toList());
+				.<EventPublication> map(this::documentToDomain) //
+				.toList();
 	}
 
 	@Override
 	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		var documents = findDocumentsByEventAndTargetIdentifierAndCompletionDateNull( //
-				event, targetIdentifier);
+		var documents = findDocumentsByEventAndTargetIdentifierAndCompletionDateNull(event, targetIdentifier);
 		var results = documents
 				.stream() //
 				.map(this::documentToDomain) //
@@ -113,7 +111,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		// we need to enforce writing of the type information
-		var eventAsMongoType = mongoTemplate.getConverter().convertToMongoType(event, TypeInformation.of(Object.class));
+		var eventAsMongoType = mongoTemplate.getConverter().convertToMongoType(event, TypeInformation.OBJECT);
+
 		var query = query(
 				where("event").is(eventAsMongoType) //
 						.and("listenerId").is(targetIdentifier.getValue()) //

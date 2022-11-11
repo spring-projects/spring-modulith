@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -165,7 +164,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 					.filter(TransactionalApplicationListener.class::isInstance)
 					.map(TransactionalApplicationListener.class::cast)
 					.sorted(AnnotationAwareOrderComparator.INSTANCE)
-					.collect(Collectors.toList());
+					.toList();
 		}
 
 		private TransactionalEventListeners(
@@ -185,7 +184,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 			List<TransactionalApplicationListener<ApplicationEvent>> collect = listeners.stream()
 					.filter(it -> it.getTransactionPhase().equals(phase))
-					.collect(Collectors.toList());
+					.toList();
 
 			return new TransactionalEventListeners(collect);
 		}

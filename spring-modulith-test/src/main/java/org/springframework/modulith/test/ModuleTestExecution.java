@@ -68,7 +68,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		this.bootstrapMode = annotation.mode();
 		this.module = module;
 
-		this.extraIncludes = getExtraModules(annotation, modules).collect(Collectors.toList());
+		this.extraIncludes = getExtraModules(annotation, modules).toList();
 
 		this.basePackages = Suppliers.memoize(() -> {
 
@@ -78,13 +78,13 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 			Stream<JavaPackage> intermediate = Stream.concat(moduleBasePackages, extraPackages);
 
-			return Stream.concat(intermediate, sharedBasePackages).distinct().collect(Collectors.toList());
+			return Stream.concat(intermediate, sharedBasePackages).distinct().toList();
 		});
 
 		this.dependencies = Suppliers.memoize(() -> {
 
 			Stream<ApplicationModule> bootstrapDependencies = module.getBootstrapDependencies(modules, bootstrapMode.getDepth());
-			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).collect(Collectors.toList());
+			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).toList();
 		});
 
 		if (annotation.verifyAutomatically()) {
