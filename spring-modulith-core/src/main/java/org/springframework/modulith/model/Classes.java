@@ -216,7 +216,7 @@ class Classes implements DescribedIterable<JavaClass> {
 				? type.getName().replace(basePackage, "…") //
 				: type.getName();
 
-		return String.format("    %s %s", prefix, name);
+		return String.format("%s %s", prefix, name);
 	}
 
 	private static class SameClass extends DescribedPredicate<JavaClass> {
