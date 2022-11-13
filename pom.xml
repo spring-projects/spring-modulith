@@ -339,6 +339,7 @@ limitations under the License.
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-assembly-plugin</artifactId>
+							<version>3.4.2</version>
 							<executions>
 								<execution>
 									<id>docs</id>
