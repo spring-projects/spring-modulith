@@ -56,11 +56,6 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.experimental</groupId>
-				<artifactId>spring-modulith-events-starter</artifactId>
-				<version>0.1.0-SNAPSHOT</version>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.experimental</groupId>
 				<artifactId>spring-modulith-events-tests</artifactId>
 				<version>0.1.0-SNAPSHOT</version>
 			</dependency>
