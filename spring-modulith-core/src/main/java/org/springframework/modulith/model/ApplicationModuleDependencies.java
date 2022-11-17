@@ -17,7 +17,9 @@ package org.springframework.modulith.model;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
@@ -71,6 +73,23 @@ public class ApplicationModuleDependencies {
 	 */
 	public Stream<ApplicationModuleDependency> stream() {
 		return dependencies.stream();
+	}
+
+	/**
+	 * Return all {@link ApplicationModuleDependency} instances unique by the value extracted using the given
+	 * {@link Function}.
+	 *
+	 * @param extractor will never be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public Stream<ApplicationModuleDependency> uniqueStream(Function<ApplicationModuleDependency, Object> extractor) {
+
+		Assert.notNull(extractor, "Extractor function must not be null!");
+
+		var seenTargets = new HashSet<>();
+
+		return dependencies.stream()
+				.filter(it -> seenTargets.add(extractor.apply(it)));
 	}
 
 	public ApplicationModuleDependencies withType(DependencyType type) {

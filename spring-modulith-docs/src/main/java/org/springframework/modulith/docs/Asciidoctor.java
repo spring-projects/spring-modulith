@@ -29,6 +29,7 @@ import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
 import org.springframework.modulith.docs.Documenter.CanvasOptions.Groupings;
 import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.model.ApplicationModuleDependency;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
 import org.springframework.modulith.model.DependencyType;
@@ -363,7 +364,8 @@ class Asciidoctor {
 	 */
 	public String renderBeanReferences(ApplicationModule module) {
 
-		var bullets = module.getDependencies(modules, DependencyType.USES_COMPONENT).stream()
+		var bullets = module.getDependencies(modules, DependencyType.USES_COMPONENT)
+				.uniqueStream(ApplicationModuleDependency::getTargetType)
 				.map(it -> "%s (in %s)".formatted(toInlineCode(it.getTargetType()), it.getTargetModule().getDisplayName()))
 				.map(this::toBulletPoint)
 				.collect(Collectors.joining("\n"));
