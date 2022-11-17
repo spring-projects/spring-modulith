@@ -136,13 +136,13 @@ public class ApplicationModule {
 		Assert.notNull(modules, "ApplicationModules must not be null!");
 		Assert.notNull(type, "DependencyTypes must not be null!");
 
-		var foo = getAllModuleDependencies(modules) //
+		var dependencies = getAllModuleDependencies(modules) //
 				.filter(it -> type.length == 0 ? true : Arrays.stream(type).anyMatch(it::hasType)) //
 				.distinct() //
 				.<ApplicationModuleDependency> flatMap(it -> DefaultApplicationModuleDependency.of(it, modules)) //
 				.toList();
 
-		return ApplicationModuleDependencies.of(foo, modules);
+		return ApplicationModuleDependencies.of(dependencies, modules);
 	}
 
 	/**

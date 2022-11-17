@@ -67,7 +67,7 @@ public class ApplicationModuleDependencies {
 	}
 
 	/**
-	 * Returns all {@link DefaultMaterializedDependency} instances as {@link Stream}.
+	 * Returns all {@link ApplicationModuleDependency} instances as {@link Stream}.
 	 *
 	 * @return will never be {@literal null}.
 	 */
