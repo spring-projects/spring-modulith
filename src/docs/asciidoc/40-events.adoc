@@ -123,7 +123,7 @@ The following starters are available:
 * `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
 
 [[events.integration-testing]]
-== Integration Testing Application Modules Workting with Events
+== Integration Testing Application Modules Working with Events
 
 Integration tests for application modules that interact with other modules' Spring beans usually have those mocked and the test cases verify the interaction by verifying that that mock bean was invoked in a particular way.
 
