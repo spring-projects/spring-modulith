@@ -25,6 +25,7 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.BootstrapContext;
 import org.springframework.test.context.CacheAwareContextLoaderDelegate;
+import org.springframework.test.context.ContextLoadException;
 import org.springframework.test.context.MergedContextConfiguration;
 import org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate;
 import org.springframework.test.context.support.DefaultBootstrapContext;
@@ -52,13 +53,10 @@ public class TestUtils {
 
 				return (ConfigurableApplicationContext) loader.loadContext(configuration);
 
-			} catch (Exception e) {
-
-				if (e instanceof RuntimeException) {
-					throw (RuntimeException) e;
-				}
-
-				throw new RuntimeException(e);
+			} catch (ContextLoadException o_O) {
+				throw asRuntimeException(o_O.getCause());
+			} catch (Exception o_O) {
+				throw asRuntimeException(o_O);
 			}
 		});
 
@@ -69,5 +67,9 @@ public class TestUtils {
 				assertThat(ex.getBeanType()).isEqualTo(expectedMissingDependency);
 			});
 		});
+	}
+
+	private static RuntimeException asRuntimeException(Throwable o_O) {
+		return o_O instanceof RuntimeException ? (RuntimeException) o_O : new RuntimeException(o_O);
 	}
 }

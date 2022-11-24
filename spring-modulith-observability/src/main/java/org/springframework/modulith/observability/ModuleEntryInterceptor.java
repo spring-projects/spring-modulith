@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.tracing.BaggageInScope;
+import io.micrometer.tracing.Baggage;
 import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.Tracer.SpanInScope;
@@ -59,7 +59,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		if (currentSpan != null) {
 
-			BaggageInScope currentBaggage = tracer.getBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
+			Baggage currentBaggage = tracer.getBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
 
 			if (currentBaggage != null && moduleName.equals(currentBaggage.get())) {
 				return invocation.proceed();
@@ -76,10 +76,9 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 				.tag(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY, moduleName)
 				.start();
 
-		try (
-				SpanInScope ws = tracer.withSpan(span); //
-				BaggageInScope baggage = tracer.createBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY, moduleName); //
-		) {
+		tracer.createBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY, moduleName);
+
+		try (SpanInScope ws = tracer.withSpan(span)) {
 
 			return invocation.proceed();
 
