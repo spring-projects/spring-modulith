@@ -19,8 +19,40 @@
 		<module>spring-modulith-events-jdbc</module>
 		<module>spring-modulith-events-mongodb</module>
 		<module>spring-modulith-events-jackson</module>
-		<module>spring-modulith-events-tests</module>
 	</modules>
+
+	<profiles>
+
+		<profile>
+
+			<id>events-default</id>
+
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+
+			<modules>
+				<module>spring-modulith-events-tests</module>
+			</modules>
+
+		</profile>
+
+		<profile>
+
+			<id>prepare-release</id>
+
+			<modules>
+				<module>spring-modulith-events-tests</module>
+			</modules>
+
+		</profile>
+
+		<!-- Needs to be declared to disable default profile -->
+		<profile>
+			<id>sonatype</id>
+		</profile>
+
+	</profiles>
 
 	<dependencies>
 
