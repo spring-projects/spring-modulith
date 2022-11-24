@@ -8,6 +8,7 @@
 	<packaging>pom</packaging>
 
 	<name>Spring Modulith</name>
+	<description>Modular monoliths with Spring Boot</description>
 
 	<organization>
 		<name>VMware Inc.</name>
