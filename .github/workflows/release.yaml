@@ -33,7 +33,7 @@ jobs:
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
       run: |
         ./mvnw -B clean install -DskipTests
-        ./mvnw -B clean deploy -Psonatype -s settings.xml
+        ./mvnw -B clean deploy -Pci,sonatype -s settings.xml
 
     - name: Setup Graphviz
       uses: ts-graphviz/setup-graphviz@v1
