@@ -19,9 +19,8 @@ import example.order.OrderCompleted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.scheduling.annotation.Async;
+import org.springframework.modulith.ApplicationModuleIntegrationListener;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * A Spring {@link Service} exposed by the inventory module.
@@ -35,8 +34,7 @@ public class InventoryManagement {
 
 	private final InventoryInternal dependency;
 
-	@Async
-	@TransactionalEventListener
+	@ApplicationModuleIntegrationListener
 	void on(OrderCompleted event) throws InterruptedException {
 
 		var orderId = event.getOrderId();

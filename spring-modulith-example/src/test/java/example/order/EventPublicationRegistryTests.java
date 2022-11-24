@@ -22,11 +22,10 @@ import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
+import org.springframework.modulith.ApplicationModuleIntegrationListener;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.test.ApplicationModuleTest;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.test.annotation.DirtiesContext;
-import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * A show case for how the Spring Modulith application event publication registry keeps track of incomplete publications
@@ -57,8 +56,7 @@ class EventPublicationRegistryTests {
 
 	static class FailingAsyncTransactionalEventListener {
 
-		@Async
-		@TransactionalEventListener
+		@ApplicationModuleIntegrationListener
 		void foo(OrderCompleted event) {
 			throw new IllegalStateException();
 		}

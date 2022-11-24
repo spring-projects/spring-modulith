@@ -78,6 +78,43 @@ This now effectively decouples the original transaction from the execution of th
 While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
 Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
 
+[[events.amil]]
+== Application Module Integration Listener
+
+To run a transactional event listener in a transaction itself, it would need to be annotated with `@Transactional` itself.
+
+.An async, transactional event listener running in a transaction itself
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class InventoryManagement {
+
+  @Async
+  @Transactional
+  @TransactionalEventListener
+  void on(OrderCompleted event) {
+
+  }
+}
+----
+
+To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleIntegrationListener` to shortcut the declaration
+
+.An application module integration listener
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class InventoryManagement {
+
+  @ApplicationModuleIntegrationListener
+  void on(OrderCompleted event) {
+
+  }
+}
+----
+
 [[events.publication-registry]]
 == The Event Publication Registry
 
