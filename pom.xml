@@ -9,6 +9,13 @@
 
 	<name>Spring Modulith</name>
 
+	<organization>
+		<name>VMware Inc.</name>
+		<url>https://spring.io</url>
+	</organization>
+
+	<url>https://spring.io/projects/spring-modulith</url>
+
 	<modules>
 		<module>spring-modulith-api</module>
 		<module>spring-modulith-bom</module>
@@ -36,11 +43,6 @@
 		<spring-boot.version>3.0.0</spring-boot.version>
 
 	</properties>
-
-	<organization>
-		<name>Spring Modulith</name>
-		<url>http://moduliths.org</url>
-	</organization>
 
 	<developers>
 		<developer>
