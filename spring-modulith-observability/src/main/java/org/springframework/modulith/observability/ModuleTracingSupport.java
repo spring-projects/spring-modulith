@@ -16,13 +16,12 @@
 package org.springframework.modulith.observability;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
 /**
@@ -30,16 +29,14 @@ import org.springframework.util.Assert;
  */
 class ModuleTracingSupport implements BeanClassLoaderAware {
 
-	private final Supplier<ApplicationModules> modules;
-	private final ApplicationRuntime context;
+	private final ApplicationModulesRuntime runtime;
 	private ClassLoader classLoader;
 
-	protected ModuleTracingSupport(ApplicationRuntime context) {
+	protected ModuleTracingSupport(ApplicationModulesRuntime runtime) {
 
-		Assert.notNull(context, "ApplicationContext must not be null!");
+		Assert.notNull(runtime, "ModulesRuntime must not be null!");
 
-		this.modules = ModulesRuntime.of(context);
-		this.context = context;
+		this.runtime = runtime;
 	}
 
 	/*
@@ -51,17 +48,8 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 		this.classLoader = classLoader;
 	}
 
-	protected final ApplicationModules getModules() {
-
-		try {
-			return modules.get();
-		} catch (Exception o_O) {
-			throw new RuntimeException(o_O);
-		}
-	}
-
 	protected final Class<?> getBeanUserClass(Object bean, String beanName) {
-		return context.getUserClass(bean, beanName);
+		return runtime.getUserClass(bean, beanName);
 	}
 
 	protected final Object addAdvisor(Object bean, Advisor advisor) {

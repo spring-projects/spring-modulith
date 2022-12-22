@@ -13,27 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.autoconfigure;
+package org.springframework.modulith.actuator.autoconfigure;
 
-import io.micrometer.tracing.Tracer;
-
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.data.rest.webmvc.RepositoryController;
-import org.springframework.modulith.observability.SpringDataRestModuleTracingBeanPostProcessor;
+import org.springframework.modulith.actuator.ApplicationModulesEndpoint;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
+ * Auto-configuration for the {@link ApplicationModulesEndpoint}.
+ *
  * @author Oliver Drotbohm
  */
-@Configuration(proxyBeanMethods = false)
-@ConditionalOnClass(RepositoryController.class)
-class SpringDataRestModuleObservabilityAutoConfiguration {
+@AutoConfiguration
+class ApplicationModulesEndpointConfiguration {
 
 	@Bean
-	static SpringDataRestModuleTracingBeanPostProcessor springDataRestModuleTracingBeanPostProcessor(
-			ApplicationModulesRuntime runtime, Tracer tracer) {
-		return new SpringDataRestModuleTracingBeanPostProcessor(runtime, tracer);
+	@ConditionalOnMissingBean
+	ApplicationModulesEndpoint applicationModulesEndpoint(ApplicationModulesRuntime runtime) {
+		return new ApplicationModulesEndpoint(runtime);
 	}
 }

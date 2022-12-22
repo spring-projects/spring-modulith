@@ -27,13 +27,11 @@ import io.micrometer.tracing.Tracer;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.observability.ApplicationRuntime;
 import org.springframework.modulith.observability.ModuleEventListener;
 import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor;
-import org.springframework.modulith.observability.ModulesRuntime;
+import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
  * @author Oliver Drotbohm
@@ -43,19 +41,15 @@ import org.springframework.modulith.observability.ModulesRuntime;
 class ModuleObservabilityAutoConfiguration {
 
 	@Bean
-	static SpringBootApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
-		return new SpringBootApplicationRuntime(context);
-	}
-
-	@Bean
-	static ModuleTracingBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationRuntime runtime,
+	static ModuleTracingBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
 			Tracer tracer) {
 		return new ModuleTracingBeanPostProcessor(runtime, tracer);
 	}
 
 	@Bean
-	static ModuleEventListener tracingModuleEventListener(ApplicationRuntime runtime, ObjectProvider<Tracer> tracer) {
-		return new ModuleEventListener(ModulesRuntime.of(runtime), () -> tracer.getObject());
+	static ModuleEventListener tracingModuleEventListener(ApplicationModulesRuntime runtime,
+			ObjectProvider<Tracer> tracer) {
+		return new ModuleEventListener(runtime, () -> tracer.getObject());
 	}
 
 	/**

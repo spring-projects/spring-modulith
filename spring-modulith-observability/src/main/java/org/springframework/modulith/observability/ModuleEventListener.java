@@ -25,6 +25,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.modulith.model.ApplicationModule;
+import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
  * @author Oliver Drotbohm
@@ -32,7 +33,7 @@ import org.springframework.modulith.model.ApplicationModule;
 @RequiredArgsConstructor
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
-	private final ModulesRuntime modules;
+	private final ApplicationModulesRuntime modules;
 	private final Supplier<Tracer> tracer;
 
 	/*

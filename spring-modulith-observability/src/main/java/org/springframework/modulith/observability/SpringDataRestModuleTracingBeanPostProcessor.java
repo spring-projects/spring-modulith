@@ -18,6 +18,8 @@ package org.springframework.modulith.observability;
 import io.micrometer.tracing.Tracer;
 import lombok.RequiredArgsConstructor;
 
+import java.util.function.Supplier;
+
 import org.aopalliance.aop.Advice;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -30,6 +32,7 @@ import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
  * @author Oliver Drotbohm
@@ -37,9 +40,9 @@ import org.springframework.modulith.model.ApplicationModules;
 public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
 
 	private final Tracer tracer;
-	private final ApplicationRuntime runtime;
+	private final ApplicationModulesRuntime runtime;
 
-	public SpringDataRestModuleTracingBeanPostProcessor(ApplicationRuntime runtime, Tracer tracer) {
+	public SpringDataRestModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Tracer tracer) {
 
 		super(runtime);
 
@@ -60,7 +63,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 			return bean;
 		}
 
-		Advice interceptor = new DataRestControllerInterceptor(getModules(), tracer);
+		Advice interceptor = new DataRestControllerInterceptor(runtime, tracer);
 		Advisor advisor = new DefaultPointcutAdvisor(interceptor);
 
 		return addAdvisor(bean, advisor, it -> it.setProxyTargetClass(true));
@@ -69,7 +72,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 	@RequiredArgsConstructor
 	private static class DataRestControllerInterceptor implements MethodInterceptor {
 
-		private final ApplicationModules modules;
+		private final Supplier<ApplicationModules> modules;
 		private final Tracer tracer;
 
 		/*
@@ -100,7 +103,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 
 				RootResourceInformation info = (RootResourceInformation) argument;
 
-				return modules.getModuleByType(info.getDomainType().getName()).orElse(null);
+				return modules.get().getModuleByType(info.getDomainType().getName()).orElse(null);
 			}
 
 			return null;

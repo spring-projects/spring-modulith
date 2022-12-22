@@ -25,7 +25,7 @@ import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.model.Types.SpringTypes;
 import org.springframework.util.Assert;
 
-interface ModulithMetadata {
+public interface ModulithMetadata {
 
 	static final String ANNOTATION_MISSING = "Modules can only be retrieved from a root type, but %s is not annotated with either @%s, @%s or @%s!";
 

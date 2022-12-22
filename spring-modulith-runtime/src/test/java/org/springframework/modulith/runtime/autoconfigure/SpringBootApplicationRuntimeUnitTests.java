@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.autoconfigure;
+package org.springframework.modulith.runtime.autoconfigure;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -23,7 +23,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.observability.ApplicationRuntime;
+import org.springframework.modulith.runtime.ApplicationRuntime;
 
 /**
  * Unit tests for {@link SpringBootApplicationRuntime}.
@@ -31,11 +31,11 @@ import org.springframework.modulith.observability.ApplicationRuntime;
  * @author Oliver Drotbohm
  */
 @ExtendWith(MockitoExtension.class)
-public class SpringBootApplicationRuntimeUnitTests {
+class SpringBootApplicationRuntimeUnitTests {
 
 	@Mock ApplicationContext context;
 
-	@Test
+	@Test // GH-87
 	void extractsUserTypeFromClassBasedProxy() {
 
 		Object proxy = new ProxyFactory(new Sample()).getProxy();

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.runtime;
 
 /**
  * Abstraction of the application runtime environment. Primarily to keep references to Spring Boot out of the core
@@ -26,14 +26,14 @@ public interface ApplicationRuntime {
 	/**
 	 * Returns the identifier of the application.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	String getId();
 
 	/**
 	 * Returns the primary application class.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	Class<?> getMainApplicationClass();
 
@@ -41,18 +41,17 @@ public interface ApplicationRuntime {
 	 * Obtain the end user class for the given bean and bean name. Necessary to reveal the actual user type from
 	 * potentially proxied instances.
 	 *
-	 * @param bean
-	 * @param beanName
-	 * @return
+	 * @param bean must not be {@literal null}.
+	 * @param beanName must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
 	 */
 	Class<?> getUserClass(Object bean, String beanName);
 
 	/**
 	 * Returns whether the given type is an application class, i.e. user code in one of the application packages.
 	 *
-	 * @param type
-	 * @return
-	 * @see #getApplicationPackages()
+	 * @param type must not be {@literal null}.
+	 * @return whether the given type is an application class, i.e. user code in one of the application packages.
 	 */
 	boolean isApplicationClass(Class<?> type);
 }

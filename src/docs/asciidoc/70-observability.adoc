@@ -24,3 +24,91 @@ image::observability.png[]
 In this particular case, triggering the payment changes the state of the order which then causes an order completion event being triggered.
 This gets picked up asynchronously by the engine that triggers another state change on the order, works for a couple of seconds and triggers the final state change on the order in turn.
 
+== Application Module Actuator
+
+The application module structure can be exposed as Spring Boot actuator.
+To enable the actuator, add the `spring-modulith-actuator` dependency to the project:
+
+[source, xml]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>spring-modulith-actuator</artifactId>
+  <version>{projectVersion}</version>
+  <scope>runtime</scope>
+</dependency>
+
+<!-- Spring Boot actuator starter required to enable actuators in general -->
+<dependency>
+  <groupId>org.springframework.boot</groupId>
+  <artifactId>spring-boot-starter-actuator</artifactId>
+  <version>…</version>
+  <scope>runtime</scope>
+</dependency>
+----
+
+Running the application will now expose an `applicationmodules` actuator resource:
+
+[source, json]
+----
+GET http://localhost:8080/actuator
+
+{
+  "_links": {
+    "self": {
+      "href": "http://localhost:8080/actuator",
+      "templated": false
+    },
+    "health-path": {
+      "href": "http://localhost:8080/actuator/health/{*path}",
+      "templated": true
+    },
+    "health": {
+      "href": "http://localhost:8080/actuator/health",
+      "templated": false
+    },
+    "applicationmodules": { <1>
+      "href": "http://localhost:8080/actuator/applicationmodules",
+      "templated": false
+    }
+  }
+}
+----
+<1> The `applicationmodules` actuator resource advertised.
+
+The `applicationmodules` resource adheres to the following structure:
+
+[%autowidth.stretch]
+|===
+|JSONPath|Description
+
+|`$.{moduleName}`|The technical name of an application module. Target for module references in `dependencies.target`.
+|`$.{moduleName}.displayName`|The human-readable name of the application module.
+|`$.{moduleName}.basePackage`|The application module's base package.
+|`$.{moduleName}.dependencies[]`|All outgoing dependencies of the application module
+|`$.{moduleName}.dependencies[].target`|The name of the application module depended on. A reference to a `{moduleName}`.
+|`$.{moduleName}.dependencies[].types[]`|The types of dependencies towards the target module. Can either be `DEFAULT` (simple type dependency), `USES_COMPONENT` (Spring bean dependency) or `EVENT_LISTENER`.
+|===
+
+An example module arrangement would look like this:
+
+[source, json]
+----
+{
+  "a": {
+    "basePackage": "example.a",
+    "displayName": "A",
+    "dependencies": []
+  },
+  "b": {
+    "basePackage": "example.b",
+    "displayName": "B",
+    "dependencies": [ {
+      "target": "a",
+      "types": [ "EVENT_LISTENER", "USES_COMPONENT" ]
+    } ]
+  }
+}
+
+----
+

@@ -18,18 +18,20 @@
 	<url>https://spring.io/projects/spring-modulith</url>
 
 	<modules>
+		<module>spring-modulith-actuator</module>
 		<module>spring-modulith-api</module>
 		<module>spring-modulith-bom</module>
 		<module>spring-modulith-core</module>
-		<module>spring-modulith-events</module>
-		<module>spring-modulith-test</module>
 		<module>spring-modulith-docs</module>
-		<module>spring-modulith-observability</module>
+		<module>spring-modulith-events</module>
 		<module>spring-modulith-moments</module>
+		<module>spring-modulith-observability</module>
+		<module>spring-modulith-runtime</module>
 		<module>spring-modulith-starter-jdbc</module>
 		<module>spring-modulith-starter-jpa</module>
 		<module>spring-modulith-starter-mongodb</module>
 		<module>spring-modulith-starter-test</module>
+		<module>spring-modulith-test</module>
 	</modules>
 
 	<properties>
@@ -449,6 +451,7 @@ limitations under the License.
 				<configuration>
 					<source>17</source>
 					<target>17</target>
+					<parameters>true</parameters>
 				</configuration>
 			</plugin>
 

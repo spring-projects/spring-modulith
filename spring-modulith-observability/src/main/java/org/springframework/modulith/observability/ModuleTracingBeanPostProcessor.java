@@ -32,6 +32,7 @@ import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
  * @author Oliver Drotbohm
@@ -40,11 +41,11 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
-	private final ApplicationRuntime runtime;
+	private final ApplicationModulesRuntime runtime;
 	private final Tracer tracer;
 	private final Map<String, Advisor> advisors = new HashMap<>();
 
-	public ModuleTracingBeanPostProcessor(ApplicationRuntime runtime, Tracer tracer) {
+	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Tracer tracer) {
 
 		super(runtime);
 
@@ -65,7 +66,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 			return bean;
 		}
 
-		ApplicationModules modules = getModules();
+		ApplicationModules modules = runtime.get();
 
 		return modules.getModuleByType(type.getName())
 				.map(DefaultObservedModule::new)

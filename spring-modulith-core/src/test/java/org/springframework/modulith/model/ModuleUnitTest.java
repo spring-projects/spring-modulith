@@ -39,9 +39,9 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 @TestInstance(Lifecycle.PER_CLASS)
 class ModuleUnitTest {
 
-	ClassFileImporter importer = new ClassFileImporter();
-	JavaClasses classes = importer.importPackages("com.acme.withatbean"); //
-	JavaPackage javaPackage = JavaPackage.of(Classes.of(classes), "");
+	String packageName = "com.acme.withatbean";
+	JavaClasses classes = new ClassFileImporter().importPackages(packageName);
+	JavaPackage javaPackage = JavaPackage.of(Classes.of(classes), packageName);
 
 	ApplicationModule module = new ApplicationModule(javaPackage, false);
 
@@ -68,5 +68,10 @@ class ModuleUnitTest {
 				.satisfies(it -> {
 					assertThat(it.getSources()).isNotEmpty();
 				});
+	}
+
+	@Test // GH-87
+	void usesCapitalizedNameAsDisplayNameByDefault() {
+		assertThat(module.getDisplayName()).isEqualTo("Withatbean");
 	}
 }

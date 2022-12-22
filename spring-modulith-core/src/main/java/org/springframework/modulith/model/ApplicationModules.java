@@ -54,8 +54,8 @@ import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private static final Map<CacheKey, ApplicationModules> CACHE = new HashMap<>();
-
 	private static final ApplicationModuleDetectionStrategy DETECTION_STRATEGY;
+	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
 
 	static {
 
@@ -82,13 +82,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private boolean verified;
 
-	private ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
-			DescribedPredicate<JavaClass> ignored,
-			boolean useFullyQualifiedModuleNames) {
+	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
+			DescribedPredicate<JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
 
 		this.metadata = metadata;
 		this.allClasses = new ClassFileImporter() //
-				.withImportOption(new ImportOption.DoNotIncludeTests()) //
+				.withImportOption(option) //
 				.importPackages(packages) //
 				.that(not(ignored));
 
@@ -189,7 +188,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		basePackages.addAll(metadata.getAdditionalPackages());
 
 		ApplicationModules modules = new ApplicationModules(metadata, basePackages, key.getIgnored(),
-				metadata.useFullyQualifiedModuleNames());
+				metadata.useFullyQualifiedModuleNames(), IMPORT_OPTION);
 
 		Set<ApplicationModule> sharedModules = metadata.getSharedModuleNames() //
 				.map(modules::getRequiredModule) //
@@ -281,7 +280,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Execute all verifications to be applied, unless the verifcation has been executed before.
+	 * Execute all verifications to be applied, unless the verification has been executed before.
 	 *
 	 * @return will never be {@literal null}.
 	 */

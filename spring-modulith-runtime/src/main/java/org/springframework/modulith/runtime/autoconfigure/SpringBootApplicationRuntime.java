@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.autoconfigure;
+package org.springframework.modulith.runtime.autoconfigure;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +23,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.observability.ApplicationRuntime;
+import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -52,7 +52,7 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	@Override
 	public Class<?> getMainApplicationClass() {
 
-		String[] mainBeanNames = context.getBeanNamesForAnnotation(SpringBootApplication.class);
+		var mainBeanNames = context.getBeanNamesForAnnotation(SpringBootApplication.class);
 
 		return context.getType(mainBeanNames[0]);
 	}
@@ -64,7 +64,7 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	@Override
 	public Class<?> getUserClass(Object bean, String beanName) {
 
-		Class<?> beanType = context.containsBean(beanName)
+		var beanType = context.containsBean(beanName)
 				? context.getType(beanName)
 				: bean.getClass();
 

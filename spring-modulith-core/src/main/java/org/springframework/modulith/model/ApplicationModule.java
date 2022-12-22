@@ -119,9 +119,8 @@ public class ApplicationModule {
 	 * @return will never be {@literal null} or empty.
 	 */
 	public String getDisplayName() {
-
 		return information.getDisplayName()
-				.orElseGet(() -> getName());
+				.orElseGet(() -> StringUtils.capitalize(basePackage.getLocalName()));
 	}
 
 	/**
