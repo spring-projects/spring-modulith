@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
-import org.springframework.modulith.ApplicationModuleIntegrationListener;
+import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.annotation.DirtiesContext;
@@ -56,7 +56,7 @@ class EventPublicationRegistryTests {
 
 	static class FailingAsyncTransactionalEventListener {
 
-		@ApplicationModuleIntegrationListener
+		@ApplicationModuleListener
 		void foo(OrderCompleted event) {
 			throw new IllegalStateException();
 		}

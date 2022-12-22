@@ -28,7 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
- * An {@link ApplicationModuleIntegrationListener} is an {@link Async} Spring {@link TransactionalEventListener} that
+ * An {@link ApplicationModuleListener} is an {@link Async} Spring {@link TransactionalEventListener} that
  * runs in a transaction itself. Thus, the annotation serves as syntactic sugar for the generally recommend setup to
  * integrate application modules via events. The setup makes sure that an original business transaction completes
  * successfully and the integration asynchronously runs in a transaction itself to decouple the integration as much as
@@ -47,7 +47,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Documented
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-public @interface ApplicationModuleIntegrationListener {
+public @interface ApplicationModuleListener {
 
 	/**
 	 * Whether the transaction to be run for the event listener is supposed to be read-only (default {@literal false}).

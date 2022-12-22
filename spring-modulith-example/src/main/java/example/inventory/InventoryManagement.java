@@ -19,7 +19,7 @@ import example.order.OrderCompleted;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.modulith.ApplicationModuleIntegrationListener;
+import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.stereotype.Service;
 
 /**
@@ -34,7 +34,7 @@ public class InventoryManagement {
 
 	private final InventoryInternal dependency;
 
-	@ApplicationModuleIntegrationListener
+	@ApplicationModuleListener
 	void on(OrderCompleted event) throws InterruptedException {
 
 		var orderId = event.getOrderId();
