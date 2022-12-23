@@ -21,6 +21,15 @@
 		<project.root>${basedir}/..</project.root>
 	</properties>
 
+	<profiles>
+		<profile>
+			<id>documentation</id>
+			<properties>
+				<maven.deploy.skip>false</maven.deploy.skip>
+			</properties>
+		</profile>
+	</profiles>
+
 	<build>
 		<plugins>
 			<plugin>
