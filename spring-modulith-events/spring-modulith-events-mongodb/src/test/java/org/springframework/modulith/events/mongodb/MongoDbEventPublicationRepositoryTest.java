@@ -40,7 +40,7 @@ import org.springframework.test.context.ContextConfiguration;
  */
 @DataMongoTest
 @ContextConfiguration(classes = TestApplication.class)
-class MongoDbEventPublicationRepositoryTest extends WithEmbeddedMongoDb {
+class MongoDbEventPublicationRepositoryTest {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 

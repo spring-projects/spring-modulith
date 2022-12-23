@@ -30,7 +30,7 @@ import org.springframework.modulith.testapp.TestApplication;
  * @author Oliver Drotbohm
  */
 @SpringBootTest(classes = TestApplication.class)
-class MongoDbEventPublicationAutoConfigurationIntegrationTests extends WithEmbeddedMongoDb {
+class MongoDbEventPublicationAutoConfigurationIntegrationTests {
 
 	@Autowired ApplicationContext context;
 
