@@ -82,12 +82,19 @@ public class Moments {
 		// Day has passed
 		events.publishEvent(DayHasPassed.of(date));
 
-		// Week has passed
-		int week = getWeekOfYear(date);
-		Year year = Year.from(date);
+		var year = Year.from(date);
 
-		if (getWeekOfYear(date.plusDays(1)) > week) {
-			events.publishEvent(WeekHasPassed.of(year, week, properties.getLocale()));
+		// Week has passed
+		var weekFields = WeekFields.of(properties.getLocale());
+		var field = weekFields.weekOfWeekBasedYear();
+		var currentWeek = date.get(field);
+		var tomorrowsWeek = date.plusDays(1).get(field);
+
+		if (tomorrowsWeek != currentWeek) {
+
+			var eventYear = Year.of(date.get(weekFields.weekBasedYear()));
+
+			events.publishEvent(WeekHasPassed.of(eventYear, currentWeek, properties.getLocale()));
 		}
 
 		// Month has passed
@@ -145,15 +152,5 @@ public class Moments {
 		Instant instant = clock.instant().plus(shift);
 
 		return LocalDateTime.ofInstant(instant, properties.getZoneId());
-	}
-
-	/**
-	 * Returns the week of the year for the given {@link LocalDate}.
-	 *
-	 * @param date must not be {@literal null}.
-	 * @return
-	 */
-	private int getWeekOfYear(LocalDate date) {
-		return date.get(WeekFields.of(properties.getLocale()).weekOfYear());
 	}
 }

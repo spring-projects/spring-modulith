@@ -127,7 +127,7 @@ class MomentsUnitTests {
 		MomentsProperties properties = MomentsProperties.DEFAULTS.withLocale(locale);
 
 		LocalDate now = LocalDate.now(clock);
-		int weekOfYear = now.get(WeekFields.of(locale).weekOfYear());
+		int weekOfYear = now.get(WeekFields.of(locale).weekOfWeekBasedYear());
 
 		new Moments(clock, events, properties).shiftBy(Duration.ofDays(7));
 
