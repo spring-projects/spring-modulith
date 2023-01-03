@@ -28,6 +28,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Provides instances of {@link PublishedEvents} as test method parameters.
@@ -35,6 +36,9 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  */
 class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCallback, AfterEachCallback {
+
+	private static final boolean ASSERT_J_PRESENT = ClassUtils.isPresent("org.assertj.core.api.Assert",
+			PublishedEventsParameterResolver.class.getClassLoader());
 
 	private ThreadBoundApplicationListenerAdapter listener = new ThreadBoundApplicationListenerAdapter();
 	private final Function<ExtensionContext, ApplicationContext> lookup;
@@ -64,7 +68,15 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 	 */
 	@Override
 	public boolean supportsParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
-		return PublishedEvents.class.isAssignableFrom(parameterContext.getParameter().getType());
+
+		var type = parameterContext.getParameter().getType();
+
+		if (type.getName().equals("org.springframework.modulith.test.AssertablePublishedEvents") && !ASSERT_J_PRESENT) {
+			throw new IllegalStateException(
+					"Method declares AssertablePublishedEvents as parameter but AssertJ is not on the classpath!");
+		}
+
+		return PublishedEvents.class.isAssignableFrom(type);
 	}
 
 	/*
@@ -74,7 +86,10 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 	@Override
 	public PublishedEvents resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
 
-		DefaultPublishedEvents publishedEvents = new DefaultPublishedEvents();
+		var publishedEvents = ASSERT_J_PRESENT
+				? new DefaultAssertablePublishedEvents()
+				: new DefaultPublishedEvents();
+
 		listener.registerDelegate(publishedEvents);
 
 		return publishedEvents;

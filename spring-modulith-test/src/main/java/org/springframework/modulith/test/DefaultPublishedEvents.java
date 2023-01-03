@@ -22,9 +22,9 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationEvent;
@@ -106,7 +106,6 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 
 			return SimpleTypedPublishedEvents.of(getFilteredEvents(subType::isInstance) //
 					.map(subType::cast));
-
 		}
 
 		/*
@@ -120,18 +119,20 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matchingMapped(java.util.function.Function, java.util.function.Predicate)
+		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matching(java.util.function.Function, java.util.function.Predicate)
 		 */
 		@Override
-		public <S> TypedPublishedEvents<T> matchingMapped(Function<T, S> mapper, Predicate<? super S> predicate) {
+		public <S> TypedPublishedEvents<T> matching(Function<T, S> mapper, Predicate<? super S> predicate) {
+			return SimpleTypedPublishedEvents.of(events.stream().filter(it -> predicate.test(mapper.apply(it))));
+		}
 
-			return SimpleTypedPublishedEvents.of(events.stream().flatMap(it -> {
-
-				S mapped = mapper.apply(it);
-
-				return predicate.test(mapped) ? Stream.of(it) : Stream.empty();
-
-			}));
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matching(java.util.function.Function, java.lang.Object)
+		 */
+		@Override
+		public <S> TypedPublishedEvents<T> matching(Function<T, S> mapper, S value) {
+			return matching(mapper, (Predicate<S>) it -> Objects.equals(it, value));
 		}
 
 		/**

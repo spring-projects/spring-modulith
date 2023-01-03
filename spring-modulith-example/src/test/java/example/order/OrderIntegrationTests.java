@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.test.ApplicationModuleTest;
-import org.springframework.modulith.test.PublishedEvents;
+import org.springframework.modulith.test.AssertablePublishedEvents;
 
 /**
  * @author Oliver Drotbohm
@@ -33,15 +33,23 @@ class OrderIntegrationTests {
 	private final OrderManagement orders;
 
 	@Test
-	void publishesOrderCompletion(PublishedEvents events) {
+	void publishesOrderCompletion(AssertablePublishedEvents events) {
 
 		var reference = new Order();
 
 		orders.complete(reference);
 
+		// Verification
+
 		var matchingMapped = events.ofType(OrderCompleted.class)
-				.matchingMapped(OrderCompleted::getOrderId, reference.getId()::equals);
+				.matching(OrderCompleted::getOrderId, reference.getId());
 
 		assertThat(matchingMapped).hasSize(1);
+
+		// AssertJ
+
+		assertThat(events)
+				.contains(OrderCompleted.class)
+				.matching(OrderCompleted::getOrderId, reference.getId());
 	}
 }

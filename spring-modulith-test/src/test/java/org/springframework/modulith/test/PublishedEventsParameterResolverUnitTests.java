@@ -36,7 +36,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Oliver Drotbohm
  */
-public class PublishedEventsParameterResolverUnitTests {
+class PublishedEventsParameterResolverUnitTests {
 
 	AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
 
@@ -46,6 +46,7 @@ public class PublishedEventsParameterResolverUnitTests {
 		PublishedEventsParameterResolver resolver = new PublishedEventsParameterResolver(__ -> context);
 
 		assertThat(resolver.supportsParameter(getParameterContext(PublishedEvents.class), null)).isTrue();
+		assertThat(resolver.supportsParameter(getParameterContext(AssertablePublishedEvents.class), null)).isTrue();
 		assertThat(resolver.supportsParameter(getParameterContext(Object.class), null)).isFalse();
 	}
 
@@ -99,5 +100,7 @@ public class PublishedEventsParameterResolverUnitTests {
 		void with(PublishedEvents events);
 
 		void with(Object object);
+
+		void with(AssertablePublishedEvents events);
 	}
 }
