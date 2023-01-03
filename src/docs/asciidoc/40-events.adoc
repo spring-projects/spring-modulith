@@ -159,7 +159,7 @@ Integration tests for application modules that interact with other modules' Spri
 [source, java, subs="quotes"]
 ----
 @ApplicationModuleTest
-class InventoryIntegrationTests {
+class OrderIntegrationTests {
 
   **@MockBean SomeOtherComponent someOtherComponent;**
 
@@ -177,19 +177,45 @@ class InventoryIntegrationTests {
 In an event-based application interaction model, the dependency to the other application module's Spring bean is gone and we have nothing to verify.
 Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `PublishedEvents` instance injected into the test method to verify a particular set of events has been published during the course of the business operation under test.
 
-.Event-based intergration testing of the application module arrangement
+.Event-based integration testing of the application module arrangement
 [source, java, subs="quotes"]
 ----
 @ApplicationModuleTest
-class InventoryIntegrationTests {
+class OrderIntegrationTests {
 
   @Test
   void someTestMethod(**PublishedEvents events**) {
 
-    // Given
-    // When
-    // Then
-    **assertThat(events.…).…;**
+    // …
+    var matchingMapped = events.ofType(OrderCompleted.class)
+      .matching(OrderCompleted::getOrderId, reference.getId());
+
+    assertThat(matchingMapped).hasSize(1);
   }
 }
 ----
+
+Note, how `PublishedEvents` exposes API to select events matching a certain criteria.
+The verification is concluded by an AssertJ assertion that verifies the number of elements expected.
+If you are using AssertJ for those assertions anyway, you can also use `AssertablePublishedEvents` as test method parameter type and use the fluent assertion APIs provided through that.
+
+.Using `AssertablePublishedEvents` to verify event publications
+[source, java, subs="quotes"]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  @Test
+  void someTestMethod(**AssertablePublishedEvents events**) {
+
+    // …
+    assertThat(events)
+      .contains(OrderCompleted.class)
+      .matching(OrderCompleted::getOrderId, reference.getId());
+  }
+}
+----
+
+Note, how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
+
+
