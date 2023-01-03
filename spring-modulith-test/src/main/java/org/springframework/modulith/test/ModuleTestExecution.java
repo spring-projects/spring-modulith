@@ -27,15 +27,14 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.AnnotatedClassFinder;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.modulith.model.JavaPackage;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.model.JavaPackage;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 
 import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
@@ -83,7 +82,8 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		this.dependencies = Suppliers.memoize(() -> {
 
-			Stream<ApplicationModule> bootstrapDependencies = module.getBootstrapDependencies(modules, bootstrapMode.getDepth());
+			Stream<ApplicationModule> bootstrapDependencies = module.getBootstrapDependencies(modules,
+					bootstrapMode.getDepth());
 			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).toList();
 		});
 
@@ -164,7 +164,8 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		return modules.iterator();
 	}
 
-	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation, ApplicationModules modules) {
+	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation,
+			ApplicationModules modules) {
 
 		return Arrays.stream(annotation.extraIncludes()) //
 				.map(modules::getModuleByName) //
