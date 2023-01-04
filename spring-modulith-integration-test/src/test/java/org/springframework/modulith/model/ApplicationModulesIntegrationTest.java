@@ -17,9 +17,9 @@ package org.springframework.modulith.model;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -27,13 +27,15 @@ import org.junit.jupiter.api.Test;
 import com.acme.myproject.Application;
 import com.acme.myproject.complex.internal.FirstTypeBasedPort;
 import com.acme.myproject.complex.internal.SecondTypeBasePort;
+import com.acme.myproject.moduleA.ServiceComponentA;
 import com.acme.myproject.moduleA.SomeConfigurationA.SomeAtBeanComponentA;
+import com.acme.myproject.moduleB.ServiceComponentB;
 
 /**
  * @author Oliver Drotbohm
  * @author Peter Gafert
  */
-class ModulesIntegrationTest {
+class ApplicationModulesIntegrationTest {
 
 	ApplicationModules modules = ApplicationModules.of(Application.class);
 
@@ -148,6 +150,18 @@ class ModulesIntegrationTest {
 		assertThat(fromPackage.stream().map(ApplicationModule::getName)) //
 				.containsExactlyInAnyOrderElementsOf(
 						modules.stream().map(ApplicationModule::getName).toList());
+	}
+
+	@Test // #102
+	void ordersTypesByModuleDependencies() {
+
+		// Non-module type first, B depending on A
+		var source = new ArrayList<>(List.of(String.class, ServiceComponentB.class, ServiceComponentA.class));
+
+		source.sort(ApplicationModules.of(Application.class).getComparator());
+
+		// Expect A before B before non-module type.
+		assertThat(source).containsExactly(ServiceComponentA.class, ServiceComponentB.class, String.class);
 	}
 
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {

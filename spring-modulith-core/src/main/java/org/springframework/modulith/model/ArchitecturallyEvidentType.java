@@ -92,7 +92,7 @@ public abstract class ArchitecturallyEvidentType {
 	 * @return will never be {@literal null}.
 	 */
 	String getAbbreviatedFullName() {
-		return FormatableJavaClass.of(getType()).getAbbreviatedFullName();
+		return FormatableType.of(getType()).getAbbreviatedFullName();
 	}
 
 	/**

@@ -23,7 +23,7 @@ import java.util.Arrays;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
-import org.springframework.modulith.model.FormatableJavaClass;
+import org.springframework.modulith.model.FormatableType;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.SpringBean;
@@ -132,8 +132,8 @@ class DefaultObservedModule implements ObservedModule {
 	private static String toString(Class<?> type, Method method, ApplicationModule module) {
 
 		String typeName = module.getType(type.getName())
-				.map(FormatableJavaClass::of)
-				.map(FormatableJavaClass::getAbbreviatedFullName)
+				.map(FormatableType::of)
+				.map(FormatableType::getAbbreviatedFullName)
 				.orElseGet(() -> type.getName());
 
 		return String.format("%s.%s(…)", typeName, method.getName());

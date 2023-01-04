@@ -126,7 +126,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 				|| basePackages.get().stream().anyMatch(it -> it.contains(className));
 
 		if (result) {
-			LOG.debug("Including class {}.", className);
+			LOG.trace("Including class {}.", className);
 		}
 
 		return !result;

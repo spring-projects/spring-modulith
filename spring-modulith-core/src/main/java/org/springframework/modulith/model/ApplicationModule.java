@@ -684,7 +684,7 @@ public class ApplicationModule {
 		 */
 		@Override
 		public String toString() {
-			return type.format(FormatableJavaClass.of(source), FormatableJavaClass.of(target));
+			return type.format(FormatableType.of(source), FormatableType.of(target));
 		}
 
 		static QualifiedDependency fromCodeUnitParameter(JavaCodeUnit codeUnit, JavaClass parameter) {

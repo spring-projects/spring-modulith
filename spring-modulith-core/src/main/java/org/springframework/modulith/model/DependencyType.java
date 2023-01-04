@@ -47,7 +47,7 @@ public enum DependencyType {
 		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
 		 */
 		@Override
-		public String format(FormatableJavaClass source, FormatableJavaClass target) {
+		public String format(FormatableType source, FormatableType target) {
 			return String.format("Component %s using %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
 		}
 	},
@@ -62,7 +62,7 @@ public enum DependencyType {
 		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
 		 */
 		@Override
-		public String format(FormatableJavaClass source, FormatableJavaClass target) {
+		public String format(FormatableType source, FormatableType target) {
 			return String.format("Entity %s depending on %s", source.getAbbreviatedFullName(),
 					target.getAbbreviatedFullName());
 		}
@@ -79,7 +79,7 @@ public enum DependencyType {
 		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
 		 */
 		@Override
-		public String format(FormatableJavaClass source, FormatableJavaClass target) {
+		public String format(FormatableType source, FormatableType target) {
 			return String.format("%s listening to events of type %s", source.getAbbreviatedFullName(),
 					target.getAbbreviatedFullName());
 		}
@@ -101,7 +101,7 @@ public enum DependencyType {
 		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
 		 */
 		@Override
-		public String format(FormatableJavaClass source, FormatableJavaClass target) {
+		public String format(FormatableType source, FormatableType target) {
 			return String.format("%s depending on %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
 		}
 	};
@@ -135,7 +135,7 @@ public enum DependencyType {
 		return forParameter(dependency.getTargetClass());
 	}
 
-	public abstract String format(FormatableJavaClass source, FormatableJavaClass target);
+	public abstract String format(FormatableType source, FormatableType target);
 
 	/**
 	 * Returns all {@link DependencyType}s except the given ones.

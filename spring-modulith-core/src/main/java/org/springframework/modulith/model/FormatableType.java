@@ -38,26 +38,50 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
  * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class FormatableJavaClass {
+public class FormatableType {
 
-	private static final Map<JavaClass, FormatableJavaClass> CACHE = new ConcurrentHashMap<>();
+	private static final Map<String, FormatableType> CACHE = new ConcurrentHashMap<>();
 
-	private final JavaClass type;
+	private final String type;
 	private final Supplier<String> abbreviatedName;
 
-	public static FormatableJavaClass of(JavaClass type) {
-		return CACHE.computeIfAbsent(type, FormatableJavaClass::new);
-	}
-
-	private FormatableJavaClass(JavaClass type) {
+	/**
+	 * Creates a new {@link FormatableType} for the given {@link JavaClass}.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static FormatableType of(JavaClass type) {
 
 		Assert.notNull(type, "JavaClass must not be null!");
+
+		return CACHE.computeIfAbsent(type.getName(), FormatableType::new);
+	}
+
+	/**
+	 * Creates a new {@link FormatableType} for the given {@link Class}.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static FormatableType of(Class<?> type) {
+		return CACHE.computeIfAbsent(type.getName(), FormatableType::new);
+	}
+
+	/**
+	 * Creates a new {@link FormatableType} for the given fully-qualified type name.
+	 *
+	 * @param type must not be {@literal null} or empty.
+	 */
+	private FormatableType(String type) {
+
+		Assert.hasText(type, "Type must not be null or empty!");
 
 		this.type = type;
 		this.abbreviatedName = Suppliers.memoize(() -> {
 
 			String abbreviatedPackage = Stream //
-					.of(type.getPackageName().split("\\.")) //
+					.of(ClassUtils.getPackageName(type).split("\\.")) //
 					.map(it -> it.substring(0, 1)) //
 					.collect(Collectors.joining("."));
 
@@ -76,6 +100,13 @@ public class FormatableJavaClass {
 		return abbreviatedName.get();
 	}
 
+	/**
+	 * Returns the abbreviated full name of the type abbreviating only the part of the given {@link ApplicationModule}'s
+	 * base package.
+	 *
+	 * @param module can be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
 	public String getAbbreviatedFullName(@Nullable ApplicationModule module) {
 
 		if (module == null) {
@@ -88,7 +119,7 @@ public class FormatableJavaClass {
 			return getAbbreviatedFullName();
 		}
 
-		String typePackageName = type.getPackageName();
+		String typePackageName = ClassUtils.getPackageName(type);
 
 		if (basePackageName.equals(typePackageName)) {
 			return getAbbreviatedFullName();
@@ -110,7 +141,7 @@ public class FormatableJavaClass {
 	 * @return will never be {@literal null}.
 	 */
 	public String getFullName() {
-		return type.getName().replace("$", ".");
+		return type.replace("$", ".");
 	}
 
 	private static String abbreviate(String source) {

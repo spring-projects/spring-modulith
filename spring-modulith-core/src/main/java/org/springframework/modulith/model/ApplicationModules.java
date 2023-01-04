@@ -29,13 +29,23 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
+import org.jgrapht.Graph;
+import org.jgrapht.graph.DefaultDirectedGraph;
+import org.jgrapht.graph.DefaultEdge;
+import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.jmolecules.archunit.JMoleculesDddRules;
+import org.springframework.core.Ordered;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.annotation.Order;
 import org.springframework.core.io.support.SpringFactoriesLoader;
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.model.Types.JMoleculesTypes;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -56,6 +66,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final Map<CacheKey, ApplicationModules> CACHE = new HashMap<>();
 	private static final ApplicationModuleDetectionStrategy DETECTION_STRATEGY;
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
+	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
+			ApplicationModules.class.getClassLoader());
 
 	static {
 
@@ -79,6 +91,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private final JavaClasses allClasses;
 	private final List<JavaPackage> rootPackages;
 	private final @With(AccessLevel.PRIVATE) @Getter Set<ApplicationModule> sharedModules;
+	private final List<String> orderedNames;
 
 	private boolean verified;
 
@@ -104,6 +117,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.toList();
 
 		this.sharedModules = Collections.emptySet();
+
+		this.orderedNames = JGRAPHT_PRESENT //
+				? TopologicalSorter.topologicallySortModules(this) //
+				: modules.values().stream().map(ApplicationModule::getName).toList();
 	}
 
 	/**
@@ -272,6 +289,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.findFirst();
 	}
 
+	/**
+	 * Returns the {@link ApplicationModule} containing the given type.
+	 *
+	 * @param candidate must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public Optional<ApplicationModule> getModuleByType(Class<?> candidate) {
+		return getModuleByType(candidate.getName());
+	}
+
 	public Optional<ApplicationModule> getModuleForPackage(String name) {
 
 		return modules.values().stream() //
@@ -328,23 +355,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.reduce(violations, Violations::and);
 	}
 
-	private FailureReport assertNoCyclesFor(JavaPackage rootPackage) {
-
-		EvaluationResult result = SlicesRuleDefinition.slices() //
-				.matching(rootPackage.getName().concat(".(*)..")) //
-				.should().beFreeOfCycles() //
-				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
-
-		return result.getFailureReport();
-	}
-
 	/**
 	 * Returns all {@link ApplicationModule}s.
 	 *
 	 * @return will never be {@literal null}.
 	 */
 	public Stream<ApplicationModule> stream() {
-		return modules.values().stream();
+		return StreamSupport.stream(this.spliterator(), false);
 	}
 
 	/**
@@ -356,13 +373,71 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return metadata.getSystemName();
 	}
 
+	/**
+	 * Returns a {@link Comparator} that will sort objects based on their types' application module. In other words,
+	 * objects of types in more fundamental modules will be ordered before ones residing in downstream modules. For
+	 * example, if module A depends on B, objects of types residing in B will be ordered before ones in A. For objects
+	 * residing in the same module, standard Spring-based ordering (via {@link Order} or {@link Ordered}) will be applied.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Comparator<Object> getComparator() {
+
+		return (left, right) -> {
+
+			var leftIndex = getModuleIndexFor(left);
+
+			if (leftIndex == null) {
+				return 1;
+			}
+
+			var rightIndex = getModuleIndexFor(right);
+
+			if (rightIndex == null) {
+				return -1;
+			}
+
+			var result = leftIndex - rightIndex;
+
+			return result != 0 ? result : AnnotationAwareOrderComparator.INSTANCE.compare(left, right);
+		};
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
 	 */
 	@Override
 	public Iterator<ApplicationModule> iterator() {
-		return modules.values().iterator();
+		return orderedNames.stream().map(this::getRequiredModule).iterator();
+	}
+
+	private FailureReport assertNoCyclesFor(JavaPackage rootPackage) {
+
+		EvaluationResult result = SlicesRuleDefinition.slices() //
+				.matching(rootPackage.getName().concat(".(*)..")) //
+				.should().beFreeOfCycles() //
+				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
+
+		return result.getFailureReport();
+	}
+
+	/**
+	 * Returns the index of the module that contains the type of the given object or 1 if the given object is
+	 * {@literal null} or its type does not reside in any module.
+	 *
+	 * @param object can be {@literal null}.
+	 * @return
+	 */
+	private Integer getModuleIndexFor(@Nullable Object object) {
+
+		return Optional.ofNullable(object)
+				.map(it -> Class.class.isInstance(it) ? Class.class.cast(it) : it.getClass())
+				.map(Class::getName)
+				.flatMap(this::getModuleByType)
+				.map(ApplicationModule::getName)
+				.map(orderedNames::indexOf)
+				.orElse(null);
 	}
 
 	/**
@@ -443,6 +518,37 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		@Override
 		public ModulithMetadata getMetadata() {
 			return ModulithMetadata.of(basePackage);
+		}
+	}
+
+	/**
+	 * Dedicated class to be able to only optionally depend on the JGraphT library.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	private static class TopologicalSorter {
+
+		private static List<String> topologicallySortModules(ApplicationModules modules) {
+
+			Graph<ApplicationModule, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+
+			modules.modules.forEach((__, project) -> {
+
+				graph.addVertex(project);
+
+				project.getDependencies(modules).stream() //
+						.map(ApplicationModuleDependency::getTargetModule) //
+						.forEach(dependency -> {
+							graph.addVertex(dependency);
+							graph.addEdge(project, dependency);
+						});
+			});
+
+			var names = new ArrayList<String>();
+
+			new TopologicalOrderIterator<>(graph).forEachRemaining(it -> names.add(0, it.getName()));
+
+			return names;
 		}
 	}
 }
