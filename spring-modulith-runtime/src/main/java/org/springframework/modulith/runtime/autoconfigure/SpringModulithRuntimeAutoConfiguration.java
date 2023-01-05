@@ -15,20 +15,27 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationContext;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
+import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.model.FormatableType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.util.ClassUtils;
 
 /**
  * Auto-configuration to register a {@link SpringBootApplicationRuntime} and {@link ApplicationModulesRuntime} as Spring
@@ -55,6 +62,50 @@ class SpringModulithRuntimeAutoConfiguration {
 				.submit(() -> SpringModulithRuntimeAutoConfiguration.initializeApplicationModules(mainClass));
 
 		return new ApplicationModulesRuntime(toSupplier(modules), runtime);
+	}
+
+	@Bean
+	ApplicationListener<ApplicationStartedEvent> applicationModuleInitialzingListener(ApplicationModulesRuntime runtime,
+			List<ApplicationModuleInitializer> initializers) {
+
+		return event -> {
+
+			var modules = runtime.get();
+
+			initializers.stream() //
+					.sorted(modules.getComparator()) //
+					.map(it -> LOG.isDebugEnabled() ? new LoggingApplicationModuleInitializerAdapter(it, modules) : it)
+					.forEach(ApplicationModuleInitializer::initialize);
+		};
+	}
+
+	@Slf4j
+	@RequiredArgsConstructor
+	private static class LoggingApplicationModuleInitializerAdapter implements ApplicationModuleInitializer {
+
+		private final ApplicationModuleInitializer delegate;
+		private final ApplicationModules modules;
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.ApplicationModuleInitializer#initialize()
+		 */
+		@Override
+		public void initialize() {
+
+			var listenerType = ClassUtils.getUserClass(delegate);
+			var formattable = FormatableType.of(listenerType);
+
+			var formattedListenerType = modules.getModuleByType(listenerType)
+					.map(formattable::getAbbreviatedFullName)
+					.orElseGet(formattable::getAbbreviatedFullName);
+
+			LOG.debug("Initializing {}.", formattedListenerType);
+
+			delegate.initialize();
+
+			LOG.debug("{} done.", formattedListenerType);
+		}
 	}
 
 	private static ApplicationModules initializeApplicationModules(Class<?> applicationMainClass) {
