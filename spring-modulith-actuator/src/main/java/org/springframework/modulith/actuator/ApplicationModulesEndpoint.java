@@ -19,6 +19,7 @@ import static java.util.stream.Collectors.*;
 
 import lombok.extern.slf4j.Slf4j;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
@@ -84,7 +85,8 @@ public class ApplicationModulesEndpoint {
 		var modules = runtime.get();
 
 		return modules.stream()
-				.collect(Collectors.toMap(ApplicationModule::getName, it -> toInfo(it, modules)));
+				.collect(
+						Collectors.toMap(ApplicationModule::getName, it -> toInfo(it, modules), (l, r) -> r, LinkedHashMap::new));
 	}
 
 	private static Map<String, Object> toInfo(ApplicationModule module, ApplicationModules modules) {
