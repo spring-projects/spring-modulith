@@ -23,19 +23,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
+import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Role;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.FormatableType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
-import org.springframework.util.ClassUtils;
 
 /**
  * Auto-configuration to register a {@link SpringBootApplicationRuntime} and {@link ApplicationModulesRuntime} as Spring
@@ -48,12 +50,14 @@ import org.springframework.util.ClassUtils;
 class SpringModulithRuntimeAutoConfiguration {
 
 	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean(ApplicationRuntime.class)
 	SpringBootApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
 		return new SpringBootApplicationRuntime(context);
 	}
 
 	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean
 	ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
 
@@ -93,7 +97,7 @@ class SpringModulithRuntimeAutoConfiguration {
 		@Override
 		public void initialize() {
 
-			var listenerType = ClassUtils.getUserClass(delegate);
+			var listenerType = AopUtils.getTargetClass(delegate);
 			var formattable = FormatableType.of(listenerType);
 
 			var formattedListenerType = modules.getModuleByType(listenerType)
@@ -104,7 +108,7 @@ class SpringModulithRuntimeAutoConfiguration {
 
 			delegate.initialize();
 
-			LOG.debug("{} done.", formattedListenerType);
+			LOG.debug("Initializing {} done.", formattedListenerType);
 		}
 	}
 

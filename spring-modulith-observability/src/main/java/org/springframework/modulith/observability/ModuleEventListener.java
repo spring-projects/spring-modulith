@@ -33,7 +33,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 @RequiredArgsConstructor
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
-	private final ApplicationModulesRuntime modules;
+	private final ApplicationModulesRuntime runtime;
 	private final Supplier<Tracer> tracer;
 
 	/*
@@ -51,11 +51,11 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 		Object object = foo.getPayload();
 		Class<? extends Object> payloadType = object.getClass();
 
-		if (!modules.isApplicationClass(payloadType)) {
+		if (!runtime.isApplicationClass(payloadType)) {
 			return;
 		}
 
-		ApplicationModule moduleByType = modules.get()
+		ApplicationModule moduleByType = runtime.get()
 				.getModuleByType(payloadType.getSimpleName())
 				.orElse(null);
 

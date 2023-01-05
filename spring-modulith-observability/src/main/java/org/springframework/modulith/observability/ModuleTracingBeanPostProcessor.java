@@ -21,6 +21,7 @@ import lombok.RequiredArgsConstructor;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 import org.aopalliance.aop.Advice;
 import org.springframework.aop.Advisor;
@@ -35,23 +36,19 @@ import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
+ * A {@link BeanPostProcessor} that decorates beans exposed by application modules with an interceptor that registers
+ * module entry and exit to create tracing spans for those invocations.
+ *
  * @author Oliver Drotbohm
  */
+@RequiredArgsConstructor
 public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
 
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
 	private final ApplicationModulesRuntime runtime;
-	private final Tracer tracer;
+	private final Supplier<Tracer> tracer;
 	private final Map<String, Advisor> advisors = new HashMap<>();
-
-	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Tracer tracer) {
-
-		super(runtime);
-
-		this.runtime = runtime;
-		this.tracer = tracer;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -60,7 +57,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 
-		Class<?> type = getBeanUserClass(bean, beanName);
+		Class<?> type = runtime.getUserClass(bean, beanName);
 
 		if (!runtime.isApplicationClass(type) || !type.isInstance(bean)) {
 			return bean;
@@ -85,7 +82,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 		return advisors.computeIfAbsent(module.getName(), __ -> {
 
-			Advice interceptor = ModuleEntryInterceptor.of(module, tracer);
+			Advice interceptor = ModuleEntryInterceptor.of(module, tracer.get());
 			MethodMatcher matcher = new ObservableTypeMethodMatcher(type);
 			Pointcut pointcut = new ComposablePointcut(matcher);
 

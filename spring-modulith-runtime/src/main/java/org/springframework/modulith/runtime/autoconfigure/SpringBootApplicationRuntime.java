@@ -17,6 +17,7 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import lombok.RequiredArgsConstructor;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -27,6 +28,9 @@ import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.util.ClassUtils;
 
 /**
+ * {@link ApplicationRuntime} implementation based on an {@link ApplicationContext} and a class that's annotated with
+ * {@link SpringBootApplication}.
+ *
  * @author Oliver Drotbohm
  */
 @RequiredArgsConstructor
@@ -35,6 +39,7 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	private static final Map<String, Boolean> APPLICATION_CLASSES = new ConcurrentHashMap<>();
 
 	private final ApplicationContext context;
+	private Class<?> mainApplicationClass;
 
 	/*
 	 * (non-Javadoc)
@@ -52,9 +57,17 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	@Override
 	public Class<?> getMainApplicationClass() {
 
-		var mainBeanNames = context.getBeanNamesForAnnotation(SpringBootApplication.class);
+		if (mainApplicationClass == null) {
 
-		return context.getType(mainBeanNames[0]);
+			// Traverse BeanDefinitions manually to avoid factory beans to be inspected
+			this.mainApplicationClass = Arrays.stream(context.getBeanDefinitionNames())
+					.filter(it -> context.findAnnotationOnBean(it, SpringBootApplication.class, false) != null)
+					.map(context::getType)
+					.findFirst()
+					.orElseThrow(() -> new IllegalStateException("Couldn't find a class annotated with @SpringBootApplication!"));
+		}
+
+		return mainApplicationClass;
 	}
 
 	/*
@@ -78,15 +91,18 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	@Override
 	public boolean isApplicationClass(Class<?> type) {
 
-		return APPLICATION_CLASSES.computeIfAbsent(type.getName(),
-				it -> {
+		var applicationClass = getMainApplicationClass();
 
-					if (it.startsWith("org.springframework")) {
-						return false;
-					}
+		return APPLICATION_CLASSES.computeIfAbsent(type.getName(), it -> computeIsApplicationClass(it, applicationClass));
+	}
 
-					return it.startsWith(getMainApplicationClass().getPackage().getName())
-							|| AutoConfigurationPackages.get(context).stream().anyMatch(pkg -> it.startsWith(pkg));
-				});
+	private boolean computeIsApplicationClass(String fqn, Class<?> applicationClass) {
+
+		if (fqn.startsWith("org.springframework")) {
+			return false;
+		}
+
+		return fqn.startsWith(applicationClass.getPackage().getName())
+				|| AutoConfigurationPackages.get(context).stream().anyMatch(pkg -> fqn.startsWith(pkg));
 	}
 }

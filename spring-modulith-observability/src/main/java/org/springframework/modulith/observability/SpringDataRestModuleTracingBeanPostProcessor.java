@@ -37,18 +37,11 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 /**
  * @author Oliver Drotbohm
  */
+@RequiredArgsConstructor
 public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
 
-	private final Tracer tracer;
 	private final ApplicationModulesRuntime runtime;
-
-	public SpringDataRestModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Tracer tracer) {
-
-		super(runtime);
-
-		this.tracer = tracer;
-		this.runtime = runtime;
-	}
+	private final Supplier<Tracer> tracer;
 
 	/*
 	 * (non-Javadoc)
@@ -73,7 +66,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 	private static class DataRestControllerInterceptor implements MethodInterceptor {
 
 		private final Supplier<ApplicationModules> modules;
-		private final Tracer tracer;
+		private final Supplier<Tracer> tracer;
 
 		/*
 		 * (non-Javadoc)
@@ -90,7 +83,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 
 			ObservedModule observed = new DefaultObservedModule(module);
 
-			return ModuleEntryInterceptor.of(observed, tracer).invoke(invocation);
+			return ModuleEntryInterceptor.of(observed, tracer.get()).invoke(invocation);
 		}
 
 		private ApplicationModule getModuleFrom(Object[] arguments) {

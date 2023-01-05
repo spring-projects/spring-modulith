@@ -21,23 +21,13 @@ import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
-import org.springframework.modulith.runtime.ApplicationModulesRuntime;
-import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
  */
 class ModuleTracingSupport implements BeanClassLoaderAware {
 
-	private final ApplicationModulesRuntime runtime;
 	private ClassLoader classLoader;
-
-	protected ModuleTracingSupport(ApplicationModulesRuntime runtime) {
-
-		Assert.notNull(runtime, "ModulesRuntime must not be null!");
-
-		this.runtime = runtime;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -46,10 +36,6 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.classLoader = classLoader;
-	}
-
-	protected final Class<?> getBeanUserClass(Object bean, String beanName) {
-		return runtime.getUserClass(bean, beanName);
 	}
 
 	protected final Object addAdvisor(Object bean, Advisor advisor) {

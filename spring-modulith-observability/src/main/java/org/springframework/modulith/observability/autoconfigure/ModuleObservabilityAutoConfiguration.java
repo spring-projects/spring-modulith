@@ -42,8 +42,8 @@ class ModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static ModuleTracingBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
-			Tracer tracer) {
-		return new ModuleTracingBeanPostProcessor(runtime, tracer);
+			ObjectProvider<Tracer> tracer) {
+		return new ModuleTracingBeanPostProcessor(runtime, () -> tracer.getObject());
 	}
 
 	@Bean
