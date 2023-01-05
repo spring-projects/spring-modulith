@@ -554,10 +554,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 			});
 
 			var names = new ArrayList<String>();
+			var iterator = new TopologicalOrderIterator<>(graph);
 
-			new TopologicalOrderIterator<>(graph).forEachRemaining(it -> names.add(0, it.getName()));
+			try {
 
-			return names;
+				iterator.forEachRemaining(it -> names.add(0, it.getName()));
+				return names;
+
+			} catch (IllegalArgumentException o_O) {
+				return modules.modules.values().stream().map(ApplicationModule::getName).toList();
+			}
 		}
 	}
 }
