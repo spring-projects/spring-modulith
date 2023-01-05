@@ -304,7 +304,7 @@ public class ApplicationModule {
 
 	public String toString(@Nullable ApplicationModules modules) {
 
-		var builder = new StringBuilder("## ").append(getDisplayName()).append(" ##\n");
+		var builder = new StringBuilder("# ").append(getDisplayName()).append("\n");
 
 		builder.append("> Logical name: ").append(getName()).append('\n');
 		builder.append("> Base package: ").append(basePackage.getName()).append('\n');

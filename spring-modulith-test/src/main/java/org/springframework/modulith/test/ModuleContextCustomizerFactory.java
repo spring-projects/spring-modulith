@@ -19,17 +19,16 @@ import lombok.EqualsAndHashCode;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.ContextCustomizerFactory;
@@ -48,7 +47,8 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	public ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
-		ApplicationModuleTest moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass, ApplicationModuleTest.class);
+		ApplicationModuleTest moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass,
+				ApplicationModuleTest.class);
 
 		return moduleTest == null ? null : new ModuleContextCustomizer(testClass);
 	}
@@ -86,16 +86,16 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 		private static void logModules(ModuleTestExecution execution) {
 
-			ApplicationModule module = execution.getModule();
-			ApplicationModules modules = execution.getModules();
-			String moduleName = module.getDisplayName();
-			String bootstrapMode = execution.getBootstrapMode().name();
+			var module = execution.getModule();
+			var modules = execution.getModules();
+			var moduleName = module.getDisplayName();
+			var bootstrapMode = execution.getBootstrapMode().name();
 
-			String message = String.format("Bootstrapping @ModuleTest for %s in mode %s (%s)…", moduleName, bootstrapMode,
-					modules.getModulithSource());
+			var message = "Bootstrapping @%s for %s in mode %s (%s)…"
+					.formatted(ApplicationModuleTest.class.getName(), moduleName, bootstrapMode, modules.getModulithSource());
 
 			LOG.info(message);
-			LOG.info(getSeparator("=", message));
+			LOG.info("");
 
 			Arrays.stream(module.toString(modules).split("\n")).forEach(LOG::info);
 
@@ -103,25 +103,25 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 			if (!extraIncludes.isEmpty()) {
 
-				logHeadline("Extra includes:", message);
+				logHeadline("Extra includes:");
 
-				extraIncludes.forEach(it -> LOG.info("> ".concat(it.getName())));
+				LOG.info("> " + extraIncludes.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
 			}
 
 			Set<ApplicationModule> sharedModules = modules.getSharedModules();
 
 			if (!sharedModules.isEmpty()) {
 
-				logHeadline("Shared modules:", message);
+				logHeadline("Shared modules:");
 
-				sharedModules.forEach(it -> LOG.info("> ".concat(it.getName())));
+				LOG.info("> " + sharedModules.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
 			}
 
 			List<ApplicationModule> dependencies = execution.getDependencies();
 
 			if (!dependencies.isEmpty() || !sharedModules.isEmpty()) {
 
-				logHeadline("Included dependencies:", message);
+				logHeadline("Included dependencies:");
 
 				Stream<ApplicationModule> dependenciesPlusMissingSharedOnes = //
 						Stream.concat(dependencies.stream(), sharedModules.stream() //
@@ -130,27 +130,23 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 				dependenciesPlusMissingSharedOnes //
 						.map(it -> it.toString(modules)) //
 						.forEach(it -> {
+							LOG.info("");
 							Arrays.stream(it.split("\n")).forEach(LOG::info);
 						});
-
-				LOG.info(getSeparator("=", message));
 			}
+
+			LOG.info("");
 		}
 
-		private static String getSeparator(String character, String reference) {
-			return String.join("", Collections.nCopies(reference.length(), character));
+		private static void logHeadline(String headline) {
+			logHeadline(headline, () -> {});
 		}
 
-		private static void logHeadline(String headline, String reference) {
-			logHeadline(headline, reference, () -> {});
-		}
+		private static void logHeadline(String headline, Runnable additional) {
 
-		private static void logHeadline(String headline, String reference, Runnable additional) {
-
-			LOG.info(getSeparator("=", reference));
+			LOG.info("");
 			LOG.info(headline);
 			additional.run();
-			LOG.info(getSeparator("=", reference));
 		}
 	}
 }

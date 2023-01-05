@@ -412,6 +412,15 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return orderedNames.stream().map(this::getRequiredModule).iterator();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return this.stream().map(ApplicationModule::toString).collect(Collectors.joining("\n"));
+	}
+
 	private FailureReport assertNoCyclesFor(JavaPackage rootPackage) {
 
 		EvaluationResult result = SlicesRuleDefinition.slices() //

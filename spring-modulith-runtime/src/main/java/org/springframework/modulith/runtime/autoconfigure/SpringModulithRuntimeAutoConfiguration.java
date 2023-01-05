@@ -59,7 +59,7 @@ class SpringModulithRuntimeAutoConfiguration {
 
 		var mainClass = runtime.getMainApplicationClass();
 		var modules = Executors.newFixedThreadPool(1)
-				.submit(() -> SpringModulithRuntimeAutoConfiguration.initializeApplicationModules(mainClass));
+				.submit(() -> ApplicationModulesBootstrap.initializeApplicationModules(mainClass));
 
 		return new ApplicationModulesRuntime(toSupplier(modules), runtime);
 	}
@@ -108,25 +108,29 @@ class SpringModulithRuntimeAutoConfiguration {
 		}
 	}
 
-	private static ApplicationModules initializeApplicationModules(Class<?> applicationMainClass) {
+	@Slf4j
+	private static class ApplicationModulesBootstrap {
 
-		LOG.debug("Obtaining Spring Modulith application modules…");
+		static ApplicationModules initializeApplicationModules(Class<?> applicationMainClass) {
 
-		var result = ApplicationModules.of(applicationMainClass);
-		var numberOfModules = result.stream().count();
+			LOG.debug("Obtaining Spring Modulith application modules…");
 
-		if (numberOfModules == 0) {
+			var result = ApplicationModules.of(applicationMainClass);
+			var numberOfModules = result.stream().count();
 
-			LOG.warn("No application modules detected!");
+			if (numberOfModules == 0) {
 
-		} else {
+				LOG.warn("No application modules detected!");
 
-			LOG.debug("Detected {} application modules: {}", //
-					result.stream().count(), //
-					result.stream().map(ApplicationModule::getName).toList());
+			} else {
+
+				LOG.debug("Detected {} application modules: {}", //
+						result.stream().count(), //
+						result.stream().map(ApplicationModule::getName).toList());
+			}
+
+			return result;
 		}
-
-		return result;
 	}
 
 	private static Supplier<ApplicationModules> toSupplier(Future<ApplicationModules> modules) {
