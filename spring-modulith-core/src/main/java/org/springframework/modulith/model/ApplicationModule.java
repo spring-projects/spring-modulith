@@ -245,6 +245,23 @@ public class ApplicationModule {
 				.toList();
 	}
 
+	/**
+	 * Returns the {@link ArchitecturallyEvidentType} for the given type.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @throws IllegalArgumentException if the given type is not a module type.
+	 */
+	public ArchitecturallyEvidentType getArchitecturallyEvidentType(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return getType(type.getName())
+				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal()))
+				.orElseThrow(() -> new IllegalArgumentException("Couldn't find type %s in module %s!".formatted(
+						FormatableType.of(type).getAbbreviatedFullName(this), getName())));
+	}
+
 	public boolean contains(JavaClass type) {
 		return basePackage.contains(type);
 	}

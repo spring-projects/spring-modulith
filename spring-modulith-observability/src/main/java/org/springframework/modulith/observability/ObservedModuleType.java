@@ -18,12 +18,17 @@ package org.springframework.modulith.observability;
 import lombok.RequiredArgsConstructor;
 
 import java.lang.reflect.Method;
+import java.util.Collection;
+import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
+import org.springframework.aop.TargetClassAware;
+import org.springframework.aop.framework.Advised;
+import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
 import org.springframework.modulith.model.ArchitecturallyEvidentType.ReferenceMethod;
-import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * Represents a type in an {@link ObservedModule}.
@@ -32,6 +37,8 @@ import org.springframework.modulith.model.ApplicationModules;
  */
 @RequiredArgsConstructor
 public class ObservedModuleType {
+
+	private static Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
 
 	private final ApplicationModules modules;
 	private final ObservedModule module;
@@ -59,7 +66,7 @@ public class ObservedModuleType {
 	public Predicate<Method> getMethodsToIntercept() {
 
 		if (!type.isEventListener()) {
-			return it -> true;
+			return it -> !(ReflectionUtils.isObjectMethod(it) || IGNORED_TYPES.contains(it.getDeclaringClass()));
 		}
 
 		return candidate -> type.getReferenceMethods() //

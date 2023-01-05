@@ -18,6 +18,7 @@ package org.springframework.modulith.observability;
 import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInvocation;
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
 
@@ -53,9 +54,10 @@ interface ObservedModule {
 	/**
 	 * Returns the {@link ObservedModuleType} for the given type and {@link ApplicationModules}.
 	 *
-	 * @param type
-	 * @param modules
-	 * @return
+	 * @param type must not be {@literal null}.
+	 * @param modules must not be {@literal null}.
+	 * @return the {@link ObservedModuleType} for the given type or {@literal null} if the type is not to be observed.
 	 */
+	@Nullable
 	ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules);
 }

@@ -23,10 +23,11 @@ import java.util.Arrays;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
-import org.springframework.modulith.model.FormatableType;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.model.FormatableType;
 import org.springframework.modulith.model.SpringBean;
+import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 
@@ -98,6 +99,9 @@ class DefaultObservedModule implements ObservedModule {
 	 */
 	@Override
 	public boolean exposes(JavaClass type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
 		return module.isExposed(type);
 	}
 
@@ -107,6 +111,9 @@ class DefaultObservedModule implements ObservedModule {
 	 */
 	@Override
 	public boolean isObservedModule(ApplicationModule module) {
+
+		Assert.notNull(module, "AppliucationModule must not be null!");
+
 		return this.module.equals(module);
 	}
 
@@ -115,6 +122,9 @@ class DefaultObservedModule implements ObservedModule {
 	 * @see org.springframework.modulith.observability.ObservedModule#getInterceptionConfiguration(java.lang.Class, org.springframework.modulith.model.Modules)
 	 */
 	public ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules) {
+
+		Assert.notNull(type, "Type must not be null!");
+		Assert.notNull(modules, "ApplicationModules must not be null!");
 
 		return module.getSpringBeans().stream()
 				.filter(it -> it.getFullyQualifiedTypeName().equals(type.getName()))
