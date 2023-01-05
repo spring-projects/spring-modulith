@@ -37,6 +37,7 @@ import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * Integration tests for {@link JdbcEventPublicationRepository}.
@@ -51,6 +52,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	@JdbcTest
 	@Import(TestApplication.class)
+	@Testcontainers(disabledWithoutDocker = true)
 	@ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
 	abstract class TestBase {
 

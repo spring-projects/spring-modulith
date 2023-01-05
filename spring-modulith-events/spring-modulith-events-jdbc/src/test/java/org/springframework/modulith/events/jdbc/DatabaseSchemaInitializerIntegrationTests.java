@@ -33,6 +33,7 @@ import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
  * @author Dmitry Belyaev
@@ -45,6 +46,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@ImportAutoConfiguration(JdbcEventPublicationAutoConfiguration.class)
 	@ContextConfiguration(classes = TestApplication.class)
+	@Testcontainers(disabledWithoutDocker = true)
 	static class TestBase {
 		@MockBean EventSerializer serializer;
 	}
