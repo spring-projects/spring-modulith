@@ -24,6 +24,7 @@ image::observability.png[]
 In this particular case, triggering the payment changes the state of the order which then causes an order completion event being triggered.
 This gets picked up asynchronously by the engine that triggers another state change on the order, works for a couple of seconds and triggers the final state change on the order in turn.
 
+[[observability.actuator]]
 == Application Module Actuator
 
 The application module structure can be exposed as Spring Boot actuator.

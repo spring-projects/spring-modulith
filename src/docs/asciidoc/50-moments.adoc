@@ -10,7 +10,7 @@ To use the abstraction, include the following dependency in your project:
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
-  <artifactId>modulith-moments</artifactId>
+  <artifactId>spring-modulith-moments</artifactId>
 </dependency>
 ----
 
