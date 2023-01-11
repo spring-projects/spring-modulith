@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.test;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -88,10 +86,13 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 				: source;
 	}
 
-	@RequiredArgsConstructor(staticName = "of")
 	private static class SimpleTypedPublishedEvents<T> implements TypedPublishedEvents<T> {
 
 		private final List<T> events;
+
+		private SimpleTypedPublishedEvents(List<T> events) {
+			this.events = events;
+		}
 
 		private static <T> SimpleTypedPublishedEvents<T> of(Stream<T> stream) {
 			return new SimpleTypedPublishedEvents<>(stream.toList());

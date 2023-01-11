@@ -15,12 +15,10 @@
  */
 package org.springframework.modulith.runtime;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
 import java.util.function.Supplier;
 
 import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.util.Assert;
 
 /**
  * Bootstrap type to make sure we only bootstrap the initialization of a {@link ApplicationModules} instance once per
@@ -28,11 +26,26 @@ import org.springframework.modulith.model.ApplicationModules;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class ApplicationModulesRuntime implements Supplier<ApplicationModules> {
 
-	private final @NonNull Supplier<ApplicationModules> modules;
-	private final @NonNull ApplicationRuntime runtime;
+	private final Supplier<ApplicationModules> modules;
+	private final ApplicationRuntime runtime;
+
+	/**
+	 * Creates a new {@link ApplicationModulesRuntime} for the given {@link ApplicationModules} and
+	 * {@link ApplicationRuntime}.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @param runtime must not be {@literal null}.
+	 */
+	public ApplicationModulesRuntime(Supplier<ApplicationModules> modules, ApplicationRuntime runtime) {
+
+		Assert.notNull(modules, "ApplicationModules must not be null!");
+		Assert.notNull(runtime, "ApplicationRuntime must not be null!");
+
+		this.modules = modules;
+		this.runtime = runtime;
+	}
 
 	/*
 	 * (non-Javadoc)

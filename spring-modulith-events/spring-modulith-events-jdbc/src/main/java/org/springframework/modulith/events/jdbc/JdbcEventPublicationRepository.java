@@ -15,20 +15,18 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
@@ -39,6 +37,7 @@ import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 /**
  * JDBC-based repository to store {@link EventPublication}s.
@@ -47,9 +46,9 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  */
-@Slf4j
-@RequiredArgsConstructor
 class JdbcEventPublicationRepository implements EventPublicationRepository {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(JdbcEventPublicationRepository.class);
 
 	private static final String SQL_STATEMENT_INSERT = """
 			INSERT INTO EVENT_PUBLICATION (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
@@ -89,6 +88,30 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private final EventSerializer serializer;
 	private final DatabaseType databaseType;
 
+	/**
+	 * Creates a new {@link JdbcEventPublicationRepository} for the given {@link JdbcOperations}, {@link EventSerializer}
+	 * and {@link DatabaseType}.
+	 *
+	 * @param operations must not be {@literal null}.
+	 * @param serializer must not be {@literal null}.
+	 * @param databaseType must not be {@literal null}.
+	 */
+	public JdbcEventPublicationRepository(JdbcOperations operations, EventSerializer serializer,
+			DatabaseType databaseType) {
+
+		Assert.notNull(operations, "JdbcOperations must not be null!");
+		Assert.notNull(serializer, "EventSerializer must not be null!");
+		Assert.notNull(databaseType, "DatabaseType must not be null!");
+
+		this.operations = operations;
+		this.serializer = serializer;
+		this.databaseType = databaseType;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRepository#create(org.springframework.modulith.events.EventPublication)
+	 */
 	@Override
 	@Transactional
 	public EventPublication create(EventPublication publication) {
@@ -218,14 +241,12 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		}
 
 		var completionDate = rs.getTimestamp("COMPLETION_DATE");
+		var publicationDate = rs.getTimestamp("PUBLICATION_DATE").toInstant();
+		var listenerId = rs.getString("LISTENER_ID");
+		var serializedEvent = rs.getString("SERIALIZED_EVENT");
 
-		return JdbcEventPublication.builder().completionDate(completionDate == null ? null : completionDate.toInstant())
-				.eventType(eventClass) //
-				.listenerId(rs.getString("LISTENER_ID")) //
-				.publicationDate(rs.getTimestamp("PUBLICATION_DATE").toInstant()) //
-				.serializedEvent(rs.getString("SERIALIZED_EVENT")) //
-				.serializer(serializer) //
-				.build();
+		return new JdbcEventPublication(id, publicationDate, listenerId, serializedEvent, eventClass, serializer,
+				completionDate == null ? null : completionDate.toInstant());
 	}
 
 	private Object uuidToDatabase(UUID id) {
@@ -242,13 +263,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		try {
 			return Class.forName(className);
 		} catch (ClassNotFoundException e) {
-			LOG.warn("Event '{}' of unknown type '{}' found", id, className);
+			LOGGER.warn("Event '{}' of unknown type '{}' found", id, className);
 			return null;
 		}
 	}
 
-	@EqualsAndHashCode
-	@Builder
 	private static class JdbcEventPublication implements CompletableEventPublication {
 
 		private final UUID id;
@@ -260,35 +279,122 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		private final EventSerializer serializer;
 		private @Nullable Instant completionDate;
 
+		/**
+		 * @param id must not be {@literal null}.
+		 * @param publicationDate must not be {@literal null}.
+		 * @param listenerId must not be {@literal null} or empty.
+		 * @param serializedEvent must not be {@literal null} or empty.
+		 * @param eventType must not be {@literal null}.
+		 * @param serializer must not be {@literal null}.
+		 * @param completionDate can be {@literal null}.
+		 */
+		public JdbcEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
+				Class<?> eventType, EventSerializer serializer, @Nullable Instant completionDate) {
+
+			Assert.notNull(id, "Id must not be null!");
+			Assert.notNull(publicationDate, "Publication date must not be null!");
+			Assert.hasText(listenerId, "Listener id must not be null or empty!");
+			Assert.hasText(serializedEvent, "Serialized event must not be null or empty!");
+			Assert.notNull(eventType, "Event type must not be null!");
+			Assert.notNull(serializer, "EventSerializer must not be null!");
+
+			this.id = id;
+			this.publicationDate = publicationDate;
+			this.listenerId = listenerId;
+			this.serializedEvent = serializedEvent;
+			this.eventType = eventType;
+			this.serializer = serializer;
+			this.completionDate = completionDate;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getEvent()
+		 */
 		@Override
 		public Object getEvent() {
 			return serializer.deserialize(serializedEvent, eventType);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getTargetIdentifier()
+		 */
 		@Override
 		public PublicationTargetIdentifier getTargetIdentifier() {
 			return PublicationTargetIdentifier.of(listenerId);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getPublicationDate()
+		 */
 		@Override
 		public Instant getPublicationDate() {
 			return publicationDate;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.CompletableEventPublication#getCompletionDate()
+		 */
 		@Override
 		public Optional<Instant> getCompletionDate() {
 			return Optional.ofNullable(completionDate);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.CompletableEventPublication#isPublicationCompleted()
+		 */
 		@Override
 		public boolean isPublicationCompleted() {
 			return completionDate != null;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.CompletableEventPublication#markCompleted()
+		 */
 		@Override
 		public CompletableEventPublication markCompleted() {
+
 			this.completionDate = Instant.now();
+
 			return this;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(@Nullable Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof JdbcEventPublication that)) {
+				return false;
+			}
+
+			return Objects.equals(completionDate, that.completionDate) //
+					&& Objects.equals(eventType, that.eventType) //
+					&& Objects.equals(id, that.id) //
+					&& Objects.equals(listenerId, that.listenerId) //
+					&& Objects.equals(publicationDate, that.publicationDate) //
+					&& Objects.equals(serializedEvent, that.serializedEvent) //
+					&& Objects.equals(serializer, that.serializer);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(completionDate, eventType, id, listenerId, publicationDate, serializedEvent, serializer);
 		}
 	}
 }

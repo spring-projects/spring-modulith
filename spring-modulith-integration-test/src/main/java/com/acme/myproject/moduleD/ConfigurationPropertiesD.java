@@ -15,8 +15,6 @@
  */
 package com.acme.myproject.moduleD;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import com.acme.myproject.moduleC.SomeValueC;
@@ -25,8 +23,11 @@ import com.acme.myproject.moduleC.SomeValueC;
  * @author Oliver Drotbohm
  */
 @ConfigurationProperties
-@RequiredArgsConstructor
 class ConfigurationPropertiesD {
 
-	private final SomeValueC value;
+	final SomeValueC value;
+
+	ConfigurationPropertiesD(SomeValueC value) {
+		this.value = value;
+	}
 }

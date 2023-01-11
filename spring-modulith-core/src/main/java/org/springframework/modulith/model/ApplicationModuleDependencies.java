@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
@@ -25,15 +23,44 @@ import java.util.stream.Stream;
 import org.springframework.util.Assert;
 
 /**
- * The materialized, in other words actually present dependencies of the current module towards other modules.
+ * The materialized, in other words actually present, dependencies of the current module towards other modules.
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(staticName = "of")
 public class ApplicationModuleDependencies {
 
 	private final List<ApplicationModuleDependency> dependencies;
 	private final ApplicationModules modules;
+
+	/**
+	 * Creates a new {@link ApplicationModuleDependencies} for the given {@link List} of
+	 * {@link ApplicationModuleDependency} and {@link ApplicationModules}.
+	 *
+	 * @param dependencies must not be {@literal null}.
+	 * @param modules must not be {@literal null}.
+	 */
+	private ApplicationModuleDependencies(List<ApplicationModuleDependency> dependencies, ApplicationModules modules) {
+
+		Assert.notNull(dependencies, "ApplicationModuleDependency list must not be null!");
+		Assert.notNull(modules, "ApplicationModules must not be null!");
+
+		this.dependencies = dependencies;
+		this.modules = modules;
+	}
+
+	/**
+	 * Creates a new {@link ApplicationModuleDependencies} for the given {@link List} of
+	 * {@link ApplicationModuleDependency} and {@link ApplicationModules}.
+	 *
+	 * @param dependencies must not be {@literal null}.
+	 * @param modules must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static ApplicationModuleDependencies of(List<ApplicationModuleDependency> dependencies,
+			ApplicationModules modules) {
+
+		return new ApplicationModuleDependencies(dependencies, modules);
+	}
 
 	/**
 	 * Returns whether the dependencies contain the given {@link ApplicationModule}.

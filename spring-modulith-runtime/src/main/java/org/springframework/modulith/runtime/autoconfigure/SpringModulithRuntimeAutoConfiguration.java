@@ -15,14 +15,13 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -38,6 +37,7 @@ import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.FormatableType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.util.Assert;
 
 /**
  * Auto-configuration to register a {@link SpringBootApplicationRuntime} and {@link ApplicationModulesRuntime} as Spring
@@ -45,9 +45,10 @@ import org.springframework.modulith.runtime.ApplicationRuntime;
  *
  * @author Oliver Drotbohm
  */
-@Slf4j
 @AutoConfiguration
 class SpringModulithRuntimeAutoConfiguration {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -78,17 +79,34 @@ class SpringModulithRuntimeAutoConfiguration {
 
 			initializers.stream() //
 					.sorted(modules.getComparator()) //
-					.map(it -> LOG.isDebugEnabled() ? new LoggingApplicationModuleInitializerAdapter(it, modules) : it)
+					.map(it -> LOGGER.isDebugEnabled() ? new LoggingApplicationModuleInitializerAdapter(it, modules) : it)
 					.forEach(ApplicationModuleInitializer::initialize);
 		};
 	}
 
-	@Slf4j
-	@RequiredArgsConstructor
 	private static class LoggingApplicationModuleInitializerAdapter implements ApplicationModuleInitializer {
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(LoggingApplicationModuleInitializerAdapter.class);
 
 		private final ApplicationModuleInitializer delegate;
 		private final ApplicationModules modules;
+
+		/**
+		 * Creates a new {@link LoggingApplicationModuleInitializerAdapter} for the given
+		 * {@link ApplicationModuleInitializer} and {@link ApplicationModule}.
+		 *
+		 * @param delegate must not be {@literal null}.
+		 * @param modules must not be {@literal null}.
+		 */
+		public LoggingApplicationModuleInitializerAdapter(ApplicationModuleInitializer delegate,
+				ApplicationModules modules) {
+
+			Assert.notNull(delegate, "ApplicationModuleInitializer must not be null!");
+			Assert.notNull(modules, "ApplicationModules must not be null!");
+
+			this.delegate = delegate;
+			this.modules = modules;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -104,31 +122,32 @@ class SpringModulithRuntimeAutoConfiguration {
 					.map(formattable::getAbbreviatedFullName)
 					.orElseGet(formattable::getAbbreviatedFullName);
 
-			LOG.debug("Initializing {}.", formattedListenerType);
+			LOGGER.debug("Initializing {}.", formattedListenerType);
 
 			delegate.initialize();
 
-			LOG.debug("Initializing {} done.", formattedListenerType);
+			LOGGER.debug("Initializing {} done.", formattedListenerType);
 		}
 	}
 
-	@Slf4j
 	private static class ApplicationModulesBootstrap {
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesBootstrap.class);
 
 		static ApplicationModules initializeApplicationModules(Class<?> applicationMainClass) {
 
-			LOG.debug("Obtaining Spring Modulith application modules…");
+			LOGGER.debug("Obtaining Spring Modulith application modules…");
 
 			var result = ApplicationModules.of(applicationMainClass);
 			var numberOfModules = result.stream().count();
 
 			if (numberOfModules == 0) {
 
-				LOG.warn("No application modules detected!");
+				LOGGER.warn("No application modules detected!");
 
 			} else {
 
-				LOG.debug("Detected {} application modules: {}", //
+				LOGGER.debug("Detected {} application modules: {}", //
 						result.stream().count(), //
 						result.stream().map(ApplicationModule::getName).toList());
 			}
@@ -144,7 +163,6 @@ class SpringModulithRuntimeAutoConfiguration {
 				return modules.get();
 			} catch (Exception o_O) {
 				throw new RuntimeException(o_O);
-				// TODO: handle exception
 			}
 		};
 	}

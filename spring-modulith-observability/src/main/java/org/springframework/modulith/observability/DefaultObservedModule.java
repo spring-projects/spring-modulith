@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.observability;
 
-import lombok.RequiredArgsConstructor;
-
 import java.lang.reflect.Method;
 import java.util.Arrays;
 
@@ -31,10 +29,21 @@ import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 
-@RequiredArgsConstructor
 class DefaultObservedModule implements ObservedModule {
 
 	private final ApplicationModule module;
+
+	/**
+	 * Creates a new {@link DefaultObservedModule} for the given {@link ApplicationModule}.
+	 *
+	 * @param module must not be {@literal null}.
+	 */
+	DefaultObservedModule(ApplicationModule module) {
+
+		Assert.notNull(module, "ApplicationModule must not be null!");
+
+		this.module = module;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -73,8 +82,8 @@ class DefaultObservedModule implements ObservedModule {
 
 		// For class-based proxies, use the target class
 
-		Advised advised = (Advised) ((ProxyMethodInvocation) invocation).getProxy();
-		Class<?> targetClass = advised.getTargetClass();
+		var advised = (Advised) ((ProxyMethodInvocation) invocation).getProxy();
+		var targetClass = advised.getTargetClass();
 
 		if (module.contains(targetClass)) {
 			return toString(targetClass, method, module);
@@ -141,11 +150,11 @@ class DefaultObservedModule implements ObservedModule {
 
 	private static String toString(Class<?> type, Method method, ApplicationModule module) {
 
-		String typeName = module.getType(type.getName())
+		var typeName = module.getType(type.getName())
 				.map(FormatableType::of)
 				.map(FormatableType::getAbbreviatedFullName)
 				.orElseGet(() -> type.getName());
 
-		return String.format("%s.%s(…)", typeName, method.getName());
+		return typeName + "." + method.getName() + "(…)";
 	}
 }

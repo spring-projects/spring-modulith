@@ -56,6 +56,6 @@ public interface CompletableEventPublication extends EventPublication {
 	 * @return
 	 */
 	static CompletableEventPublication of(Object event, PublicationTargetIdentifier id) {
-		return DefaultEventPublication.of(event, id);
+		return new DefaultEventPublication(event, id);
 	}
 }

@@ -15,22 +15,78 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.Value;
-
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 import org.jmolecules.event.types.DomainEvent;
+import org.springframework.util.Assert;
 
 /**
  * A {@link DomainEvent} published on each day.
  *
  * @author Oliver Drotbohm
  */
-@Value(staticConstructor = "of")
 public class HourHasPassed implements DomainEvent {
 
 	/**
 	 * The hour that has just passed.
 	 */
 	private final LocalDateTime time;
+
+	/**
+	 * Creates a new {@link HourHasPassed} for the given {@link LocalDateTime}.
+	 *
+	 * @param time must not be {@literal null}.
+	 */
+	private HourHasPassed(LocalDateTime time) {
+
+		Assert.notNull(time, "YearMonth must not be null!");
+
+		this.time = time;
+	}
+
+	/**
+	 * Creates a new {@link HourHasPassed} for the given {@link LocalDateTime}.
+	 *
+	 * @param time must not be {@literal null}.
+	 */
+	public static HourHasPassed of(LocalDateTime time) {
+		return new HourHasPassed(time);
+	}
+
+	/**
+	 * The hour that has just passed.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public LocalDateTime getTime() {
+		return time;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof HourHasPassed that)) {
+			return false;
+		}
+
+		return Objects.equals(time, that.time);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(time);
+	}
 }

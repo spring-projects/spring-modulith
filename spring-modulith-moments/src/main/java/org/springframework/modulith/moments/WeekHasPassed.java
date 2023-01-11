@@ -15,18 +15,15 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
-
 import java.time.LocalDate;
 import java.time.Year;
 import java.time.temporal.ChronoField;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
+import java.util.Objects;
 
 import org.jmolecules.event.types.DomainEvent;
+import org.springframework.util.Assert;
 
 /**
  * A {@link DomainEvent} published if a week has passed. The semantics of what constitutes are depended on the
@@ -34,23 +31,41 @@ import org.jmolecules.event.types.DomainEvent;
  *
  * @author Oliver Drotbohm
  */
-@Value(staticConstructor = "of")
 public class WeekHasPassed implements DomainEvent {
 
-	/**
-	 * The year of the week that has just passed.
-	 */
-	private final @NonNull Year year;
-
-	/**
-	 * The week of the {@link Year} that has just passed.
-	 */
+	private final Year year;
 	private final int week;
+	private final Locale locale;
 
 	/**
-	 * The {@link Locale} to be used to calculate the start date of the week.
+	 * Creates a new {@link WeekHasPassed} for the given {@link Year}, week and {@link Locale}.
+	 *
+	 * @param year must not be {@literal null}.
+	 * @param week must be between 0 and 53 (inclusive).
+	 * @param locale must not be {@literal null}.
 	 */
-	private final @NonNull @Getter(AccessLevel.NONE) Locale locale;
+	WeekHasPassed(Year year, int week, Locale locale) {
+
+		Assert.notNull(year, "Year must not be null!");
+		Assert.isTrue(week >= 0 && week <= 53, "Week must be between 0 and 53!");
+		Assert.notNull(locale, "Locale must not be null!");
+
+		this.year = year;
+		this.week = week;
+		this.locale = locale;
+	}
+
+	/**
+	 * Creates a new {@link WeekHasPassed} for the given {@link Year}, week and {@link Locale}.
+	 *
+	 * @param year must not be {@literal null}.
+	 * @param week must be between 0 and 53 (inclusive).
+	 * @param locale must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static WeekHasPassed of(Year year, int week, Locale locale) {
+		return new WeekHasPassed(year, week, locale);
+	}
 
 	/**
 	 * Creates a new {@link WeekHasPassed} for the given {@link Year} and week of the year.
@@ -61,6 +76,24 @@ public class WeekHasPassed implements DomainEvent {
 	 */
 	public static WeekHasPassed of(Year year, int week) {
 		return WeekHasPassed.of(year, week, Locale.getDefault());
+	}
+
+	/**
+	 * The year of the week that has just passed.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Year getYear() {
+		return year;
+	}
+
+	/**
+	 * The {@link Locale} to be used to calculate the start date of the week.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public int getWeek() {
+		return week;
 	}
 
 	/**
@@ -82,5 +115,41 @@ public class WeekHasPassed implements DomainEvent {
 	 */
 	public LocalDate getEndDate() {
 		return getStartDate().plusDays(6);
+	}
+
+	/**
+	 * @return will never be {@literal null}.
+	 */
+	Locale getLocale() {
+		return locale;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof WeekHasPassed that)) {
+			return false;
+		}
+
+		return week == that.week //
+				&& Objects.equals(year, that.year) //
+				&& Objects.equals(locale, that.locale);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(locale, week, year);
 	}
 }

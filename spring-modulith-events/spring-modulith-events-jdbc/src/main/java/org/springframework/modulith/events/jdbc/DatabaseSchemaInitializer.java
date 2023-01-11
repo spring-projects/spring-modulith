@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import lombok.RequiredArgsConstructor;
-
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
@@ -24,7 +22,7 @@ import java.nio.charset.StandardCharsets;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.util.StreamUtils;
 
 /**
@@ -34,13 +32,32 @@ import org.springframework.util.StreamUtils;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 class DatabaseSchemaInitializer implements InitializingBean {
 
-	private final JdbcTemplate jdbcTemplate;
+	private final JdbcOperations jdbcOperations;
 	private final ResourceLoader resourceLoader;
 	private final DatabaseType databaseType;
 
+	/**
+	 * Creates a new {@link DatabaseSchemaInitializer} for the given {@link JdbcOperations}, {@link ResourceLoader} and
+	 * {@link DatabaseType}.
+	 *
+	 * @param jdbcOperations must not be {@literal null}.
+	 * @param resourceLoader must not be {@literal null}.
+	 * @param databaseType must not be {@literal null}.
+	 */
+	public DatabaseSchemaInitializer(JdbcOperations jdbcOperations, ResourceLoader resourceLoader,
+			DatabaseType databaseType) {
+
+		this.jdbcOperations = jdbcOperations;
+		this.resourceLoader = resourceLoader;
+		this.databaseType = databaseType;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.InitializingBean#afterPropertiesSet()
+	 */
 	@Override
 	public void afterPropertiesSet() {
 
@@ -48,10 +65,10 @@ class DatabaseSchemaInitializer implements InitializingBean {
 		var schemaDdlResource = resourceLoader.getResource(schemaResourceFilename);
 		var schemaDdl = asString(schemaDdlResource);
 
-		jdbcTemplate.execute(schemaDdl);
+		jdbcOperations.execute(schemaDdl);
 	}
 
-	private String asString(Resource resource) {
+	private static String asString(Resource resource) {
 
 		try {
 			return StreamUtils.copyToString(resource.getInputStream(), StandardCharsets.UTF_8);

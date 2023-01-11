@@ -15,9 +15,6 @@
  */
 package org.springframework.modulith.moments.support;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -39,20 +36,39 @@ import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class Moments {
 
 	private static final MonthDay DEC_31ST = MonthDay.of(Month.DECEMBER, 31);
 
-	private final @NonNull Clock clock;
-	private final @NonNull ApplicationEventPublisher events;
-	private final @NonNull MomentsProperties properties;
+	private final Clock clock;
+	private final ApplicationEventPublisher events;
+	private final MomentsProperties properties;
 
 	private Duration shift = Duration.ZERO;
+
+	/**
+	 * Creates a new {@link Moments} for the given {@link Clock}, {@link ApplicationEventPublisher} and
+	 * {@link MomentsProperties}.
+	 *
+	 * @param clock must not be {@literal null}.
+	 * @param events must not be {@literal null}.
+	 * @param properties must not be {@literal null}.
+	 */
+	public Moments(Clock clock, ApplicationEventPublisher events, MomentsProperties properties) {
+
+		Assert.notNull(clock, "Clock must not be null!");
+		Assert.notNull(events, "ApplicationEventPublisher must not be null!");
+		Assert.notNull(properties, "MomentsProperties must not be null!");
+
+		this.clock = clock;
+		this.events = events;
+		this.properties = properties;
+	}
 
 	/**
 	 * Triggers event publication every hour.
@@ -71,48 +87,6 @@ public class Moments {
 	@Scheduled(cron = "@daily")
 	void everyMidnight() {
 		emitEventsFor(now().toLocalDate().minusDays(1));
-	}
-
-	void emitEventsFor(LocalDateTime time) {
-		events.publishEvent(HourHasPassed.of(time.truncatedTo(ChronoUnit.HOURS)));
-	}
-
-	void emitEventsFor(LocalDate date) {
-
-		// Day has passed
-		events.publishEvent(DayHasPassed.of(date));
-
-		var year = Year.from(date);
-
-		// Week has passed
-		var weekFields = WeekFields.of(properties.getLocale());
-		var field = weekFields.weekOfWeekBasedYear();
-		var currentWeek = date.get(field);
-		var tomorrowsWeek = date.plusDays(1).get(field);
-
-		if (tomorrowsWeek != currentWeek) {
-
-			var eventYear = Year.of(date.get(weekFields.weekBasedYear()));
-
-			events.publishEvent(WeekHasPassed.of(eventYear, currentWeek, properties.getLocale()));
-		}
-
-		// Month has passed
-		if (date.getDayOfMonth() == date.lengthOfMonth()) {
-			events.publishEvent(MonthHasPassed.of(YearMonth.from(date)));
-		}
-
-		// Quarter has passed
-		ShiftedQuarter quarter = properties.getShiftedQuarter(date);
-
-		if (quarter.isLastDay(date)) {
-			events.publishEvent(QuarterHasPassed.of(year, quarter));
-		}
-
-		// Year has passed
-		if (MonthDay.from(date).equals(DEC_31ST)) {
-			events.publishEvent(YearHasPassed.of(year));
-		}
 	}
 
 	Moments shiftBy(Duration duration) {
@@ -152,5 +126,47 @@ public class Moments {
 		Instant instant = clock.instant().plus(shift);
 
 		return LocalDateTime.ofInstant(instant, properties.getZoneId());
+	}
+
+	private void emitEventsFor(LocalDateTime time) {
+		events.publishEvent(HourHasPassed.of(time.truncatedTo(ChronoUnit.HOURS)));
+	}
+
+	private void emitEventsFor(LocalDate date) {
+
+		// Day has passed
+		events.publishEvent(DayHasPassed.of(date));
+
+		var year = Year.from(date);
+
+		// Week has passed
+		var weekFields = WeekFields.of(properties.getLocale());
+		var field = weekFields.weekOfWeekBasedYear();
+		var currentWeek = date.get(field);
+		var tomorrowsWeek = date.plusDays(1).get(field);
+
+		if (tomorrowsWeek != currentWeek) {
+
+			var eventYear = Year.of(date.get(weekFields.weekBasedYear()));
+
+			events.publishEvent(WeekHasPassed.of(eventYear, currentWeek, properties.getLocale()));
+		}
+
+		// Month has passed
+		if (date.getDayOfMonth() == date.lengthOfMonth()) {
+			events.publishEvent(MonthHasPassed.of(YearMonth.from(date)));
+		}
+
+		// Quarter has passed
+		ShiftedQuarter quarter = properties.getShiftedQuarter(date);
+
+		if (quarter.isLastDay(date)) {
+			events.publishEvent(QuarterHasPassed.of(year, quarter));
+		}
+
+		// Year has passed
+		if (MonthDay.from(date).equals(DEC_31ST)) {
+			events.publishEvent(YearHasPassed.of(year));
+		}
 	}
 }

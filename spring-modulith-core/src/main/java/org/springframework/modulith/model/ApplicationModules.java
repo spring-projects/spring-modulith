@@ -19,12 +19,6 @@ import static com.tngtech.archunit.base.DescribedPredicate.*;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static java.util.stream.Collectors.*;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.Value;
-import lombok.With;
-
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -60,7 +54,6 @@ import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
  * @author Oliver Drotbohm
  * @author Peter Gafert
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private static final Map<CacheKey, ApplicationModules> CACHE = new HashMap<>();
@@ -90,7 +83,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private final Map<String, ApplicationModule> modules;
 	private final JavaClasses allClasses;
 	private final List<JavaPackage> rootPackages;
-	private final @With(AccessLevel.PRIVATE) @Getter Set<ApplicationModule> sharedModules;
+	private final Set<ApplicationModule> sharedModules;
 	private final List<String> orderedNames;
 
 	private boolean verified;
@@ -124,6 +117,39 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
+	 * Creates a new {@link ApplicationModules} for the given {@link ModulithMetadata}, {@link ApplicationModule}s,
+	 * {@link JavaClasses}, {@link JavaPackage}s, shared {@link ApplicationModule}s, ordered module names and verified
+	 * flag.
+	 *
+	 * @param metadata must not be {@literal null}.
+	 * @param modules must not be {@literal null}.
+	 * @param allClasses must not be {@literal null}.
+	 * @param rootPackages must not be {@literal null}.
+	 * @param sharedModules must not be {@literal null}.
+	 * @param orderedNames must not be {@literal null}.
+	 * @param verified
+	 */
+	private ApplicationModules(ModulithMetadata metadata, Map<String, ApplicationModule> modules, JavaClasses classes,
+			List<JavaPackage> rootPackages, Set<ApplicationModule> sharedModules, List<String> orderedNames,
+			boolean verified) {
+
+		Assert.notNull(metadata, "ModulithMetadata must not be null!");
+		Assert.notNull(modules, "Application modules must not be null!");
+		Assert.notNull(classes, "JavaClasses must not be null!");
+		Assert.notNull(rootPackages, "Root JavaPackages must not be null!");
+		Assert.notNull(sharedModules, "Shared ApplicationModules must not be null!");
+		Assert.notNull(orderedNames, "Ordered application module names must not be null!");
+
+		this.metadata = metadata;
+		this.modules = modules;
+		this.allClasses = classes;
+		this.rootPackages = rootPackages;
+		this.sharedModules = sharedModules;
+		this.orderedNames = orderedNames;
+		this.verified = verified;
+	}
+
+	/**
 	 * Creates a new {@link ApplicationModules} relative to the given modulith type. Will inspect the {@link Modulith}
 	 * annotation on the class given for advanced customizations of the module setup.
 	 *
@@ -147,7 +173,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
 
-		CacheKey key = TypeKey.of(modulithType, ignored);
+		CacheKey key = new TypeKey(modulithType, ignored);
 
 		return CACHE.computeIfAbsent(key, it -> {
 
@@ -177,7 +203,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public static ApplicationModules of(String javaPackage, DescribedPredicate<JavaClass> ignored) {
 
-		CacheKey key = PackageKey.of(javaPackage, ignored);
+		CacheKey key = new PackageKey(javaPackage, ignored);
 
 		return CACHE.computeIfAbsent(key, it -> {
 
@@ -189,33 +215,32 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Creates a new {@link ApplicationModules} instance for the given {@link CacheKey}.
+	 * Returns the source of the {@link ApplicationModules}. Either a main application class or a package name.
 	 *
-	 * @param key must not be {@literal null}.
 	 * @return will never be {@literal null}.
+	 * @deprecated use {@link #getSource()} instead
 	 */
-	private static ApplicationModules of(CacheKey key) {
-
-		Assert.notNull(key, "Cache key must not be null!");
-
-		ModulithMetadata metadata = key.getMetadata();
-
-		Set<String> basePackages = new HashSet<>();
-		basePackages.add(key.getBasePackage());
-		basePackages.addAll(metadata.getAdditionalPackages());
-
-		ApplicationModules modules = new ApplicationModules(metadata, basePackages, key.getIgnored(),
-				metadata.useFullyQualifiedModuleNames(), IMPORT_OPTION);
-
-		Set<ApplicationModule> sharedModules = metadata.getSharedModuleNames() //
-				.map(modules::getRequiredModule) //
-				.collect(Collectors.toSet());
-
-		return modules.withSharedModules(sharedModules);
+	@Deprecated(forRemoval = true)
+	public Object getModulithSource() {
+		return metadata.getSource();
 	}
 
-	public Object getModulithSource() {
-		return metadata.getModulithSource();
+	/**
+	 * Returns the source of the {@link ApplicationModules}. Either a main application class or a package name.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Object getSource() {
+		return metadata.getSource();
+	}
+
+	/**
+	 * Returns all {@link ApplicationModule}s registered as shared ones.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Set<ApplicationModule> getSharedModules() {
+		return sharedModules;
 	}
 
 	/**
@@ -421,9 +446,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return this.stream().map(ApplicationModule::toString).collect(Collectors.joining("\n"));
 	}
 
+	private ApplicationModules withSharedModules(Set<ApplicationModule> sharedModules) {
+		return new ApplicationModules(metadata, modules, allClasses, rootPackages, sharedModules, orderedNames, verified);
+	}
+
 	private FailureReport assertNoCyclesFor(JavaPackage rootPackage) {
 
-		EvaluationResult result = SlicesRuleDefinition.slices() //
+		var result = SlicesRuleDefinition.slices() //
 				.matching(rootPackage.getName().concat(".(*)..")) //
 				.should().beFreeOfCycles() //
 				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
@@ -457,13 +486,39 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	private ApplicationModule getRequiredModule(String moduleName) {
 
-		ApplicationModule module = modules.get(moduleName);
+		var module = modules.get(moduleName);
 
 		if (module == null) {
 			throw new IllegalArgumentException(String.format("Module %s does not exist!", moduleName));
 		}
 
 		return module;
+	}
+
+	/**
+	 * Creates a new {@link ApplicationModules} instance for the given {@link CacheKey}.
+	 *
+	 * @param key must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	private static ApplicationModules of(CacheKey key) {
+
+		Assert.notNull(key, "Cache key must not be null!");
+
+		var metadata = key.getMetadata();
+
+		var basePackages = new HashSet<String>();
+		basePackages.add(key.getBasePackage());
+		basePackages.addAll(metadata.getAdditionalPackages());
+
+		var modules = new ApplicationModules(metadata, basePackages, key.getIgnored(),
+				metadata.useFullyQualifiedModuleNames(), IMPORT_OPTION);
+
+		var sharedModules = metadata.getSharedModuleNames() //
+				.map(modules::getRequiredModule) //
+				.collect(Collectors.toSet());
+
+		return modules.withSharedModules(sharedModules);
 	}
 
 	public static class Filters {
@@ -489,11 +544,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		ModulithMetadata getMetadata();
 	}
 
-	@Value(staticConstructor = "of")
 	private static final class TypeKey implements CacheKey {
 
-		Class<?> type;
-		DescribedPredicate<JavaClass> ignored;
+		private final Class<?> type;
+		private final DescribedPredicate<JavaClass> ignored;
+
+		/**
+		 * Creates a new {@link TypeKey} for the given type and {@link DescribedPredicate} of ignored {@link JavaClass}es.
+		 *
+		 * @param type must not be {@literal null}.
+		 * @param ignored must not be {@literal null}.
+		 */
+		TypeKey(Class<?> type, DescribedPredicate<JavaClass> ignored) {
+
+			this.type = type;
+			this.ignored = ignored;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -512,13 +578,79 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		public ModulithMetadata getMetadata() {
 			return ModulithMetadata.of(type);
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getIgnored()
+		 */
+		@Override
+		public DescribedPredicate<JavaClass> getIgnored() {
+			return ignored;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof TypeKey other)) {
+				return false;
+			}
+
+			return Objects.equals(this.type, other.type) //
+					&& Objects.equals(this.ignored, other.ignored);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(type, ignored);
+		}
 	}
 
-	@Value(staticConstructor = "of")
 	private static final class PackageKey implements CacheKey {
 
-		String basePackage;
-		DescribedPredicate<JavaClass> ignored;
+		private final String basePackage;
+		private final DescribedPredicate<JavaClass> ignored;
+
+		/**
+		 * Creates a new {@link PackageKey} for the given base package and {@link DescribedPredicate} of ignored
+		 * {@link JavaClass}es.
+		 *
+		 * @param basePackage must not be {@literal null}.
+		 * @param ignored must not be {@literal null}.
+		 */
+		PackageKey(String basePackage, DescribedPredicate<JavaClass> ignored) {
+
+			this.basePackage = basePackage;
+			this.ignored = ignored;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getBasePackage()
+		 */
+		@Override
+		public String getBasePackage() {
+			return basePackage;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getIgnored()
+		 */
+		public DescribedPredicate<JavaClass> getIgnored() {
+			return ignored;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -527,6 +659,34 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		@Override
 		public ModulithMetadata getMetadata() {
 			return ModulithMetadata.of(basePackage);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof PackageKey that)) {
+				return false;
+			}
+
+			return Objects.equals(this.basePackage, that.basePackage) //
+					&& Objects.equals(this.ignored, that.ignored);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(basePackage, ignored);
 		}
 	}
 

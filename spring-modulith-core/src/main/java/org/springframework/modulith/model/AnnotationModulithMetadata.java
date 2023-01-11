@@ -15,9 +15,6 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -33,11 +30,25 @@ import org.springframework.util.StringUtils;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 class AnnotationModulithMetadata implements ModulithMetadata {
 
 	private final Class<?> modulithType;
 	private final Modulithic annotation;
+
+	/**
+	 * Creates a new {@link AnnotationModulithMetadata} for the given type and annotation.
+	 *
+	 * @param modulithType must not be {@literal null}.
+	 * @param annotation must not be {@literal null}.
+	 */
+	private AnnotationModulithMetadata(Class<?> modulithType, Modulithic annotation) {
+
+		Assert.notNull(modulithType, "Type must not be null!");
+		Assert.notNull(annotation, "Annotation must not be null!");
+
+		this.modulithType = modulithType;
+		this.annotation = annotation;
+	}
 
 	/**
 	 * Creates a {@link ModulithMetadata} inspecting {@link Modulithic} annotation or return {@link Optional#empty()} if
@@ -62,6 +73,15 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 	 */
 	@Override
 	public Object getModulithSource() {
+		return getSource();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.model.ModulithMetadata#getModulithSource()
+	 */
+	@Override
+	public Object getSource() {
 		return modulithType;
 	}
 

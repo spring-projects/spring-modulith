@@ -15,16 +15,14 @@
  */
 package org.springframework.modulith.events.support;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -33,6 +31,7 @@ import org.springframework.context.event.AbstractApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
@@ -52,12 +51,24 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @see CompletionRegisteringBeanPostProcessor
  */
-@Slf4j
-@RequiredArgsConstructor
 public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
 		implements SmartInitializingSingleton {
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
+
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
+
+	/**
+	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
+	 *
+	 * @param registry must not be {@literal null}.
+	 */
+	public PersistentApplicationEventMulticaster(Supplier<EventPublicationRegistry> registry) {
+
+		Assert.notNull(registry, "EventPublicationRegistry must not be null!");
+
+		this.registry = registry;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -76,15 +87,16 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public void multicastEvent(ApplicationEvent event, ResolvableType eventType) {
 
-		ResolvableType type = eventType == null ? ResolvableType.forInstance(event) : eventType;
-		Collection<ApplicationListener<?>> listeners = getApplicationListeners(event, type);
+		var type = eventType == null ? ResolvableType.forInstance(event) : eventType;
+		var listeners = getApplicationListeners(event, type);
 
 		if (listeners.isEmpty()) {
 			return;
 		}
 
-		TransactionalEventListeners txListeners = new TransactionalEventListeners(listeners);
-		Object eventToPersist = getEventToPersist(event);
+		var txListeners = new TransactionalEventListeners(listeners);
+		var eventToPersist = getEventToPersist(event);
+
 		registry.get().store(eventToPersist, txListeners.stream() //
 				.map(TransactionalApplicationListener::getListenerId) //
 				.map(PublicationTargetIdentifier::of));
@@ -108,7 +120,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 	private void invokeTargetListener(EventPublication publication) {
 
-		TransactionalEventListeners listeners = new TransactionalEventListeners(
+		var listeners = new TransactionalEventListeners(
 				getApplicationListeners());
 
 		listeners.stream() //
@@ -117,7 +129,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				.map(it -> executeListenerWithCompletion(publication, it)) //
 				.orElseGet(() -> {
 
-					LOG.debug("Listener {} not found!", publication.getTargetIdentifier());
+					LOGGER.debug("Listener {} not found!", publication.getTargetIdentifier());
 					return null;
 				});
 	}

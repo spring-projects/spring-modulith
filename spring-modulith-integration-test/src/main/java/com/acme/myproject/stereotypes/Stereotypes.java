@@ -15,8 +15,6 @@
  */
 package com.acme.myproject.stereotypes;
 
-import lombok.Value;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
@@ -65,17 +63,6 @@ public class Stereotypes {
 	@Component
 	static class SomeAppInterfaceImplementation implements SomeAppInterface {}
 
-	@Value
 	@ConfigurationProperties("org.springframework.modulith.sample")
-	static class SomeConfigurationProperties {
-
-		/**
-		 * Some test property.
-		 */
-		String test;
-
-		public SomeConfigurationProperties(String test) {
-			this.test = test;
-		}
-	}
+	static record SomeConfigurationProperties(String test) {}
 }

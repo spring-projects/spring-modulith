@@ -15,9 +15,6 @@
  */
 package org.springframework.modulith.test;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -35,8 +32,8 @@ import org.springframework.test.context.TestConstructor.AutowireMode;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
- * Bootstraps the module containing the package of the test class annotated with {@link ApplicationModuleTest}. Will apply the
- * following modifications to the Spring Boot configuration:
+ * Bootstraps the module containing the package of the test class annotated with {@link ApplicationModuleTest}. Will
+ * apply the following modifications to the Spring Boot configuration:
  * <ul>
  * <li>Restricts the component scanning to the module's package.
  * <li>
@@ -76,7 +73,6 @@ public @interface ApplicationModuleTest {
 	 */
 	String[] extraIncludes() default {};
 
-	@RequiredArgsConstructor
 	public enum BootstrapMode {
 
 		/**
@@ -94,6 +90,19 @@ public @interface ApplicationModuleTest {
 		 */
 		ALL_DEPENDENCIES(DependencyDepth.ALL);
 
-		private final @Getter DependencyDepth depth;
+		private final DependencyDepth depth;
+
+		private BootstrapMode(DependencyDepth depth) {
+			this.depth = depth;
+		}
+
+		/**
+		 * Returns the {@link DependencyDepth} associated with the {@link BootstrapMode}.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public DependencyDepth getDepth() {
+			return depth;
+		}
 	}
 }

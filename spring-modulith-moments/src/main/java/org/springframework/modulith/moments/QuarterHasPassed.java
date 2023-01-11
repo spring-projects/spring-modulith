@@ -15,25 +15,49 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.NonNull;
-import lombok.Value;
-
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
+import java.util.Objects;
 
 import org.jmolecules.event.types.DomainEvent;
+import org.springframework.util.Assert;
 
 /**
  * A {@link DomainEvent} published once a quarter has passed.
  *
  * @author Oliver Drotbohm
  */
-@Value(staticConstructor = "of")
 public class QuarterHasPassed implements DomainEvent {
 
-	private final @NonNull Year year;
-	private final @NonNull ShiftedQuarter quarter;
+	private final Year year;
+	private final ShiftedQuarter quarter;
+
+	/**
+	 * Creates a new {@link QuarterHasPassed} for the given {@link Year} and {@link ShiftedQuarter}.
+	 *
+	 * @param year must not be {@literal null}.
+	 * @param quarter must not be {@literal null}.
+	 */
+	private QuarterHasPassed(Year year, ShiftedQuarter quarter) {
+
+		Assert.notNull(year, "Year must not be null!");
+		Assert.notNull(quarter, "ShiftedQuarter must not be null!");
+
+		this.year = year;
+		this.quarter = quarter;
+	}
+
+	/**
+	 * Returns a {@link QuarterHasPassed} for the given {@link Year} and {@link ShiftedQuarter}.
+	 *
+	 * @param year must not be {@literal null}.
+	 * @param quarter must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static QuarterHasPassed of(Year year, ShiftedQuarter quarter) {
+		return new QuarterHasPassed(year, quarter);
+	}
 
 	/**
 	 * Returns a {@link QuarterHasPassed} for the given {@link Year} and logical {@link Quarter}.
@@ -74,5 +98,33 @@ public class QuarterHasPassed implements DomainEvent {
 	 */
 	public LocalDate getEndDate() {
 		return quarter.getEndDate(year);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof QuarterHasPassed that)) {
+			return false;
+		}
+
+		return Objects.equals(quarter, that.quarter) //
+				&& Objects.equals(year, that.year);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(quarter, year);
 	}
 }

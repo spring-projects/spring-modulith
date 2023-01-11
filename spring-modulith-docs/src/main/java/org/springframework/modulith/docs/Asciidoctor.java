@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
-import org.springframework.modulith.docs.Documenter.CanvasOptions.Groupings;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModuleDependency;
 import org.springframework.modulith.model.ApplicationModules;
@@ -42,7 +41,6 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaModifier;
 
 /**
@@ -99,10 +97,9 @@ class Asciidoctor {
 	 */
 	public String toInlineCode(String source) {
 
-		String[] parts = source.split("#");
-
-		String type = parts[0];
-		Optional<String> methodSignature = parts.length == 2 ? Optional.of(parts[1]) : Optional.empty();
+		var parts = source.split("#");
+		var type = parts[0];
+		var methodSignature = parts.length == 2 ? Optional.of(parts[1]) : Optional.<String> empty();
 
 		return modules.getModuleByType(type)
 				.flatMap(it -> it.getType(type))
@@ -116,15 +113,14 @@ class Asciidoctor {
 
 	public String toInlineCode(SpringBean bean) {
 
-		String base = toInlineCode(bean.toArchitecturallyEvidentType());
-
-		List<JavaClass> interfaces = bean.getInterfacesWithinModule();
+		var base = toInlineCode(bean.toArchitecturallyEvidentType());
+		var interfaces = bean.getInterfacesWithinModule();
 
 		if (interfaces.isEmpty()) {
 			return base;
 		}
 
-		String interfacesAsString = interfaces.stream() //
+		var interfacesAsString = interfaces.stream() //
 				.map(this::toInlineCode) //
 				.collect(Collectors.joining(", "));
 
@@ -133,8 +129,8 @@ class Asciidoctor {
 
 	public String renderSpringBeans(ApplicationModule module, CanvasOptions options) {
 
-		StringBuilder builder = new StringBuilder();
-		Groupings groupings = options.groupBeans(module);
+		var builder = new StringBuilder();
+		var groupings = options.groupBeans(module);
 
 		if (groupings.hasOnlyFallbackGroup()) {
 			return toBulletPoints(groupings.byGrouping(CanvasOptions.FALLBACK_GROUP));
@@ -166,13 +162,13 @@ class Asciidoctor {
 
 	public String renderEvents(ApplicationModule module) {
 
-		List<EventType> events = module.getPublishedEvents();
+		var events = module.getPublishedEvents();
 
 		if (events.isEmpty()) {
 			return "none";
 		}
 
-		StringBuilder builder = new StringBuilder();
+		var builder = new StringBuilder();
 
 		for (EventType eventType : events) {
 
@@ -205,12 +201,12 @@ class Asciidoctor {
 		Stream<String> stream = properties.stream()
 				.map(it -> {
 
-					StringBuilder builder = new StringBuilder()
-							.append(toCode(it.getName()))
+					var builder = new StringBuilder()
+							.append(toCode(it.name()))
 							.append(" -- ")
-							.append(toInlineCode(it.getType()));
+							.append(toInlineCode(it.type()));
 
-					String defaultValue = it.getDefaultValue();
+					var defaultValue = it.defaultValue();
 
 					if (defaultValue != null && StringUtils.hasText(defaultValue)) {
 
@@ -219,7 +215,7 @@ class Asciidoctor {
 								.append("");
 					}
 
-					String description = it.getDescription();
+					var description = it.description();
 
 					if (description != null && StringUtils.hasText(description)) {
 						builder = builder.append(". ")
@@ -257,8 +253,8 @@ class Asciidoctor {
 
 	private String toOptionalLink(JavaClass source, Optional<String> methodSignature) {
 
-		ApplicationModule module = modules.getModuleByType(source).orElse(null);
-		String typeAndMethod = toCode(
+		var module = modules.getModuleByType(source).orElse(null);
+		var typeAndMethod = toCode(
 				toTypeAndMethod(FormatableType.of(source).getAbbreviatedFullName(module), methodSignature));
 
 		if (module == null
@@ -267,7 +263,7 @@ class Asciidoctor {
 			return typeAndMethod;
 		}
 
-		String classPath = convertClassNameToResourcePath(source.getFullName()) //
+		var classPath = convertClassNameToResourcePath(source.getFullName()) //
 				.replace('$', '.');
 
 		return Optional.ofNullable(javaDocBase == PLACEHOLDER ? null : javaDocBase) //
@@ -288,7 +284,7 @@ class Asciidoctor {
 
 			if (!docSource.isPresent()) {
 
-				Stream<JavaClass> referenceTypes = type.getReferenceTypes();
+				var referenceTypes = type.getReferenceTypes();
 
 				return String.format("%s listening to %s", //
 						toInlineCode(type.getType()), //
@@ -299,14 +295,14 @@ class Asciidoctor {
 
 			return header + type.getReferenceMethods().map(it -> {
 
-				JavaMethod method = it.getMethod();
+				var method = it.getMethod();
 				Assert.isTrue(method.getRawParameterTypes().size() > 0,
 						() -> String.format("Method %s must have at least one parameter!", method));
 
-				JavaClass parameterType = it.getMethod().getRawParameterTypes().get(0);
-				String isAsync = it.isAsync() ? "(async) " : "";
+				var parameterType = method.getRawParameterTypes().get(0);
+				var isAsync = it.isAsync() ? "(async) " : "";
 
-				return docSource.flatMap(source -> source.getDocumentation(it.getMethod()))
+				return docSource.flatMap(source -> source.getDocumentation(method))
 						.map(doc -> String.format("** %s %s-- %s", toInlineCode(parameterType), isAsync, doc))
 						.orElseGet(() -> String.format("** %s %s", toInlineCode(parameterType), isAsync));
 

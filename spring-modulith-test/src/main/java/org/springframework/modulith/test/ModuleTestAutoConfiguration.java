@@ -15,16 +15,14 @@
  */
 package org.springframework.modulith.test;
 
-import lombok.extern.slf4j.Slf4j;
-
-import java.lang.reflect.Field;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
@@ -43,7 +41,7 @@ import org.springframework.util.StringUtils;
  *
  * @author Oliver Drotbohm
  */
-@Configuration
+@Configuration(proxyBeanMethods = false)
 @Import(ModuleTestAutoConfiguration.AutoConfigurationAndEntityScanPackageCustomizer.class)
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 class ModuleTestAutoConfiguration {
@@ -51,8 +49,9 @@ class ModuleTestAutoConfiguration {
 	private static final String AUTOCONFIG_PACKAGES = "org.springframework.boot.autoconfigure.AutoConfigurationPackages";
 	private static final String ENTITY_SCAN_PACKAGE = "org.springframework.boot.autoconfigure.domain.EntityScanPackages";
 
-	@Slf4j
 	static class AutoConfigurationAndEntityScanPackageCustomizer implements ImportBeanDefinitionRegistrar {
+
+		private static final Logger LOGGER = LoggerFactory.getLogger(AutoConfigurationAndEntityScanPackageCustomizer.class);
 
 		/*
 		 * (non-Javadoc)
@@ -61,10 +60,10 @@ class ModuleTestAutoConfiguration {
 		@Override
 		public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 
-			ModuleTestExecution execution = ((BeanFactory) registry).getBean(ModuleTestExecution.class);
-			List<String> basePackages = execution.getBasePackages().toList();
+			var execution = ((BeanFactory) registry).getBean(ModuleTestExecution.class);
+			var basePackages = execution.getBasePackages().toList();
 
-			LOG.info("Re-configuring auto-configuration and entity scan packages to: {}.",
+			LOGGER.info("Re-configuring auto-configuration and entity scan packages to: {}.",
 					StringUtils.collectionToDelimitedString(basePackages, ", "));
 
 			setBasePackagesOn(registry, AUTOCONFIG_PACKAGES, "BasePackagesBeanDefinition", "basePackages", basePackages);
@@ -80,10 +79,10 @@ class ModuleTestAutoConfiguration {
 				return;
 			}
 
-			BeanDefinition definition = registry.getBeanDefinition(beanName);
+			var definition = registry.getBeanDefinition(beanName);
 
 			// For Boot 2.4, we deal with a BasePackagesBeanDefinition
-			Field field = Arrays.stream(definition.getClass().getDeclaredFields())
+			var field = Arrays.stream(definition.getClass().getDeclaredFields())
 					.filter(__ -> definition.getClass().getSimpleName().equals(definitionType))
 					.filter(it -> it.getName().equals(fieldName))
 					.findFirst()

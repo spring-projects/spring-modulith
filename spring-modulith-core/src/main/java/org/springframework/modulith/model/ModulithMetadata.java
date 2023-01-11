@@ -61,11 +61,20 @@ public interface ModulithMetadata {
 	}
 
 	/**
-	 * Returns the source of the Moduliths setup. Either a type or a package.
+	 * Returns the source of the Spring Modulith setup. Either a type or a package.
+	 *
+	 * @return will never be {@literal null}.
+	 * @deprecated use {@link #getSource()} instead.
+	 */
+	@Deprecated(forRemoval = true)
+	Object getModulithSource();
+
+	/**
+	 * Returns the source of the Spring Modulith setup. Either a type or a package.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	Object getModulithSource();
+	Object getSource();
 
 	/**
 	 * Returns the names of the packages that are supposed to be considered modulith base packages, i.e. for which to

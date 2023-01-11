@@ -15,17 +15,15 @@
  */
 package org.springframework.modulith.test;
 
-import lombok.EqualsAndHashCode;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Arrays;
 import java.util.List;
-import java.util.Set;
+import java.util.Objects;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.model.ApplicationModule;
@@ -47,16 +45,14 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	public ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
-		ApplicationModuleTest moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass,
-				ApplicationModuleTest.class);
+		var moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass, ApplicationModuleTest.class);
 
 		return moduleTest == null ? null : new ModuleContextCustomizer(testClass);
 	}
 
-	@Slf4j
-	@EqualsAndHashCode
 	static class ModuleContextCustomizer implements ContextCustomizer {
 
+		private static final Logger LOGGER = LoggerFactory.getLogger(ModuleContextCustomizer.class);
 		private static final String BEAN_NAME = ModuleTestExecution.class.getName();
 
 		private final Supplier<ModuleTestExecution> execution;
@@ -72,14 +68,14 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		@Override
 		public void customizeContext(ConfigurableApplicationContext context, MergedContextConfiguration mergedConfig) {
 
-			ModuleTestExecution testExecution = execution.get();
+			var testExecution = execution.get();
 
 			logModules(testExecution);
 
-			ConfigurableListableBeanFactory beanFactory = context.getBeanFactory();
+			var beanFactory = context.getBeanFactory();
 			beanFactory.registerSingleton(BEAN_NAME, testExecution);
 
-			DefaultPublishedEvents events = new DefaultPublishedEvents();
+			var events = new DefaultPublishedEvents();
 			beanFactory.registerSingleton(events.getClass().getName(), events);
 			context.addApplicationListener(events);
 		}
@@ -94,48 +90,47 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			var message = "Bootstrapping @%s for %s in mode %s (%s)…"
 					.formatted(ApplicationModuleTest.class.getName(), moduleName, bootstrapMode, modules.getModulithSource());
 
-			LOG.info(message);
-			LOG.info("");
+			LOGGER.info(message);
+			LOGGER.info("");
 
-			Arrays.stream(module.toString(modules).split("\n")).forEach(LOG::info);
+			Arrays.stream(module.toString(modules).split("\n")).forEach(LOGGER::info);
 
-			List<ApplicationModule> extraIncludes = execution.getExtraIncludes();
+			var extraIncludes = execution.getExtraIncludes();
 
 			if (!extraIncludes.isEmpty()) {
 
 				logHeadline("Extra includes:");
 
-				LOG.info("> " + extraIncludes.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+				LOGGER.info("> " + extraIncludes.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
 			}
 
-			Set<ApplicationModule> sharedModules = modules.getSharedModules();
+			var sharedModules = modules.getSharedModules();
 
 			if (!sharedModules.isEmpty()) {
 
 				logHeadline("Shared modules:");
 
-				LOG.info("> " + sharedModules.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+				LOGGER.info("> " + sharedModules.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
 			}
 
-			List<ApplicationModule> dependencies = execution.getDependencies();
+			var dependencies = execution.getDependencies();
 
 			if (!dependencies.isEmpty() || !sharedModules.isEmpty()) {
 
 				logHeadline("Included dependencies:");
 
-				Stream<ApplicationModule> dependenciesPlusMissingSharedOnes = //
-						Stream.concat(dependencies.stream(), sharedModules.stream() //
-								.filter(it -> !dependencies.contains(it)));
+				var dependenciesPlusMissingSharedOnes = Stream.concat(dependencies.stream(), sharedModules.stream() //
+						.filter(it -> !dependencies.contains(it)));
 
 				dependenciesPlusMissingSharedOnes //
 						.map(it -> it.toString(modules)) //
 						.forEach(it -> {
-							LOG.info("");
-							Arrays.stream(it.split("\n")).forEach(LOG::info);
+							LOGGER.info("");
+							Arrays.stream(it.split("\n")).forEach(LOGGER::info);
 						});
 			}
 
-			LOG.info("");
+			LOGGER.info("");
 		}
 
 		private static void logHeadline(String headline) {
@@ -144,9 +139,36 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 		private static void logHeadline(String headline, Runnable additional) {
 
-			LOG.info("");
-			LOG.info(headline);
+			LOGGER.info("");
+			LOGGER.info(headline);
 			additional.run();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof ModuleContextCustomizer that)) {
+				return false;
+			}
+
+			return Objects.equals(execution, that.execution);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(execution);
 		}
 	}
 }

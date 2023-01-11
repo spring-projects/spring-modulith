@@ -17,11 +17,6 @@ package org.springframework.modulith.model;
 
 import static org.springframework.modulith.model.Types.JavaXTypes.*;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -51,12 +46,15 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class ArchitecturallyEvidentType {
 
 	private static Map<Key, ArchitecturallyEvidentType> CACHE = new HashMap<>();
 
-	private final @Getter JavaClass type;
+	private final JavaClass type;
+
+	protected ArchitecturallyEvidentType(JavaClass type) {
+		this.type = type;
+	}
 
 	/**
 	 * Creates a new {@link ArchitecturallyEvidentType} for the given {@link JavaType} and {@link Classes} of Spring
@@ -68,7 +66,7 @@ public abstract class ArchitecturallyEvidentType {
 	 */
 	public static ArchitecturallyEvidentType of(JavaClass type, Classes beanTypes) {
 
-		return CACHE.computeIfAbsent(Key.of(type, beanTypes), it -> {
+		return CACHE.computeIfAbsent(new Key(type, beanTypes), it -> {
 
 			List<ArchitecturallyEvidentType> delegates = new ArrayList<>();
 
@@ -84,6 +82,15 @@ public abstract class ArchitecturallyEvidentType {
 
 			return DelegatingType.of(type, delegates);
 		});
+	}
+
+	/**
+	 * Returns the {@link JavaClass} backing the {@link ArchitecturallyEvidentType}.
+	 *
+	 * @return the type wnn
+	 */
+	public JavaClass getType() {
+		return type;
 	}
 
 	/**
@@ -620,17 +627,19 @@ public abstract class ArchitecturallyEvidentType {
 		}
 	}
 
-	@Value(staticConstructor = "of")
-	private static class Key {
+	private static record Key(JavaClass type, Classes beanTypes) {}
 
-		JavaClass type;
-		Classes beanTypes;
-	}
-
-	@Value
-	public final class ReferenceMethod {
+	public static class ReferenceMethod {
 
 		private final JavaMethod method;
+
+		public ReferenceMethod(JavaMethod method) {
+			this.method = method;
+		}
+
+		public JavaMethod getMethod() {
+			return method;
+		}
 
 		public boolean isAsync() {
 			return method.isAnnotatedWith(SpringTypes.AT_ASYNC) || method.isMetaAnnotatedWith(SpringTypes.AT_ASYNC);

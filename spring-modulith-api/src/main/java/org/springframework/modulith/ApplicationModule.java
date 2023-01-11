@@ -32,7 +32,7 @@ public @interface ApplicationModule {
 	/**
 	 * The human readable name of the module to be used for display and documentation purposes.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	String displayName() default "";
 
@@ -43,7 +43,7 @@ public @interface ApplicationModule {
 	 * {@link NamedInterface}s need to be separated by a double colon {@code ::}, e.g. {@code module::API} if
 	 * {@code module} is the logical module name and {@code API} is the name of the named interface.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 * @see NamedInterface
 	 */
 	String[] allowedDependencies() default {};

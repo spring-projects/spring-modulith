@@ -193,7 +193,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 		assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
 				.hasSize(1) //
-				.element(0).extracting(JpaEventPublication::getSerializedEvent).isEqualTo(serializedEvent2);
+				.element(0).extracting(it -> it.serializedEvent).isEqualTo(serializedEvent2);
 	}
 
 	@Value

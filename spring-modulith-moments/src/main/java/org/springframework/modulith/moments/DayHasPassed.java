@@ -15,22 +15,78 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.Value;
-
 import java.time.LocalDate;
+import java.util.Objects;
 
 import org.jmolecules.event.types.DomainEvent;
+import org.springframework.util.Assert;
 
 /**
  * A {@link DomainEvent} published on each day.
  *
  * @author Oliver Drotbohm
  */
-@Value(staticConstructor = "of")
 public class DayHasPassed implements DomainEvent {
 
 	/**
 	 * The day that has just passed.
 	 */
 	private final LocalDate date;
+
+	/**
+	 * Creates a new {@link DayHasPassed} for the given {@link LocalDate}.
+	 *
+	 * @param month must not be {@literal null}.
+	 */
+	private DayHasPassed(LocalDate date) {
+
+		Assert.notNull(date, "LocalDate must not be null!");
+
+		this.date = date;
+	}
+
+	/**
+	 * Creates a new {@link DayHasPassed} for the given {@link LocalDate}.
+	 *
+	 * @param month must not be {@literal null}.
+	 */
+	public static DayHasPassed of(LocalDate date) {
+		return new DayHasPassed(date);
+	}
+
+	/**
+	 * The day that has just passed.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public LocalDate getDate() {
+		return date;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DayHasPassed that)) {
+			return false;
+		}
+
+		return Objects.equals(date, that.date);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(date);
+	}
 }

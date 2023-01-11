@@ -15,15 +15,12 @@
  */
 package org.springframework.modulith.docs;
 
-import lombok.Value;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.core.io.Resource;
@@ -34,7 +31,6 @@ import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
-import com.jayway.jsonpath.DocumentContext;
 import com.jayway.jsonpath.JsonPath;
 import com.tngtech.archunit.core.domain.JavaType;
 
@@ -55,10 +51,11 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 	 */
 	ConfigurationProperties() {
 
-		PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
+		var resolver = new PathMatchingResourcePatternResolver();
 
 		try {
-			Resource[] resources = resolver.getResources(METADATA_PATH);
+
+			var resources = resolver.getResources(METADATA_PATH);
 
 			this.properties = Arrays.stream(resources)
 					.flatMap(ConfigurationProperties::parseProperties)
@@ -96,9 +93,9 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 	private Stream<ModuleProperty> getModuleProperty(ApplicationModule module,
 			ConfigurationProperty property) {
 
-		return module.getType(property.getSourceType())
-				.map(it -> new ModuleProperty(property.getName(), property.getDescription(), property.getType(), it,
-						property.getDefaultValue()))
+		return module.getType(property.sourceType)
+				.map(it -> new ModuleProperty(property.name(), property.description(), property.type(), it,
+						property.defaultValue()))
 				.map(Stream::of)
 				.orElseGet(Stream::empty);
 	}
@@ -112,7 +109,7 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 
 		try (InputStream stream = source.getInputStream()) {
 
-			DocumentContext context = JsonPath.parse(stream);
+			var context = JsonPath.parse(stream);
 			List<Object> read = context.read(PATH, List.class);
 
 			return read.stream()
@@ -124,13 +121,8 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 		}
 	}
 
-	@Value
-	static class ConfigurationProperty {
-
-		String name;
-		@Nullable String description;
-		String type, sourceType;
-		@Nullable String defaultValue;
+	static record ConfigurationProperty(String name, @Nullable String description, String type, String sourceType,
+			@Nullable String defaultValue) {
 
 		@SuppressWarnings("null")
 		static Stream<ConfigurationProperty> of(Map<String, Object> source) {
@@ -162,12 +154,6 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 		}
 	}
 
-	@Value
-	static class ModuleProperty {
-		String name;
-		@Nullable String description;
-		String type;
-		JavaType sourceType;
-		@Nullable String defaultValue;
-	}
+	static record ModuleProperty(String name, @Nullable String description, String type, JavaType sourceType,
+			@Nullable String defaultValue) {}
 }

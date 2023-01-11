@@ -31,7 +31,7 @@ class CompletableEventPublicationUnitTests {
 
 		assertThatExceptionOfType(IllegalArgumentException.class)//
 				.isThrownBy(() -> CompletableEventPublication.of(null, PublicationTargetIdentifier.of("foo")))//
-				.withMessageContaining("event");
+				.withMessageContaining("Event");
 	}
 
 	@Test
@@ -39,7 +39,7 @@ class CompletableEventPublicationUnitTests {
 
 		assertThatExceptionOfType(IllegalArgumentException.class)//
 				.isThrownBy(() -> CompletableEventPublication.of(new Object(), null))//
-				.withMessageContaining("targetIdentifier");
+				.withMessageContaining("TargetIdentifier");
 	}
 
 	@Test

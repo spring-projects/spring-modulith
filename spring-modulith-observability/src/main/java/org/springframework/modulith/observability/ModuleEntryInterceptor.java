@@ -15,34 +15,44 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.tracing.Baggage;
-import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.Tracer.SpanInScope;
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
-@Slf4j
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 class ModuleEntryInterceptor implements MethodInterceptor {
 
+	private static Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
 	private static Map<String, ModuleEntryInterceptor> CACHE = new HashMap<>();
 
 	private final ObservedModule module;
 	private final Tracer tracer;
 
+	/**
+	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule} and {@link Tracer}.
+	 *
+	 * @param module must not be {@literal null}.
+	 * @param tracer must not be {@literal null}.
+	 */
+	private ModuleEntryInterceptor(ObservedModule module, Tracer tracer) {
+
+		Assert.notNull(module, "ObservedModule must not be null!");
+		Assert.notNull(tracer, "Tracer must not be null!");
+
+		this.module = module;
+		this.tracer = tracer;
+	}
+
 	public static ModuleEntryInterceptor of(ObservedModule module, Tracer tracer) {
 
-		String name = module.getName();
-
-		return CACHE.computeIfAbsent(name, __ -> {
+		return CACHE.computeIfAbsent(module.getName(), __ -> {
 			return new ModuleEntryInterceptor(module, tracer);
 		});
 	}
@@ -54,23 +64,23 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	@Override
 	public Object invoke(MethodInvocation invocation) throws Throwable {
 
-		String moduleName = module.getName();
-		Span currentSpan = tracer.currentSpan();
+		var moduleName = module.getName();
+		var currentSpan = tracer.currentSpan();
 
 		if (currentSpan != null) {
 
-			Baggage currentBaggage = tracer.getBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
+			var currentBaggage = tracer.getBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
 
 			if (currentBaggage != null && moduleName.equals(currentBaggage.get())) {
 				return invocation.proceed();
 			}
 		}
 
-		String invokedMethod = module.getInvokedMethod(invocation);
+		var invokedMethod = module.getInvokedMethod(invocation);
 
-		LOG.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
+		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
 
-		Span span = tracer.spanBuilder()
+		var span = tracer.spanBuilder()
 				.name(moduleName)
 				.tag("module.method", invokedMethod)
 				.tag(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY, moduleName)
@@ -84,7 +94,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		} finally {
 
-			LOG.trace("Leaving {}", module.getDisplayName());
+			LOGGER.trace("Leaving {}", module.getDisplayName());
 
 			span.end();
 		}

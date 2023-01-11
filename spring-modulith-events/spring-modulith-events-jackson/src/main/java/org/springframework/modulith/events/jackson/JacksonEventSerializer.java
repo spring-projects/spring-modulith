@@ -15,23 +15,35 @@
  */
 package org.springframework.modulith.events.jackson;
 
-import lombok.RequiredArgsConstructor;
-
 import java.io.IOException;
 import java.util.function.Supplier;
 
 import org.springframework.modulith.events.EventSerializer;
+import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
+ * A Jackson-based {@link EventSerializer}.
+ *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 class JacksonEventSerializer implements EventSerializer {
 
 	private final Supplier<ObjectMapper> mapper;
+
+	/**
+	 * Creates a new {@link JacksonEventSerializer} for the given {@link ObjectMapper}.
+	 *
+	 * @param mapper must not be {@literal null}.
+	 */
+	public JacksonEventSerializer(Supplier<ObjectMapper> mapper) {
+
+		Assert.notNull(mapper, "ObjectMapper must not be null!");
+
+		this.mapper = mapper;
+	}
 
 	/*
 	 * (non-Javadoc)

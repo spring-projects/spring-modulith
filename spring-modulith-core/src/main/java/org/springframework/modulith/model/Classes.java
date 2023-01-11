@@ -15,15 +15,13 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.EqualsAndHashCode;
-import lombok.ToString;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -46,8 +44,6 @@ import com.tngtech.archunit.core.domain.properties.HasName;
 /**
  * @author Oliver Drotbohm
  */
-@ToString
-@EqualsAndHashCode
 class Classes implements DescribedIterable<JavaClass> {
 
 	public static Classes NONE = Classes.of(Collections.emptyList());
@@ -65,7 +61,7 @@ class Classes implements DescribedIterable<JavaClass> {
 
 		this.classes = classes.stream() //
 				.sorted(Comparator.comparing(JavaClass::getName)) //
-				.collect(Collectors.collectingAndThen(Collectors.toList(), Collections::unmodifiableList));
+				.toList();
 	}
 
 	/**
@@ -190,20 +186,54 @@ class Classes implements DescribedIterable<JavaClass> {
 		return classes.iterator();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "Classes [classes=" + classes + "]";
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof Classes that)) {
+			return false;
+		}
+
+		return Objects.equals(classes, that.classes);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(classes);
+	}
+
 	String format() {
+
 		return classes.stream() //
 				.map(Classes::format) //
 				.collect(Collectors.joining("\n"));
 	}
 
 	String format(String basePackage) {
+
 		return classes.stream() //
 				.map(it -> Classes.format(it, basePackage)) //
 				.collect(Collectors.joining("\n"));
-	}
-
-	private static String format(JavaClass type) {
-		return format(type, "");
 	}
 
 	static String format(JavaClass type, String basePackage) {
@@ -211,12 +241,16 @@ class Classes implements DescribedIterable<JavaClass> {
 		Assert.notNull(type, "Type must not be null!");
 		Assert.notNull(basePackage, "Base package must not be null!");
 
-		String prefix = type.getModifiers().contains(JavaModifier.PUBLIC) ? "+" : "o";
-		String name = StringUtils.hasText(basePackage) //
+		var prefix = type.getModifiers().contains(JavaModifier.PUBLIC) ? "+" : "o";
+		var name = StringUtils.hasText(basePackage) //
 				? type.getName().replace(basePackage, "…") //
 				: type.getName();
 
 		return String.format("%s %s", prefix, name);
+	}
+
+	private static String format(JavaClass type) {
+		return format(type, "");
 	}
 
 	private static class SameClass extends DescribedPredicate<JavaClass> {

@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.observability;
 
-import lombok.RequiredArgsConstructor;
-
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
@@ -28,6 +26,7 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.model.ArchitecturallyEvidentType;
 import org.springframework.modulith.model.ArchitecturallyEvidentType.ReferenceMethod;
+import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -35,7 +34,6 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class ObservedModuleType {
 
 	private static Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
@@ -43,6 +41,25 @@ public class ObservedModuleType {
 	private final ApplicationModules modules;
 	private final ObservedModule module;
 	private final ArchitecturallyEvidentType type;
+
+	/**
+	 * Creates a new {@link ObservedModuleType} for the given {@link ApplicationModules}, {@link ObservedModule} and
+	 * {@link ArchitecturallyEvidentType}.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @param module must not be {@literal null}.
+	 * @param type must not be {@literal null}.
+	 */
+	ObservedModuleType(ApplicationModules modules, ObservedModule module, ArchitecturallyEvidentType type) {
+
+		Assert.notNull(modules, "ApplicationModules must not be null!");
+		Assert.notNull(module, "ObservedModule must not be null!");
+		Assert.notNull(type, "ArchitecturallyEvidentType must not be null!");
+
+		this.modules = modules;
+		this.module = module;
+		this.type = type;
+	}
 
 	/**
 	 * Returns whether the type should be traced at all. Can be skipped for types not exposed by the module unless they

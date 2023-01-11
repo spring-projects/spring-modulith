@@ -15,9 +15,6 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
@@ -28,33 +25,66 @@ import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.model.NamedInterface.TypeBasedNamedInterface;
+import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
-import org.springframework.util.MultiValueMap;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 
 /**
+ * A collection of {@link NamedInterface}s.
+ *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class NamedInterfaces implements Iterable<NamedInterface> {
 
 	public static final NamedInterfaces NONE = new NamedInterfaces(Collections.emptyList());
 
 	private final List<NamedInterface> namedInterfaces;
 
-	public static NamedInterfaces discoverNamedInterfaces(JavaPackage basePackage) {
+	/**
+	 * Creates a new {@link NamedInterfaces} for all {@link NamedInterface}s.
+	 *
+	 * @param namedInterfaces must not be {@literal null}.
+	 */
+	private NamedInterfaces(List<NamedInterface> namedInterfaces) {
+
+		Assert.notNull(namedInterfaces, "Named interfaces must not be null!");
+
+		this.namedInterfaces = namedInterfaces;
+	}
+
+	/**
+	 * Discovers all {@link NamedInterfaces} declared for the given {@link JavaPackage}.
+	 *
+	 * @param basePackage must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static NamedInterfaces discoverNamedInterfaces(JavaPackage basePackage) {
 
 		return NamedInterfaces.ofAnnotatedPackages(basePackage) //
 				.and(NamedInterfaces.ofAnnotatedTypes(basePackage)) //
 				.and(NamedInterface.unnamed(basePackage));
 	}
 
-	public static NamedInterfaces of(List<NamedInterface> interfaces) {
+	/**
+	 * Creates a new {@link NamedInterfaces} for the given {@link NamedInterface}s.
+	 *
+	 * @param interfaces must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static NamedInterfaces of(List<NamedInterface> interfaces) {
 		return interfaces.isEmpty() ? NONE : new NamedInterfaces(interfaces);
 	}
 
+	/**
+	 * Creates a new {@link NamedInterfaces} for the given base {@link JavaPackage}.
+	 *
+	 * @param basePackage must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
 	static NamedInterfaces ofAnnotatedPackages(JavaPackage basePackage) {
+
+		Assert.notNull(basePackage, "Base package must not be null!");
 
 		return basePackage //
 				.getSubPackagesAnnotatedWith(org.springframework.modulith.NamedInterface.class) //
@@ -62,78 +92,34 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.collect(Collectors.collectingAndThen(Collectors.toList(), NamedInterfaces::of));
 	}
 
-	private static List<TypeBasedNamedInterface> ofAnnotatedTypes(JavaPackage basePackage) {
-
-		MultiValueMap<String, JavaClass> mappings = new LinkedMultiValueMap<>();
-
-		basePackage.stream() //
-				.filter(it -> !JavaPackage.isPackageInfoType(it)) //
-				.forEach(it -> {
-
-					if (!it.isAnnotatedWith(org.springframework.modulith.NamedInterface.class)) {
-						return;
-					}
-
-					org.springframework.modulith.NamedInterface annotation = AnnotatedElementUtils
-							.getMergedAnnotation(it.reflect(), org.springframework.modulith.NamedInterface.class);
-
-					for (String name : annotation.name()) {
-						mappings.add(name, it);
-					}
-				});
-
-		return mappings.entrySet().stream() //
-				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()), basePackage)) //
-				.toList();
-	}
-
-	private NamedInterfaces and(NamedInterface namedInterface) {
-
-		List<NamedInterface> result = new ArrayList<>(namedInterfaces.size() + 1);
-		result.addAll(namedInterfaces);
-		result.add(namedInterface);
-
-		return new NamedInterfaces(result);
-	}
-
+	/**
+	 * Returns whether at least one explicit {@link NamedInterface} is declared.
+	 *
+	 * @return will never be {@literal null}.
+	 */
 	public boolean hasExplicitInterfaces() {
 		return namedInterfaces.size() > 1 || !namedInterfaces.get(0).isUnnamed();
 	}
 
+	/**
+	 * Create a {@link Stream} of {@link NamedInterface}s.
+	 *
+	 * @return will never be {@literal null}.
+	 */
 	public Stream<NamedInterface> stream() {
 		return namedInterfaces.stream();
 	}
 
-	public NamedInterfaces and(List<TypeBasedNamedInterface> others) {
-
-		List<NamedInterface> namedInterfaces = new ArrayList<>();
-		List<NamedInterface> unmergedInterface = this.namedInterfaces;
-
-		for (TypeBasedNamedInterface candidate : others) {
-
-			Optional<NamedInterface> existing = namedInterfaces.stream() //
-					.filter(it -> it.hasSameNameAs(candidate)) //
-					.findFirst();
-
-			// Merge existing with new and add to result
-			existing.ifPresent(it -> {
-				namedInterfaces.add(it.merge(candidate));
-				namedInterfaces.add(it);
-				unmergedInterface.remove(it);
-			});
-
-			// Simply add candidate
-			if (!existing.isPresent()) {
-				namedInterfaces.add(candidate);
-			}
-		}
-
-		namedInterfaces.addAll(unmergedInterface);
-
-		return new NamedInterfaces(namedInterfaces);
-	}
-
+	/**
+	 * Returns the {@link NamedInterface} with the given name if present.
+	 *
+	 * @param name must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 */
 	public Optional<NamedInterface> getByName(String name) {
+
+		Assert.hasText(name, "Named interface name must not be null or empty!");
+
 		return namedInterfaces.stream().filter(it -> it.getName().equals(name)).findFirst();
 	}
 
@@ -157,5 +143,80 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	@Override
 	public Iterator<NamedInterface> iterator() {
 		return namedInterfaces.iterator();
+	}
+
+	/**
+	 * Creates a new {@link NamedInterfaces} instance with the given {@link TypeBasedNamedInterface}s added.
+	 *
+	 * @param others must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	NamedInterfaces and(List<TypeBasedNamedInterface> others) {
+
+		Assert.notNull(others, "Other TypeBasedNamedInterfaces must not be null!");
+
+		var namedInterfaces = new ArrayList<NamedInterface>();
+		var unmergedInterface = this.namedInterfaces;
+
+		if (others.isEmpty()) {
+			return this;
+		}
+
+		for (TypeBasedNamedInterface candidate : others) {
+
+			var existing = namedInterfaces.stream() //
+					.filter(it -> it.hasSameNameAs(candidate)) //
+					.findFirst();
+
+			// Merge existing with new and add to result
+			existing.ifPresent(it -> {
+				namedInterfaces.add(it.merge(candidate));
+				namedInterfaces.add(it);
+				unmergedInterface.remove(it);
+			});
+
+			// Simply add candidate
+			if (!existing.isPresent()) {
+				namedInterfaces.add(candidate);
+			}
+		}
+
+		namedInterfaces.addAll(unmergedInterface);
+
+		return new NamedInterfaces(namedInterfaces);
+	}
+
+	private NamedInterfaces and(NamedInterface namedInterface) {
+
+		var result = new ArrayList<NamedInterface>(namedInterfaces.size() + 1);
+		result.addAll(namedInterfaces);
+		result.add(namedInterface);
+
+		return new NamedInterfaces(result);
+	}
+
+	private static List<TypeBasedNamedInterface> ofAnnotatedTypes(JavaPackage basePackage) {
+
+		var mappings = new LinkedMultiValueMap<String, JavaClass>();
+
+		basePackage.stream() //
+				.filter(it -> !JavaPackage.isPackageInfoType(it)) //
+				.forEach(it -> {
+
+					if (!it.isAnnotatedWith(org.springframework.modulith.NamedInterface.class)) {
+						return;
+					}
+
+					var annotation = AnnotatedElementUtils.getMergedAnnotation(it.reflect(),
+							org.springframework.modulith.NamedInterface.class);
+
+					for (String name : annotation.name()) {
+						mappings.add(name, it);
+					}
+				});
+
+		return mappings.entrySet().stream() //
+				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()), basePackage)) //
+				.toList();
 	}
 }

@@ -17,8 +17,6 @@ package org.springframework.modulith.events.config;
 
 import static org.springframework.core.io.support.SpringFactoriesLoader.*;
 
-import lombok.RequiredArgsConstructor;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Inherited;
@@ -45,12 +43,15 @@ import org.springframework.modulith.events.config.EnablePersistentDomainEvents.P
 @Import(PersistentDomainEventsImportSelector.class)
 public @interface EnablePersistentDomainEvents {
 
-	@RequiredArgsConstructor
 	static class PersistentDomainEventsImportSelector implements ImportSelector, ResourceLoaderAware {
 
 		private ResourceLoader resourceLoader;
 
-		/* 
+		PersistentDomainEventsImportSelector(ResourceLoader resourceLoader) {
+			this.resourceLoader = resourceLoader;
+		}
+
+		/*
 		 * (non-Javadoc)
 		 * @see org.springframework.context.ResourceLoaderAware#setResourceLoader(org.springframework.core.io.ResourceLoader)
 		 */
@@ -59,7 +60,7 @@ public @interface EnablePersistentDomainEvents {
 			this.resourceLoader = resourceLoader;
 		}
 
-		/* 
+		/*
 		 * (non-Javadoc)
 		 * @see org.springframework.context.annotation.ImportSelector#selectImports(org.springframework.core.type.AnnotationMetadata)
 		 */

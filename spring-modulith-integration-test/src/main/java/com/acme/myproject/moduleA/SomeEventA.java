@@ -15,15 +15,10 @@
  */
 package com.acme.myproject.moduleA;
 
-import lombok.Value;
-
 import org.jmolecules.event.annotation.DomainEvent;
 
 /**
  * @author Oliver Drotbohm
  */
-@Value
 @DomainEvent
-public class SomeEventA {
-	String message;
-}
+public record SomeEventA(String message) {}

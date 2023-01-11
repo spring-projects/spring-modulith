@@ -17,19 +17,16 @@ package org.springframework.modulith.moments;
 
 import static java.time.MonthDay.*;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
 import java.time.Month;
 import java.time.MonthDay;
+
+import org.springframework.util.Assert;
 
 /**
  * A logical {@link Quarter} of the year.
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public enum Quarter {
 
 	Q1(of(Month.JANUARY, 1), of(Month.MARCH, 31)), //
@@ -37,7 +34,40 @@ public enum Quarter {
 	Q3(of(Month.JULY, 1), of(Month.SEPTEMBER, 30)), //
 	Q4(of(Month.OCTOBER, 1), of(Month.DECEMBER, 31));
 
-	private final @Getter MonthDay start, end;
+	private final MonthDay start, end;
+
+	/**
+	 * Creates a new {@link Quarter} for the given start and end {@link MonthDay}.
+	 *
+	 * @param start must not be {@literal null}.
+	 * @param end must not be {@literal null}.
+	 */
+	private Quarter(MonthDay start, MonthDay end) {
+
+		Assert.notNull(start, "Start MonthDay must not be null!");
+		Assert.notNull(end, "End MonthDay must not be null!");
+
+		this.start = start;
+		this.end = end;
+	}
+
+	/**
+	 * Returns the start {@link MonthDay}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public MonthDay getStart() {
+		return start;
+	}
+
+	/**
+	 * Returns the end {@link MonthDay}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public MonthDay getEnd() {
+		return end;
+	}
 
 	/**
 	 * Returns the next logical {@link Quarter}.

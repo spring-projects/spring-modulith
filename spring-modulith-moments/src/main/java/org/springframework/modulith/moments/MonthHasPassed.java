@@ -15,23 +15,75 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.Value;
-
 import java.time.YearMonth;
+import java.util.Objects;
 
 import org.jmolecules.event.types.DomainEvent;
+import org.springframework.util.Assert;
 
 /**
  * A {@link DomainEvent} published on the last day of the month.
  *
  * @author Oliver Drotbohm
- * @since 1.3
  */
-@Value(staticConstructor = "of")
 public class MonthHasPassed implements DomainEvent {
+
+	private final YearMonth month;
+
+	/**
+	 * Creates a new {@link MonthHasPassed} for the given {@link YearMonth}.
+	 *
+	 * @param month must not be {@literal null}.
+	 */
+	private MonthHasPassed(YearMonth month) {
+
+		Assert.notNull(month, "YearMonth must not be null!");
+
+		this.month = month;
+	}
+
+	/**
+	 * Creates a new {@link MonthHasPassed} for the given {@link YearMonth}.
+	 *
+	 * @param month must not be {@literal null}.
+	 */
+	public static MonthHasPassed of(YearMonth month) {
+		return new MonthHasPassed(month);
+	}
 
 	/**
 	 * The month that has just passed.
+	 *
+	 * @return will never be {@literal null}.
 	 */
-	private final YearMonth month;
+	public YearMonth getMonth() {
+		return month;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof MonthHasPassed that)) {
+			return false;
+		}
+
+		return Objects.equals(month, that.month);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(month);
+	}
 }

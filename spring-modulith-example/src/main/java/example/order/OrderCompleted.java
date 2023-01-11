@@ -16,14 +16,10 @@
 package example.order;
 
 import example.order.Order.OrderIdentifier;
-import lombok.Value;
 
 import org.jmolecules.event.types.DomainEvent;
 
 /**
  * @author Oliver Drotbohm
  */
-@Value
-public class OrderCompleted implements DomainEvent {
-	OrderIdentifier orderId;
-}
+public record OrderCompleted(OrderIdentifier orderId) implements DomainEvent {}

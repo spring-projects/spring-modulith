@@ -15,16 +15,13 @@
  */
 package org.springframework.modulith.events.mongodb;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
-import org.springframework.data.annotation.Id;
+import java.time.Instant;
+
+import org.bson.types.ObjectId;
 import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
-
-import java.time.Instant;
+import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 
 /**
  * A MongoDB Document to represent event publications.
@@ -33,18 +30,63 @@ import java.time.Instant;
  * @author Björn Kieling
  */
 @Document(collection = "org_springframework_modulith_events")
-@Getter
-@RequiredArgsConstructor
-@AllArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__(@PersistenceCreator))
 class MongoDbEventPublication {
 
-	@Id
-	private String id;
+	final ObjectId id;
+	final Instant publicationDate;
+	final String listenerId;
+	final Object event;
 
-	private final Instant publicationDate;
-	private final String listenerId;
-	private final Object event;
+	@Nullable Instant completionDate;
 
-	@Setter(AccessLevel.PACKAGE)
-	private Instant completionDate;
+	/**
+	 * Creates a new {@link MongoDbEventPublication} for the given id, publication date, listener id, event and completion
+	 * date.
+	 *
+	 * @param id must not be {@literal null}.
+	 * @param publicationDate must not be {@literal null}.
+	 * @param listenerId must not be {@literal null} or empty.
+	 * @param event must not be {@literal null}.
+	 * @param completionDate can be {@literal null}.
+	 */
+	@PersistenceCreator
+	MongoDbEventPublication(ObjectId id, Instant publicationDate, String listenerId, Object event,
+			@Nullable Instant completionDate) {
+
+		Assert.notNull(id, "Id must not be null!");
+		Assert.notNull(publicationDate, "Publication date must not be null!");
+		Assert.notNull(listenerId, "Listener id must not be null!");
+		Assert.notNull(event, "Event must not be null!");
+
+		this.id = id;
+		this.publicationDate = publicationDate;
+		this.listenerId = listenerId;
+		this.event = event;
+		this.completionDate = completionDate;
+	}
+
+	/**
+	 * Creates a new {@link MongoDbEventPublication} for the given publication date, listener id and event.
+	 *
+	 * @param publicationDate must not be {@literal null}.
+	 * @param listenerId must not be {@literal null}.
+	 * @param event must not be {@literal null}.
+	 */
+	MongoDbEventPublication(Instant publicationDate, String listenerId, Object event) {
+		this(new ObjectId(), publicationDate, listenerId, event, null);
+	}
+
+	/**
+	 * Marks the publication as completed at the given {@link Instant}.
+	 *
+	 * @param instant must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	MongoDbEventPublication markCompleted(Instant instant) {
+
+		Assert.notNull(instant, "Instant must not be null!");
+
+		this.completionDate = instant;
+		return this;
+	}
 }

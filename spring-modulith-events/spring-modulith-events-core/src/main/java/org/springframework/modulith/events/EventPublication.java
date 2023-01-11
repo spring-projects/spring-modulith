@@ -79,6 +79,10 @@ public interface EventPublication extends Comparable<EventPublication> {
 		return this.getTargetIdentifier().equals(identifier);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
 	@Override
 	public default int compareTo(EventPublication that) {
 		return this.getPublicationDate().compareTo(that.getPublicationDate());

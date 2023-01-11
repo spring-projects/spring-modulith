@@ -17,8 +17,6 @@ package org.springframework.modulith.model;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 
-import lombok.experimental.UtilityClass;
-
 import java.lang.annotation.Annotation;
 
 import org.springframework.lang.Nullable;
@@ -33,12 +31,11 @@ import com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates;
 /**
  * @author Oliver Drotbohm
  */
-@UtilityClass
 class Types {
 
 	@Nullable
 	@SuppressWarnings("unchecked")
-	<T> Class<T> loadIfPresent(String name) {
+	static <T> Class<T> loadIfPresent(String name) {
 
 		ClassLoader loader = Types.class.getClassLoader();
 
@@ -79,7 +76,6 @@ class Types {
 		}
 	}
 
-	@UtilityClass
 	static class JavaXTypes {
 
 		private static final String BASE_PACKAGE = "jakarta";
@@ -93,7 +89,6 @@ class Types {
 		}
 	}
 
-	@UtilityClass
 	static class SpringTypes {
 
 		private static final String BASE_PACKAGE = "org.springframework";
@@ -129,7 +124,6 @@ class Types {
 		}
 	}
 
-	@UtilityClass
 	static class SpringDataTypes {
 
 		private static final String BASE_PACKAGE = SpringTypes.BASE_PACKAGE + ".data";
@@ -147,11 +141,11 @@ class Types {
 		}
 	}
 
-	DescribedPredicate<CanBeAnnotated> isAnnotatedWith(Class<?> type) {
+	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(Class<?> type) {
 		return isAnnotatedWith(type.getName());
 	}
 
-	DescribedPredicate<CanBeAnnotated> isAnnotatedWith(String type) {
+	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(String type) {
 		return Predicates.annotatedWith(type) //
 				.or(Predicates.metaAnnotatedWith(type));
 	}

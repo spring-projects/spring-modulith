@@ -18,14 +18,11 @@ package org.springframework.modulith.events.jpa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
-import lombok.AccessLevel;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.UUID;
+
+import org.springframework.util.Assert;
 
 /**
  * JPA entity to represent event publications.
@@ -34,25 +31,47 @@ import java.util.UUID;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  */
-@Data
 @Entity
-@NoArgsConstructor(force = true)
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 class JpaEventPublication {
 
-	private final @Id @Column(length = 16) UUID id;
-	private final Instant publicationDate;
-	private final String listenerId;
-	private final String serializedEvent;
-	private final Class<?> eventType;
+	final @Id @Column(length = 16) UUID id;
+	final Instant publicationDate;
+	final String listenerId;
+	final String serializedEvent;
+	final Class<?> eventType;
 
-	private Instant completionDate;
+	Instant completionDate;
 
-	@Builder
-	static JpaEventPublication of(Instant publicationDate, String listenerId, Object serializedEvent,
-			Class<?> eventType) {
-		return new JpaEventPublication(UUID.randomUUID(), publicationDate, listenerId, serializedEvent.toString(),
-				eventType);
+	/**
+	 * Creates a new {@link JpaEventPublication} for the given publication date, listener id, serialized event and event
+	 * type.
+	 *
+	 * @param publicationDate must not be {@literal null}.
+	 * @param listenerId must not be {@literal null} or empty.
+	 * @param serializedEvent must not be {@literal null} or empty.
+	 * @param eventType must not be {@literal null}.
+	 */
+	JpaEventPublication(Instant publicationDate, String listenerId, String serializedEvent, Class<?> eventType) {
+
+		Assert.notNull(publicationDate, "Publication date must not be null!");
+		Assert.notNull(listenerId, "Listener id must not be null or empty!");
+		Assert.notNull(serializedEvent, "Serialized event must not be null or empty!");
+		Assert.notNull(eventType, "Event type must not be null!");
+
+		this.id = UUID.randomUUID();
+		this.publicationDate = publicationDate;
+		this.listenerId = listenerId;
+		this.serializedEvent = serializedEvent;
+		this.eventType = eventType;
+	}
+
+	JpaEventPublication() {
+
+		this.id = null;
+		this.publicationDate = null;
+		this.listenerId = null;
+		this.serializedEvent = null;
+		this.eventType = null;
 	}
 
 	JpaEventPublication markCompleted() {

@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -25,6 +23,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 /**
@@ -33,13 +32,24 @@ import org.springframework.util.ClassUtils;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 class SpringBootApplicationRuntime implements ApplicationRuntime {
 
 	private static final Map<String, Boolean> APPLICATION_CLASSES = new ConcurrentHashMap<>();
 
 	private final ApplicationContext context;
 	private Class<?> mainApplicationClass;
+
+	/**
+	 * Creates a new {@link SpringBootApplicationRuntime} for the given {@link ApplicationContext}.
+	 *
+	 * @param context must not be {@literal null}.
+	 */
+	SpringBootApplicationRuntime(ApplicationContext context) {
+
+		Assert.notNull(context, "ApplicationContext must not be null!");
+
+		this.context = context;
+	}
 
 	/*
 	 * (non-Javadoc)

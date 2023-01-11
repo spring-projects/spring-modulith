@@ -15,19 +15,14 @@
  */
 package org.springframework.modulith.events.support;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-
 import java.lang.reflect.Method;
 import java.util.function.Supplier;
 
 import org.aopalliance.aop.Advice;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.aop.framework.ProxyFactory;
@@ -35,6 +30,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.transaction.event.TransactionPhase;
@@ -47,16 +43,27 @@ import org.springframework.util.ReflectionUtils.MethodCallback;
 
 /**
  * {@link BeanPostProcessor} that will add a
- * {@link CompletionRegisteringBeanPostProcessor.ProxyCreatingMethodCallback.CompletionRegisteringMethodInterceptor}
- * to the bean in case it carries a {@link TransactionalEventListener} annotation so that the successful invocation of
+ * {@link CompletionRegisteringBeanPostProcessor.ProxyCreatingMethodCallback.CompletionRegisteringMethodInterceptor} to
+ * the bean in case it carries a {@link TransactionalEventListener} annotation so that the successful invocation of
  * those methods mark the event publication to those listeners as completed.
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor {
 
 	private final Supplier<EventPublicationRegistry> registry;
+
+	/**
+	 * Creates a new {@link CompletionRegisteringBeanPostProcessor} for the given {@link EventPublicationRegistry}.
+	 *
+	 * @param registry must not be {@literal null}.
+	 */
+	public CompletionRegisteringBeanPostProcessor(Supplier<EventPublicationRegistry> registry) {
+
+		Assert.notNull(registry, "EventPublicationRegistry must not be null!");
+
+		this.registry = registry;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -65,11 +72,11 @@ public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor
 	@Override
 	public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 
-		ProxyCreatingMethodCallback callback = new ProxyCreatingMethodCallback(registry, beanName, bean, false);
+		ProxyCreatingMethodCallback callback = new ProxyCreatingMethodCallback(registry, beanName, bean);
 
 		ReflectionUtils.doWithMethods(AopProxyUtils.ultimateTargetClass(bean), callback);
 
-		return callback.methodFound ? callback.getBean() : bean;
+		return callback.methodFound ? callback.bean : bean;
 
 	}
 
@@ -79,13 +86,32 @@ public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	@AllArgsConstructor
 	private static class ProxyCreatingMethodCallback implements MethodCallback {
 
-		private @NonNull final Supplier<EventPublicationRegistry> registry;
-		private @NonNull final String beanName;
-		private @NonNull @Getter Object bean;
+		private final Supplier<EventPublicationRegistry> registry;
+		private final String beanName;
+		private Object bean;
 		private boolean methodFound;
+
+		/**
+		 * Creates a new {@link ProxyCreatingMethodCallback} for the given {@link EventPublicationRegistry}, bean name, bean
+		 * and whether a completing method has been found.
+		 *
+		 * @param registry must not be {@literal null}.
+		 * @param beanName must not be {@literal null} or empty.
+		 * @param bean must not be {@literal null}.
+		 */
+		ProxyCreatingMethodCallback(Supplier<EventPublicationRegistry> registry, String beanName, Object bean) {
+
+			Assert.notNull(registry, "EventPublicationRegistry must not be null!");
+			Assert.hasText(beanName, "Bean name must not be null or empty!");
+			Assert.notNull(bean, "Bean must not be null!");
+
+			this.registry = registry;
+			this.beanName = beanName;
+			this.bean = bean;
+			this.methodFound = false;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -127,10 +153,9 @@ public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	@Slf4j
-	@RequiredArgsConstructor
 	private static class CompletionRegisteringMethodInterceptor implements MethodInterceptor, Ordered {
 
+		private static final Logger LOG = LoggerFactory.getLogger(CompletionRegisteringMethodInterceptor.class);
 		private static final ConcurrentLruCache<Method, Boolean> COMPLETING_METHOD = new ConcurrentLruCache<>(100,
 				CompletionRegisteringMethodInterceptor::calculateIsCompletingMethod);
 		private static final ConcurrentLruCache<CacheKey, TransactionalApplicationListenerMethodAdapter> ADAPTERS = new ConcurrentLruCache<>(
@@ -138,6 +163,19 @@ public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor
 
 		private final @NonNull Supplier<EventPublicationRegistry> registry;
 		private final @NonNull String beanName;
+
+		/**
+		 * @param registry
+		 * @param beanName
+		 */
+		CompletionRegisteringMethodInterceptor(Supplier<EventPublicationRegistry> registry, String beanName) {
+
+			Assert.notNull(registry, "EventPublicationRegistry must not be null!");
+			Assert.hasText(beanName, "Bean name must not be null or empty!");
+
+			this.registry = registry;
+			this.beanName = beanName;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -172,7 +210,7 @@ public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor
 			}
 
 			// Mark publication complete if the method is a transactional event listener.
-			String adapterId = ADAPTERS.get(CacheKey.of(beanName, method)).getListenerId();
+			String adapterId = ADAPTERS.get(new CacheKey(beanName, method)).getListenerId();
 			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
 			registry.get().markCompleted(invocation.getArguments()[0], identifier);
 
@@ -213,12 +251,8 @@ public class CompletionRegisteringBeanPostProcessor implements BeanPostProcessor
 			return new TransactionalApplicationListenerMethodAdapter(key.beanName, key.method.getDeclaringClass(),
 					key.method);
 		}
+
 	}
 
-	@Value(staticConstructor = "of")
-	static class CacheKey {
-
-		String beanName;
-		Method method;
-	}
+	static record CacheKey(String beanName, Method method) {}
 }

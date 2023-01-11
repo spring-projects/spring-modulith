@@ -15,36 +15,125 @@
  */
 package org.springframework.modulith.events;
 
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-
 import java.time.Instant;
+import java.util.Objects;
 import java.util.Optional;
+
+import org.springframework.util.Assert;
 
 /**
  * Default {@link CompletableEventPublication} implementation.
  *
  * @author Oliver Drotbohm
  */
-@Getter
-@RequiredArgsConstructor(staticName = "of")
-@EqualsAndHashCode
-@ToString
 class DefaultEventPublication implements CompletableEventPublication {
 
-	private final @NonNull Object event;
-	private final @NonNull PublicationTargetIdentifier targetIdentifier;
-	private final Instant publicationDate = Instant.now();
+	private final Object event;
+	private final PublicationTargetIdentifier targetIdentifier;
+	private final Instant publicationDate;
 
-	private Optional<Instant> completionDate = Optional.empty();
+	private Optional<Instant> completionDate;
 
+	/**
+	 * Creates a new {@link DefaultEventPublication} for the given event and {@link PublicationTargetIdentifier}.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param targetIdentifier must not be {@literal null}.
+	 */
+	DefaultEventPublication(Object event, PublicationTargetIdentifier targetIdentifier) {
+
+		Assert.notNull(event, "Event must not be null!");
+		Assert.notNull(targetIdentifier, "PublicationTargetIdentifier must not be null!");
+
+		this.event = event;
+		this.targetIdentifier = targetIdentifier;
+		this.publicationDate = Instant.now();
+		this.completionDate = Optional.empty();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getEvent()
+	 */
+	@Override
+	public Object getEvent() {
+		return event;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getTargetIdentifier()
+	 */
+	@Override
+	public PublicationTargetIdentifier getTargetIdentifier() {
+		return targetIdentifier;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getPublicationDate()
+	 */
+	public Instant getPublicationDate() {
+		return publicationDate;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.CompletableEventPublication#getCompletionDate()
+	 */
+	public Optional<Instant> getCompletionDate() {
+		return completionDate;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.CompletableEventPublication#markCompleted()
+	 */
 	@Override
 	public CompletableEventPublication markCompleted() {
 
 		this.completionDate = Optional.of(Instant.now());
 		return this;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return "DefaultEventPublication [event=" + event + ", targetIdentifier=" + targetIdentifier + ", publicationDate="
+				+ publicationDate + ", completionDate=" + completionDate + "]";
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof DefaultEventPublication that)) {
+			return false;
+		}
+
+		return Objects.equals(this.completionDate, that.completionDate) //
+				&& Objects.equals(this.event, that.event) //
+				&& Objects.equals(this.publicationDate, that.publicationDate) //
+				&& Objects.equals(this.targetIdentifier, that.targetIdentifier);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(completionDate, event, publicationDate, targetIdentifier);
 	}
 }

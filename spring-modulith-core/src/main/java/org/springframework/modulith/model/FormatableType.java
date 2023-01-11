@@ -15,9 +15,6 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
@@ -37,13 +34,27 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class FormatableType {
 
 	private static final Map<String, FormatableType> CACHE = new ConcurrentHashMap<>();
 
 	private final String type;
 	private final Supplier<String> abbreviatedName;
+
+	/**
+	 * Creates a new {@link FormatableType} for the given source {@link String} and lazily computed abbreviated name.
+	 *
+	 * @param type must not be {@literal null} or empty.
+	 * @param abbreviatedName must not be {@literal null}.
+	 */
+	private FormatableType(String type, Supplier<String> abbreviatedName) {
+
+		Assert.hasText(type, "Type string must not be null or empty!");
+		Assert.notNull(abbreviatedName, "Computed abbreviated name must not be null!");
+
+		this.type = type;
+		this.abbreviatedName = abbreviatedName;
+	}
 
 	/**
 	 * Creates a new {@link FormatableType} for the given {@link JavaClass}.

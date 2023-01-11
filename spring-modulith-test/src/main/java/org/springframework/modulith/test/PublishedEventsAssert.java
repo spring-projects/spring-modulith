@@ -17,9 +17,6 @@ package org.springframework.modulith.test;
 
 import static org.assertj.core.api.Assertions.*;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -69,10 +66,21 @@ public class PublishedEventsAssert extends AbstractAssert<PublishedEventsAssert,
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 	public class PublishedEventAssert<T> {
 
 		private final TypedPublishedEvents<T> events;
+
+		/**
+		 * Creates a new {@link PublishedEventAssert} for the given {@link TypedPublishedEvents}.
+		 *
+		 * @param events must not be {@literal null}.
+		 */
+		private PublishedEventAssert(TypedPublishedEvents<T> events) {
+
+			Assert.notNull(events, "TypedPublishedEvents must not be null!");
+
+			this.events = events;
+		}
 
 		/**
 		 * Asserts that at least one event matches the given predicate.

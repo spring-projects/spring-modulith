@@ -17,8 +17,6 @@ package org.springframework.modulith.actuator;
 
 import static java.util.stream.Collectors.*;
 
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -28,6 +26,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.modulith.model.ApplicationModule;
@@ -41,9 +41,10 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-@Slf4j
 @Endpoint(id = "applicationmodules")
 public class ApplicationModulesEndpoint {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesEndpoint.class);
 
 	private static final Function<Set<DependencyType>, Set<DependencyType>> REMOVE_DEFAULT_DEPENDENCY_TYPE_IF_OTHERS_PRESENT = it -> {
 
@@ -69,7 +70,7 @@ public class ApplicationModulesEndpoint {
 
 		Assert.notNull(runtime, "ModulesRuntime must not be null!");
 
-		LOG.debug("Activating Spring Modulith actuator.");
+		LOGGER.debug("Activating Spring Modulith actuator.");
 
 		this.runtime = runtime;
 	}

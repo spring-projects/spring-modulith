@@ -23,18 +23,11 @@ import static org.springframework.modulith.model.Types.JavaXTypes.*;
 import static org.springframework.modulith.model.Types.SpringDataTypes.*;
 import static org.springframework.modulith.model.Types.SpringTypes.*;
 
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.ToString;
-import lombok.Value;
-
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -63,20 +56,19 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
  *
  * @author Oliver Drotbohm
  */
-@EqualsAndHashCode(doNotUseGetters = true)
 public class ApplicationModule {
 
 	/**
 	 * The base package of the {@link ApplicationModule}.
 	 */
-	private final @Getter JavaPackage basePackage;
+	private final JavaPackage basePackage;
 	private final ApplicationModuleInformation information;
 
 	/**
 	 * All {@link NamedInterfaces} of the {@link ApplicationModule} either declared explicitly via {@link NamedInterface}
 	 * or implicitly.
 	 */
-	private final @Getter NamedInterfaces namedInterfaces;
+	private final NamedInterfaces namedInterfaces;
 	private final boolean useFullyQualifiedModuleNames;
 
 	private final Supplier<Classes> springBeans;
@@ -102,6 +94,24 @@ public class ApplicationModule {
 		this.valueTypes = Suppliers
 				.memoize(() -> findArchitecturallyEvidentType(ArchitecturallyEvidentType::isValueObject));
 		this.publishedEvents = Suppliers.memoize(() -> findPublishedEvents());
+	}
+
+	/**
+	 * Returns the module's base package.
+	 *
+	 * @return the basePackage
+	 */
+	public JavaPackage getBasePackage() {
+		return basePackage;
+	}
+
+	/**
+	 * Returns all {@link NamedInterfaces} exposed by the module.
+	 *
+	 * @return the namedInterfaces will never be {@literal null}.
+	 */
+	public NamedInterfaces getNamedInterfaces() {
+		return namedInterfaces;
 	}
 
 	/**
@@ -407,6 +417,41 @@ public class ApplicationModule {
 		return getType(candidate).isPresent();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof ApplicationModule that)) {
+			return false;
+		}
+
+		return Objects.equals(this.basePackage, that.basePackage) //
+				&& Objects.equals(this.entities, that.entities) //
+				&& Objects.equals(this.information, that.information) //
+				&& Objects.equals(this.namedInterfaces, that.namedInterfaces) //
+				&& Objects.equals(this.publishedEvents, that.publishedEvents) //
+				&& Objects.equals(this.springBeans, that.springBeans) //
+				&& Objects.equals(this.useFullyQualifiedModuleNames, that.useFullyQualifiedModuleNames) //
+				&& Objects.equals(this.valueTypes, that.valueTypes);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(basePackage, entities, information, namedInterfaces, publishedEvents, springBeans,
+				useFullyQualifiedModuleNames, valueTypes);
+	}
+
 	private List<EventType> findPublishedEvents() {
 
 		DescribedPredicate<JavaClass> isEvent = implement(JMoleculesTypes.DOMAIN_EVENT) //
@@ -529,15 +574,28 @@ public class ApplicationModule {
 				.toList();
 	}
 
-	@Value
-	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 	static class DeclaredDependency {
 
 		private static final String INVALID_EXPLICIT_MODULE_DEPENDENCY = "Invalid explicit module dependency in %s! No module found with name '%s'.";
 		private static final String INVALID_NAMED_INTERFACE_DECLARATION = "No named interface named '%s' found! Original dependency declaration: %s -> %s.";
 
-		@NonNull ApplicationModule target;
-		@NonNull NamedInterface namedInterface;
+		private final ApplicationModule target;
+		private final NamedInterface namedInterface;
+
+		/**
+		 * Creates a new {@link DeclaredDependency} for the given {@link ApplicationModule} and {@link NamedInterface}.
+		 *
+		 * @param target must not be {@literal null}.
+		 * @param namedInterface must not be {@literal null}.
+		 */
+		private DeclaredDependency(ApplicationModule target, NamedInterface namedInterface) {
+
+			Assert.notNull(target, "Target ApplicationModule must not be null!");
+			Assert.notNull(namedInterface, "NamedInterface must not be null!");
+
+			this.target = target;
+			this.namedInterface = namedInterface;
+		}
 
 		/**
 		 * Creates an {@link DeclaredDependency} to the module and optionally named interface defined by the given
@@ -580,10 +638,22 @@ public class ApplicationModule {
 		 * @return
 		 */
 		public static DeclaredDependency to(ApplicationModule module) {
+
+			Assert.notNull(module, "ApplicationModule must not be null!");
+
 			return new DeclaredDependency(module, module.getNamedInterfaces().getUnnamedInterface());
 		}
 
+		/**
+		 * Returns whether the {@link DeclaredDependency} contains the given {@link JavaClass}.
+		 *
+		 * @param type must not be {@literal null}.
+		 * @return
+		 */
 		public boolean contains(JavaClass type) {
+
+			Assert.notNull(type, "Type must not be null!");
+
 			return namedInterface.contains(type);
 		}
 
@@ -595,6 +665,35 @@ public class ApplicationModule {
 		public String toString() {
 			return namedInterface.isUnnamed() ? target.getName() : target.getName() + "::" + namedInterface.getName();
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof DeclaredDependency that)) {
+				return false;
+			}
+
+			return Objects.equals(this.target, that.target) //
+					&& Objects.equals(this.namedInterface, that.namedInterface);
+
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(target, namedInterface);
+		}
 	}
 
 	/**
@@ -602,16 +701,26 @@ public class ApplicationModule {
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	@Value
 	static class DeclaredDependencies {
 
-		List<DeclaredDependency> dependencies;
+		private final List<DeclaredDependency> dependencies;
+
+		/**
+		 * Creates a new {@link DeclaredDependencies} for the given {@link List} of {@link DeclaredDependency}.
+		 *
+		 * @param dependencies must not be {@literal null}.
+		 */
+		public DeclaredDependencies(List<DeclaredDependency> dependencies) {
+
+			Assert.notNull(dependencies, "Dependencies must not be null!");
+
+			this.dependencies = dependencies;
+		}
 
 		/**
 		 * Returns whether any of the dependencies contains the given {@link JavaClass}.
 		 *
 		 * @param type must not be {@literal null}.
-		 * @return
 		 */
 		public boolean contains(JavaClass type) {
 
@@ -621,10 +730,17 @@ public class ApplicationModule {
 					.anyMatch(it -> it.contains(type));
 		}
 
+		/**
+		 * Returns whether the {@link DeclaredDependencies} are empty.
+		 */
 		public boolean isEmpty() {
 			return dependencies.isEmpty();
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
 		@Override
 		public String toString() {
 
@@ -632,18 +748,64 @@ public class ApplicationModule {
 					.map(DeclaredDependency::toString)
 					.collect(Collectors.joining(", "));
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof DeclaredDependencies that)) {
+				return false;
+			}
+
+			return Objects.equals(this.dependencies, that.dependencies);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(dependencies);
+		}
 	}
 
-	@EqualsAndHashCode
-	@RequiredArgsConstructor
 	static class QualifiedDependency {
 
-		private static final List<String> INJECTION_TYPES = Arrays.asList(//
-				AT_AUTOWIRED, AT_RESOURCE, AT_INJECT);
+		private static final List<String> INJECTION_TYPES = Arrays.asList(AT_AUTOWIRED, AT_RESOURCE, AT_INJECT);
 
-		private final @NonNull @Getter JavaClass source, target;
-		private final @NonNull String description;
-		private final @NonNull DependencyType type;
+		private final JavaClass source, target;
+		private final String description;
+		private final DependencyType type;
+
+		/**
+		 * Creates a new {@link QualifiedDependency} from the given source and target {@link JavaClass}, description and
+		 * {@link DependencyType}.
+		 *
+		 * @param source must not be {@literal null}.
+		 * @param target must not be {@literal null}.
+		 * @param description must not be {@literal null}.
+		 * @param type must not be {@literal null}.
+		 */
+		public QualifiedDependency(JavaClass source, JavaClass target, String description, DependencyType type) {
+
+			Assert.notNull(source, "Source JavaClass must not be null!");
+			Assert.notNull(target, "Target JavaClass must not be null!");
+			Assert.notNull(description, "Description must not be null!");
+			Assert.notNull(type, "DependencyType must not be null!");
+
+			this.source = source;
+			this.target = target;
+			this.description = description;
+			this.type = type;
+		}
 
 		QualifiedDependency(Dependency dependency) {
 			this(dependency.getOriginClass(), //
@@ -652,6 +814,65 @@ public class ApplicationModule {
 					DependencyType.forDependency(dependency));
 		}
 
+		static QualifiedDependency fromCodeUnitParameter(JavaCodeUnit codeUnit, JavaClass parameter) {
+
+			var description = createDescription(codeUnit, parameter, "parameter");
+			var type = DependencyType.forCodeUnit(codeUnit) //
+					.defaultOr(() -> DependencyType.forParameter(parameter));
+
+			return new QualifiedDependency(codeUnit.getOwner(), parameter, description, type);
+		}
+
+		static QualifiedDependency fromCodeUnitReturnType(JavaCodeUnit codeUnit) {
+
+			var description = createDescription(codeUnit, codeUnit.getRawReturnType(), "return type");
+
+			return new QualifiedDependency(codeUnit.getOwner(), codeUnit.getRawReturnType(), description,
+					DependencyType.DEFAULT);
+		}
+
+		static Stream<QualifiedDependency> fromType(ArchitecturallyEvidentType type) {
+
+			var source = type.getType();
+
+			return Stream.concat(Stream.concat(fromConstructorOf(type), fromMethodsOf(source)), fromFieldsOf(source));
+		}
+
+		static Stream<QualifiedDependency> allFrom(JavaCodeUnit codeUnit) {
+
+			var parameterDependencies = codeUnit.getRawParameterTypes()//
+					.stream() //
+					.map(it -> fromCodeUnitParameter(codeUnit, it));
+
+			var returnType = Stream.of(fromCodeUnitReturnType(codeUnit));
+
+			return Stream.concat(parameterDependencies, returnType);
+		}
+
+		/**
+		 * Returns the source {@link JavaClass}.
+		 *
+		 * @return the source will never be {@literal null}.
+		 */
+		public JavaClass getSource() {
+			return source;
+		}
+
+		/**
+		 * Returns the target {@link JavaClass}.
+		 *
+		 * @return the target must not be {@literal null}.
+		 */
+		public JavaClass getTarget() {
+			return target;
+		}
+
+		/**
+		 * Returns whether the {@link QualifiedDependency} has the given {@link DependencyType}.
+		 *
+		 * @param type must not be {@literal null}.
+		 * @return
+		 */
 		boolean hasType(DependencyType type) {
 			return this.type.equals(type);
 		}
@@ -704,39 +925,34 @@ public class ApplicationModule {
 			return type.format(FormatableType.of(source), FormatableType.of(target));
 		}
 
-		static QualifiedDependency fromCodeUnitParameter(JavaCodeUnit codeUnit, JavaClass parameter) {
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
 
-			var description = createDescription(codeUnit, parameter, "parameter");
-			var type = DependencyType.forCodeUnit(codeUnit) //
-					.defaultOr(() -> DependencyType.forParameter(parameter));
+			if (this == obj) {
+				return true;
+			}
 
-			return new QualifiedDependency(codeUnit.getOwner(), parameter, description, type);
+			if (!(obj instanceof QualifiedDependency other)) {
+				return false;
+			}
+
+			return Objects.equals(this.source, other.source) //
+					&& Objects.equals(this.target, other.target) //
+					&& Objects.equals(this.description, other.description) //
+					&& Objects.equals(this.type, other.type); //
 		}
 
-		static QualifiedDependency fromCodeUnitReturnType(JavaCodeUnit codeUnit) {
-
-			var description = createDescription(codeUnit, codeUnit.getRawReturnType(), "return type");
-
-			return new QualifiedDependency(codeUnit.getOwner(), codeUnit.getRawReturnType(), description,
-					DependencyType.DEFAULT);
-		}
-
-		static Stream<QualifiedDependency> fromType(ArchitecturallyEvidentType type) {
-
-			var source = type.getType();
-
-			return Stream.concat(Stream.concat(fromConstructorOf(type), fromMethodsOf(source)), fromFieldsOf(source));
-		}
-
-		static Stream<QualifiedDependency> allFrom(JavaCodeUnit codeUnit) {
-
-			var parameterDependencies = codeUnit.getRawParameterTypes()//
-					.stream() //
-					.map(it -> fromCodeUnitParameter(codeUnit, it));
-
-			var returnType = Stream.of(fromCodeUnitReturnType(codeUnit));
-
-			return Stream.concat(parameterDependencies, returnType);
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(source, target, description, type);
 		}
 
 		private static Stream<QualifiedDependency> fromConstructorOf(ArchitecturallyEvidentType source) {
@@ -885,15 +1101,35 @@ public class ApplicationModule {
 		}
 	}
 
-	@ToString
-	@EqualsAndHashCode
-	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 	private static class DefaultApplicationModuleDependency implements ApplicationModuleDependency {
 
 		private final QualifiedDependency dependency;
 		private final ApplicationModule target;
 
-		static Stream<DefaultApplicationModuleDependency> of(QualifiedDependency dependency, ApplicationModules modules) {
+		/**
+		 * Creates a new {@link ApplicationModuleDependency} for the given {@link QualifiedDependency} and
+		 * {@link ApplicationModules}.
+		 *
+		 * @param dependency must not be {@literal null}.
+		 * @param target must not be {@literal null}.
+		 */
+		private DefaultApplicationModuleDependency(QualifiedDependency dependency, ApplicationModule target) {
+
+			Assert.notNull(dependency, "QualifiedDependency must not be null!");
+			Assert.notNull(target, "Target ApplicationModule must not be null!");
+
+			this.dependency = dependency;
+			this.target = target;
+		}
+
+		/**
+		 * Creates a new {@link Stream} of {@link ApplicationModuleDependency} for the given {@link QualifiedDependency} and
+		 * {@link ApplicationModules}.
+		 *
+		 * @param dependency must not be {@literal null}.
+		 * @param modules must not be {@literal null}.
+		 */
+		static Stream<ApplicationModuleDependency> of(QualifiedDependency dependency, ApplicationModules modules) {
 
 			return modules.getModuleByType(dependency.getTarget()).stream()
 					.map(it -> new DefaultApplicationModuleDependency(dependency, it));
@@ -933,6 +1169,43 @@ public class ApplicationModule {
 		@Override
 		public ApplicationModule getTargetModule() {
 			return target;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return "DefaultApplicationModuleDependency [dependency=" + dependency + ", target=" + target + "]";
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof DefaultApplicationModuleDependency other)) {
+				return false;
+			}
+
+			return Objects.equals(this.target, other.target) //
+					&& Objects.equals(this.dependency, other.dependency);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(target, dependency);
 		}
 	}
 }

@@ -16,11 +16,10 @@
 package org.springframework.modulith.events.jpa;
 
 import jakarta.persistence.EntityManager;
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.modulith.events.CompletableEventPublication;
@@ -29,6 +28,7 @@ import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.Assert;
 
 /**
  * Repository to store {@link EventPublication}s.
@@ -37,7 +37,6 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  */
-@RequiredArgsConstructor
 class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static String BY_EVENT_AND_LISTENER_ID = """
@@ -66,6 +65,26 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	private final EntityManager entityManager;
 	private final EventSerializer serializer;
 
+	/**
+	 * Creates a new {@link JpaEventPublicationRepository} for the given {@link EntityManager} and
+	 * {@link EventSerializer}.
+	 *
+	 * @param entityManager must not be {@literal null}.
+	 * @param serializer must not be {@literal null}.
+	 */
+	public JpaEventPublicationRepository(EntityManager entityManager, EventSerializer serializer) {
+
+		Assert.notNull(entityManager, "EntityManager must not be null!");
+		Assert.notNull(serializer, "EventSerializer must not be null!");
+
+		this.entityManager = entityManager;
+		this.serializer = serializer;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRepository#create(org.springframework.modulith.events.EventPublication)
+	 */
 	@Override
 	@Transactional
 	public EventPublication create(EventPublication publication) {
@@ -75,6 +94,10 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		return publication;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRepository#update(org.springframework.modulith.events.CompletableEventPublication)
+	 */
 	@Override
 	@Transactional
 	public EventPublication update(CompletableEventPublication publication) {
@@ -83,11 +106,15 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		var event = publication.getEvent();
 
 		findEntityBySerializedEventAndListenerIdAndCompletionDateNull(event, id) //
-				.ifPresent(entity -> entity.setCompletionDate(publication.getCompletionDate().orElse(null)));
+				.ifPresent(entity -> entity.completionDate = publication.getCompletionDate().orElse(null));
 
 		return publication;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRepository#findIncompletePublications()
+	 */
 	@Override
 	@Transactional(readOnly = true)
 	public List<EventPublication> findIncompletePublications() {
@@ -98,6 +125,10 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				.toList();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRepository#findIncompletePublicationsByEventAndTargetIdentifier(java.lang.Object, org.springframework.modulith.events.PublicationTargetIdentifier)
+	 */
 	@Override
 	@Transactional(readOnly = true)
 	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
@@ -107,6 +138,10 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				.map(this::entityToDomain);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRepository#deleteCompletedPublications()
+	 */
 	@Override
 	@Transactional
 	public void deleteCompletedPublications() {
@@ -130,55 +165,116 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	}
 
 	private JpaEventPublication domainToEntity(EventPublication domain) {
-
-		return JpaEventPublication.builder() //
-				.publicationDate(domain.getPublicationDate()) //
-				.listenerId(domain.getTargetIdentifier().getValue()) //
-				.serializedEvent(serializeEvent(domain.getEvent())) //
-				.eventType(domain.getEvent().getClass()) //
-				.build();
+		return new JpaEventPublication(domain.getPublicationDate(), domain.getTargetIdentifier().getValue(),
+				serializeEvent(domain.getEvent()), domain.getEvent().getClass());
 	}
 
 	private EventPublication entityToDomain(JpaEventPublication entity) {
-		return JpaEventPublicationAdapter.of(entity, serializer);
+		return new JpaEventPublicationAdapter(entity, serializer);
 	}
 
-	@EqualsAndHashCode
-	@RequiredArgsConstructor(staticName = "of")
 	private static class JpaEventPublicationAdapter implements CompletableEventPublication {
 
 		private final JpaEventPublication publication;
 		private final EventSerializer serializer;
 
+		/**
+		 * Creates a new {@link JpaEventPublicationAdapter} for the given {@link JpaEventPublication} and
+		 * {@link EventSerializer}.
+		 *
+		 * @param publication must not be {@literal null}.
+		 * @param serializer must not be {@literal null}.
+		 */
+		public JpaEventPublicationAdapter(JpaEventPublication publication, EventSerializer serializer) {
+
+			Assert.notNull(publication, "JpaEventPublication must not be null!");
+			Assert.notNull(serializer, "EventSerializer must not be null!");
+
+			this.publication = publication;
+			this.serializer = serializer;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getEvent()
+		 */
 		@Override
 		public Object getEvent() {
-			return serializer.deserialize(publication.getSerializedEvent(), publication.getEventType());
+			return serializer.deserialize(publication.serializedEvent, publication.eventType);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getTargetIdentifier()
+		 */
 		@Override
 		public PublicationTargetIdentifier getTargetIdentifier() {
-			return PublicationTargetIdentifier.of(publication.getListenerId());
+			return PublicationTargetIdentifier.of(publication.listenerId);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getPublicationDate()
+		 */
 		@Override
 		public Instant getPublicationDate() {
-			return publication.getPublicationDate();
+			return publication.publicationDate;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.CompletableEventPublication#getCompletionDate()
+		 */
 		@Override
 		public Optional<Instant> getCompletionDate() {
-			return Optional.ofNullable(publication.getCompletionDate());
+			return Optional.ofNullable(publication.completionDate);
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.CompletableEventPublication#isPublicationCompleted()
+		 */
 		@Override
 		public boolean isPublicationCompleted() {
-			return publication.getCompletionDate() != null;
+			return publication.completionDate != null;
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.CompletableEventPublication#markCompleted()
+		 */
 		@Override
 		public CompletableEventPublication markCompleted() {
 			publication.markCompleted();
 			return this;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof JpaEventPublicationAdapter that)) {
+				return false;
+			}
+
+			return Objects.equals(publication, that.publication)
+					&& Objects.equals(serializer, that.serializer);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(publication, serializer);
 		}
 	}
 }

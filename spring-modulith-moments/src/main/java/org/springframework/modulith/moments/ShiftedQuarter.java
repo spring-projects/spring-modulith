@@ -15,15 +15,11 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NonNull;
-import lombok.Value;
-
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.MonthDay;
 import java.time.Year;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
@@ -33,14 +29,38 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-@Value(staticConstructor = "of")
 public class ShiftedQuarter {
 
 	private static final MonthDay FIRST_DAY = MonthDay.of(Month.JANUARY, 1);
 	private static final MonthDay LAST_DAY = MonthDay.of(Month.DECEMBER, 31);
 
-	private final @NonNull Quarter quarter;
-	private final @NonNull @Getter(AccessLevel.NONE) Month startMonth;
+	private final Quarter quarter;
+	private final Month startMonth;
+
+	/**
+	 * Creates a new {@link ShiftedQuarter} for the given {@link Quarter} and start {@link Month}.
+	 *
+	 * @param quarter must not be {@literal null}.
+	 * @param startMonth must not be {@literal null}.
+	 */
+	private ShiftedQuarter(Quarter quarter, Month startMonth) {
+
+		Assert.notNull(quarter, "Quarter must not be null!");
+		Assert.notNull(startMonth, "Start Month must not be null!");
+
+		this.quarter = quarter;
+		this.startMonth = startMonth;
+	}
+
+	/**
+	 * Creates a new {@link ShiftedQuarter} for the given {@link Quarter} and start {@link Month}.
+	 *
+	 * @param quarter must not be {@literal null}.
+	 * @param startMonth must not be {@literal null}.
+	 */
+	public static ShiftedQuarter of(Quarter quarter, Month startMonth) {
+		return new ShiftedQuarter(quarter, startMonth);
+	}
 
 	/*+
 	 * Creates a new ShiftedQuarter for the given logical {@link Quarter}.
@@ -50,6 +70,15 @@ public class ShiftedQuarter {
 	 */
 	public static ShiftedQuarter of(Quarter quarter) {
 		return new ShiftedQuarter(quarter, Month.JANUARY);
+	}
+
+	/**
+	 * Returns the logical {@link Quarter}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Quarter getQuarter() {
+		return quarter;
 	}
 
 	/**
@@ -71,25 +100,36 @@ public class ShiftedQuarter {
 
 		Assert.notNull(date, "Reference date must not be null!");
 
-		MonthDay shiftedStart = getStart();
-		MonthDay shiftedEnd = getEnd();
-		MonthDay reference = MonthDay.from(date);
+		var shiftedStart = getStart();
+		var shiftedEnd = getEnd();
+		var reference = MonthDay.from(date);
 
-		Stream<Range> ranges = shiftedEnd.isAfter(shiftedStart)
-				? Stream.of(Range.of(shiftedStart, shiftedEnd))
-				: Stream.of(Range.of(shiftedStart, LAST_DAY), Range.of(FIRST_DAY, shiftedEnd));
+		var ranges = shiftedEnd.isAfter(shiftedStart)
+				? Stream.of(new Range(shiftedStart, shiftedEnd))
+				: Stream.of(new Range(shiftedStart, LAST_DAY), new Range(FIRST_DAY, shiftedEnd));
 
 		return ranges.anyMatch(it -> it.contains(reference));
 	}
 
+	/**
+	 * @return will never be {@literal null}.
+	 */
 	public MonthDay getStart() {
 		return getShifted(quarter.getStart());
 	}
 
+	/**
+	 * @return will never be {@literal null}.
+	 */
 	public MonthDay getEnd() {
 		return getShifted(quarter.getEnd());
 	}
 
+	/**
+	 * Returns whether the given {@link LocalDate} is the last day of the {@link ShiftedQuarter}.
+	 *
+	 * @param date must not be {@literal null}.
+	 */
 	public boolean isLastDay(LocalDate date) {
 		return MonthDay.from(date).equals(getEnd());
 	}
@@ -122,14 +162,39 @@ public class ShiftedQuarter {
 		return getStartDate(year).plusMonths(3).minusDays(1);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof ShiftedQuarter that)) {
+			return false;
+		}
+
+		return quarter == that.quarter //
+				&& startMonth == that.startMonth;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(quarter, startMonth);
+	}
+
 	private MonthDay getShifted(MonthDay source) {
 		return source.with(source.getMonth().plus(startMonth.getValue() - 1));
 	}
 
-	@Value(staticConstructor = "of")
-	private static class Range {
-
-		MonthDay start, end;
+	private static record Range(MonthDay start, MonthDay end) {
 
 		public boolean contains(MonthDay day) {
 

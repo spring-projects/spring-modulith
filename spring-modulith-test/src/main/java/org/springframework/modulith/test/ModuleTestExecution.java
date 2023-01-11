@@ -15,20 +15,16 @@
  */
 package org.springframework.modulith.test;
 
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.AnnotatedClassFinder;
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -43,26 +39,26 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 /**
  * @author Oliver Drotbohm
  */
-@Slf4j
-@EqualsAndHashCode(of = "key")
 public class ModuleTestExecution implements Iterable<ApplicationModule> {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleTestExecution.class);
 
 	private static Map<Class<?>, Class<?>> MODULITH_TYPES = new HashMap<>();
 	private static Map<Key, ModuleTestExecution> EXECUTIONS = new HashMap<>();
 
 	private final Key key;
 
-	private final @Getter BootstrapMode bootstrapMode;
-	private final @Getter ApplicationModule module;
-	private final @Getter ApplicationModules modules;
-	private final @Getter List<ApplicationModule> extraIncludes;
+	private final BootstrapMode bootstrapMode;
+	private final ApplicationModule module;
+	private final ApplicationModules modules;
+	private final List<ApplicationModule> extraIncludes;
 
 	private final Supplier<List<JavaPackage>> basePackages;
 	private final Supplier<List<ApplicationModule>> dependencies;
 
 	private ModuleTestExecution(ApplicationModuleTest annotation, ApplicationModules modules, ApplicationModule module) {
 
-		this.key = Key.of(module.getBasePackage().getName(), annotation);
+		this.key = new Key(module.getBasePackage().getName(), annotation);
 		this.modules = modules;
 		this.bootstrapMode = annotation.mode();
 		this.module = module;
@@ -71,18 +67,18 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		this.basePackages = Suppliers.memoize(() -> {
 
-			Stream<JavaPackage> moduleBasePackages = module.getBootstrapBasePackages(modules, bootstrapMode.getDepth());
-			Stream<JavaPackage> sharedBasePackages = modules.getSharedModules().stream().map(it -> it.getBasePackage());
-			Stream<JavaPackage> extraPackages = extraIncludes.stream().map(ApplicationModule::getBasePackage);
+			var moduleBasePackages = module.getBootstrapBasePackages(modules, bootstrapMode.getDepth());
+			var sharedBasePackages = modules.getSharedModules().stream().map(it -> it.getBasePackage());
+			var extraPackages = extraIncludes.stream().map(ApplicationModule::getBasePackage);
 
-			Stream<JavaPackage> intermediate = Stream.concat(moduleBasePackages, extraPackages);
+			var intermediate = Stream.concat(moduleBasePackages, extraPackages);
 
 			return Stream.concat(intermediate, sharedBasePackages).distinct().toList();
 		});
 
 		this.dependencies = Suppliers.memoize(() -> {
 
-			Stream<ApplicationModule> bootstrapDependencies = module.getBootstrapDependencies(modules,
+			var bootstrapDependencies = module.getBootstrapDependencies(modules,
 					bootstrapMode.getDepth());
 			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).toList();
 		});
@@ -96,17 +92,16 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		return () -> {
 
-			ApplicationModuleTest annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
-			String packageName = type.getPackage().getName();
+			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
+			var packageName = type.getPackage().getName();
 
-			Class<?> modulithType = MODULITH_TYPES.computeIfAbsent(type,
+			var modulithType = MODULITH_TYPES.computeIfAbsent(type,
 					it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromPackage(packageName));
-			ApplicationModules modules = ApplicationModules.of(modulithType);
-			ApplicationModule module = modules.getModuleForPackage(packageName) //
-					.orElseThrow(
-							() -> new IllegalStateException(String.format("Package %s is not part of any module!", packageName)));
+			var modules = ApplicationModules.of(modulithType);
+			var module = modules.getModuleForPackage(packageName).orElseThrow( //
+					() -> new IllegalStateException(String.format("Package %s is not part of any module!", packageName)));
 
-			return EXECUTIONS.computeIfAbsent(Key.of(module.getBasePackage().getName(), annotation),
+			return EXECUTIONS.computeIfAbsent(new Key(module.getBasePackage().getName(), annotation),
 					it -> new ModuleTestExecution(annotation, modules, module));
 		};
 	}
@@ -122,11 +117,11 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 	public boolean includes(String className) {
 
-		boolean result = modules.withinRootPackages(className) //
+		var result = modules.withinRootPackages(className) //
 				|| basePackages.get().stream().anyMatch(it -> it.contains(className));
 
 		if (result) {
-			LOG.trace("Including class {}.", className);
+			LOGGER.trace("Including class {}.", className);
 		}
 
 		return !result;
@@ -155,6 +150,42 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		module.verifyDependencies(modules);
 	}
 
+	/**
+	 * Returns the {@link BootstrapMode} to be used for the executions.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public BootstrapMode getBootstrapMode() {
+		return bootstrapMode;
+	}
+
+	/**
+	 * Returns the primary {@link ApplicationModule} to bootstrap.
+	 *
+	 * @return the module will never be {@literal null}.
+	 */
+	public ApplicationModule getModule() {
+		return module;
+	}
+
+	/**
+	 * Returns all {@link ApplicationModules} of the application.
+	 *
+	 * @return the modules will never be {@literal null}.
+	 */
+	public ApplicationModules getModules() {
+		return modules;
+	}
+
+	/**
+	 * Returns all {@link ApplicationModule}s registered as extra includes for the execution.
+	 *
+	 * @return the extraIncludes will never be {@literal null}.
+	 */
+	public List<ApplicationModule> getExtraIncludes() {
+		return extraIncludes;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -162,6 +193,33 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	@Override
 	public Iterator<ApplicationModule> iterator() {
 		return modules.iterator();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof ModuleTestExecution that)) {
+			return false;
+		}
+
+		return Objects.equals(key, that.key);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(key);
 	}
 
 	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation,
@@ -172,11 +230,5 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 				.flatMap(it -> it.map(Stream::of).orElseGet(Stream::empty));
 	}
 
-	@Value
-	@RequiredArgsConstructor(staticName = "of", access = AccessLevel.PRIVATE)
-	private static class Key {
-
-		String moduleBasePackage;
-		ApplicationModuleTest annotation;
-	}
+	private static record Key(String moduleBasePackage, ApplicationModuleTest annotation) {}
 }

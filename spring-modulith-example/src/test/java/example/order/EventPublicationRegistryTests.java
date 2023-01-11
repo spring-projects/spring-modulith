@@ -18,7 +18,6 @@ package example.order;
 import static org.assertj.core.api.Assertions.*;
 
 import example.order.EventPublicationRegistryTests.FailingAsyncTransactionalEventListener;
-import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
@@ -34,13 +33,21 @@ import org.springframework.test.annotation.DirtiesContext;
  * @author Oliver Drotbohm
  */
 @ApplicationModuleTest
-@RequiredArgsConstructor
 @Import(FailingAsyncTransactionalEventListener.class)
 @DirtiesContext
 class EventPublicationRegistryTests {
 
 	private final OrderManagement orders;
 	private final EventPublicationRegistry registry;
+
+	/**
+	 * @param orders
+	 * @param registry
+	 */
+	EventPublicationRegistryTests(OrderManagement orders, EventPublicationRegistry registry) {
+		this.orders = orders;
+		this.registry = registry;
+	}
 
 	@Test
 	void leavesPublicationIncompleteForFailingListener() throws Exception {

@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
-import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 
@@ -47,11 +46,11 @@ class ModuleDetectionStrategyUnitTest {
 	@Test
 	void detectsJMoleculesAnnotatedModule() {
 
-		JavaClasses classes = new ClassFileImporter() //
+		var classes = new ClassFileImporter() //
 				.withImportOption(new ImportOption.OnlyIncludeTests()) //
 				.importPackages("jmolecules");
 
-		JavaPackage javaPackage = JavaPackage.of(Classes.of(classes), "jmolecules");
+		var javaPackage = JavaPackage.of(Classes.of(classes), "jmolecules");
 
 		assertThat(ApplicationModuleDetectionStrategy.explictlyAnnotated().getModuleBasePackages(javaPackage))
 				.containsExactly(javaPackage);

@@ -15,14 +15,13 @@
  */
 package org.springframework.modulith.events.jackson;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventSerializationConfigurationExtension;
+import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,11 +33,26 @@ import com.fasterxml.jackson.databind.SerializationFeature;
  * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
-@RequiredArgsConstructor
 class JacksonEventSerializationConfiguration implements EventSerializationConfigurationExtension {
 
 	private final ObjectProvider<ObjectMapper> mapper;
 	private final ApplicationContext context;
+
+	/**
+	 * Creates a new {@link JacksonEventSerializationConfiguration} for the given {@link ObjectMapper} and
+	 * {@link ApplicationContext}.
+	 *
+	 * @param mapper must not be {@literal null}.
+	 * @param context must not be {@literal null}.
+	 */
+	public JacksonEventSerializationConfiguration(ObjectProvider<ObjectMapper> mapper, ApplicationContext context) {
+
+		Assert.notNull(mapper, "ObjectMapper must not be null!");
+		Assert.notNull(context, "ApplicationContext must not be null!");
+
+		this.mapper = mapper;
+		this.context = context;
+	}
 
 	@Bean
 	public JacksonEventSerializer jacksonEventSerializer() {
@@ -47,7 +61,7 @@ class JacksonEventSerializationConfiguration implements EventSerializationConfig
 
 	private ObjectMapper defaultObjectMapper() {
 
-		ObjectMapper mapper = new ObjectMapper();
+		var mapper = new ObjectMapper();
 
 		mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
 		mapper.registerModules(context.getBeansOfType(Module.class).values());

@@ -15,9 +15,8 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.Value;
-
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
@@ -30,15 +29,9 @@ import com.tngtech.archunit.core.domain.JavaModifier;
  *
  * @author Oliver Drotbohm
  */
-@Value
 public class EventType {
 
 	private final JavaClass type;
-
-	/**
-	 * The sources that create that event. Includes static factory methods that return an instance of the event type
-	 * itself as well as constructor invocations, except ones from the factory methods.
-	 */
 	private final List<Source> sources;
 
 	/**
@@ -66,7 +59,68 @@ public class EventType {
 				.toList();
 	}
 
+	/**
+	 * The {@link JavaClass} of the {@link EventType}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public JavaClass getType() {
+		return type;
+	}
+
+	/**
+	 * The sources that create that event. Includes static factory methods that return an instance of the event type
+	 * itself as well as constructor invocations, except ones from the factory methods.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public List<Source> getSources() {
+		return sources;
+	}
+
+	/**
+	 * Whether any sources exist at all.
+	 *
+	 * @see #getSources()
+	 */
 	public boolean hasSources() {
 		return !this.sources.isEmpty();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "EventType [type=" + type + ", sources=" + sources + "]";
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof EventType thaType)) {
+			return false;
+		}
+
+		return Objects.equals(sources, thaType.sources) //
+				&& Objects.equals(type, thaType.type);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(sources, type);
 	}
 }

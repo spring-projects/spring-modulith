@@ -15,20 +15,18 @@
  */
 package example.order;
 
-import lombok.Value;
-
 import java.util.UUID;
 
 /**
  * @author Oliver Drotbohm
  */
-@Value
 public class Order {
 
 	private OrderIdentifier id = new OrderIdentifier(UUID.randomUUID());
 
-	@Value
-	public static class OrderIdentifier {
-		UUID id;
+	public OrderIdentifier getId() {
+		return id;
 	}
+
+	public static record OrderIdentifier(UUID id) {}
 }

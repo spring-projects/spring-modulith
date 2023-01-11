@@ -15,26 +15,38 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.tracing.Span;
 import io.micrometer.tracing.Tracer;
-import lombok.RequiredArgsConstructor;
 
 import java.util.function.Supplier;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
-import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
+import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<Tracer> tracer;
+
+	/**
+	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link Tracer}.
+	 *
+	 * @param runtime must not be {@literal null}.
+	 * @param tracer must not be {@literal null}.
+	 */
+	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer) {
+
+		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
+		Assert.notNull(tracer, "Tracer must not be null!");
+
+		this.runtime = runtime;
+		this.tracer = tracer;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -43,19 +55,18 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	@Override
 	public void onApplicationEvent(ApplicationEvent event) {
 
-		if (!PayloadApplicationEvent.class.isInstance(event)) {
+		if (!(event instanceof PayloadApplicationEvent<?> payloadEvent)) {
 			return;
 		}
 
-		PayloadApplicationEvent<?> foo = (PayloadApplicationEvent<?>) event;
-		Object object = foo.getPayload();
-		Class<? extends Object> payloadType = object.getClass();
+		var object = payloadEvent.getPayload();
+		var payloadType = object.getClass();
 
 		if (!runtime.isApplicationClass(payloadType)) {
 			return;
 		}
 
-		ApplicationModule moduleByType = runtime.get()
+		var moduleByType = runtime.get()
 				.getModuleByType(payloadType.getSimpleName())
 				.orElse(null);
 
@@ -63,7 +74,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		Span span = tracer.get().currentSpan();
+		var span = tracer.get().currentSpan();
 
 		if (span == null) {
 			return;

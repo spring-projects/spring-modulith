@@ -16,7 +16,6 @@
 package org.springframework.modulith.observability;
 
 import io.micrometer.tracing.Tracer;
-import lombok.RequiredArgsConstructor;
 
 import java.util.function.Supplier;
 
@@ -33,15 +32,31 @@ import org.springframework.data.rest.webmvc.RootResourceInformation;
 import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
+import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
 
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<Tracer> tracer;
+
+	/**
+	 * Creates a new {@link SpringDataRestModuleTracingBeanPostProcessor} for the given {@link ApplicationModulesRuntime}
+	 * and {@link Tracer}.
+	 *
+	 * @param runtime must not be {@literal null}.
+	 * @param tracer must not be {@literal null}.
+	 */
+	public SpringDataRestModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer) {
+
+		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
+		Assert.notNull(tracer, "Tracer must not be null!");
+
+		this.runtime = runtime;
+		this.tracer = tracer;
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -62,11 +77,25 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 		return addAdvisor(bean, advisor, it -> it.setProxyTargetClass(true));
 	}
 
-	@RequiredArgsConstructor
 	private static class DataRestControllerInterceptor implements MethodInterceptor {
 
 		private final Supplier<ApplicationModules> modules;
 		private final Supplier<Tracer> tracer;
+
+		/**
+		 * Creates a new {@link DataRestControllerInterceptor} for the given {@link ApplicationModules} and {@link Tracer}.
+		 *
+		 * @param modules must not be {@literal null}.
+		 * @param tracer must not be {@literal null}.
+		 */
+		private DataRestControllerInterceptor(Supplier<ApplicationModules> modules, Supplier<Tracer> tracer) {
+
+			Assert.notNull(modules, "ApplicationModules must not be null!");
+			Assert.notNull(tracer, "Tracer must not be null!");
+
+			this.modules = modules;
+			this.tracer = tracer;
+		}
 
 		/*
 		 * (non-Javadoc)
@@ -75,13 +104,13 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 		@Override
 		public Object invoke(MethodInvocation invocation) throws Throwable {
 
-			ApplicationModule module = getModuleFrom(invocation.getArguments());
+			var module = getModuleFrom(invocation.getArguments());
 
 			if (module == null) {
 				return invocation.proceed();
 			}
 
-			ObservedModule observed = new DefaultObservedModule(module);
+			var observed = new DefaultObservedModule(module);
 
 			return ModuleEntryInterceptor.of(observed, tracer.get()).invoke(invocation);
 		}
@@ -90,11 +119,9 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 
 			for (Object argument : arguments) {
 
-				if (!RootResourceInformation.class.isInstance(arguments)) {
+				if (!(argument instanceof RootResourceInformation info)) {
 					continue;
 				}
-
-				RootResourceInformation info = (RootResourceInformation) argument;
 
 				return modules.get().getModuleByType(info.getDomainType().getName()).orElse(null);
 			}
@@ -102,5 +129,4 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 			return null;
 		}
 	}
-
 }

@@ -15,9 +15,6 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -32,7 +29,6 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(staticName = "of", access = AccessLevel.PRIVATE)
 public class Violations extends RuntimeException {
 
 	private static final long serialVersionUID = 6863781504675034691L;
@@ -42,12 +38,24 @@ public class Violations extends RuntimeException {
 	private final List<RuntimeException> exceptions;
 
 	/**
+	 * Creates a new {@link Violations} from the given {@link RuntimeException}s.
+	 *
+	 * @param exceptions must not be {@literal null}.
+	 */
+	private Violations(List<RuntimeException> exceptions) {
+
+		Assert.notNull(exceptions, "Exceptions must not be null!");
+
+		this.exceptions = exceptions;
+	}
+
+	/**
 	 * A {@link Collector} to turn a {@link Stream} of {@link RuntimeException}s into a {@link Violations} instance.
 	 *
 	 * @return will never be {@literal null}.
 	 */
 	static Collector<RuntimeException, ?, Violations> toViolations() {
-		return Collectors.collectingAndThen(Collectors.toList(), Violations::of);
+		return Collectors.collectingAndThen(Collectors.toList(), Violations::new);
 	}
 
 	/*

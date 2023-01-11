@@ -18,11 +18,9 @@ package org.springframework.modulith.events.mongodb;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
-import lombok.EqualsAndHashCode;
-import lombok.RequiredArgsConstructor;
-
 import java.time.Instant;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import org.springframework.data.domain.Sort;
@@ -72,7 +70,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 				publication.getTargetIdentifier()) //
 						.stream() //
 						.findFirst() //
-						.map(document -> document.setCompletionDate(publication.getCompletionDate().orElse(null))) //
+						.map(document -> document.markCompleted(publication.getCompletionDate().orElse(null))) //
 						.map(mongoTemplate::save) //
 						.map(this::documentToDomain) //
 						.orElse(publication);
@@ -131,44 +129,73 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	}
 
 	private CompletableEventPublication documentToDomain(MongoDbEventPublication document) {
-		return MongoDbEventPublicationAdapter.of(document);
+		return new MongoDbEventPublicationAdapter(document);
 	}
 
-	@EqualsAndHashCode
-	@RequiredArgsConstructor(staticName = "of")
 	private static class MongoDbEventPublicationAdapter implements CompletableEventPublication {
 
 		private final MongoDbEventPublication publication;
 
+		MongoDbEventPublicationAdapter(MongoDbEventPublication publication) {
+			this.publication = publication;
+		}
+
 		@Override
 		public Object getEvent() {
-			return publication.getEvent();
+			return publication.event;
 		}
 
 		@Override
 		public PublicationTargetIdentifier getTargetIdentifier() {
-			return PublicationTargetIdentifier.of(publication.getListenerId());
+			return PublicationTargetIdentifier.of(publication.listenerId);
 		}
 
 		@Override
 		public Instant getPublicationDate() {
-			return publication.getPublicationDate();
+			return publication.publicationDate;
 		}
 
 		@Override
 		public Optional<Instant> getCompletionDate() {
-			return Optional.ofNullable(publication.getCompletionDate());
+			return Optional.ofNullable(publication.completionDate);
 		}
 
 		@Override
 		public boolean isPublicationCompleted() {
-			return publication.getCompletionDate() != null;
+			return publication.completionDate != null;
 		}
 
 		@Override
 		public CompletableEventPublication markCompleted() {
-			publication.setCompletionDate(Instant.now());
+			publication.completionDate = Instant.now();
 			return this;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof MongoDbEventPublicationAdapter other)) {
+				return false;
+			}
+
+			return Objects.equals(publication, other.publication);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(publication);
 		}
 	}
 }

@@ -17,13 +17,6 @@ package org.springframework.modulith.docs;
 
 import static org.springframework.modulith.docs.Asciidoctor.*;
 
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-import lombok.With;
-
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -77,11 +70,9 @@ import com.tngtech.archunit.core.domain.JavaClass;
  *
  * @author Oliver Drotbohm
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public class Documenter {
 
 	private static final Map<DependencyType, String> DEPENDENCY_DESCRIPTIONS = new LinkedHashMap<>();
-
 	private static final String INVALID_FILE_NAME_PATTERN = "Configured file name pattern does not include a '%s' placeholder for the module name!";
 
 	static {
@@ -89,7 +80,7 @@ public class Documenter {
 		DEPENDENCY_DESCRIPTIONS.put(DependencyType.DEFAULT, "depends on");
 	}
 
-	private final @Getter ApplicationModules modules;
+	private final ApplicationModules modules;
 	private final Workspace workspace;
 	private final Container container;
 	private final ConfigurationProperties properties;
@@ -98,7 +89,8 @@ public class Documenter {
 	private Map<ApplicationModule, Component> components;
 
 	/**
-	 * Creates a new {@link Documenter} for the {@link ApplicationModules} created for the given modulith type.
+	 * Creates a new {@link Documenter} for the {@link ApplicationModules} created for the given modulith type in the
+	 * default output folder ({@code spring-modulith-docs}).
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 */
@@ -107,7 +99,8 @@ public class Documenter {
 	}
 
 	/**
-	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} instance.
+	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} instance in the default output folder
+	 * ({@code spring-modulith-docs}).
 	 *
 	 * @param modules must not be {@literal null}.
 	 */
@@ -115,7 +108,13 @@ public class Documenter {
 		this(modules, getDefaultOutputDirectory());
 	}
 
-	private Documenter(ApplicationModules modules, String outputFolder) {
+	/**
+	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} and output folder.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @param outputFolder must not be {@literal null} or empty.
+	 */
+	public Documenter(ApplicationModules modules, String outputFolder) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 		Assert.hasText(outputFolder, "Output folder must not be null or empty!");
@@ -142,11 +141,12 @@ public class Documenter {
 	 * Customize the output folder to write the generated files to. Defaults to {@value #DEFAULT_LOCATION}.
 	 *
 	 * @param outputFolder must not be {@literal null} or empty.
-	 * @return the current instance, will never be {@literal null}.
-	 * @see #DEFAULT_LOCATION
+	 * @return will never be {@literal null}.
+	 * @deprecated use {@link Documenter(ApplicationModules, String)} directly.
 	 */
+	@Deprecated(forRemoval = true)
 	public Documenter withOutputFolder(String outputFolder) {
-		return new Documenter(modules, workspace, container, properties, outputFolder, components);
+		return new Documenter(modules, outputFolder);
 	}
 
 	/**
@@ -258,12 +258,12 @@ public class Documenter {
 		Assert.notNull(module, "Module must not be null!");
 		Assert.notNull(options, "Options must not be null!");
 
-		ComponentView view = createComponentView(options, module);
-		view.setTitle(options.getDefaultDisplayName().apply(module));
+		var view = createComponentView(options, module);
+		view.setTitle(options.defaultDisplayName.apply(module));
 
 		addComponentsToView(module, view, options);
 
-		String fileNamePattern = options.getTargetFileName().orElse("module-%s.uml");
+		var fileNamePattern = options.getTargetFileName().orElse("module-%s.uml");
 
 		Assert.isTrue(fileNamePattern.contains("%s"), () -> String.format(INVALID_FILE_NAME_PATTERN, fileNamePattern));
 
@@ -291,8 +291,8 @@ public class Documenter {
 
 		modules.forEach(module -> {
 
-			String filename = String.format(options.getTargetFileName().orElse("module-%s.adoc"), module.getName());
-			Path file = recreateFile(filename);
+			var filename = options.getTargetFileName(module.getName());
+			var file = recreateFile(filename);
 
 			try (FileWriter writer = new FileWriter(file.toFile())) {
 
@@ -347,16 +347,8 @@ public class Documenter {
 				.toString();
 	}
 
-	private static String addTableRow(String title, String content, CanvasOptions options) {
-
-		return options.hideEmptyLines && (content.isBlank() || content.equalsIgnoreCase("none"))
-				? ""
-				: writeTableRow(title, content);
-	}
-
-	private static <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper,
-			CanvasOptions options) {
-		return options.hideEmptyLines && types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
+	ApplicationModules getModules() {
+		return modules;
 	}
 
 	String toPlantUml() {
@@ -387,7 +379,7 @@ public class Documenter {
 
 			this.components = modules.stream() //
 					.collect(Collectors.toMap(Function.identity(),
-							it -> container.addComponent(options.getDefaultDisplayName().apply(it), "", "Module")));
+							it -> container.addComponent(options.defaultDisplayName.apply(it), "", "Module")));
 
 			this.components.forEach((key, value) -> addDependencies(key, value, options));
 		}
@@ -398,7 +390,7 @@ public class Documenter {
 	private void addComponentsToView(ApplicationModule module, ComponentView view, DiagramOptions options) {
 
 		Supplier<Stream<ApplicationModule>> bootstrapDependencies = () -> module.getBootstrapDependencies(modules,
-				options.getDependencyDepth());
+				options.dependencyDepth);
 		Supplier<Stream<ApplicationModule>> otherDependencies = () -> options.getDependencyTypes()
 				.flatMap(it -> module.getDependencies(modules, it).stream()
 						.map(ApplicationModuleDependency::getTargetModule));
@@ -413,14 +405,14 @@ public class Documenter {
 			DiagramOptions options,
 			Consumer<ComponentView> afterCleanup) {
 
-		Styles styles = view.getViewSet().getConfiguration().getStyles();
-		Map<ApplicationModule, Component> components = getComponents(options);
+		var styles = view.getViewSet().getConfiguration().getStyles();
+		var components = getComponents(options);
 
 		modules.get() //
 				.distinct()
-				.filter(options.getExclusions().negate()) //
+				.filter(options.exclusions.negate()) //
 				.map(it -> applyBackgroundColor(it, components, options, styles)) //
-				.filter(options.getComponentFilter()) //
+				.filter(options.componentFilter) //
 				.forEach(view::add);
 
 		// Remove filtered dependency types
@@ -431,7 +423,7 @@ public class Documenter {
 		afterCleanup.accept(view);
 
 		// Filter outgoing relationships of target-only modules
-		modules.get().filter(options.getTargetOnly()) //
+		modules.get().filter(options.targetOnly) //
 				.forEach(module -> {
 
 					Component component = components.get(module);
@@ -465,31 +457,6 @@ public class Documenter {
 
 		relationships.stream().filter(it -> it.getTagsAsSet().contains(DependencyType.DEFAULT.toString())) //
 				.findFirst().ifPresent(view::remove);
-	}
-
-	private static Component applyBackgroundColor(ApplicationModule module,
-			Map<ApplicationModule, Component> components,
-			DiagramOptions options,
-			Styles styles) {
-
-		Component component = components.get(module);
-		Function<ApplicationModule, Optional<String>> selector = options.getColorSelector();
-
-		// Apply custom color if configured
-		selector.apply(module).ifPresent(color -> {
-
-			String tag = module.getName() + "-" + color;
-			component.addTags(tag);
-
-			// Add or update background color
-			styles.getElements().stream()
-					.filter(it -> it.getTag().equals(tag))
-					.findFirst()
-					.orElseGet(() -> styles.addElementStyle(tag))
-					.background(color);
-		});
-
-		return component;
 	}
 
 	private Documenter writeViewAsPlantUml(ComponentView view, String filename, DiagramOptions options) {
@@ -566,6 +533,43 @@ public class Documenter {
 		}
 	}
 
+	private static Component applyBackgroundColor(ApplicationModule module,
+			Map<ApplicationModule, Component> components,
+			DiagramOptions options,
+			Styles styles) {
+
+		var component = components.get(module);
+		var selector = options.colorSelector;
+
+		// Apply custom color if configured
+		selector.apply(module).ifPresent(color -> {
+
+			var tag = module.getName() + "-" + color;
+			component.addTags(tag);
+
+			// Add or update background color
+			styles.getElements().stream()
+					.filter(it -> it.getTag().equals(tag))
+					.findFirst()
+					.orElseGet(() -> styles.addElementStyle(tag))
+					.background(color);
+		});
+
+		return component;
+	}
+
+	private static String addTableRow(String title, String content, CanvasOptions options) {
+
+		return options.hideEmptyLines && (content.isBlank() || content.equalsIgnoreCase("none"))
+				? ""
+				: writeTableRow(title, content);
+	}
+
+	private static <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper,
+			CanvasOptions options) {
+		return options.hideEmptyLines && types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
+	}
+
 	/**
 	 * Returns the default output directory based on the detected build system.
 	 *
@@ -575,11 +579,7 @@ public class Documenter {
 		return (new File("pom.xml").exists() ? "target" : "build").concat("/spring-modulith-docs");
 	}
 
-	@Value
-	private static class Connection {
-
-		Element source, target;
-
+	private static record Connection(Element source, Element target) {
 		public static Connection of(Relationship relationship) {
 			return new Connection(relationship.getSource(), relationship.getDestination());
 		}
@@ -590,58 +590,130 @@ public class Documenter {
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	@Getter(AccessLevel.PRIVATE)
-	@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 	public static class DiagramOptions {
 
 		private static final Set<DependencyType> ALL_TYPES = Arrays.stream(DependencyType.values())
 				.collect(Collectors.toSet());
 
 		private final Set<DependencyType> dependencyTypes;
+		private final DependencyDepth dependencyDepth;
+		private final Predicate<ApplicationModule> exclusions;
+		private final Predicate<Component> componentFilter;
+		private final Predicate<ApplicationModule> targetOnly;
+		private final @Nullable String targetFileName;
+		private final Function<ApplicationModule, Optional<String>> colorSelector;
+		private final Function<ApplicationModule, String> defaultDisplayName;
+		private final DiagramStyle style;
+		private final ElementsWithoutRelationships elementsWithoutRelationships;
+
+		/**
+		 * @param dependencyTypes must not be {@literal null}.
+		 * @param dependencyDepth must not be {@literal null}.
+		 * @param exclusions must not be {@literal null}.
+		 * @param componentFilter must not be {@literal null}.
+		 * @param targetOnly must not be {@literal null}.
+		 * @param targetFileName can be {@literal null}.
+		 * @param colorSelector must not be {@literal null}.
+		 * @param defaultDisplayName must not be {@literal null}.
+		 * @param style must not be {@literal null}.
+		 * @param elementsWithoutRelationships must not be {@literal null}.
+		 */
+		DiagramOptions(Set<DependencyType> dependencyTypes, DependencyDepth dependencyDepth,
+				Predicate<ApplicationModule> exclusions, Predicate<Component> componentFilter,
+				Predicate<ApplicationModule> targetOnly, @Nullable String targetFileName,
+				Function<ApplicationModule, Optional<String>> colorSelector,
+				Function<ApplicationModule, String> defaultDisplayName, DiagramStyle style,
+				ElementsWithoutRelationships elementsWithoutRelationships) {
+
+			Assert.notNull(dependencyTypes, "Dependency types must not be null!");
+			Assert.notNull(dependencyDepth, "Dependency depth must not be null!");
+			Assert.notNull(exclusions, "Exclusions must not be null!");
+			Assert.notNull(componentFilter, "Component filter must not be null!");
+			Assert.notNull(targetOnly, "Target only must not be null!");
+			Assert.notNull(colorSelector, "Color selector must not be null!");
+			Assert.notNull(defaultDisplayName, "Default display name must not be null!");
+			Assert.notNull(style, "DiagramStyle must not be null!");
+			Assert.notNull(elementsWithoutRelationships, "ElementsWithoutRelationships must not be null!");
+
+			this.dependencyTypes = dependencyTypes;
+			this.dependencyDepth = dependencyDepth;
+			this.exclusions = exclusions;
+			this.componentFilter = componentFilter;
+			this.targetOnly = targetOnly;
+			this.targetFileName = targetFileName;
+			this.colorSelector = colorSelector;
+			this.defaultDisplayName = defaultDisplayName;
+			this.style = style;
+			this.elementsWithoutRelationships = elementsWithoutRelationships;
+		}
 
 		/**
 		 * The {@link DependencyDepth} to define which other modules to be included in the diagram to be created.
 		 */
-		private final @With DependencyDepth dependencyDepth;
+		public DiagramOptions withDependencyDepth(DependencyDepth dependencyDepth) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * A {@link Predicate} to define the which modules to exclude from the diagram to be created.
 		 */
-		private final @With Predicate<ApplicationModule> exclusions;
+		public DiagramOptions withExcusions(Predicate<ApplicationModule> exclusions) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * A {@link Predicate} to define which Structurizr {@link Component}s to be included in the diagram to be created.
 		 */
-		private final @With Predicate<Component> componentFilter;
+		public DiagramOptions withComponentFilter(Predicate<Component> componentFilter) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * A {@link Predicate} to define which of the modules shall only be considered targets, i.e. all efferent
 		 * relationships are going to be hidden from the rendered view. Modules that have no incoming relationships will
 		 * entirely be removed from the view.
 		 */
-		private final @With Predicate<ApplicationModule> targetOnly;
+		public DiagramOptions withTargetOnly(Predicate<ApplicationModule> targetOnly) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * The target file name to be used for the diagram to be created. For individual module diagrams this needs to
 		 * include a {@code %s} placeholder for the module names.
 		 */
-		private final @With @Nullable String targetFileName;
+		public DiagramOptions withTargetFileName(String targetFileName) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * A callback to return a hex-encoded color per {@link ApplicationModule}.
 		 */
-		private final @With Function<ApplicationModule, Optional<String>> colorSelector;
+		public DiagramOptions withColorSelector(Function<ApplicationModule, Optional<String>> colorSelector) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * A callback to return a default display names for a given {@link ApplicationModule}. Default implementation just
 		 * forwards to {@link ApplicationModule#getDisplayName()}.
 		 */
-		private final @With Function<ApplicationModule, String> defaultDisplayName;
+		public DiagramOptions withDefaultDisplayName(Function<ApplicationModule, String> defaultDisplayName) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * Which style to render the diagram in. Defaults to {@value DiagramStyle#UML}.
 		 */
-		private final @With DiagramStyle style;
+		public DiagramOptions withStyle(DiagramStyle style) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
@@ -651,7 +723,10 @@ public class Documenter {
 		 *
 		 * @see #withExclusions(Predicate)
 		 */
-		private final @With ElementsWithoutRelationships elementsWithoutRelationships;
+		public DiagramOptions withElementsWithoutRelationships(ElementsWithoutRelationships elementsWithoutRelationships) {
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+		}
 
 		/**
 		 * Creates a new default {@link DiagramOptions} instance configured to use all dependency types, list immediate
@@ -729,17 +804,23 @@ public class Documenter {
 		}
 	}
 
-	// Prefix required for javac 🤔
-	@lombok.RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 	public static class CanvasOptions {
 
-		static final Grouping FALLBACK_GROUP = Grouping.of("Others", null, __ -> true);
+		static final Grouping FALLBACK_GROUP = new Grouping("Others", __ -> true, null);
 
 		private final List<Grouping> groupers;
-		private final @With @Getter @Nullable String apiBase;
-		private final @With @Nullable String targetFileName;
-		private final boolean hideInternals;
-		private final boolean hideEmptyLines;
+		private final @Nullable String apiBase, targetFileName;
+		private final boolean hideInternals, hideEmptyLines;
+
+		CanvasOptions(List<Grouping> groupers, @Nullable String apiBase, @Nullable String targetFileName,
+				boolean hideInternals, boolean hideEmptyLines) {
+
+			this.groupers = groupers;
+			this.apiBase = apiBase;
+			this.targetFileName = targetFileName;
+			this.hideInternals = hideInternals;
+			this.hideEmptyLines = hideEmptyLines;
+		}
 
 		public static CanvasOptions defaults() {
 
@@ -758,14 +839,38 @@ public class Documenter {
 
 		public CanvasOptions groupingBy(Grouping... groupings) {
 
-			List<Grouping> result = new ArrayList<>(groupers);
-			result.addAll(Arrays.asList(groupings));
+			var result = new ArrayList<>(groupers);
+			result.addAll(List.of(groupings));
 
 			return new CanvasOptions(result, apiBase, targetFileName, hideInternals, hideEmptyLines);
 		}
 
+		/**
+		 * Registers a component grouping with the given name and selecting filter.
+		 *
+		 * @param name must not be {@literal null} or empty.
+		 * @param filter must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
 		public CanvasOptions groupingBy(String name, Predicate<SpringBean> filter) {
-			return groupingBy(Grouping.of(name, null, filter));
+			return groupingBy(Grouping.of(name, filter, null));
+		}
+
+		/**
+		 * Registers a component grouping with the given name, selecting filter and description.
+		 *
+		 * @param name must not be {@literal null} or empty.
+		 * @param filter must not be {@literal null}.
+		 * @param description must not be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public CanvasOptions groupingBy(String name, Predicate<SpringBean> filter, String description) {
+
+			Assert.hasText(name, "Name must not be null!");
+			Assert.notNull(filter, "Filter must not be null!");
+			Assert.hasText(description, "Description must not be null!");
+
+			return groupingBy(Grouping.of(name, filter, description));
 		}
 
 		/**
@@ -777,21 +882,55 @@ public class Documenter {
 			return new CanvasOptions(groupers, apiBase, targetFileName, false, hideEmptyLines);
 		}
 
+		/**
+		 * Enables table rows not containing any values to be retained in the output. By default, no table rows for e.g.
+		 * aggregates will be rendered if none are found in the {@link ApplicationModule}.
+		 *
+		 * @return will never be {@literal null}.
+		 */
 		public CanvasOptions revealEmptyLines() {
 			return new CanvasOptions(groupers, apiBase, targetFileName, hideInternals, false);
 		}
 
+		/**
+		 * Configures a URI string to act as the base of the Javadoc accessible for the types contained in the canvas. If
+		 * set, the output will add links to the Javadoc for those types.
+		 *
+		 * @param apiBase must not be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public CanvasOptions withApiBase(String apiBase) {
+
+			Assert.hasText(apiBase, "API base must not be null or empty!");
+
+			return new CanvasOptions(groupers, apiBase, targetFileName, hideInternals, hideEmptyLines);
+		}
+
+		/**
+		 * Configures the target file name for the canvas to be written. Defaults to {@code module-$moduleName.adoc}.
+		 *
+		 * @param targetFileName must not be {@literal null} or empty.
+		 * @return will never be {@literal null}.
+		 */
+		public CanvasOptions withTargetFileName(String targetFileName) {
+			return new CanvasOptions(groupers, apiBase, targetFileName, hideInternals, hideEmptyLines);
+		}
+
+		String getApiBase() {
+			return apiBase;
+		}
+
 		Groupings groupBeans(ApplicationModule module) {
 
-			List<Grouping> sources = new ArrayList<>(groupers);
+			var sources = new ArrayList<Grouping>(groupers);
 			sources.add(FALLBACK_GROUP);
 
-			MultiValueMap<Grouping, SpringBean> result = new LinkedMultiValueMap<>();
-			List<SpringBean> alreadyMapped = new ArrayList<>();
+			var result = new LinkedMultiValueMap<Grouping, SpringBean>();
+			var alreadyMapped = new ArrayList<SpringBean>();
 
 			sources.forEach(it -> {
 
-				List<SpringBean> matchingBeans = getMatchingBeans(module, it, alreadyMapped);
+				var matchingBeans = getMatchingBeans(module, it, alreadyMapped);
 
 				result.addAll(it, matchingBeans);
 				alreadyMapped.addAll(matchingBeans);
@@ -804,15 +943,15 @@ public class Documenter {
 				}
 			});
 
-			return Groupings.of(result);
+			return new Groupings(result);
 		}
 
 		Predicate<JavaClass> hideInternalFilter(ApplicationModule module) {
 			return hideInternals ? module::isExposed : __ -> true;
 		}
 
-		private Optional<String> getTargetFileName() {
-			return Optional.ofNullable(targetFileName);
+		private String getTargetFileName(String moduleName) {
+			return (targetFileName == null ? "module-%s.adoc" : targetFileName).formatted(moduleName);
 		}
 
 		private List<SpringBean> getMatchingBeans(ApplicationModule module, Grouping filter,
@@ -825,44 +964,148 @@ public class Documenter {
 					.toList();
 		}
 
-		@Value(staticConstructor = "of")
-		@Getter(AccessLevel.PACKAGE)
 		public static class Grouping {
 
-			String name;
-			@Nullable String description;
-			Predicate<SpringBean> predicate;
+			private final String name;
+			private final Predicate<SpringBean> predicate;
+			private final @Nullable String description;
 
+			/**
+			 * Creates a new {@link Grouping} for the given {@link Predicate} and description.
+			 *
+			 * @param name must not be {@literal null} or empty.
+			 * @param predicate must not be {@literal null}.
+			 * @param description can be {@literal null}.
+			 */
+			private Grouping(String name, Predicate<SpringBean> predicate, @Nullable String description) {
+
+				Assert.hasText(name, "Name must not be null or empty!");
+				Assert.notNull(predicate, "Predicate must not be null!");
+				Assert.isTrue(description == null || !description.isBlank(), "Description must not be empty or null!");
+
+				this.name = name;
+				this.predicate = predicate;
+				this.description = description;
+			}
+
+			/**
+			 * Creates a {@link Grouping} with the given name.
+			 *
+			 * @param name must not be {@literal null} or empty.
+			 * @return will never be {@literal null}.
+			 * @deprecated no replacement as a name-only {@link Grouping} doesn't make any sense in the first place.
+			 */
+			@Deprecated
 			public static Grouping of(String name) {
-				return new Grouping(name, null, __ -> false);
+				return new Grouping(name, __ -> false, null);
 			}
 
+			/**
+			 * Creates a {@link Grouping} with the given name and selecting {@link Predicate}.
+			 *
+			 * @param name must not be {@literal null} or empty.
+			 * @param predicate must not be {@literal null}.
+			 * @return will never be {@literal null}.
+			 */
 			public static Grouping of(String name, Predicate<SpringBean> predicate) {
-				return new Grouping(name, null, predicate);
+				return new Grouping(name, predicate, null);
 			}
 
-			public boolean matches(SpringBean candidate) {
-				return predicate.test(candidate);
+			/**
+			 * Creates a {@link Grouping} with the given name, selecting {@link Predicate} and description.
+			 *
+			 * @param name must not be {@literal null} or empty.
+			 * @param predicate must not be {@literal null}.
+			 * @param description must not be {@literal null} or empty.
+			 * @return will never be {@literal null}.
+			 */
+			public static Grouping of(String name, Predicate<SpringBean> predicate, String description) {
+				return new Grouping(name, predicate, description);
 			}
 
+			/**
+			 * Helper method to create a {@link Predicate} for {@link SpringBean}s matching the given name pattern.
+			 *
+			 * @param pattern must not be {@literal null} or empty.
+			 * @return will never be {@literal null}.
+			 */
 			public static Predicate<SpringBean> nameMatching(String pattern) {
+
+				Assert.hasText(pattern, "Pattern must not be null or empty!");
+
 				return bean -> bean.getFullyQualifiedTypeName().matches(pattern);
 			}
 
+			/**
+			 * Helper method to create a {@link Predicate} for {@link SpringBean}s implementing the given interface.
+			 *
+			 * @param type must not be {@literal null}.
+			 * @return will never be {@literal null}.
+			 */
 			public static Predicate<SpringBean> implementing(Class<?> type) {
+
+				Assert.notNull(type, "Type must not be null!");
+
 				return bean -> bean.getType().isAssignableTo(type);
 			}
 
+			/**
+			 * Helper method to create a {@link Predicate} for {@link SpringBean}s that are a subtype of the given one. In
+			 * other words, implement or extend it but are not the type itself.
+			 *
+			 * @param type must not be {@literal null}.
+			 * @return will never be {@literal null}.
+			 */
 			public static Predicate<SpringBean> subtypeOf(Class<?> type) {
+
+				Assert.notNull(type, "Type must not be null!");
+
 				return implementing(type) //
 						.and(bean -> !bean.getType().isEquivalentTo(type));
 			}
+
+			/**
+			 * Returns the name of the {@link Grouping}.
+			 *
+			 * @return will never be {@literal null} or empty.
+			 */
+			public String getName() {
+				return name;
+			}
+
+			/**
+			 * Returns the description of the {@link Grouping}.
+			 *
+			 * @return can be {@literal null}.
+			 */
+			@Nullable
+			public String getDescription() {
+				return description;
+			}
+
+			/**
+			 * Returns whether the given {@link SpringBean} matches the {@link Grouping}.
+			 *
+			 * @param candidate must not be {@literal null}.
+			 */
+			public boolean matches(SpringBean candidate) {
+
+				Assert.notNull(candidate, "Candidate Spring bean must not be null!");
+
+				return predicate.test(candidate);
+			}
 		}
 
-		@RequiredArgsConstructor(access = AccessLevel.PACKAGE, staticName = "of")
 		static class Groupings {
 
 			private final MultiValueMap<Grouping, SpringBean> groupings;
+
+			Groupings(MultiValueMap<Grouping, SpringBean> groupings) {
+
+				Assert.notNull(groupings, "Groupings must not be null!");
+
+				this.groupings = groupings;
+			}
 
 			Set<Grouping> keySet() {
 				return groupings.keySet();
@@ -873,7 +1116,7 @@ public class Documenter {
 			}
 
 			List<SpringBean> byGroupName(String name) {
-				return byFilter(it -> it.getName().equals(name));
+				return byFilter(it -> it.name.equals(name));
 			}
 
 			void forEach(BiConsumer<Grouping, List<SpringBean>> consumer) {

@@ -15,8 +15,6 @@
  */
 package com.acme.myproject.moduleC;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.stereotype.Component;
 
 import com.acme.myproject.moduleB.ServiceComponentB;
@@ -25,7 +23,11 @@ import com.acme.myproject.moduleB.ServiceComponentB;
  * @author Oliver Drotbohm
  */
 @Component
-@RequiredArgsConstructor
 class ServiceComponentC {
-	private final ServiceComponentB serviceComponentB;
+
+	final ServiceComponentB serviceComponentB;
+
+	ServiceComponentC(ServiceComponentB serviceComponentB) {
+		this.serviceComponentB = serviceComponentB;
+	}
 }

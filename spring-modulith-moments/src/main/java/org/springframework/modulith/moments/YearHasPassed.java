@@ -15,26 +15,43 @@
  */
 package org.springframework.modulith.moments;
 
-import lombok.Value;
-
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.Year;
+import java.util.Objects;
 
 import org.jmolecules.event.types.DomainEvent;
+import org.springframework.util.Assert;
 
 /**
  * A {@link DomainEvent} published on the last day of the year.
  *
  * @author Oliver Drotbohm
  */
-@Value(staticConstructor = "of")
 public class YearHasPassed implements DomainEvent {
 
-	/**
-	 * The month that has just passed.
-	 */
 	private final Year year;
+
+	/**
+	 * Creates a new {@link YearHasPassed} for the given {@link Year}.
+	 *
+	 * @param year must not be {@literal null}.
+	 */
+	private YearHasPassed(Year year) {
+
+		Assert.notNull(year, "Year must not be null!");
+
+		this.year = year;
+	}
+
+	/**
+	 * Creates a new {@link YearHasPassed} for the given {@link Year}.
+	 *
+	 * @param year must not be {@literal null}.
+	 */
+	public static YearHasPassed of(Year year) {
+		return new YearHasPassed(year);
+	}
 
 	/**
 	 * Creates a new {@link YearHasPassed} event for the given year.
@@ -44,6 +61,15 @@ public class YearHasPassed implements DomainEvent {
 	 */
 	public static YearHasPassed of(int year) {
 		return of(Year.of(year));
+	}
+
+	/**
+	 * The {@link Year} that has just passed.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Year getYear() {
+		return year;
 	}
 
 	/**
@@ -62,5 +88,32 @@ public class YearHasPassed implements DomainEvent {
 	 */
 	LocalDate getEndDate() {
 		return LocalDate.of(year.getValue(), Month.DECEMBER, 31);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (this == obj) {
+			return true;
+		}
+
+		if (!(obj instanceof YearHasPassed that)) {
+			return false;
+		}
+
+		return Objects.equals(year, that.year);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(year);
 	}
 }

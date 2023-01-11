@@ -15,11 +15,6 @@
  */
 package org.springframework.modulith.moments.support;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.With;
-
 import java.time.LocalDate;
 import java.time.Month;
 import java.time.ZoneId;
@@ -27,10 +22,9 @@ import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
-import java.util.stream.Collectors;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
+import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.moments.Quarter;
@@ -43,25 +37,15 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  */
 @ConfigurationProperties(prefix = "spring.modulith.moments")
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class MomentsProperties {
 
 	public static final MomentsProperties DEFAULTS = new MomentsProperties(null, null, null, (Month) null, false);
 
-	private final @With Granularity granularity;
+	private final Granularity granularity;
+	private final ZoneId zoneId;
+	private final Locale locale;
 
-	/**
-	 * The {@link ZoneId} to determine times which are attached to the events published. Defaults to
-	 * {@value ZoneOffset#UTC}.
-	 */
-	private final @With @Getter ZoneId zoneId;
-
-	/**
-	 * The {@link Locale} to use when determining week boundaries. Defaults to {@value Locale#getDefault()}.
-	 */
-	private final @With @Getter Locale locale;
-
-	private final @Getter boolean enableTimeMachine;
+	private final boolean enableTimeMachine;
 
 	private final ShiftedQuarters quarters;
 
@@ -88,9 +72,58 @@ public class MomentsProperties {
 	}
 
 	/**
-	 * Returns whether to create hourly events.
+	 * Creates a new {@link MomentsProperties} for the given {@link Granularity}, {@link ZoneId}, {@link Locale}, whether
+	 * to enable the {@link TimeMachine} and {@link ShiftedQuarters}.
 	 *
-	 * @return
+	 * @param granularity must not be {@literal null}.
+	 * @param zoneId must not be {@literal null}.
+	 * @param locale must not be {@literal null}.
+	 * @param enableTimeMachine
+	 * @param quarters must not be {@literal null}.
+	 */
+	private MomentsProperties(Granularity granularity, ZoneId zoneId, Locale locale, boolean enableTimeMachine,
+			ShiftedQuarters quarters) {
+
+		Assert.notNull(granularity, "Granilarity must not be null!");
+		Assert.notNull(zoneId, "ZoneId must not be null!");
+		Assert.notNull(locale, "Locale must not be null!");
+		Assert.notNull(quarters, "ShiftedQuarters must not be null!");
+
+		this.granularity = granularity;
+		this.zoneId = zoneId;
+		this.locale = locale;
+		this.enableTimeMachine = enableTimeMachine;
+		this.quarters = quarters;
+	}
+
+	/**
+	 * The {@link ZoneId} to determine times which are attached to the events published. Defaults to
+	 * {@value ZoneOffset#UTC}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public ZoneId getZoneId() {
+		return zoneId;
+	}
+
+	/**
+	 * The {@link Locale} to use when determining week boundaries. Defaults to {@value Locale#getDefault()}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Locale getLocale() {
+		return locale;
+	}
+
+	/**
+	 * Whether to enable the {@link TimeMachine}.
+	 */
+	public boolean isEnableTimeMachine() {
+		return enableTimeMachine;
+	}
+
+	/**
+	 * Returns whether to create hourly events.
 	 */
 	boolean isHourly() {
 		return Granularity.HOURS.equals(granularity);
@@ -100,7 +133,7 @@ public class MomentsProperties {
 	 * Returns the {@link ShiftedQuarter} for the given reference date.
 	 *
 	 * @param reference must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public ShiftedQuarter getShiftedQuarter(LocalDate reference) {
 
@@ -109,14 +142,29 @@ public class MomentsProperties {
 		return quarters.getCurrent(reference);
 	}
 
+	MomentsProperties withGranularity(Granularity granularity) {
+		return new MomentsProperties(granularity, zoneId, locale, enableTimeMachine, quarters);
+	}
+
+	MomentsProperties withZoneId(ZoneId zoneId) {
+		return new MomentsProperties(granularity, zoneId, locale, enableTimeMachine, quarters);
+	}
+
+	MomentsProperties withLocale(Locale locale) {
+		return new MomentsProperties(granularity, zoneId, locale, enableTimeMachine, quarters);
+	}
+
 	static enum Granularity {
 		HOURS, DAYS;
 	}
 
-	@RequiredArgsConstructor
 	private static class ShiftedQuarters {
 
 		private final List<ShiftedQuarter> quarters;
+
+		private ShiftedQuarters(List<ShiftedQuarter> quarters) {
+			this.quarters = quarters;
+		}
 
 		public ShiftedQuarter getCurrent(LocalDate reference) {
 

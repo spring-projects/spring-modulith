@@ -186,7 +186,7 @@ class MongoDbEventPublicationRepositoryTest {
 
 			assertThat(mongoTemplate.findAll(MongoDbEventPublication.class)) //
 					.hasSize(1) //
-					.element(0).extracting(MongoDbEventPublication::getEvent).isEqualTo(testEvent2);
+					.element(0).extracting(it -> it.event).isEqualTo(testEvent2);
 		}
 	}
 

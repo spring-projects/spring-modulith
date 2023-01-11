@@ -15,25 +15,22 @@
  */
 package example.inventory;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
-
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.ConstructorBinding;
 
 /**
  * Some Spring Boot configuration properties exposed by the inventory.
  *
  * @author Oliver Drotbohm
  */
-@Value
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE, onConstructor = @__(@ConstructorBinding))
 @ConfigurationProperties("example.inventory")
-class InventorySettings {
+record InventorySettings(int stockThreshold) {
 
 	/**
 	 * Some Javadoc.
+	 *
+	 * @return
 	 */
-	int stockThreshold;
+	public int stockThreshold() {
+		return stockThreshold;
+	}
 }

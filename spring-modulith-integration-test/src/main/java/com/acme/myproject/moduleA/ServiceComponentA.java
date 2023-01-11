@@ -15,8 +15,6 @@
  */
 package com.acme.myproject.moduleA;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -24,10 +22,13 @@ import org.springframework.stereotype.Component;
  * @author Oliver Drotbohm
  */
 @Component
-@RequiredArgsConstructor
 public class ServiceComponentA {
 
 	private final ApplicationEventPublisher publisher;
+
+	ServiceComponentA(ApplicationEventPublisher publisher) {
+		this.publisher = publisher;
+	}
 
 	public void fireEvent() {
 		publisher.publishEvent(new SomeEventA("Message"));

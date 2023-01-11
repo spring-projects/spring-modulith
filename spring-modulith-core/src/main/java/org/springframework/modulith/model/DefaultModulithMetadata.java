@@ -15,10 +15,6 @@
  */
 package org.springframework.modulith.model;
 
-import lombok.AccessLevel;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-
 import java.lang.annotation.Annotation;
 import java.util.Collections;
 import java.util.List;
@@ -26,6 +22,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.lang.NonNull;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.model.Types.SpringTypes;
@@ -37,13 +34,24 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 class DefaultModulithMetadata implements ModulithMetadata {
 
 	private static final Class<? extends Annotation> AT_SPRING_BOOT_APPLICATION = Types
 			.loadIfPresent(SpringTypes.AT_SPRING_BOOT_APPLICATION);
 
-	private final @NonNull Object modulithSource;
+	private final @NonNull Object source;
+
+	/**
+	 * Creates a new {@link DefaultModulithMetadata} for the given source.
+	 *
+	 * @param source must not be {@literal null}.
+	 */
+	private DefaultModulithMetadata(Object source) {
+
+		Assert.notNull(source, "Source must not be null!");
+
+		this.source = source;
+	}
 
 	/**
 	 * Creates a new {@link ModulithMetadata} representing the defaults of a class annotated but not customized with
@@ -80,7 +88,16 @@ class DefaultModulithMetadata implements ModulithMetadata {
 	 */
 	@Override
 	public Object getModulithSource() {
-		return modulithSource;
+		return getSource();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.model.ModulithMetadata#getModulithSource()
+	 */
+	@Override
+	public Object getSource() {
+		return source;
 	}
 
 	/*

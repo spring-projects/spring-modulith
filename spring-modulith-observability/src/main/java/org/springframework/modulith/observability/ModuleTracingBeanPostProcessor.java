@@ -16,17 +16,13 @@
 package org.springframework.modulith.observability;
 
 import io.micrometer.tracing.Tracer;
-import lombok.RequiredArgsConstructor;
 
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import org.aopalliance.aop.Advice;
 import org.springframework.aop.Advisor;
-import org.springframework.aop.MethodMatcher;
-import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcher;
@@ -34,6 +30,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.modulith.model.ApplicationModules;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
+import org.springframework.util.Assert;
 
 /**
  * A {@link BeanPostProcessor} that decorates beans exposed by application modules with an interceptor that registers
@@ -41,14 +38,30 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
 
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<Tracer> tracer;
-	private final Map<String, Advisor> advisors = new HashMap<>();
+	private final Map<String, Advisor> advisors;
+
+	/**
+	 * Creates a new {@link ModuleTracingBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
+	 * {@link Tracer}.
+	 *
+	 * @param runtime must not be {@literal null}.
+	 * @param tracer must not be {@literal null}.
+	 */
+	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer) {
+
+		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
+		Assert.notNull(tracer, "Tracer must not be null!");
+
+		this.runtime = runtime;
+		this.tracer = tracer;
+		this.advisors = new HashMap<>();
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -69,7 +82,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 				.map(DefaultObservedModule::new)
 				.map(it -> {
 
-					ObservedModuleType moduleType = it.getObservedModuleType(type, modules);
+					var moduleType = it.getObservedModuleType(type, modules);
 
 					return moduleType != null //
 							? addAdvisor(bean, getOrBuildAdvisor(it, moduleType)) //
@@ -82,18 +95,29 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 		return advisors.computeIfAbsent(module.getName(), __ -> {
 
-			Advice interceptor = ModuleEntryInterceptor.of(module, tracer.get());
-			MethodMatcher matcher = new ObservableTypeMethodMatcher(type);
-			Pointcut pointcut = new ComposablePointcut(matcher);
+			var interceptor = ModuleEntryInterceptor.of(module, tracer.get());
+			var matcher = new ObservableTypeMethodMatcher(type);
+			var pointcut = new ComposablePointcut(matcher);
 
 			return new DefaultPointcutAdvisor(pointcut, interceptor);
 		});
 	}
 
-	@RequiredArgsConstructor
 	private static class ObservableTypeMethodMatcher extends StaticMethodMatcher {
 
 		private final ObservedModuleType type;
+
+		/**
+		 * Creates a new {@link ObservableTypeMethodMatcher} for the given {@link ObservedModuleType}.
+		 *
+		 * @param type must not be {@literal null}.
+		 */
+		private ObservableTypeMethodMatcher(ObservedModuleType type) {
+
+			Assert.notNull(type, "ObservableModuleType must not be null!");
+
+			this.type = type;
+		}
 
 		/*
 		 * (non-Javadoc)

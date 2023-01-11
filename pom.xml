@@ -121,24 +121,6 @@ limitations under the License.
 				<plugins>
 
 					<plugin>
-						<groupId>org.projectlombok</groupId>
-						<artifactId>lombok-maven-plugin</artifactId>
-						<version>1.18.20.0</version>
-						<configuration>
-							<addOutputDirectory>false</addOutputDirectory>
-							<sourceDirectory>${project.basedir}/src/main/java</sourceDirectory>
-						</configuration>
-						<executions>
-							<execution>
-								<phase>generate-sources</phase>
-								<goals>
-									<goal>delombok</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-
-					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
 						<version>3.4.1</version>
@@ -154,7 +136,6 @@ limitations under the License.
 							<doclint>none</doclint>
 							<quiet>true</quiet>
 							<show>package</show>
-							<sourcepath>target/generated-sources/delombok</sourcepath>
 						</configuration>
 					</plugin>
 
@@ -433,7 +414,7 @@ limitations under the License.
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
-			<scope>provided</scope>
+			<scope>test</scope>
 		</dependency>
 
 	</dependencies>

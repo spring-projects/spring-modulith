@@ -16,7 +16,6 @@
 package org.springframework.modulith.events.jpa;
 
 import jakarta.persistence.EntityManager;
-import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -29,7 +28,6 @@ import org.springframework.modulith.events.config.EventPublicationConfigurationE
  * @author Björn Kieling
  */
 @Configuration(proxyBeanMethods = false)
-@RequiredArgsConstructor
 class JpaEventPublicationConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean

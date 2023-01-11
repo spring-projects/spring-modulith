@@ -48,7 +48,7 @@ class DocumenterUnitTests {
 				.groupBeans(modules.getModuleByName("stereotypes").orElseThrow(RuntimeException::new));
 
 		assertThat(result.keySet())
-				.extracting(CanvasOptions.Grouping::getName)
+				.extracting(it -> it.getName())
 				.containsExactlyInAnyOrder("Controllers", "Services", "Repositories", "Event listeners",
 						"Configuration properties", "Representations", "Interface implementations", "Others");
 

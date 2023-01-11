@@ -15,20 +15,30 @@
  */
 package org.springframework.modulith.test;
 
-import lombok.RequiredArgsConstructor;
-
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
+import org.springframework.util.Assert;
 
 /**
  * Default implementation of {@link AssertablePublishedEvents}.
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 class DefaultAssertablePublishedEvents implements AssertablePublishedEvents, ApplicationListener<ApplicationEvent> {
 
 	private final DefaultPublishedEvents delegate;
+
+	/**
+	 * Creates a new {@link DefaultAssertablePublishedEvents} with the given {@link DefaultPublishedEvents} delegate.
+	 *
+	 * @param delegate must not be {@literal null}.
+	 */
+	DefaultAssertablePublishedEvents(DefaultPublishedEvents delegate) {
+
+		Assert.notNull(delegate, "DefaultPublishedEvents must not be null!");
+
+		this.delegate = delegate;
+	}
 
 	/**
 	 * Creates a new {@link DefaultAssertablePublishedEvents}.

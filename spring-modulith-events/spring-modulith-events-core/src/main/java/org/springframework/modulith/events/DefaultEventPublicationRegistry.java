@@ -15,13 +15,11 @@
  */
 package org.springframework.modulith.events;
 
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
 import org.springframework.transaction.annotation.Propagation;
@@ -36,12 +34,28 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
-@Slf4j
-@RequiredArgsConstructor
 public class DefaultEventPublicationRegistry implements DisposableBean, EventPublicationRegistry {
 
-	private final @NonNull EventPublicationRepository events;
+	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEventPublicationRegistry.class);
 
+	private final EventPublicationRepository events;
+
+	/**
+	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository}.
+	 *
+	 * @param events must not be {@literal null}.
+	 */
+	public DefaultEventPublicationRegistry(EventPublicationRepository events) {
+
+		Assert.notNull(events, "EventPublicationRepository must not be null!");
+
+		this.events = events;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRegistry#store(java.lang.Object, java.util.stream.Stream)
+	 */
 	@Override
 	public void store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
@@ -49,11 +63,19 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 				.forEach(events::create);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRegistry#findIncompletePublications()
+	 */
 	@Override
 	public Iterable<EventPublication> findIncompletePublications() {
 		return events.findIncompletePublications();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRegistry#markCompleted(java.lang.Object, org.springframework.modulith.events.PublicationTargetIdentifier)
+	 */
 	@Override
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier) {
@@ -67,6 +89,10 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 				.ifPresent(it -> events.update(it.markCompleted()));
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.DisposableBean#destroy()
+	 */
 	@Override
 	public void destroy() {
 
@@ -74,18 +100,18 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 		if (publications.isEmpty()) {
 
-			LOG.info("No publications outstanding!");
+			LOGGER.info("No publications outstanding!");
 			return;
 		}
 
-		LOG.info("Shutting down with the following publications left unfinished:");
+		LOGGER.info("Shutting down with the following publications left unfinished:");
 
 		for (int i = 0; i < publications.size(); i++) {
 
 			String prefix = i + 1 == publications.size() ? "└─" : "├─";
 			EventPublication it = publications.get(i);
 
-			LOG.info("{} {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
+			LOGGER.info("{} {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
 		}
 	}
 
@@ -93,7 +119,7 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 		EventPublication result = CompletableEventPublication.of(event, targetIdentifier);
 
-		LOG.debug("Registering publication of {} for {}.", //
+		LOGGER.debug("Registering publication of {} for {}.", //
 				result.getEvent().getClass().getName(), result.getTargetIdentifier().getValue());
 
 		return result;
@@ -101,9 +127,10 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 	private static EventPublication logCompleted(EventPublication publication) {
 
-		LOG.debug("Marking publication of event {} to listener {} completed.", //
+		LOGGER.debug("Marking publication of event {} to listener {} completed.", //
 				publication.getEvent().getClass().getName(), publication.getTargetIdentifier().getValue());
 
 		return publication;
 	}
+
 }

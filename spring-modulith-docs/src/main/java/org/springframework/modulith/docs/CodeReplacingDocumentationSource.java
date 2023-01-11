@@ -15,9 +15,9 @@
  */
 package org.springframework.modulith.docs;
 
-import lombok.RequiredArgsConstructor;
-
 import java.util.Optional;
+
+import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaMethod;
 
@@ -27,11 +27,26 @@ import com.tngtech.archunit.core.domain.JavaMethod;
  *
  * @author Oliver Drotbohm
  */
-@RequiredArgsConstructor
 class CodeReplacingDocumentationSource implements DocumentationSource {
 
 	private final DocumentationSource delegate;
 	private final Asciidoctor codeSource;
+
+	/**
+	 * Creates a new {@link CodeReplacingDocumentationSource} for the given delegate {@link DocumentationSource} and
+	 * {@link Asciidoctor} instance.
+	 *
+	 * @param delegate must not be {@literal null}.
+	 * @param asciidoctor must not be {@literal null}.
+	 */
+	CodeReplacingDocumentationSource(DocumentationSource delegate, Asciidoctor asciidoctor) {
+
+		Assert.notNull(delegate, "Delegate DocumentationSource must not be null!");
+		Assert.notNull(asciidoctor, "Asciidoctor must not be null!");
+
+		this.delegate = delegate;
+		this.codeSource = asciidoctor;
+	}
 
 	/*
 	 * (non-Javadoc)
