@@ -37,6 +37,8 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
+ * An abstraction of a Java package.
+ *
  * @author Oliver Drotbohm
  */
 public class JavaPackage implements DescribedIterable<JavaClass> {

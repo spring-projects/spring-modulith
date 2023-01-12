@@ -62,7 +62,7 @@ public class ApplicationModulesEndpoint {
 	private final Supplier<ApplicationModules> runtime;
 
 	/**
-	 * Creates a new {@link ApplicationModulesEndpoint} for the given {@link ModulesRuntime}.
+	 * Creates a new {@link ApplicationModulesEndpoint} for the given {@link ApplicationModules}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 */

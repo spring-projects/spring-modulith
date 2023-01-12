@@ -36,7 +36,7 @@ public class DayHasPassed implements DomainEvent {
 	/**
 	 * Creates a new {@link DayHasPassed} for the given {@link LocalDate}.
 	 *
-	 * @param month must not be {@literal null}.
+	 * @param date must not be {@literal null}.
 	 */
 	private DayHasPassed(LocalDate date) {
 
@@ -48,7 +48,7 @@ public class DayHasPassed implements DomainEvent {
 	/**
 	 * Creates a new {@link DayHasPassed} for the given {@link LocalDate}.
 	 *
-	 * @param month must not be {@literal null}.
+	 * @param date must not be {@literal null}.
 	 */
 	public static DayHasPassed of(LocalDate date) {
 		return new DayHasPassed(date);

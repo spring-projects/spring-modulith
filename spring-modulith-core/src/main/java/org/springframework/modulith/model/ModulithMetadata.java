@@ -30,8 +30,8 @@ public interface ModulithMetadata {
 	static final String ANNOTATION_MISSING = "Modules can only be retrieved from a root type, but %s is not annotated with either @%s, @%s or @%s!";
 
 	/**
-	 * Creates a new {@link ModulithMetadata} for the given annotated type. Expecteds the type either be annotated with
-	 * {@link Modulith}, {@link Modulithic} or {@link SpringBootApplication}.
+	 * Creates a new {@link ModulithMetadata} for the given annotated type. Expects the type either be annotated with
+	 * {@link Modulith}, {@link Modulithic} or {@link org.springframework.boot.autoconfigure.SpringBootApplication}.
 	 *
 	 * @param annotated must not be {@literal null}.
 	 * @return

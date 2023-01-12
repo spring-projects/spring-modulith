@@ -98,7 +98,7 @@ public class MomentsProperties {
 
 	/**
 	 * The {@link ZoneId} to determine times which are attached to the events published. Defaults to
-	 * {@value ZoneOffset#UTC}.
+	 * {@link ZoneOffset#UTC}.
 	 *
 	 * @return will never be {@literal null}.
 	 */
@@ -107,7 +107,7 @@ public class MomentsProperties {
 	}
 
 	/**
-	 * The {@link Locale} to use when determining week boundaries. Defaults to {@value Locale#getDefault()}.
+	 * The {@link Locale} to use when determining week boundaries. Defaults to {@link Locale#getDefault()}.
 	 *
 	 * @return will never be {@literal null}.
 	 */
@@ -154,8 +154,22 @@ public class MomentsProperties {
 		return new MomentsProperties(granularity, zoneId, locale, enableTimeMachine, quarters);
 	}
 
+	/**
+	 * The granularity of events to publish.
+	 *
+	 * @author Oliver Drotbohm
+	 */
 	static enum Granularity {
-		HOURS, DAYS;
+
+		/**
+		 * Publish hourly events. Will include daily events.
+		 */
+		HOURS,
+
+		/**
+		 * Publish daily events only.
+		 */
+		DAYS;
 	}
 
 	private static class ShiftedQuarters {

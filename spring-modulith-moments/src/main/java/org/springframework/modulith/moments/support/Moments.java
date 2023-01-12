@@ -39,6 +39,8 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.util.Assert;
 
 /**
+ * Core component to publish passage-of-time events.
+ *
  * @author Oliver Drotbohm
  */
 public class Moments {

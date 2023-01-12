@@ -151,11 +151,11 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 	/**
 	 * First-class collection to work with transactional event listeners, i.e. {@link ApplicationListener} instances that
-	 * implement {@link TransactionalEventListenerMetadata}.
+	 * implement {@link TransactionalApplicationListener}.
 	 *
 	 * @author Oliver Drotbohm
 	 * @see TransactionalEventListener
-	 * @see TransactionalEventListenerMetadata
+	 * @see TransactionalApplicationListener
 	 */
 	static class TransactionalEventListeners {
 
@@ -163,7 +163,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 		/**
 		 * Creates a new {@link TransactionalEventListeners} instance by filtering all elements implementing
-		 * {@link TransactionalEventListenerMetadata}.
+		 * {@link TransactionalApplicationListener}.
 		 *
 		 * @param listeners must not be {@literal null}.
 		 */

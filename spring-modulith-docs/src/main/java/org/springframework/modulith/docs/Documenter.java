@@ -74,6 +74,7 @@ public class Documenter {
 
 	private static final Map<DependencyType, String> DEPENDENCY_DESCRIPTIONS = new LinkedHashMap<>();
 	private static final String INVALID_FILE_NAME_PATTERN = "Configured file name pattern does not include a '%s' placeholder for the module name!";
+	private static final String DEFAULT_LOCATION = "spring-modulith-docs";
 
 	static {
 		DEPENDENCY_DESCRIPTIONS.put(DependencyType.EVENT_LISTENER, "listens to");
@@ -576,7 +577,7 @@ public class Documenter {
 	 * @return will never be {@literal null}.
 	 */
 	private static String getDefaultOutputDirectory() {
-		return (new File("pom.xml").exists() ? "target" : "build").concat("/spring-modulith-docs");
+		return (new File("pom.xml").exists() ? "target" : "build").concat("/").concat(DEFAULT_LOCATION);
 	}
 
 	private static record Connection(Element source, Element target) {
@@ -658,7 +659,7 @@ public class Documenter {
 		/**
 		 * A {@link Predicate} to define the which modules to exclude from the diagram to be created.
 		 */
-		public DiagramOptions withExcusions(Predicate<ApplicationModule> exclusions) {
+		public DiagramOptions withExclusions(Predicate<ApplicationModule> exclusions) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
 					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
 		}
@@ -708,7 +709,7 @@ public class Documenter {
 		}
 
 		/**
-		 * Which style to render the diagram in. Defaults to {@value DiagramStyle#UML}.
+		 * Which style to render the diagram in. Defaults to {@link DiagramStyle#UML}.
 		 */
 		public DiagramOptions withStyle(DiagramStyle style) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
@@ -717,7 +718,7 @@ public class Documenter {
 
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
-		 * retained in the diagrams created. The default is {@value ElementsWithoutRelationships#HIDDEN}. See
+		 * retained in the diagrams created. The default is {@link ElementsWithoutRelationships#HIDDEN}. See
 		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude
 		 * in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *
@@ -785,14 +786,14 @@ public class Documenter {
 			/**
 			 * A C4 model component diagram.
 			 *
-			 * @see https://c4model.com/#ComponentDiagram
+			 * @see <a href="https://c4model.com/#ComponentDiagram">https://c4model.com/#ComponentDiagram</a>
 			 */
 			C4;
 		}
 
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
-		 * retained in the diagrams created. The default is {@value ElementsWithoutRelationships#HIDDEN}. See
+		 * retained in the diagrams created. The default is {@link ElementsWithoutRelationships#HIDDEN}. See
 		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude
 		 * in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *

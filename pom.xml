@@ -42,6 +42,7 @@
 		<jmolecules-bom.version>2022.2.2</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<spring.version>6.0.4</spring.version> <!-- For Javadoc links only -->
 		<spring-asciidoctor-backends.version>0.0.4</spring-asciidoctor-backends.version>
 		<spring-boot.version>3.0.1</spring-boot.version>
 
@@ -132,11 +133,6 @@ limitations under the License.
 								</goals>
 							</execution>
 						</executions>
-						<configuration>
-							<doclint>none</doclint>
-							<quiet>true</quiet>
-							<show>package</show>
-						</configuration>
 					</plugin>
 
 				</plugins>
@@ -225,7 +221,6 @@ limitations under the License.
 
 			<properties>
 				<generated-docs.directory>${project.build.directory}/generated-docs</generated-docs.directory>
-				<maven.main.skip>true</maven.main.skip>
 				<maven.test.skip>true</maven.test.skip>
 				<maven.install.skip>true</maven.install.skip>
 				<maven.deploy.skip>true</maven.deploy.skip>
@@ -238,6 +233,22 @@ limitations under the License.
 					<plugin>
 						<groupId>org.jfrog.buildinfo</groupId>
 						<artifactId>artifactory-maven-plugin</artifactId>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<version>3.4.1</version>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>aggregate-javadocs</id>
+								<goals>
+									<goal>aggregate-no-fork</goal>
+								</goals>
+								<phase>package</phase>
+							</execution>
+						</executions>
 					</plugin>
 
 				</plugins>
@@ -422,6 +433,26 @@ limitations under the License.
 	<build>
 
 		<defaultGoal>verify</defaultGoal>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.4.1</version>
+					<configuration>
+						<doclint>accessibility,html,reference,syntax</doclint>
+						<show>package</show>
+						<quiet>true</quiet>
+						<links>
+							<link>https://docs.spring.io/spring-boot/docs/${spring-boot.version}/api/</link>
+							<link>https://docs.spring.io/spring/docs/${spring.version}/javadoc-api/</link>
+							<link>https://docs.oracle.com/en/java/javase/17/docs/api/</link>
+						</links>
+					</configuration>
+				</plugin>
+			</plugins>
+		</pluginManagement>
 
 		<plugins>
 

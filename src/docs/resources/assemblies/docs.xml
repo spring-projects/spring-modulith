@@ -13,6 +13,16 @@
 			-->
 			<directory>target/generated-docs</directory>
 			<outputDirectory>reference</outputDirectory>
+			<excludes>
+				<exclude>**/.asciidoctor/**</exclude>
+			</excludes>
+		</fileSet>
+		<fileSet>
+			<!--
+				Adds reference manual (html and pdf) to the distribution archive under the 'docs/reference'.
+			-->
+			<directory>../target/site/apidocs</directory>
+			<outputDirectory>api</outputDirectory>
 		</fileSet>
 	</fileSets>
 </assembly>

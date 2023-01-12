@@ -42,10 +42,9 @@ import org.springframework.util.ReflectionUtils;
 import org.springframework.util.ReflectionUtils.MethodCallback;
 
 /**
- * {@link BeanPostProcessor} that will add a
- * {@link CompletionRegisteringBeanPostProcessor.ProxyCreatingMethodCallback.CompletionRegisteringMethodInterceptor} to
- * the bean in case it carries a {@link TransactionalEventListener} annotation so that the successful invocation of
- * those methods mark the event publication to those listeners as completed.
+ * {@link BeanPostProcessor} that will add a {@link CompletionRegisteringMethodInterceptor} to the bean in case it
+ * carries a {@link TransactionalEventListener} annotation so that the successful invocation of those methods mark the
+ * event publication to those listeners as completed.
  *
  * @author Oliver Drotbohm
  */

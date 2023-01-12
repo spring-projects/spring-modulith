@@ -154,7 +154,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * annotation on the class given for advanced customizations of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public static ApplicationModules of(Class<?> modulithType) {
 		return of(modulithType, alwaysFalse());
@@ -167,9 +167,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
-	 * @param detection must not be {@literal null}.
 	 * @param ignored must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
 

@@ -22,7 +22,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.jmolecules.ddd.annotation.Module;
 import org.springframework.modulith.ApplicationModule;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
@@ -34,24 +36,46 @@ import org.springframework.util.StringUtils;
  */
 interface ApplicationModuleInformation {
 
+	/**
+	 * Creates a new {@link ApplicationModuleInformation} for the given {@link JavaPackage}.
+	 *
+	 * @param javaPackage must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
 	public static ApplicationModuleInformation of(JavaPackage javaPackage) {
 
 		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module",
 				ApplicationModuleInformation.class.getClassLoader())
-				&& MoleculesModule.supports(javaPackage)) {
-			return new MoleculesModule(javaPackage);
+				&& JMoleculesModule.supports(javaPackage)) {
+			return new JMoleculesModule(javaPackage);
 		}
 
-		return new ModulithsModule(javaPackage);
+		return new SpringModulithModule(javaPackage);
 	}
 
+	/**
+	 * Returns the display name to be used to describe the module.
+	 *
+	 * @return will never be {@literal null}.
+	 */
 	default Optional<String> getDisplayName() {
 		return Optional.empty();
 	}
 
+	/**
+	 * Returns all allowed dependencies.
+	 *
+	 * @return will never be {@literal null}.
+	 */
 	List<String> getAllowedDependencies();
 
-	static class MoleculesModule implements ApplicationModuleInformation {
+	/**
+	 * An {@link ApplicationModuleInformation} for the jMolecules {@link Module} annotation.
+	 *
+	 * @author Oliver Drotbohm
+	 * @see <a href="https://jmolecules.org">https://jMolecules.org</a>
+	 */
+	static class JMoleculesModule implements ApplicationModuleInformation {
 
 		private final Optional<org.jmolecules.ddd.annotation.Module> annotation;
 
@@ -59,7 +83,7 @@ interface ApplicationModuleInformation {
 			return javaPackage.getAnnotation(org.jmolecules.ddd.annotation.Module.class).isPresent();
 		}
 
-		public MoleculesModule(JavaPackage javaPackage) {
+		public JMoleculesModule(JavaPackage javaPackage) {
 			this.annotation = javaPackage.getAnnotation(org.jmolecules.ddd.annotation.Module.class);
 		}
 
@@ -90,15 +114,33 @@ interface ApplicationModuleInformation {
 		}
 	}
 
-	static class ModulithsModule implements ApplicationModuleInformation {
+	/**
+	 * An {@link ApplicationModuleInformation} that inspects the {@link ApplicationModule} annotation.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	static class SpringModulithModule implements ApplicationModuleInformation {
 
 		private final Optional<ApplicationModule> annotation;
 
+		/**
+		 * Whether the given {@link JavaPackage} supports this {@link ApplicationModuleInformation}.
+		 *
+		 * @param javaPackage must not be {@literal null}.
+		 */
 		public static boolean supports(JavaPackage javaPackage) {
+
+			Assert.notNull(javaPackage, "Java package must not be null!");
+
 			return javaPackage.getAnnotation(ApplicationModule.class).isPresent();
 		}
 
-		public ModulithsModule(JavaPackage javaPackage) {
+		/**
+		 * Creates a new {@link SpringModulithModule} for the given {@link JavaPackage}.
+		 *
+		 * @param javaPackage must not be {@literal null}.
+		 */
+		public SpringModulithModule(JavaPackage javaPackage) {
 			this.annotation = javaPackage.getAnnotation(ApplicationModule.class);
 		}
 
