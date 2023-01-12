@@ -20,10 +20,10 @@ import static org.assertj.core.api.Assertions.*;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.SpringBean;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
 import org.springframework.modulith.docs.Documenter.CanvasOptions.Grouping;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.SpringBean;
 
 import com.acme.myproject.Application;
 import com.acme.myproject.stereotypes.Stereotypes;

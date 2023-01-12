@@ -21,9 +21,9 @@ import example.sample.SampleComponent;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.Advised;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.ArchitecturallyEvidentType;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.test.TestApplicationModules;
 import org.springframework.util.ReflectionUtils;
 

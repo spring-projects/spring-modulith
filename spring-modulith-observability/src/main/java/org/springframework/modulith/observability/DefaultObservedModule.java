@@ -21,10 +21,10 @@ import java.util.Arrays;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.FormatableType;
-import org.springframework.modulith.model.SpringBean;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.FormatableType;
+import org.springframework.modulith.core.SpringBean;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;

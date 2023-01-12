@@ -29,8 +29,8 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 

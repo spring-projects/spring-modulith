@@ -16,8 +16,8 @@
 package example;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.docs.Documenter;
-import org.springframework.modulith.model.ApplicationModules;
 
 /**
  * Tests to verify the modular structure and generate documentation for the modules.

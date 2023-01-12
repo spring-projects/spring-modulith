@@ -19,8 +19,8 @@ import java.lang.reflect.Method;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.lang.Nullable;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 

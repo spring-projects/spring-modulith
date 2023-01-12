@@ -17,7 +17,7 @@ package org.springframework.modulith.runtime;
 
 import java.util.function.Supplier;
 
-import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.util.Assert;
 
 /**

@@ -28,7 +28,7 @@ import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
-import org.springframework.modulith.model.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 

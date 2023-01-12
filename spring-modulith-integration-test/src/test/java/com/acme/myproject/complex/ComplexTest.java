@@ -21,7 +21,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.modulith.model.NamedInterface;
+import org.springframework.modulith.core.NamedInterface;
 import org.springframework.modulith.test.ModuleTestExecution;
 
 import com.acme.myproject.NonVerifyingModuleTest;

@@ -17,8 +17,8 @@ package org.springframework.modulith.test;
 
 import java.util.List;
 
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.ModulithMetadata;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ModulithMetadata;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.importer.ImportOption;

@@ -26,9 +26,9 @@ import java.util.Comparator;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.DependencyType;
 
 import com.acme.myproject.Application;
 

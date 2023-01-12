@@ -30,10 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModuleDependency;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.DependencyType;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleDependency;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.DependencyType;
 import org.springframework.util.Assert;
 
 /**

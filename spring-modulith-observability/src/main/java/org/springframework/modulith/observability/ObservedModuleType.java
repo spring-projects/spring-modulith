@@ -23,9 +23,9 @@ import java.util.stream.Stream;
 
 import org.springframework.aop.TargetClassAware;
 import org.springframework.aop.framework.Advised;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.ArchitecturallyEvidentType;
-import org.springframework.modulith.model.ArchitecturallyEvidentType.ReferenceMethod;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ArchitecturallyEvidentType;
+import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 

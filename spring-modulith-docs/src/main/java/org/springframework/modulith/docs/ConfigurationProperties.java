@@ -26,8 +26,8 @@ import java.util.stream.Stream;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.docs.ConfigurationProperties.ConfigurationProperty;
-import org.springframework.modulith.model.ApplicationModule;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 

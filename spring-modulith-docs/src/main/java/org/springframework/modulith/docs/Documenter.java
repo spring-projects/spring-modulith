@@ -36,12 +36,12 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModuleDependency;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.DependencyDepth;
-import org.springframework.modulith.model.DependencyType;
-import org.springframework.modulith.model.SpringBean;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleDependency;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.DependencyDepth;
+import org.springframework.modulith.core.DependencyType;
+import org.springframework.modulith.core.SpringBean;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;

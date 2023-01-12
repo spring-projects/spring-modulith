@@ -28,9 +28,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.AnnotatedClassFinder;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.JavaPackage;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 
 import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;

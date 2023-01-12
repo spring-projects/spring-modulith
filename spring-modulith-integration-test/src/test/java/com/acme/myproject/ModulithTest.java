@@ -18,12 +18,12 @@ package com.acme.myproject;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.model.ApplicationModule;
-import org.springframework.modulith.model.ApplicationModuleDependencies;
-import org.springframework.modulith.model.ApplicationModules;
-import org.springframework.modulith.model.ApplicationModules.Filters;
-import org.springframework.modulith.model.DependencyType;
-import org.springframework.modulith.model.Violations;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleDependencies;
+import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.DependencyType;
+import org.springframework.modulith.core.Violations;
+import org.springframework.modulith.core.ApplicationModules.Filters;
 
 import com.acme.myproject.invalid.InvalidComponent;
 import com.acme.myproject.moduleB.internal.InternalComponentB;
