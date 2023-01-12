@@ -28,7 +28,7 @@ If this package does not contain any sub-packages, it is considered a simple one
 It allows to hide code inside it by using Java's package scope to hide types from being referred to by code residing in other packages and thus not subject for dependency injection into those.
 Thus, naturally, the module's API consists of all public types in the package.
 
-Let us have a look at an example arrangement (icon:plus-circle[] denotes a public type, icon:minus-circle[] a package protected one).
+Let us have a look at an example arrangement (icon:plus-circle[role=green] denotes a public type, icon:minus-circle[role=red] a package protected one).
 
 .A single inventory application module
 [source, subs="+specialchars, macros"]
@@ -36,10 +36,10 @@ Let us have a look at an example arrangement (icon:plus-circle[] denotes a publi
 icon:cubes[] Example
 └─ icon:folder[] src/main/java
    ├─ icon:cube[] example                        <1>
-   |  └─ icon:plus-circle[] Application.java
+   |  └─ icon:plus-circle[role=green] Application.java
    └─ icon:cube[] example.inventory              <2>
-      ├─ icon:plus-circle[] InventoryManagement.java
-      └─ icon:minus-circle[] SomethingInventoryInternal.java
+      ├─ icon:plus-circle[role=green] InventoryManagement.java
+      └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
 ----
 <1> The application's main package `example`.
 <2> An application module package `inventory`.
@@ -55,14 +55,14 @@ If an application module package contains sub-packages, types in those might nee
 icon:cubes[] Example
 └─ icon:folder[] src/main/java
    ├─ icon:cube[] example
-   |  └─ icon:plus-circle[] Application.java
+   |  └─ icon:plus-circle[role=green] Application.java
    ├─ icon:cube[] example.inventory
-   |  ├─ icon:plus-circle[] InventoryManagement.java
-   |  └─ icon:minus-circle[] SomethingInventoryInternal.java
+   |  ├─ icon:plus-circle[role=green] InventoryManagement.java
+   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
    ├─ **icon:cube[] example.order**
-   |  └─ icon:plus-circle[] OrderManagement.java
+   |  └─ icon:plus-circle[role=green] OrderManagement.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[] SomethingOrderInternal.java
+      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
 ----
 
 In such an arrangement, the `order` package is considered an API package.
@@ -142,15 +142,15 @@ You achieve that by annotating the `package-info.java` file of those package wit
 icon:cubes[] Example
 └─ icon:folder[] src/main/java
    ├─ icon:cube[] example
-   |  └─ icon:plus-circle[] Application.java
+   |  └─ icon:plus-circle[role=green] Application.java
    ├─ …
    ├─ icon:cube[] example.order
-   |  └─ icon:plus-circle[] OrderManagement.java
+   |  └─ icon:plus-circle[role=green] OrderManagement.java
    ├─ **icon:cube[] example.order.spi**
    |  ├— icon:coffee[] package-info.java
-   |  └─ icon:plus-circle[] SomeSpiInterface.java
+   |  └─ icon:plus-circle[role=green] SomeSpiInterface.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[] SomethingOrderInternal.java
+      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
 ----
 
 .`package-info.java` in `example.order.spi`
