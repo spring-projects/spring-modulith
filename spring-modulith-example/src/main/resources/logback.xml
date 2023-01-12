@@ -1,17 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
-	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
-		<encoder>
-			<pattern>%d %5p %40.40c:%4L - %m%n</pattern>
-		</encoder>
-	</appender>
-
-	<logger name="org.springframework.modulith" level="info" />
-	<logger name="example" level="info" />
-
-	<root level="error">
-		<appender-ref ref="console" />
+	
+	<include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+	
+	<root level="INFO">
+		<appender-ref ref="CONSOLE" />
 	</root>
-
+	
+	<logger name="org.springframework.modulith" level="DEBUG"/>
+	<logger name="example" level="INFO" />
+	
 </configuration>
