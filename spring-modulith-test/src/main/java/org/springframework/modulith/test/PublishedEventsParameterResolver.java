@@ -25,7 +25,7 @@ import org.junit.jupiter.api.extension.ParameterResolver;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
-import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -40,7 +40,7 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 	private static final boolean ASSERT_J_PRESENT = ClassUtils.isPresent("org.assertj.core.api.Assert",
 			PublishedEventsParameterResolver.class.getClassLoader());
 
-	private ThreadBoundApplicationListenerAdapter listener = new ThreadBoundApplicationListenerAdapter();
+	private ThreadBoundApplicationListenerAdapter listener;
 	private final Function<ExtensionContext, ApplicationContext> lookup;
 
 	PublishedEventsParameterResolver() {
@@ -59,7 +59,22 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 	public void beforeAll(ExtensionContext extensionContext) {
 
 		ApplicationContext context = lookup.apply(extensionContext);
-		((ConfigurableApplicationContext) context).addApplicationListener(listener);
+
+		if (!(context instanceof AbstractApplicationContext aac)) {
+			throw new IllegalStateException();
+		}
+
+		listener = aac.getApplicationListeners().stream()
+				.filter(ThreadBoundApplicationListenerAdapter.class::isInstance)
+				.map(ThreadBoundApplicationListenerAdapter.class::cast)
+				.findFirst()
+				.orElseGet(() -> {
+
+					var adapter = new ThreadBoundApplicationListenerAdapter();
+					aac.addApplicationListener(adapter);
+
+					return adapter;
+				});
 	}
 
 	/*
@@ -114,7 +129,7 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 	 */
 	private static class ThreadBoundApplicationListenerAdapter implements ApplicationListener<ApplicationEvent> {
 
-		private final ThreadLocal<ApplicationListener<ApplicationEvent>> delegate = new ThreadLocal<>();
+		private final ThreadLocal<ApplicationListener<ApplicationEvent>> delegate = new InheritableThreadLocal<>();
 
 		/**
 		 * Registers the given {@link ApplicationListener} to be used for the current thread.
