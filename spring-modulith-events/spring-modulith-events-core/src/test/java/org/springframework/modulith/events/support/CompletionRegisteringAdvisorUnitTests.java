@@ -23,7 +23,7 @@ import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.Advised;
-import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.transaction.event.TransactionPhase;
@@ -34,19 +34,10 @@ import org.springframework.transaction.event.TransactionalEventListener;
  *
  * @author Oliver Drotbohm
  */
-class CompletionRegisteringBeanPostProcessorUnitTests {
+class CompletionRegisteringAdvisorUnitTests {
 
 	EventPublicationRegistry registry = mock(EventPublicationRegistry.class);
-	BeanPostProcessor processor = new CompletionRegisteringBeanPostProcessor(() -> registry);
 	SomeEventListener bean = new SomeEventListener();
-
-	@Test
-	void doesNotProxyNonTransactionalEventListenerClass() {
-
-		NoEventListener bean = new NoEventListener();
-
-		assertThat(bean).isSameAs(processor.postProcessBeforeInitialization(bean, "bean"));
-	}
 
 	@Test
 	void triggersCompletionForAfterCommitEventListener() throws Exception {
@@ -78,13 +69,20 @@ class CompletionRegisteringBeanPostProcessorUnitTests {
 
 	private void assertCompletion(BiConsumer<SomeEventListener, Object> consumer, boolean expected) {
 
-		Object processed = processor.postProcessAfterInitialization(bean, "listener");
+		Object processed = createProxyFor(bean);
 
 		assertThat(processed).isInstanceOf(Advised.class);
 		assertThat(processed).isInstanceOfSatisfying(SomeEventListener.class, //
 				it -> consumer.accept(it, new Object()));
 
 		verify(registry, times(expected ? 1 : 0)).markCompleted(any(), any());
+	}
+
+	private Object createProxyFor(Object bean) {
+
+		ProxyFactory factory = new ProxyFactory(bean);
+		factory.addAdvisor(new CompletionRegisteringAdvisor(() -> registry));
+		return factory.getProxy();
 	}
 
 	static class SomeEventListener {
@@ -100,6 +98,4 @@ class CompletionRegisteringBeanPostProcessorUnitTests {
 
 		void nonEventListener(Object object) {}
 	}
-
-	static class NoEventListener {}
 }

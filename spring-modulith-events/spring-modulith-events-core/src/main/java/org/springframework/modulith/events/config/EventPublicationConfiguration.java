@@ -16,12 +16,14 @@
 package org.springframework.modulith.events.config;
 
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Role;
 import org.springframework.modulith.events.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRepository;
-import org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor;
+import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 
 /**
@@ -45,7 +47,8 @@ class EventPublicationConfiguration {
 	}
 
 	@Bean
-	static CompletionRegisteringBeanPostProcessor bpp(ObjectFactory<EventPublicationRegistry> store) {
-		return new CompletionRegisteringBeanPostProcessor(store::getObject);
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry) {
+		return new CompletionRegisteringAdvisor(registry::getObject);
 	}
 }

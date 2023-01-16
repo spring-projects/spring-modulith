@@ -49,7 +49,7 @@ import org.springframework.util.Assert;
  * for incomplete publications and
  *
  * @author Oliver Drotbohm
- * @see CompletionRegisteringBeanPostProcessor
+ * @see CompletionRegisteringAdvisor
  */
 public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
 		implements SmartInitializingSingleton {
