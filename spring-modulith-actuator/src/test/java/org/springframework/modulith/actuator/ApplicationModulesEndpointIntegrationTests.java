@@ -22,7 +22,6 @@ import net.minidev.json.JSONArray;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.test.TestApplicationModules;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 
 /**
@@ -38,7 +37,7 @@ class ApplicationModulesEndpointIntegrationTests {
 		var modules = TestApplicationModules.of("example");
 		var endpoint = new ApplicationModulesEndpoint(() -> modules);
 		var result = endpoint.getApplicationModules();
-		var context = JsonPath.parse(new ObjectMapper().writeValueAsString(result));
+		var context = JsonPath.parse(result);
 
 		assertThat(context.<String> read("$.a.basePackage")).isEqualTo("example.a");
 		assertThat(context.<JSONArray> read("$.a.dependencies")).isEmpty();

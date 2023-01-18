@@ -15,26 +15,17 @@
  */
 package org.springframework.modulith.actuator;
 
-import static java.util.stream.Collectors.*;
-
-import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
-import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.core.ApplicationModuleDependency;
 import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.DependencyType;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.util.Assert;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * A Spring Boot actuator endpoint to expose the application module structure of a Spring Modulith based application.
@@ -46,20 +37,7 @@ public class ApplicationModulesEndpoint {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesEndpoint.class);
 
-	private static final Function<Set<DependencyType>, Set<DependencyType>> REMOVE_DEFAULT_DEPENDENCY_TYPE_IF_OTHERS_PRESENT = it -> {
-
-		if (it.stream().anyMatch(type -> type != DependencyType.DEFAULT)) {
-			it.remove(DependencyType.DEFAULT);
-		}
-
-		return it;
-	};
-
-	private static final Collector<ApplicationModuleDependency, ?, Set<DependencyType>> MAPPER = mapping(
-			ApplicationModuleDependency::getDependencyType,
-			collectingAndThen(toSet(), REMOVE_DEFAULT_DEPENDENCY_TYPE_IF_OTHERS_PRESENT));
-
-	private final Supplier<ApplicationModules> runtime;
+	private final SingletonSupplier<String> structure;
 
 	/**
 	 * Creates a new {@link ApplicationModulesEndpoint} for the given {@link ApplicationModules}.
@@ -72,7 +50,7 @@ public class ApplicationModulesEndpoint {
 
 		LOGGER.debug("Activating Spring Modulith actuator.");
 
-		this.runtime = runtime;
+		this.structure = SingletonSupplier.of(new ApplicationModulesExporter(runtime.get())::toJson);
 	}
 
 	/**
@@ -81,34 +59,7 @@ public class ApplicationModulesEndpoint {
 	 * @return will never be {@literal null}.
 	 */
 	@ReadOperation
-	Map<String, Object> getApplicationModules() {
-
-		var modules = runtime.get();
-
-		return modules.stream()
-				.collect(
-						Collectors.toMap(ApplicationModule::getName, it -> toInfo(it, modules), (l, r) -> r, LinkedHashMap::new));
-	}
-
-	private static Map<String, Object> toInfo(ApplicationModule module, ApplicationModules modules) {
-
-		return Map.of( //
-				"displayName", module.getDisplayName(), //
-				"basePackage", module.getBasePackage().getName(), //
-				"dependencies", module.getDependencies(modules).stream() //
-						.collect(Collectors.groupingBy(ApplicationModuleDependency::getTargetModule, MAPPER))
-						.entrySet() //
-						.stream() //
-						.map(ApplicationModulesEndpoint::toInfo) //
-						.toList() //
-		);
-	}
-
-	private static Map<String, Object> toInfo(Entry<ApplicationModule, ? extends Set<DependencyType>> types) {
-
-		return Map.of( //
-				"target", types.getKey().getName(), //
-				"types", types.getValue() //
-		);
+	String getApplicationModules() {
+		return structure.obtain();
 	}
 }
