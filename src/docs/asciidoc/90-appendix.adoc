@@ -36,6 +36,7 @@ To include application-module-internal types in the canvas, configure `CanvasOpt
 [cols="3,1,5", options="header, unbreakable"]
 |===
 |Module|Typical scope|Description
+|`spring-modulith-actuator`|`runtime`|A Spring Boot actuator to expose the application module structure via an actuator.
 |`spring-modulith-api`|`compile`|The abstractions to be used in your production code to customize Spring Modulith's default behavior.
 |`spring-modulith-core`|`runtime`|The core application module model and API.
 |`spring-modulith-docs`|`test`|The `Documenter` API to create Asciidoctor and PlantUML documentation from the module model.
@@ -45,6 +46,7 @@ To include application-module-internal types in the canvas, configure `CanvasOpt
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-moments`|`compile`|The Passage of Time events implementation described <<moments, here>>.
+|`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
 |`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
 |===
 
