@@ -76,6 +76,9 @@ public class Documenter {
 	private static final String INVALID_FILE_NAME_PATTERN = "Configured file name pattern does not include a '%s' placeholder for the module name!";
 	private static final String DEFAULT_LOCATION = "spring-modulith-docs";
 
+	private static final String DEFAULT_COMPONENTS_FILE = "components.puml";
+	private static final String DEFAULT_MODULE_COMPONENTS_FILE = "module-%s.puml";
+
 	static {
 		DEPENDENCY_DESCRIPTIONS.put(DependencyType.EVENT_LISTENER, "listens to");
 		DEPENDENCY_DESCRIPTIONS.put(DependencyType.DEFAULT, "depends on");
@@ -203,7 +206,7 @@ public class Documenter {
 
 		Assert.notNull(options, "Options must not be null!");
 
-		Path file = recreateFile(options.getTargetFileName().orElse("components.uml"));
+		Path file = recreateFile(options.getTargetFileName().orElse(DEFAULT_COMPONENTS_FILE));
 
 		try (Writer writer = new FileWriter(file.toFile())) {
 			writer.write(createPlantUml(options));
@@ -264,7 +267,7 @@ public class Documenter {
 
 		addComponentsToView(module, view, options);
 
-		var fileNamePattern = options.getTargetFileName().orElse("module-%s.uml");
+		var fileNamePattern = options.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
 
 		Assert.isTrue(fileNamePattern.contains("%s"), () -> String.format(INVALID_FILE_NAME_PATTERN, fileNamePattern));
 
