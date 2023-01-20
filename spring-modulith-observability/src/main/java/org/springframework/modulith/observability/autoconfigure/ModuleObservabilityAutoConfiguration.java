@@ -37,7 +37,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
  * @author Oliver Drotbohm
  */
 @Configuration(proxyBeanMethods = false)
-@ConditionalOnProperty(name = "management.tracing.enabled", havingValue = "true")
+@ConditionalOnProperty(name = "management.tracing.enabled", havingValue = "true", matchIfMissing = true)
 class ModuleObservabilityAutoConfiguration {
 
 	@Bean
