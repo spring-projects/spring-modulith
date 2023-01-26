@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events;
 
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationListener;
@@ -42,7 +43,7 @@ public interface EventPublicationRegistry {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	Iterable<EventPublication> findIncompletePublications();
+	Collection<EventPublication> findIncompletePublications();
 
 	/**
 	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as completed.

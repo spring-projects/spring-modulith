@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -68,7 +69,7 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 	 * @see org.springframework.modulith.events.EventPublicationRegistry#findIncompletePublications()
 	 */
 	@Override
-	public Iterable<EventPublication> findIncompletePublications() {
+	public Collection<EventPublication> findIncompletePublications() {
 		return events.findIncompletePublications();
 	}
 

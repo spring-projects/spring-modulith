@@ -113,9 +113,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	@Override
 	public void afterSingletonsInstantiated() {
 
-		for (EventPublication publication : registry.get().findIncompletePublications()) {
-			invokeTargetListener(publication);
-		}
+		LOGGER.debug("Looking up previously pending event publications…");
+
+		var publications = registry.get().findIncompletePublications();
+
+		LOGGER.debug("{} found.", publications.isEmpty() ? "None" : publications.size());
+
+		publications.forEach(this::invokeTargetListener);
 	}
 
 	private void invokeTargetListener(EventPublication publication) {
