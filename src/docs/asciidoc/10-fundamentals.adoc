@@ -202,6 +202,6 @@ This class needs to be registered in `META-INF/spring.factories` as follows:
 
 [source, text]
 ----
-org.springframework.modulith.model.ApplicationModuleDetectionStrategy=\
+org.springframework.modulith.core.ApplicationModuleDetectionStrategy=\
   example.CustomApplicationModuleDetectionStrategy
 ----
