@@ -19,8 +19,6 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.springframework.data.repository.Repository;
-import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.Classes;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.base.DescribedPredicate;

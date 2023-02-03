@@ -23,12 +23,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.DependencyType;
-import org.springframework.modulith.core.NamedInterface;
-import org.springframework.modulith.core.NamedInterfaces;
-import org.springframework.modulith.core.Violations;
 
 import com.acme.myproject.Application;
 import com.acme.myproject.complex.internal.FirstTypeBasedPort;

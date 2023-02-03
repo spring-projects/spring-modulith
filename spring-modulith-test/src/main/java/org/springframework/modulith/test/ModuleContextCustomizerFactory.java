@@ -88,7 +88,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			var bootstrapMode = execution.getBootstrapMode().name();
 
 			var message = "Bootstrapping @%s for %s in mode %s (%s)…"
-					.formatted(ApplicationModuleTest.class.getName(), moduleName, bootstrapMode, modules.getModulithSource());
+					.formatted(ApplicationModuleTest.class.getName(), moduleName, bootstrapMode, modules.getSource());
 
 			LOGGER.info(message);
 			LOGGER.info("");
@@ -101,7 +101,8 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 				logHeadline("Extra includes:");
 
-				LOGGER.info("> " + extraIncludes.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+				LOGGER.info("> "
+						+ extraIncludes.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
 			}
 
 			var sharedModules = modules.getSharedModules();
@@ -110,7 +111,8 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 				logHeadline("Shared modules:");
 
-				LOGGER.info("> " + sharedModules.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+				LOGGER.info("> "
+						+ sharedModules.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
 			}
 
 			var dependencies = execution.getDependencies();

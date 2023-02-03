@@ -18,8 +18,6 @@ package org.springframework.modulith.core;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.core.Classes;
-import org.springframework.modulith.core.JavaPackage;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;

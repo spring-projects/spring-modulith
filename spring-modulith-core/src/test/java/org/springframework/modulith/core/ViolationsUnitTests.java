@@ -18,7 +18,6 @@ package org.springframework.modulith.core;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.core.Violations;
 
 /**
  * Unit tests for {@link Violations}.

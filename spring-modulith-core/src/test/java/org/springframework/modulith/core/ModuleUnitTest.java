@@ -24,11 +24,6 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.core.Classes;
-import org.springframework.modulith.core.EventType;
-import org.springframework.modulith.core.JavaPackage;
-import org.springframework.modulith.core.SpringBean;
 
 import com.acme.withatbean.TestEvents.JMoleculesAnnotated;
 import com.acme.withatbean.TestEvents.JMoleculesImplementing;
