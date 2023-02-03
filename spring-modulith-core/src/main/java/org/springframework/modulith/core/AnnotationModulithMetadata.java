@@ -120,6 +120,7 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 	public Optional<String> getSystemName() {
 
 		return Optional.of(annotation.systemName()) //
-				.filter(StringUtils::hasText);
+				.filter(StringUtils::hasText) //
+				.or(() -> Optional.of(modulithType.getSimpleName()));
 	}
 }

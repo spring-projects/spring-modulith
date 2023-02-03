@@ -45,7 +45,7 @@ public interface ModulithMetadata {
 				String.format(ANNOTATION_MISSING, annotated.getSimpleName(), Modulith.class.getSimpleName(),
 						Modulithic.class.getSimpleName(), SpringTypes.AT_SPRING_BOOT_APPLICATION));
 
-		Supplier<ModulithMetadata> withDefaults = () -> DefaultModulithMetadata.of(annotated).orElseThrow(exception);
+		Supplier<ModulithMetadata> withDefaults = () -> SpringBootModulithMetadata.of(annotated).orElseThrow(exception);
 
 		return AnnotationModulithMetadata.of(annotated).orElseGet(withDefaults);
 	}
@@ -57,7 +57,7 @@ public interface ModulithMetadata {
 	 * @return will never be {@literal null}.
 	 */
 	public static ModulithMetadata of(String javaPackage) {
-		return DefaultModulithMetadata.of(javaPackage);
+		return SpringBootModulithMetadata.of(javaPackage);
 	}
 
 	/**

@@ -22,7 +22,6 @@ import java.lang.annotation.RetentionPolicy;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.Modulithic;
-import org.springframework.modulith.core.AnnotationModulithMetadata;
 
 /**
  * Unit tests for {@link AnnotationModulithMetadata}.
@@ -47,6 +46,14 @@ class AnnotationModulithMetadataUnitTest {
 		});
 	}
 
+	@Test // #130
+	void usesSimpleClassNameAsDefaultSystemName() {
+
+		assertThat(AnnotationModulithMetadata.of(Sample.class)).hasValueSatisfying(it -> {
+			assertThat(it.getSystemName()).hasValue(Sample.class.getSimpleName());
+		});
+	}
+
 	@Modulithic(useFullyQualifiedModuleNames = true)
 	static class Sample {}
 
@@ -55,6 +62,5 @@ class AnnotationModulithMetadataUnitTest {
 
 	@Retention(RetentionPolicy.RUNTIME)
 	@Modulithic(useFullyQualifiedModuleNames = true)
-	@interface Intermediate {
-	}
+	@interface Intermediate {}
 }

@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.NonNull;
 import org.springframework.modulith.Modulith;
@@ -34,31 +35,33 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-class DefaultModulithMetadata implements ModulithMetadata {
+class SpringBootModulithMetadata implements ModulithMetadata {
 
 	private static final Class<? extends Annotation> AT_SPRING_BOOT_APPLICATION = Types
 			.loadIfPresent(SpringTypes.AT_SPRING_BOOT_APPLICATION);
 
 	private final @NonNull Object source;
+	private final String systemName;
 
 	/**
-	 * Creates a new {@link DefaultModulithMetadata} for the given source.
+	 * Creates a new {@link SpringBootModulithMetadata} for the given source.
 	 *
 	 * @param source must not be {@literal null}.
 	 */
-	private DefaultModulithMetadata(Object source) {
+	private SpringBootModulithMetadata(Object source, String systemName) {
 
 		Assert.notNull(source, "Source must not be null!");
 
 		this.source = source;
+		this.systemName = systemName;
 	}
 
 	/**
-	 * Creates a new {@link ModulithMetadata} representing the defaults of a class annotated but not customized with
-	 * {@link Modulithic} or {@link Modulith}.
+	 * Creates a new {@link ModulithMetadata} representing the defaults of a class annotated with
+	 * {@link SpringBootApplication} but not customized with {@link Modulithic} or {@link Modulith}.
 	 *
 	 * @param annotated must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public static Optional<ModulithMetadata> of(Class<?> annotated) {
 
@@ -66,7 +69,7 @@ class DefaultModulithMetadata implements ModulithMetadata {
 
 		return Optional.ofNullable(AT_SPRING_BOOT_APPLICATION) //
 				.filter(it -> AnnotatedElementUtils.hasAnnotation(annotated, it)) //
-				.map(__ -> new DefaultModulithMetadata(annotated));
+				.map(__ -> new SpringBootModulithMetadata(annotated, annotated.getSimpleName()));
 	}
 
 	/**
@@ -79,7 +82,7 @@ class DefaultModulithMetadata implements ModulithMetadata {
 
 		Assert.hasText(javaPackage, "Package name must not be null or empty!");
 
-		return new DefaultModulithMetadata(javaPackage);
+		return new SpringBootModulithMetadata(javaPackage, null);
 	}
 
 	/*
@@ -133,6 +136,6 @@ class DefaultModulithMetadata implements ModulithMetadata {
 	 */
 	@Override
 	public Optional<String> getSystemName() {
-		return Optional.empty();
+		return Optional.ofNullable(systemName);
 	}
 }

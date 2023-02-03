@@ -23,7 +23,6 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
-import org.springframework.modulith.core.ModulithMetadata;
 
 /**
  * Unit tests for {@link ModulithMetadata}.
@@ -53,7 +52,7 @@ class ModulithMetadataUnitTest {
 
 		assertThat(metadata.getAdditionalPackages()).isEmpty();
 		assertThat(metadata.getSharedModuleNames()).isEmpty();
-		assertThat(metadata.getSystemName()).isEmpty();
+		assertThat(metadata.getSystemName()).hasValue(SpringBootApplicationAnnotated.class.getSimpleName());
 		assertThat(metadata.useFullyQualifiedModuleNames()).isFalse();
 	}
 
