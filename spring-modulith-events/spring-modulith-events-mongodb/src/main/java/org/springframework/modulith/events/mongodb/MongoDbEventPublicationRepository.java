@@ -38,6 +38,7 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Dmitry Belyaev
  * @author Oliver Drotbohm
+ * @author Takeshi Ogawa
  */
 class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
@@ -79,7 +80,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<EventPublication> findIncompletePublications() {
 
-		var query = query(where("completionDate").isNull());
+		var query = query(where("completionDate").isNull()).with(Sort.by("publicationDate").ascending());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
 				.<EventPublication> map(this::documentToDomain) //
