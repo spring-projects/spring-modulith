@@ -134,9 +134,9 @@ This can be an event of a particular type in turn, optionally further constraint
 ----
 
 These lines set up a completion criteria that the eventual execution will wait for to proceed.
-In other words, the example above will cause the execution to eventually block until either the default timout is reached or a `SomeOtherEvent` is published that matches the predicate defined.
+In other words, the example above will cause the execution to eventually block until either the default timeout is reached or a `SomeOtherEvent` is published that matches the predicate defined.
 
-The terminal operations to execute the event-based `Scenario` are named `….toArrive…()` and allow to optionally access the expected event published, or the result object of the bean invocation defined in the origina stimulus.
+The terminal operations to execute the event-based `Scenario` are named `….toArrive…()` and allow to optionally access the expected event published, or the result object of the bean invocation defined in the original stimulus.
 
 .Triggering the verification
 [source, java]
@@ -148,7 +148,7 @@ The terminal operations to execute the event-based `Scenario` are named `….toA
 ….toArriveAndVerify(event -> …)
 ----
 
-The choice of method names might look a bit weird when looking at the steps individually but they actually ready quite fluent when combined.
+The choice of method names might look a bit weird when looking at the steps individually but they actually read quite fluent when combined.
 
 .A complete `Scenario` definition
 [source, java]
@@ -171,7 +171,7 @@ scenario.publish(new MyApplicationEvent(…))
 ----
 
 The `result` handed into the `….andVerify(…)` method will be the value returned by the method invocation to detect the state change.
-By default, non-`null` values and non-empty `Optionals` will be considered a conclusive state change.
+By default, non-`null` values and non-empty ``Optional``s will be considered a conclusive state change.
 This can be tweaked by using the `….andWaitForStateChange(…, Predicate)` overload.
 
 
