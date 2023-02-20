@@ -151,7 +151,7 @@ public class Scenario {
 		Assert.notNull(supplier, "Supplier must not be null!");
 		Assert.notNull(cleanupCallback, "Cleanup callback must not be null!");
 
-		return stimulate((tx, e) -> supplier.get(), cleanupCallback);
+		return stimulate((tx) -> tx.execute(status -> supplier.get()), cleanupCallback);
 	}
 
 	/**

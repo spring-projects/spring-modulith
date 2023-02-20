@@ -35,6 +35,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
 import org.springframework.modulith.test.Scenario.When;
+import org.springframework.transaction.TransactionException;
+import org.springframework.transaction.support.SimpleTransactionStatus;
+import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionOperations;
 
 /**
@@ -43,14 +46,14 @@ import org.springframework.transaction.support.TransactionOperations;
  * @author Oliver Drotbohm
  */
 @ExtendWith(MockitoExtension.class)
-public class ScenarioUnitTests {
+class ScenarioUnitTests {
 
 	private static final Duration DELAY = Duration.ofMillis(50);
 	private static final Duration WAIT_TIME = Duration.ofMillis(101);
 	private static final Duration TIMED_OUT = Duration.ofMillis(150);
 
-	@Mock TransactionOperations tx;
 	@Mock ApplicationEventPublisher publisher;
+	TransactionOperations tx = StubTransactionOperations.INSTANCE;
 
 	@Test // GH-136
 	void timesOutIfNoEventArrivesInTime() throws Throwable {
@@ -416,6 +419,20 @@ public class ScenarioUnitTests {
 	}
 
 	record SomeEvent(String payload) {}
+
+	enum StubTransactionOperations implements TransactionOperations {
+
+		INSTANCE;
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.transaction.support.TransactionOperations#execute(org.springframework.transaction.support.TransactionCallback)
+		 */
+		@Override
+		public <T> T execute(TransactionCallback<T> action) throws TransactionException {
+			return action.doInTransaction(new SimpleTransactionStatus());
+		}
+	}
 
 	static class CapturingExceptionHandler implements UncaughtExceptionHandler {
 
