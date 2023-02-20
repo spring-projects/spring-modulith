@@ -100,13 +100,13 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#ofSubType(java.lang.Class)
+		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#ofType(java.lang.Class)
 		 */
 		@Override
-		public <S extends T> TypedPublishedEvents<S> ofSubType(Class<S> subType) {
+		public <S> TypedPublishedEvents<S> ofType(Class<S> type) {
 
-			return SimpleTypedPublishedEvents.of(getFilteredEvents(subType::isInstance) //
-					.map(subType::cast));
+			return SimpleTypedPublishedEvents.of(getFilteredEvents(type::isInstance) //
+					.map(type::cast));
 		}
 
 		/*

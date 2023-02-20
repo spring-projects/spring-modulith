@@ -28,7 +28,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-public interface PublishedEvents {
+public interface PublishedEvents extends TypedEvents {
 
 	/**
 	 * Creates a new {@link PublishedEvents} instance for the given events.
@@ -53,27 +53,11 @@ public interface PublishedEvents {
 		return new DefaultPublishedEvents(events);
 	}
 
-	/**
-	 * Returns all application events of the given type that were fired during the test execution.
-	 *
-	 * @param <T> the event type
-	 * @param type must not be {@literal null}.
-	 * @return
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.test.TypedEvents#ofType(java.lang.Class)
 	 */
 	<T> TypedPublishedEvents<T> ofType(Class<T> type);
-
-	/**
-	 * Returns whether an event of the given type was published.
-	 *
-	 * @param type must not be {@literal null}.
-	 * @return whether an event of the given type was published.
-	 */
-	default boolean eventOfTypeWasPublished(Class<?> type) {
-
-		Assert.notNull(type, "Event type must not be null!");
-
-		return ofType(type).iterator().hasNext();
-	}
 
 	/**
 	 * All application events of a given type that were fired during a test execution.
@@ -81,7 +65,7 @@ public interface PublishedEvents {
 	 * @author Oliver Drotbohm
 	 * @param <T> the event type
 	 */
-	interface TypedPublishedEvents<T> extends Iterable<T> {
+	interface TypedPublishedEvents<T> extends Iterable<T>, TypedEvents {
 
 		/**
 		 * Further constrain the event type for downstream assertions.
@@ -90,7 +74,16 @@ public interface PublishedEvents {
 		 * @param subType the sub type
 		 * @return will never be {@literal null}.
 		 */
-		<S extends T> TypedPublishedEvents<S> ofSubType(Class<S> subType);
+		default <S extends T> TypedPublishedEvents<S> ofSubType(Class<S> subType) {
+			return ofType(subType);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.test.TypedEvents#ofType(java.lang.Class)
+		 */
+		@Override
+		<S> TypedPublishedEvents<S> ofType(Class<S> type);
 
 		/**
 		 * Returns all {@link TypedPublishedEvents} that match the given predicate.

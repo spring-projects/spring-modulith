@@ -31,14 +31,14 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @see AssertablePublishedEvents
  */
-public class PublishedEventsAssert extends AbstractAssert<PublishedEventsAssert, PublishedEvents> {
+public class PublishedEventsAssert extends AbstractAssert<PublishedEventsAssert, TypedEvents> {
 
 	/**
 	 * Creates a new {@link PublishedEventsAssert}
 	 *
 	 * @param actual must not be {@literal null}.
 	 */
-	PublishedEventsAssert(AssertablePublishedEvents actual) {
+	PublishedEventsAssert(TypedEvents actual) {
 		super(actual, PublishedEventsAssert.class);
 	}
 

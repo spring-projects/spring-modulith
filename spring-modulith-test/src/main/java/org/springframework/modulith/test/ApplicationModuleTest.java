@@ -47,8 +47,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @BootstrapWith(SpringBootTestContextBootstrapper.class)
 @TypeExcludeFilters(ModuleTypeExcludeFilter.class)
 @ImportAutoConfiguration(ModuleTestAutoConfiguration.class)
-@ExtendWith(SpringExtension.class)
-@ExtendWith(PublishedEventsParameterResolver.class)
+@ExtendWith({ SpringExtension.class, PublishedEventsParameterResolver.class, ScenarioParameterResolver.class })
 @TestInstance(Lifecycle.PER_CLASS)
 @TestConstructor(autowireMode = AutowireMode.ALL)
 public @interface ApplicationModuleTest {
