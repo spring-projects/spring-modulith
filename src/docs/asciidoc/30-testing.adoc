@@ -98,6 +98,7 @@ class SomeApplicationModuleTest {
     // Use the Scenario API to define your integration test
   }
 }
+----
 
 The test definition itself usually follows the following skeleton:
 
@@ -124,6 +125,7 @@ The resulting object can now get the execution customized though the generic `�
 The setup phase will be concluded by defining the actual expectation of the outcome of the stimulus.
 This can be an event of a particular type in turn, optionally further constraint by matchers:
 
+.Expecting an event being published as operation result
 [source, java]
 ----
 ….andWaitForEventOfType(SomeOtherEvent.class)
@@ -136,6 +138,7 @@ In other words, the example above will cause the execution to eventually block u
 
 The terminal operations to execute the event-based `Scenario` are named `….toArrive…()` and allow to optionally access the expected event published, or the result object of the bean invocation defined in the origina stimulus.
 
+.Triggering the verification
 [source, java]
 ----
 // Executes the scenario
@@ -159,6 +162,7 @@ scenario.publish(new MyApplicationEvent(…))
 Alternatively to an event publication acting as expected completion signal, we can also inspect the state of the application module by invoking a method on one of the components exposed.
 The scenario would then rather look like this:
 
+.Expecting a state change
 [source, java]
 ----
 scenario.publish(new MyApplicationEvent(…))
