@@ -59,6 +59,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
 			FROM EVENT_PUBLICATION
 			WHERE COMPLETION_DATE IS NULL
+			ORDER BY PUBLICATION_DATE ASC
 			""";
 
 	private static final String SQL_STATEMENT_UPDATE = """

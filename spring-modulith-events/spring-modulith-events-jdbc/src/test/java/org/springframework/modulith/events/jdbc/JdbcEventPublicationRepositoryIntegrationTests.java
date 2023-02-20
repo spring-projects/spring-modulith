@@ -16,11 +16,15 @@
 package org.springframework.modulith.events.jdbc;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import lombok.Value;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -95,6 +99,31 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			repository.update(publication.markCompleted());
 
 			assertThat(repository.findIncompletePublications()).isEmpty();
+		}
+
+		@Test // GH-133
+		void returnsOldestIncompletePublicationsFirst() {
+
+			when(serializer.serialize(any())).thenReturn("{}");
+
+			var now = LocalDateTime.now();
+
+			createPublicationAt(now.withHour(3));
+			createPublicationAt(now.withHour(0));
+			createPublicationAt(now.withHour(1));
+
+			assertThat(repository.findIncompletePublications())
+					.isSortedAccordingTo(Comparator.comparing(EventPublication::getPublicationDate));
+		}
+
+		private void createPublicationAt(LocalDateTime publicationDate) {
+
+			EventPublication publication = mock(EventPublication.class);
+			when(publication.getEvent()).thenReturn("");
+			when(publication.getTargetIdentifier()).thenReturn(TARGET_IDENTIFIER);
+			when(publication.getPublicationDate()).thenReturn(publicationDate.toInstant(ZoneOffset.UTC));
+
+			repository.create(publication);
 		}
 
 		@Nested
@@ -240,10 +269,12 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	@Nested
 	@ActiveProfiles("hsqldb")
+	@Testcontainers(disabledWithoutDocker = false)
 	class HSQL extends TestBase {}
 
 	@Nested
 	@ActiveProfiles("h2")
+	@Testcontainers(disabledWithoutDocker = false)
 	class H2 extends TestBase {}
 
 	@Nested

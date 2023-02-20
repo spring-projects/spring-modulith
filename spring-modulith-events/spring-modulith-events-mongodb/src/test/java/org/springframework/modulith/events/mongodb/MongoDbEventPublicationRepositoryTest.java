@@ -19,8 +19,12 @@ import static org.assertj.core.api.Assertions.*;
 
 import lombok.Value;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
 
+import org.bson.types.ObjectId;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -98,6 +102,25 @@ class MongoDbEventPublicationRepositoryTest {
 
 		assertThat(repository.findIncompletePublications()).hasSize(1)
 				.element(0).extracting(EventPublication::getEvent).isEqualTo(testEvent1);
+	}
+
+	@Test // GH-133
+	void returnsOldestIncompletePublicationsFirst() {
+
+		var now = LocalDateTime.now();
+
+		savePublicationAt(now.withHour(3));
+		savePublicationAt(now.withHour(0));
+		savePublicationAt(now.withHour(1));
+
+		assertThat(repository.findIncompletePublications())
+				.isSortedAccordingTo(Comparator.comparing(EventPublication::getPublicationDate));
+	}
+
+	private void savePublicationAt(LocalDateTime date) {
+
+		mongoTemplate.save(
+				new MongoDbEventPublication(new ObjectId(), date.toInstant(ZoneOffset.UTC), "", "", null));
 	}
 
 	@Nested

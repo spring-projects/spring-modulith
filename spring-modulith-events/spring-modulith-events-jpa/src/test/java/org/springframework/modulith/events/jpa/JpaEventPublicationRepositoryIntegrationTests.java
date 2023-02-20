@@ -23,6 +23,9 @@ import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.util.Comparator;
 import java.util.List;
 
 import javax.sql.DataSource;
@@ -194,6 +197,23 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
 				.hasSize(1) //
 				.element(0).extracting(it -> it.serializedEvent).isEqualTo(serializedEvent2);
+	}
+
+	@Test // GH-133
+	void returnsOldestIncompletePublicationsFirst() {
+
+		var now = LocalDateTime.now();
+
+		savePublicationAt(now.withHour(3));
+		savePublicationAt(now.withHour(0));
+		savePublicationAt(now.withHour(1));
+
+		assertThat(repository.findIncompletePublications())
+				.isSortedAccordingTo(Comparator.comparing(EventPublication::getPublicationDate));
+	}
+
+	private void savePublicationAt(LocalDateTime date) {
+		em.persist(new JpaEventPublication(date.toInstant(ZoneOffset.UTC), "", "", Object.class));
 	}
 
 	@Value

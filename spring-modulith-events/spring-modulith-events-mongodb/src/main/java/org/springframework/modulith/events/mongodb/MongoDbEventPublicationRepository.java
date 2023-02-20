@@ -79,7 +79,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<EventPublication> findIncompletePublications() {
 
-		var query = query(where("completionDate").isNull());
+		var query = query(where("completionDate").isNull())
+				.with(Sort.by("publicationDate").ascending());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
 				.<EventPublication> map(this::documentToDomain) //

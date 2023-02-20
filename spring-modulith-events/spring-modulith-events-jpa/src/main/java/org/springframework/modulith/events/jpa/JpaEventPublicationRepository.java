@@ -53,6 +53,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			from JpaEventPublication p
 			where
 				p.completionDate is null
+			order by
+				p.publicationDate asc
 			""";
 
 	private static final String DELETE_COMPLETED = """
