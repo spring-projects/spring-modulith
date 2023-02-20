@@ -75,7 +75,7 @@ This now effectively decouples the original transaction from the execution of th
 While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
 Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
 
-[[events.amil]]
+[[events.aml]]
 == Application Module Listener
 
 To run a transactional event listener in a transaction itself, it would need to be annotated with `@Transactional` in turn.

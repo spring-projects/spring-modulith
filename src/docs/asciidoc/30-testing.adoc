@@ -78,3 +78,96 @@ Spring Boot will create bean definitions and instances for the types defined as 
 If you find your application module depending on too many beans of other ones, that is usually a sign of high coupling between them.
 The dependencies should be reviewed for whether they are candidates for replacement by publishing a domain event (see <<events>>).
 
+[[testing.scenarios]]
+== Defining integration test scenarios
+
+Integration testing application modules can become a quite elaborate effort.
+Especially if the integration of those is based on <<events.aml, asynchronous, transactional event handling>>, dealing with the concurrent execution can be subject to subtle errors.
+Also, it requires dealing with quite a few infrastructure components: `TransactionOperations` and `ApplicationEventProcessor` to make sure events are published and delivered to transactional listeners, Awaitility to handle concurrency and AssertJ assertions to formulate expectations on the test execution's outcome.
+
+To ease the definition of application module integration tests, Spring Modulith provides the `Scenario` abstraction that can be used by declaring it as test method parameter in tests declared as `@ApplicationModuleTest`.
+
+.Using the `Scenario` API in a JUnit 5 test
+[source, java]
+----
+@ApplicationModuleTest
+class SomeApplicationModuleTest {
+
+  @Test
+  public void someModuleIntegrationTest(Scenario scenario) {
+    // Use the Scenario API to define your integration test
+  }
+}
+
+The test definition itself usually follows the following skeleton:
+
+1. A stimulus to the system is defined. This is usually either an event publication or an invocation of a Spring component exposed by the module.
+2. Optional customization of technical details of the execution (timeouts, etc.)
+3. The definition of some expected outcome, such as another application event being fired that matches some criteria or some state change of the module that can be detected by invoking exposed components.
+4. Optional, additional verifications made on the received event or observed, changed state.
+
+`Scenario` exposes API to define these steps and guide you through the definition.
+
+.Defining a stimulus as starting point of the `Scenario`
+[source, java]
+----
+// Start with an event publication
+scenario.publish(new MyApplicationEvent(…)).…
+
+// Start with a bean invocation
+scenario.stimulate(() -> someBean.someMethod(…)).…
+----
+
+Both the event publication and bean invocation will happen within a transaction callback to make sure the given event or any ones published during the bean invocation will be delivered to transactional event listeners.
+The resulting object can now get the execution customized though the generic `….customize(…)` method or specialized ones for common use cases like setting a timeout (`….waitAtMost(…)`).
+
+The setup phase will be concluded by defining the actual expectation of the outcome of the stimulus.
+This can be an event of a particular type in turn, optionally further constraint by matchers:
+
+[source, java]
+----
+….andWaitForEventOfType(SomeOtherEvent.class)
+ .matching(event -> …) // Use some predicate here
+ .…
+----
+
+These lines set up a completion criteria that the eventual execution will wait for to proceed.
+In other words, the example above will cause the execution to eventually block until either the default timout is reached or a `SomeOtherEvent` is published that matches the predicate defined.
+
+The terminal operations to execute the event-based `Scenario` are named `….toArrive…()` and allow to optionally access the expected event published, or the result object of the bean invocation defined in the origina stimulus.
+
+[source, java]
+----
+// Executes the scenario
+….toArrive(…)
+
+// Execute and define assertions on the event received
+….toArriveAndVerify(event -> …)
+----
+
+The choice of method names might look a bit weird when looking at the steps individually but they actually ready quite fluent when combined.
+
+.A complete `Scenario` definition
+[source, java]
+----
+scenario.publish(new MyApplicationEvent(…))
+  .andWaitForEventOfType(SomeOtherEvent.class)
+  .matching(event -> …)
+  .toArriveAndVerify(event -> …);
+----
+
+Alternatively to an event publication acting as expected completion signal, we can also inspect the state of the application module by invoking a method on one of the components exposed.
+The scenario would then rather look like this:
+
+[source, java]
+----
+scenario.publish(new MyApplicationEvent(…))
+  .andWaitForStateChange(() -> someBean.someMethod(…)))
+  .andVerify(result -> …);
+----
+
+The `result` handed into the `….andVerify(…)` method will be the value returned by the method invocation to detect the state change.
+By default, non-`null` values and non-empty `Optionals` will be considered a conclusive state change.
+This can be tweaked by using the `….andWaitForStateChange(…, Predicate)` overload.
+
+
