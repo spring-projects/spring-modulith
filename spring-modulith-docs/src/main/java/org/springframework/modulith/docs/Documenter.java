@@ -492,7 +492,14 @@ public class Documenter {
 			default:
 
 				Writer writer = new StringWriter();
-				PlantUMLWriter umlWriter = new BasicPlantUMLWriter();
+				PlantUMLWriter umlWriter = new BasicPlantUMLWriter() {
+
+					@Override
+					protected void writeContainerForContainer(ComponentView view, Writer writer,
+							BiConsumer<ComponentView, Writer> packageContentWriter) throws IOException {
+						packageContentWriter.accept(view, writer);
+					}
+				};
 				umlWriter.addSkinParam("componentStyle", "uml1");
 				umlWriter.write(view, writer);
 
