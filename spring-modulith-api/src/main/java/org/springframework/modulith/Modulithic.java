@@ -49,8 +49,8 @@ public @interface Modulithic {
 	boolean useFullyQualifiedModuleNames() default false;
 
 	/**
-	 * The names of modules considered to be shared, i.e. which should always be included in the bootstrap no matter what.
-	 * Useful for code to contain commons Spring configuration and components.
+	 * The names of modules considered to be shared, i.e. which should always be included in the bootstrap, no matter
+	 * what. Useful for code to contain global Spring configuration and components.
 	 *
 	 * @return
 	 */
