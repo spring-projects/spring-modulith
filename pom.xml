@@ -103,6 +103,28 @@ limitations under the License.
 
 		</profile>
 
+		<!-- For integration builds against milestones and snapshots -->
+
+		<profile>
+			<id>with-preview-repos</id>
+			<repositories>
+				<repository>
+					<id>spring-milestone</id>
+					<url>https://repo.spring.io/milestone</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-snapshot</id>
+					<url>https://repo.spring.io/snapshot</url>
+					<releases>
+						<enabled>false</enabled>
+					</releases>
+				</repository>
+			</repositories>
+		</profile>
+
 		<profile>
 
 			<id>prepare-release</id>
