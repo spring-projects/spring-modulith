@@ -137,7 +137,7 @@ public class Documenter {
 
 		SoftwareSystem system = model.addSoftwareSystem(systemName, "");
 
-		this.container = system.addContainer("Application", "", "");
+		this.container = system.addContainer(systemName, "", "");
 		this.properties = new ConfigurationProperties();
 	}
 
