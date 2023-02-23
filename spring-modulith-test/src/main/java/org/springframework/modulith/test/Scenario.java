@@ -108,7 +108,7 @@ public class Scenario {
 	 * Publishes the event provided by the given {@link Supplier}. The event will be published in a transaction to make
 	 * sure that transactional event listeners are invoked as well.
 	 *
-	 * @param events must not be {@literal null}.
+	 * @param event must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
 	public When<Void> publish(Supplier<Object> event) {
