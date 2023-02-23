@@ -83,7 +83,7 @@ class ScenarioUnitTests {
 	@Test // GH-136
 	void matchesEventsWithPredicate() throws Throwable {
 
-		Consumer<Scenario> consumer = it -> publishObject(it)
+		Consumer<Scenario> consumer = it -> it.publish(() -> 41)
 				.forEventOfType(SomeEvent.class)
 				.matching(__ -> __.payload().startsWith("foo"))
 				.toArrive();
@@ -194,7 +194,8 @@ class ScenarioUnitTests {
 		BiConsumer<String, Integer> verification = mock(BiConsumer.class);
 		Consumer<Integer> cleanupCallback = mock(Consumer.class);
 
-		Consumer<Scenario> consumer = it -> it.stimulate(() -> 41, cleanupCallback)
+		Consumer<Scenario> consumer = it -> it.stimulate(() -> 41)
+				.andCleanup(cleanupCallback)
 				.forEventOfType(String.class)
 				.toArriveAndVerify(verification);
 
@@ -211,9 +212,10 @@ class ScenarioUnitTests {
 	void triggersCleanupOnFailure() {
 
 		BiConsumer<String, Integer> verification = mock(BiConsumer.class);
-		Consumer<Integer> cleanupCallback = mock(Consumer.class);
+		Runnable cleanupCallback = mock(Runnable.class);
 
-		Consumer<Scenario> consumer = it -> it.stimulate((tx) -> 41, cleanupCallback)
+		Consumer<Scenario> consumer = it -> it.stimulate((tx) -> 41)
+				.andCleanup(cleanupCallback)
 				.andWaitAtMost(WAIT_TIME)
 				.forEventOfType(String.class)
 				.toArriveAndVerify(verification);
@@ -223,7 +225,7 @@ class ScenarioUnitTests {
 				.expectFailure();
 
 		verify(verification, never()).accept(any(), any());
-		verify(cleanupCallback).accept(41);
+		verify(cleanupCallback).run();
 	}
 
 	@Test // GH-136
@@ -266,8 +268,8 @@ class ScenarioUnitTests {
 
 		Consumer<String> verification = mock(Consumer.class);
 
-		Consumer<Scenario> consumer = it -> it.stimulate(() -> 41)
-				.andWaitForStateChange(delayed("Foo"))
+		Consumer<Scenario> consumer = it -> it.stimulate(() -> {})
+				.forStateChange(delayed("Foo"))
 				.andVerify(verification);
 
 		givenAScenario(consumer)

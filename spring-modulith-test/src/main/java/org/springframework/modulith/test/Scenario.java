@@ -16,7 +16,6 @@
 package org.springframework.modulith.test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -55,6 +54,19 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Optional;
 @API(status = Status.EXPERIMENTAL)
 public class Scenario {
 
+	private static final Predicate<Object> DEFAULT_ACCEPTANCE = it -> {
+
+		if (it instanceof Optional<?> o) {
+			return o.isPresent();
+		}
+
+		if (it instanceof Boolean b) {
+			return b;
+		}
+
+		return it != null;
+	};
+
 	private final TransactionOperations transactionOperations;
 	private final ApplicationEventPublisher publisher;
 	private final AssertablePublishedEvents events;
@@ -86,9 +98,9 @@ public class Scenario {
 	 * @param event must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public When<Void> publish(Object... event) {
+	public When<Void> publish(Object event) {
 		return stimulate((tx, e) -> {
-			tx.executeWithoutResult(__ -> Arrays.stream(event).forEach(e::publishEvent));
+			tx.executeWithoutResult(__ -> e.publishEvent(event));
 		});
 	}
 
@@ -99,11 +111,10 @@ public class Scenario {
 	 * @param events must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	@SuppressWarnings("unchecked")
-	public When<Void> publish(Supplier<Object>... events) {
+	public When<Void> publish(Supplier<Object> event) {
 
 		return stimulate((tx, e) -> {
-			tx.executeWithoutResult(__ -> Arrays.stream(events).map(Supplier::get).forEach(e::publishEvent));
+			tx.executeWithoutResult(__ -> e.publishEvent(event.get()));
 		});
 	}
 
@@ -120,7 +131,7 @@ public class Scenario {
 		return stimulate(() -> {
 			runnable.run();
 			return null;
-		}, __ -> {});
+		});
 	}
 
 	/**
@@ -134,24 +145,7 @@ public class Scenario {
 	 * @see EventResult#toArriveAndVerify(Consumer)
 	 */
 	public <S> When<S> stimulate(Supplier<S> supplier) {
-		return stimulate(supplier, __ -> {});
-	}
-
-	/**
-	 * Stimulates the system using the given {@link Supplier}, keeping the supplied value around for later verification
-	 * but also registers a cleanup callback to make sure potential state changes are rolled back for the test execution.
-	 *
-	 * @param <S> the type of the value returned by the stimulus.
-	 * @param supplier must not be {@literal null}.
-	 * @param cleanupCallback must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	public <S> When<S> stimulate(Supplier<S> supplier, Consumer<S> cleanupCallback) {
-
-		Assert.notNull(supplier, "Supplier must not be null!");
-		Assert.notNull(cleanupCallback, "Cleanup callback must not be null!");
-
-		return stimulate((tx) -> tx.execute(status -> supplier.get()), cleanupCallback);
+		return stimulate(__ -> supplier.get());
 	}
 
 	/**
@@ -163,25 +157,9 @@ public class Scenario {
 	 * @return will never be {@literal null}.
 	 */
 	public <S> When<S> stimulate(Function<TransactionOperations, S> function) {
-		return stimulate(function, __ -> {});
-	}
-
-	/**
-	 * Stimulates the system using the given function providing access to the {@link TransactionOperations} and keeping
-	 * the supplied value around for later verification but also registers a cleanup callback to make sure potential state
-	 * changes are rolled back for the test execution.
-	 *
-	 * @param <S> the type of the value returned by the stimulus.
-	 * @param function must not be {@literal null}.
-	 * @param cleanupCallback must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	public <S> When<S> stimulate(Function<TransactionOperations, S> function, Consumer<S> cleanupCallback) {
-
-		Assert.notNull(function, "Function must not be null!");
-		Assert.notNull(cleanupCallback, "Cleanup callback must not be null!");
-
-		return stimulate((tx, events) -> function.apply(tx), cleanupCallback);
+		return stimulate((tx, __) -> {
+			return function.apply(tx);
+		});
 	}
 
 	/**
@@ -195,24 +173,10 @@ public class Scenario {
 
 		Assert.notNull(stimulus, "Stimulus must not be null!");
 
-		return stimulate(stimulus, () -> {});
-	}
-
-	/**
-	 * @param stimulus must not be {@literal null}.
-	 * @param cleanupCallback must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	public When<Void> stimulate(BiConsumer<TransactionOperations, ApplicationEventPublisher> stimulus,
-			Runnable cleanupCallback) {
-
-		Assert.notNull(stimulus, "Stimulus must not be null!");
-		Assert.notNull(cleanupCallback, "Cleanup callback must not be null!");
-
 		return stimulate((tx, e) -> {
 			stimulus.accept(tx, e);
 			return (Void) null;
-		}, __ -> cleanupCallback.run());
+		});
 	}
 
 	/**
@@ -227,26 +191,7 @@ public class Scenario {
 
 		Assert.notNull(stimulus, "Stimulus must not be null!");
 
-		return stimulate(stimulus, __ -> {});
-	}
-
-	/**
-	 * Stimulate the system using the given {@link TransactionOperations} and {@link ApplicationEventPublisher} (usually a
-	 * method on some application service or event publication is triggered), produce a result and a callback to clean up
-	 * after the verification has completed.
-	 *
-	 * @param <S> the type of the result.
-	 * @param stimulus must not be {@literal null}.
-	 * @param cleanupCallback must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	public <S> When<S> stimulate(BiFunction<TransactionOperations, ApplicationEventPublisher, S> stimulus,
-			Consumer<S> cleanupCallback) {
-
-		Assert.notNull(stimulus, "Stimulus must not be null!");
-		Assert.notNull(cleanupCallback, "Cleanup callback must not be null!");
-
-		return new When<>(stimulus, cleanupCallback, Function.identity());
+		return new When<>(stimulus, __ -> {}, Function.identity());
 	}
 
 	public class When<T> {
@@ -265,6 +210,34 @@ public class Scenario {
 			this.stimulus = stimulus;
 			this.cleanup = cleanup;
 			this.customizer = customizer;
+		}
+
+		/**
+		 * Registers the given {@link Runnable} as cleanup callback to always run after completion of the {@link Scenario},
+		 * no matter the outcome of its execution (error or success).
+		 *
+		 * @param runnable must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		public When<T> andCleanup(Runnable runnable) {
+
+			Assert.notNull(runnable, "Cleanup callback must not be null!");
+
+			return andCleanup(__ -> runnable.run());
+		}
+
+		/**
+		 * Registers the given {@link Consumer} as cleanup callback to always run after completion of the {@link Scenario},
+		 * no matter the outcome of its execution (error or success).
+		 *
+		 * @param consumer must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		public When<T> andCleanup(Consumer<T> consumer) {
+
+			Assert.notNull(consumer, "Cleanup callback must not be null!");
+
+			return new When<>(stimulus, consumer, customizer);
 		}
 
 		// Customize
@@ -319,7 +292,7 @@ public class Scenario {
 		 * @see #andWaitForStateChange(Supplier)
 		 */
 		public <S> StateChangeResult<S> forStateChange(Supplier<S> supplier) {
-			return andWaitForStateChange(supplier);
+			return forStateChange(supplier, DEFAULT_ACCEPTANCE);
 		}
 
 		/**
@@ -347,8 +320,10 @@ public class Scenario {
 		}
 
 		/**
-		 * Expects a particular state change on the module to produce a result and uses the given {@link Predicate} to
-		 * determine whether the value is conclusive.
+		 * Expects a particular state change on the module to produce a result. By default, a non-{@literal null} value
+		 * would indicate success, except for {@link java.util.Optional}s, in which case we'd check for the presence of a
+		 * value and {@code booleans}, for which we accept {@literal true} as conclusive signal. For more control about the
+		 * result matching, use {@link #andWaitForStateChange(Supplier, Predicate)}.
 		 *
 		 * @param <S> the type of the result.
 		 * @param supplier must not be {@literal null}.
@@ -356,16 +331,12 @@ public class Scenario {
 		 * @see #forStateChange(Supplier)
 		 */
 		public <S> StateChangeResult<S> andWaitForStateChange(Supplier<S> supplier) {
-
-			Predicate<S> acceptanceCriteria = it -> it instanceof Optional<?> o ? o.isPresent() : it != null;
-
-			return andWaitForStateChange(supplier, acceptanceCriteria);
+			return andWaitForStateChange(supplier, DEFAULT_ACCEPTANCE);
 		}
 
 		/**
-		 * Expects a particular state change on the module to produce a result. By default, a non-{@literal null} value
-		 * would indicate success, except for {@link java.util.Optional}s, in which case we'd check for the presence of a
-		 * value. For more control about the result matching, use {@link #andWaitForStateChange(Supplier, Predicate)}
+		 * Expects a particular state change on the module to produce a result and uses the given {@link Predicate} to
+		 * determine whether the value is conclusive.
 		 *
 		 * @param <S> the type of the result for the state change
 		 * @param supplier must not be {@literal null}.
