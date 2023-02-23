@@ -1,6 +1,7 @@
 name: Compatibility Build
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '5 6 * * *'
 
