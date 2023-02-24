@@ -11,7 +11,7 @@
 
 	<artifactId>spring-modulith-example</artifactId>
 	<name>Spring Modulith - Example</name>
-	<version>0.5.0-SNAPSHOT</version>
+	<version>0.4.1</version>
 
 	<properties>
 		<java.version>17</java.version>
@@ -22,7 +22,7 @@
 			<dependency>
 				<groupId>org.springframework.experimental</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
-				<version>0.5.0-SNAPSHOT</version>
+				<version>0.4.1</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -133,4 +133,8 @@
 			</releases>
 		</pluginRepository>
 	</pluginRepositories>
+
+  <scm>
+    <tag>0.4.1</tag>
+  </scm>
 </project>
