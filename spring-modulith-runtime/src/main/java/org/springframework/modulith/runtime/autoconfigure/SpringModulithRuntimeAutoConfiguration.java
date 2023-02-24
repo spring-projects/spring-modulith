@@ -16,7 +16,6 @@
 package org.springframework.modulith.runtime.autoconfigure;
 
 import java.util.List;
-import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
@@ -31,6 +30,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.task.AsyncTaskExecutor;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
@@ -49,6 +50,7 @@ import org.springframework.util.Assert;
 class SpringModulithRuntimeAutoConfiguration {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
+	private final AsyncTaskExecutor executor = new SimpleAsyncTaskExecutor();
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -63,7 +65,7 @@ class SpringModulithRuntimeAutoConfiguration {
 	ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
 
 		var mainClass = runtime.getMainApplicationClass();
-		var modules = Executors.newFixedThreadPool(1)
+		var modules = executor
 				.submit(() -> ApplicationModulesBootstrap.initializeApplicationModules(mainClass));
 
 		return new ApplicationModulesRuntime(toSupplier(modules), runtime);

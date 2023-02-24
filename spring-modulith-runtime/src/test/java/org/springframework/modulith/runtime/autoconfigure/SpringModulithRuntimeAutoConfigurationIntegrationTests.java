@@ -18,30 +18,34 @@ package org.springframework.modulith.runtime.autoconfigure;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.ApplicationContext;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 
 /**
- * Integration thest for {@link SpringModulithRuntimeAutoConfiguration}.
+ * Integration test for {@link SpringModulithRuntimeAutoConfiguration}.
  *
  * @author Oliver Drotbohm
  */
-@SpringBootTest
 class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 
 	@SpringBootApplication
 	static class SampleApp {}
 
-	@Autowired ApplicationContext context;
-
 	@Test // GH-87
 	void bootstrapRegistersRuntimeInstances() {
 
-		assertThat(context.getBean(ApplicationRuntime.class)).isNotNull();
-		assertThat(context.getBean(ApplicationModulesRuntime.class)).isNotNull();
+		new ApplicationContextRunner()
+				.withUserConfiguration(SampleApp.class)
+				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
+				.run(context -> {
+
+					assertThat(context.getBean(ApplicationRuntime.class)).isNotNull();
+					assertThat(context.getBean(ApplicationModulesRuntime.class)).isNotNull();
+
+					context.close();
+				});
 	}
 }
