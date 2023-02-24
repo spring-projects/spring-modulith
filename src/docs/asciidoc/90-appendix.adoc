@@ -23,17 +23,43 @@ To include application-module-internal types in the canvas, configure `CanvasOpt
 == Spring Modulith modules
 
 .Spring Modulith starter POMs
-[cols="3,1,5", options="header, unbreakable"]
+[cols="2,1,3", options="header, unbreakable"]
 |===
-|Starter|Typical scope|Description
-|`spring-modulith-starter-jdbc`|`compile`|Includes `spring-modulith-api`, `spring-modulith-moments` as well as `spring-modulith-events-jdbc`.
-|`spring-modulith-starter-jpa`|`compile`|Includes `spring-modulith-api`, `spring-modulith-moments` as well as `spring-modulith-events-jpa`.
-|`spring-modulith-starter-mongodb`|`compile`|Includes `spring-modulith-api`, `spring-modulith-moments` as well as `spring-modulith-events-mongodb`.
-|`spring-modulith-starter-test`|`compile`|Includes `spring-modulith-docs` and `spring-modulith-test`.
+|Starter|Typical scope|Includes
+
+|`spring-modulith-starter-core`
+|`compile`
+a|* `spring-modulith-api`
+* `spring-modulith-moments`
+* `spring-modulith-core` (runtime)
+* `spring-modulith-runtime` (runtime)
+
+|`spring-modulith-starter-jdbc`
+|`compile`
+a|* `spring-modulith-starter-core`
+* `spring-modulith-events-jdbc` (runtime)
+* `spring-modulith-events-jackson` (runtime)
+
+|`spring-modulith-starter-jpa`
+|`compile`
+a|* `spring-modulith-starter-core`
+* `spring-modulith-events-jpa` (runtime)
+* `spring-modulith-events-jackson` (runtime)
+
+|`spring-modulith-starter-mongodb`
+|`compile`
+a|* `spring-modulith-starter-core`
+* `spring-modulith-events-mongodb` (runtime)
+* `spring-modulith-events-jackson` (runtime)
+
+|`spring-modulith-starter-test`
+|`test`
+a|* `spring-modulith-docs`
+* `spring-modulith-test`
 |===
 
 .Individual Spring Modulith JARs
-[cols="3,1,5", options="header, unbreakable"]
+[cols="2,1,3", options="header, unbreakable"]
 |===
 |Module|Typical scope|Description
 |`spring-modulith-actuator`|`runtime`|A Spring Boot actuator to expose the application module structure via an actuator.
