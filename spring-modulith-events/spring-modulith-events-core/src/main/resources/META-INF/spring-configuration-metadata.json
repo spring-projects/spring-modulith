@@ -1,0 +1,10 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.default-async-termination",
+			"type": "java.lang.boolean",
+			"description": "Whether to configure defaults for the async processing termination, namely to wait for task completion for 2 seconds. See TaskExecutionProperties for details.",
+			"defaultValue": "true"
+		}
+	]
+}
