@@ -34,7 +34,10 @@ import org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
 import org.springframework.modulith.test.Scenario.When.EventResult;
 import org.springframework.modulith.test.Scenario.When.StateChangeResult;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.thirdparty.com.google.common.base.Optional;
@@ -72,21 +75,24 @@ public class Scenario {
 	private final AssertablePublishedEvents events;
 
 	/**
-	 * Creates a new {@link Scenario} for the given {@link TransactionOperations}, {@link ApplicationEventPublisher} and
+	 * Creates a new {@link Scenario} for the given {@link TransactionTemplate}, {@link ApplicationEventPublisher} and
 	 * {@link AssertablePublishedEvents}.
 	 *
-	 * @param transactionOperations must not be {@literal null}.
+	 * @param transactionTemplate must not be {@literal null}.
 	 * @param publisher must not be {@literal null}.
 	 * @param events must not be {@literal null}.
 	 */
-	Scenario(TransactionOperations transactionOperations, ApplicationEventPublisher publisher,
+	Scenario(TransactionTemplate transactionTemplate, ApplicationEventPublisher publisher,
 			AssertablePublishedEvents events) {
 
-		Assert.notNull(transactionOperations, "TransactionOperations must not be null!");
+		Assert.notNull(transactionTemplate, "TransactionTemplate must not be null!");
 		Assert.notNull(publisher, "ApplicationEventPublisher must not be null!");
 		Assert.notNull(events, "AssertablePublishedEvents must not be null!");
 
-		this.transactionOperations = transactionOperations;
+		var definition = new DefaultTransactionDefinition(transactionTemplate);
+		definition.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+		this.transactionOperations = new TransactionTemplate(transactionTemplate.getTransactionManager(), definition);
 		this.publisher = publisher;
 		this.events = events;
 	}
@@ -145,7 +151,7 @@ public class Scenario {
 	 * @see EventResult#toArriveAndVerify(Consumer)
 	 */
 	public <S> When<S> stimulate(Supplier<S> supplier) {
-		return stimulate(__ -> supplier.get());
+		return stimulate(tx -> tx.execute(__ -> supplier.get()));
 	}
 
 	/**

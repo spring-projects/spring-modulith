@@ -120,6 +120,10 @@ scenario.stimulate(() -> someBean.someMethod(…)).…
 ----
 
 Both the event publication and bean invocation will happen within a transaction callback to make sure the given event or any ones published during the bean invocation will be delivered to transactional event listeners.
+Note, that this will require a *new* transaction to be started, no matter whether the test case is already running inside a transaction or not.
+In other words, state changes of the database triggered by the stimulus will *never* be rolled back and have to be cleaned up manually.
+See the `….andCleanup(…)` methods for that purpose.
+
 The resulting object can now get the execution customized though the generic `….customize(…)` method or specialized ones for common use cases like setting a timeout (`….waitAtMost(…)`).
 
 The setup phase will be concluded by defining the actual expectation of the outcome of the stimulus.

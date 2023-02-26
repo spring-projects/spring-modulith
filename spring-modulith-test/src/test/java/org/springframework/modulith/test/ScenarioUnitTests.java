@@ -27,6 +27,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -35,10 +36,9 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
 import org.springframework.modulith.test.Scenario.When;
-import org.springframework.transaction.TransactionException;
-import org.springframework.transaction.support.SimpleTransactionStatus;
-import org.springframework.transaction.support.TransactionCallback;
-import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Unit tests for {@link Scenario}.
@@ -52,8 +52,15 @@ class ScenarioUnitTests {
 	private static final Duration WAIT_TIME = Duration.ofMillis(101);
 	private static final Duration TIMED_OUT = Duration.ofMillis(150);
 
+	TransactionTemplate tx;
+
 	@Mock ApplicationEventPublisher publisher;
-	TransactionOperations tx = StubTransactionOperations.INSTANCE;
+	@Mock PlatformTransactionManager txManager;
+
+	@BeforeEach
+	void setUp() {
+		this.tx = new TransactionTemplate(txManager);
+	}
 
 	@Test // GH-136
 	void timesOutIfNoEventArrivesInTime() throws Throwable {
@@ -328,6 +335,18 @@ class ScenarioUnitTests {
 		verify(verification, never()).accept(any(), any());
 	}
 
+	@Test // GH-150
+	void executesStimulusInNewTransaction() {
+
+		Consumer<Scenario> scenario = it -> it.stimulate(() -> 41)
+				.andWaitForStateChange(() -> true);
+
+		givenAScenario(scenario).expectSuccess();
+
+		verify(txManager)
+				.getTransaction(argThat(it -> it.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW));
+	}
+
 	private Fixture givenAScenario(Consumer<Scenario> consumer) {
 		return new Fixture(consumer, DELAY, null, new DefaultAssertablePublishedEvents());
 	}
@@ -377,21 +396,21 @@ class ScenarioUnitTests {
 
 		public void expectSuccess() {
 
-			foo();
+			execute();
 
 			exceptionHandler.throwIfCaught();
 		}
 
 		public void expectFailure() {
 
-			foo();
+			execute();
 
 			assertThat(exceptionHandler.caught)
 					.as("Expected failure but did not see an exception!")
 					.isNotNull();
 		}
 
-		private void foo() {
+		private void execute() {
 
 			try {
 
@@ -421,20 +440,6 @@ class ScenarioUnitTests {
 	}
 
 	record SomeEvent(String payload) {}
-
-	enum StubTransactionOperations implements TransactionOperations {
-
-		INSTANCE;
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.transaction.support.TransactionOperations#execute(org.springframework.transaction.support.TransactionCallback)
-		 */
-		@Override
-		public <T> T execute(TransactionCallback<T> action) throws TransactionException {
-			return action.doInTransaction(new SimpleTransactionStatus());
-		}
-	}
 
 	static class CapturingExceptionHandler implements UncaughtExceptionHandler {
 

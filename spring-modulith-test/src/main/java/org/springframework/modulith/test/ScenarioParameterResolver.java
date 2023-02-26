@@ -21,7 +21,7 @@ import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.springframework.transaction.support.TransactionOperations;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * JUnit {@link ParameterResolver} for {@link Scenario}.
@@ -70,7 +70,7 @@ class ScenarioParameterResolver implements ParameterResolver, BeforeAllCallback 
 			throws ParameterResolutionException {
 
 		var context = SpringExtension.getApplicationContext(extensionContext);
-		var operations = context.getBean(TransactionOperations.class);
+		var operations = context.getBean(TransactionTemplate.class);
 		var events = (AssertablePublishedEvents) delegate.resolveParameter(parameterContext, extensionContext);
 
 		return new Scenario(operations, context, events);
