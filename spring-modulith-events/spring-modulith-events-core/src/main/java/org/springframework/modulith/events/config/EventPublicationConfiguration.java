@@ -113,7 +113,7 @@ class EventPublicationConfiguration {
 		private boolean anyPropertyConfigured(String... properties) {
 
 			return Arrays.stream(properties)
-					.map(it -> environment.getProperty(it, (String) null))
+					.map(it -> environment.containsProperty(it))
 					.anyMatch(it -> it != null);
 		}
 	}
