@@ -1,39 +1,35 @@
-[[observability]]
-= Observing Application Modules
-:imagesdir: images
+[[production-ready]]
+= Production-ready Features
 
-The interaction between application modules can be intercepted to create Micrometer spans to ultimately end up in traces you can visualize in tools like https://zipkin.io/[Zipkin].
-To activate the instrumentation add the following runtime dependency to your project:
+Spring Modulith provides support to expose architectural information about your system as a Spring Boot actuator endpoint as well as observing the interaction between application modules by capturing metrics and traces.
+As  a production-ready application is likely to require both, the most convenient way to activate those features is to use the Spring Modulith Insight starter as follows:
 
+.Using the Spring Modulith Insight starter
 [source, xml]
 ----
 <dependency>
-  <groupId>org.springframework.modulith</groupId>
-  <artifactId>spring-modulith-observability</artifactId>
+  <groupId>org.springframework.experimental</groupId>
+  <artifactId>spring-modulith-starter-insight</artifactId>
   <version>{projectVersion}</version>
   <scope>runtime</scope>
 </dependency>
 ----
 
-This will cause all Spring components that are part of the application module's API being decorated with an aspect that will intercept invocations and create Micrometer spans for them.
-A sample invocation trace can be seen below:
+This will include the actuator and observability support as well as Spring Boot's actuator startup for general support for actuators.
+Note, that you will still have to add further dependencies to connect your application to your monitoring tools such as https://zipkin.io/[Zipkin], https://docs.wavefront.com/[Wavefront] etc. usually via https://opentelemetry.io/[OpenTelemetry] or https://github.com/openzipkin/brave[Brave].
+Find more information on that in https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.micrometer-tracing[the corresponding section] of Spring Boot's reference documentation.
 
-.A sample module invocation trace
-image::observability.png[]
-
-In this particular case, triggering the payment changes the state of the order which then causes an order completion event being triggered.
-This gets picked up asynchronously by the engine that triggers another state change on the order, works for a couple of seconds and triggers the final state change on the order in turn.
-
-[[observability.actuator]]
-== Application Module Actuator
+[[production-ready.actuator]]
+== [[observability.actuator]]Application Module Actuator
 
 The application module structure can be exposed as Spring Boot actuator.
 To enable the actuator, add the `spring-modulith-actuator` dependency to the project:
 
+.Using the Spring Modulith actuator support
 [source, xml]
 ----
 <dependency>
-  <groupId>org.springframework.modulith</groupId>
+  <groupId>org.springframework.experimental</groupId>
   <artifactId>spring-modulith-actuator</artifactId>
   <version>{projectVersion}</version>
   <scope>runtime</scope>
@@ -50,6 +46,7 @@ To enable the actuator, add the `spring-modulith-actuator` dependency to the pro
 
 Running the application will now expose an `applicationmodules` actuator resource:
 
+.Accessing the actuator HTTP resource
 [source, json]
 ----
 GET http://localhost:8080/actuator
@@ -79,6 +76,7 @@ GET http://localhost:8080/actuator
 
 The `applicationmodules` resource adheres to the following structure:
 
+.The JSON structure of the application modules actuator
 [%autowidth.stretch]
 |===
 |JSONPath|Description
@@ -93,6 +91,7 @@ The `applicationmodules` resource adheres to the following structure:
 
 An example module arrangement would look like this:
 
+.An example response for the application modules actuator
 [source, json]
 ----
 {
@@ -110,6 +109,34 @@ An example module arrangement would look like this:
     } ]
   }
 }
-
 ----
 
+[[production-ready.observability]]
+== [[observability]]Observing Application Modules
+:imagesdir: images
+
+The interaction between application modules can be intercepted to create Micrometer spans to ultimately end up in traces you can visualize in tools like https://zipkin.io/[Zipkin].
+To activate the instrumentation add the following runtime dependency to your project:
+
+.Using the Spring Modulith observability support
+[source, xml]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>spring-modulith-observability</artifactId>
+  <version>{projectVersion}</version>
+  <scope>runtime</scope>
+</dependency>
+----
+
+NOTE: You will have to configure additional infrastructure dependencies depending on the tooling you want to pipe the observability metadata in.
+For details, please check the corresponding https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.micrometer-tracing[Spring Boot documentation] on which dependencies to include for your setup.
+
+This will cause all Spring components that are part of the application module's API being decorated with an aspect that will intercept invocations and create Micrometer spans for them.
+A sample invocation trace can be seen below:
+
+.A sample module invocation trace
+image::observability.png[]
+
+In this particular case, triggering the payment changes the state of the order which then causes an order completion event being triggered.
+This gets picked up asynchronously by the engine that triggers another state change on the order, works for a couple of seconds and triggers the final state change on the order in turn.
