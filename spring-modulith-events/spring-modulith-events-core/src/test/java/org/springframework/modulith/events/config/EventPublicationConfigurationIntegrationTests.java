@@ -48,7 +48,13 @@ class EventPublicationConfigurationIntegrationTests {
 	void registersAsyncTerminationDefaulterByDefault() {
 
 		basicSetup()
-				.run(context -> assertThat(context).hasSingleBean(AsyncPropertiesDefaulter.class));
+				.run(context -> {
+					assertThat(context).hasSingleBean(AsyncPropertiesDefaulter.class);
+
+					expect(Shutdown::isAwaitTermination, true).andThen(
+							expect(Shutdown::getAwaitTerminationPeriod, Duration.ofSeconds(2)))
+							.accept(context);
+				});
 	}
 
 	@Test // GH-149
@@ -63,7 +69,6 @@ class EventPublicationConfigurationIntegrationTests {
 	void doesNotApplyDefaultingIfShutdownTerminationPropertyConfigured() {
 
 		basicSetup()
-				.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
 				.withPropertyValues("spring.task.execution.shutdown.await-termination=false")
 				.run(expect(Shutdown::isAwaitTermination, false));
 	}
@@ -72,7 +77,6 @@ class EventPublicationConfigurationIntegrationTests {
 	void doesNotApplyDefaultingIfShutdownTerminationPeriodPropertyConfigured() {
 
 		basicSetup()
-				.withConfiguration(AutoConfigurations.of(TaskExecutionAutoConfiguration.class))
 				.withPropertyValues("spring.task.execution.shutdown.await-termination-period=10m")
 				.run(expect(Shutdown::getAwaitTerminationPeriod, Duration.ofMinutes(10)));
 	}
@@ -88,7 +92,8 @@ class EventPublicationConfigurationIntegrationTests {
 	private ApplicationContextRunner basicSetup() {
 
 		return new ApplicationContextRunner()
-				.withConfiguration(AutoConfigurations.of(EventPublicationConfiguration.class))
+				.withConfiguration(
+						AutoConfigurations.of(EventPublicationConfiguration.class, TaskExecutionAutoConfiguration.class))
 				.withBean(EventPublicationRepository.class, () -> repository);
 	}
 }
