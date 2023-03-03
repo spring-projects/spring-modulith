@@ -15,42 +15,29 @@
  */
 package example.order;
 
-import static org.assertj.core.api.Assertions.*;
+import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.test.ApplicationModuleTest;
-import org.springframework.modulith.test.AssertablePublishedEvents;
+import org.springframework.modulith.test.Scenario;
 
 /**
  * @author Oliver Drotbohm
  */
 @ApplicationModuleTest
+@RequiredArgsConstructor
 class OrderIntegrationTests {
 
 	private final OrderManagement orders;
 
-	OrderIntegrationTests(OrderManagement orders) {
-		this.orders = orders;
-	}
-
 	@Test
-	void publishesOrderCompletion(AssertablePublishedEvents events) {
+	void publishesOrderCompletion(Scenario scenario) {
 
 		var reference = new Order();
 
-		orders.complete(reference);
-
-		// Verification
-
-		var matchingMapped = events.ofType(OrderCompleted.class)
-				.matching(OrderCompleted::orderId, reference.getId());
-
-		assertThat(matchingMapped).hasSize(1);
-
-		// AssertJ
-
-		assertThat(events)
-				.contains(OrderCompleted.class)
-				.matching(OrderCompleted::orderId, reference.getId());
+		scenario.stimulate(() -> orders.complete(reference))
+				.andWaitForEventOfType(OrderCompleted.class)
+				.matchingMappedValue(OrderCompleted::orderId, reference.getId())
+				.toArrive();
 	}
 }

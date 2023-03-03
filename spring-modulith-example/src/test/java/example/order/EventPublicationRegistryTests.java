@@ -18,12 +18,15 @@ package example.order;
 import static org.assertj.core.api.Assertions.*;
 
 import example.order.EventPublicationRegistryTests.FailingAsyncTransactionalEventListener;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.test.ApplicationModuleTest;
+import org.springframework.modulith.test.Scenario;
 import org.springframework.test.annotation.DirtiesContext;
 
 /**
@@ -35,37 +38,41 @@ import org.springframework.test.annotation.DirtiesContext;
 @ApplicationModuleTest
 @Import(FailingAsyncTransactionalEventListener.class)
 @DirtiesContext
+@RequiredArgsConstructor
 class EventPublicationRegistryTests {
 
 	private final OrderManagement orders;
 	private final EventPublicationRegistry registry;
-
-	/**
-	 * @param orders
-	 * @param registry
-	 */
-	EventPublicationRegistryTests(OrderManagement orders, EventPublicationRegistry registry) {
-		this.orders = orders;
-		this.registry = registry;
-	}
+	private final FailingAsyncTransactionalEventListener listener;
 
 	@Test
-	void leavesPublicationIncompleteForFailingListener() throws Exception {
+	void leavesPublicationIncompleteForFailingListener(Scenario scenario) throws Exception {
 
 		var order = new Order();
 
-		orders.complete(order);
-
-		Thread.sleep(40);
-
-		assertThat(registry.findIncompletePublications()).hasSize(1);
+		scenario.stimulate(() -> orders.complete(order))
+				.andWaitForStateChange(() -> listener.getEx())
+				.andVerify(__ -> {
+					assertThat(registry.findIncompletePublications()).hasSize(1);
+				});
 	}
 
 	static class FailingAsyncTransactionalEventListener {
 
+		@Getter Exception ex;
+
 		@ApplicationModuleListener
 		void foo(OrderCompleted event) {
-			throw new IllegalStateException();
+
+			var exception = new IllegalStateException("¯\\_(ツ)_/¯");
+
+			try {
+
+				throw exception;
+
+			} finally {
+				this.ex = exception;
+			}
 		}
 	}
 }

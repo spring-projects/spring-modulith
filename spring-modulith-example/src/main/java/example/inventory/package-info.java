@@ -4,4 +4,5 @@
  *
  * @see example.inventory.InventoryInternal
  */
+@org.springframework.lang.NonNullApi
 package example.inventory;

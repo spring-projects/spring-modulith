@@ -16,6 +16,8 @@
 package example.order;
 
 import example.order.internal.OrderInternal;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -25,16 +27,11 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Oliver Drotbohm
  */
 @Service
+@RequiredArgsConstructor
 public class OrderManagement {
 
-	final ApplicationEventPublisher events;
-	final OrderInternal dependency;
-
-	OrderManagement(ApplicationEventPublisher events, OrderInternal dependency) {
-
-		this.events = events;
-		this.dependency = dependency;
-	}
+	private final @NonNull ApplicationEventPublisher events;
+	private final @NonNull OrderInternal dependency;
 
 	@Transactional
 	public void complete(Order order) {

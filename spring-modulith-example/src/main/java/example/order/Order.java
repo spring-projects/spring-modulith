@@ -15,18 +15,20 @@
  */
 package example.order;
 
+import example.order.Order.OrderIdentifier;
+import lombok.Getter;
+
 import java.util.UUID;
+
+import org.jmolecules.ddd.types.AggregateRoot;
+import org.jmolecules.ddd.types.Identifier;
 
 /**
  * @author Oliver Drotbohm
  */
-public class Order {
+public class Order implements AggregateRoot<Order, OrderIdentifier> {
 
-	private OrderIdentifier id = new OrderIdentifier(UUID.randomUUID());
+	private @Getter OrderIdentifier id = new OrderIdentifier(UUID.randomUUID());
 
-	public OrderIdentifier getId() {
-		return id;
-	}
-
-	public static record OrderIdentifier(UUID id) {}
+	public static record OrderIdentifier(UUID id) implements Identifier {}
 }

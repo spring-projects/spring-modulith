@@ -16,6 +16,7 @@
 package example.inventory;
 
 import example.order.OrderCompleted;
+import lombok.RequiredArgsConstructor;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,15 +29,12 @@ import org.springframework.stereotype.Service;
  * @author Oliver Drotbohm
  */
 @Service
-public class InventoryManagement {
+@RequiredArgsConstructor
+class InventoryManagement {
 
 	private static final Logger LOG = LoggerFactory.getLogger(InventoryManagement.class);
 
-	final InventoryInternal dependency;
-
-	InventoryManagement(InventoryInternal dependency) {
-		this.dependency = dependency;
-	}
+	private final InventoryInternal dependency;
 
 	@ApplicationModuleListener
 	void on(OrderCompleted event) throws InterruptedException {
