@@ -25,6 +25,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
 
+import com.acme.withatbean.SampleAggregate;
 import com.acme.withatbean.TestEvents.JMoleculesAnnotated;
 import com.acme.withatbean.TestEvents.JMoleculesImplementing;
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -73,5 +74,13 @@ class ModuleUnitTest {
 	@Test // GH-87
 	void usesCapitalizedNameAsDisplayNameByDefault() {
 		assertThat(module.getDisplayName()).isEqualTo("Withatbean");
+	}
+
+	@Test // GH-157
+	void detectsAggregates() {
+
+		assertThat(module.getAggregateRoots())
+				.<Class<?>> extracting(JavaClass::reflect)
+				.containsExactly(SampleAggregate.class);
 	}
 }

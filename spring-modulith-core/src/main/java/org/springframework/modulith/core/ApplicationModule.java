@@ -72,7 +72,7 @@ public class ApplicationModule {
 	private final boolean useFullyQualifiedModuleNames;
 
 	private final Supplier<Classes> springBeans;
-	private final Supplier<Classes> entities;
+	private final Supplier<Classes> aggregateRoots;
 	private final Supplier<List<JavaClass>> valueTypes;
 	private final Supplier<List<EventType>> publishedEvents;
 
@@ -90,7 +90,7 @@ public class ApplicationModule {
 		this.useFullyQualifiedModuleNames = useFullyQualifiedModuleNames;
 
 		this.springBeans = Suppliers.memoize(() -> filterSpringBeans(basePackage));
-		this.entities = Suppliers.memoize(() -> findEntities(basePackage));
+		this.aggregateRoots = Suppliers.memoize(() -> findAggregateRoots(basePackage));
 		this.valueTypes = Suppliers
 				.memoize(() -> findArchitecturallyEvidentType(ArchitecturallyEvidentType::isValueObject));
 		this.publishedEvents = Suppliers.memoize(() -> findPublishedEvents());
@@ -195,10 +195,7 @@ public class ApplicationModule {
 	 */
 	public List<JavaClass> getAggregateRoots() {
 
-		return entities.get().stream() //
-				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal())) //
-				.filter(ArchitecturallyEvidentType::isAggregateRoot) //
-				.map(ArchitecturallyEvidentType::getType) //
+		return aggregateRoots.get().stream() //
 				.flatMap(this::resolveModuleSuperTypes) //
 				.distinct() //
 				.toList();
@@ -433,7 +430,7 @@ public class ApplicationModule {
 		}
 
 		return Objects.equals(this.basePackage, that.basePackage) //
-				&& Objects.equals(this.entities, that.entities) //
+				&& Objects.equals(this.aggregateRoots, that.aggregateRoots) //
 				&& Objects.equals(this.information, that.information) //
 				&& Objects.equals(this.namedInterfaces, that.namedInterfaces) //
 				&& Objects.equals(this.publishedEvents, that.publishedEvents) //
@@ -448,7 +445,7 @@ public class ApplicationModule {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(basePackage, entities, information, namedInterfaces, publishedEvents, springBeans,
+		return Objects.hash(basePackage, aggregateRoots, information, namedInterfaces, publishedEvents, springBeans,
 				useFullyQualifiedModuleNames, valueTypes);
 	}
 
@@ -532,12 +529,13 @@ public class ApplicationModule {
 		return modules.contains(dependency) && !contains(dependency);
 	}
 
-	private Classes findEntities(JavaPackage source) {
+	private Classes findAggregateRoots(JavaPackage source) {
 
 		return source.stream() //
 				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal()))
-				.filter(ArchitecturallyEvidentType::isEntity) //
-				.map(ArchitecturallyEvidentType::getType).collect(Classes.toClasses());
+				.filter(ArchitecturallyEvidentType::isAggregateRoot) //
+				.map(ArchitecturallyEvidentType::getType) //
+				.collect(Classes.toClasses());
 	}
 
 	private static Classes filterSpringBeans(JavaPackage source) {
