@@ -34,6 +34,12 @@ a|* `spring-modulith-api`
 * `spring-modulith-core` (runtime)
 * `spring-modulith-runtime` (runtime)
 
+|`spring-modulith-starter-insight`
+|`runtime`
+a|* `spring-modulith-actuator` (runtime)
+* `spring-modulith-observability` (runtime)
+* `spring-boot-starter-actuator` (runtime)
+
 |`spring-modulith-starter-jdbc`
 |`compile`
 a|* `spring-modulith-starter-core`
