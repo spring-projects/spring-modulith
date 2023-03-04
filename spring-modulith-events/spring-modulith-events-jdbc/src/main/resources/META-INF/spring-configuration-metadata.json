@@ -1,0 +1,10 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.events.schema-initialization.enabled",
+			"type": "java.lang.boolean",
+			"description": "Whether to initialize the event publication schema.",
+			"defaultValue": "false"
+		}
+	]
+}
