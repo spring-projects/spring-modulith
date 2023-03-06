@@ -25,6 +25,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
@@ -45,9 +46,19 @@ import org.springframework.util.Assert;
  * Bean.
  *
  * @author Oliver Drotbohm
+ * @author Michael Weirauch
  */
 @AutoConfiguration
 class SpringModulithRuntimeAutoConfiguration {
+
+	@AutoConfiguration
+	@ConditionalOnMissingClass("com.tngtech.archunit.core.importer.ClassFileImporter")
+	static class ArchUnitRuntimeDependencyMissingConfiguration {
+
+		ArchUnitRuntimeDependencyMissingConfiguration() {
+			throw new MissingRuntimeDependencyException("archunit");
+		}
+	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
 	private final AsyncTaskExecutor executor = new SimpleAsyncTaskExecutor();
