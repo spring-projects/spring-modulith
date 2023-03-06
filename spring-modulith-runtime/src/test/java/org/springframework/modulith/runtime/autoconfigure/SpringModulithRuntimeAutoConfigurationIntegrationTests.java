@@ -18,16 +18,21 @@ package org.springframework.modulith.runtime.autoconfigure;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.BeanInstantiationException;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+
+import com.tngtech.archunit.core.importer.ClassFileImporter;
 
 /**
  * Integration test for {@link SpringModulithRuntimeAutoConfiguration}.
  *
  * @author Oliver Drotbohm
+ * @author Michael Weirauch
  */
 class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 
@@ -44,6 +49,24 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 
 					assertThat(context.getBean(ApplicationRuntime.class)).isNotNull();
 					assertThat(context.getBean(ApplicationModulesRuntime.class)).isNotNull();
+
+					context.close();
+				});
+	}
+
+	@Test
+	void missingArchUnitRuntimeDependencyEscalatesOnContextStartup() {
+
+		new ApplicationContextRunner()
+				.withUserConfiguration(SampleApp.class)
+				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
+				.withClassLoader(new FilteredClassLoader(ClassFileImporter.class))
+				.run(context -> {
+
+					assertThat(context).hasFailed();
+					assertThat(context.getStartupFailure().getCause())
+						.isInstanceOf(BeanInstantiationException.class)
+						.cause().isInstanceOf(MissingRuntimeDependencyException.class);
 
 					context.close();
 				});
