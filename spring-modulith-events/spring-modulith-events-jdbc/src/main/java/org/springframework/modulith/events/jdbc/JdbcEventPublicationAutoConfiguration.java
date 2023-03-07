@@ -47,7 +47,7 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.events.schema-initialization.enabled", havingValue = "true")
+	@ConditionalOnProperty(name = "spring.modulith.events.jdbc-schema-initialization.enabled", havingValue = "true")
 	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, ResourceLoader resourceLoader,
 			DatabaseType databaseType) {
 

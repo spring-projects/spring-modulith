@@ -33,7 +33,7 @@ import org.springframework.modulith.testapp.TestApplication;
  */
 @SpringBootTest(
 		classes = TestApplication.class,
-		properties = "spring.modulith.events.schema-initialization.enabled=true")
+		properties = "spring.modulith.events.jdbc-schema-initialization.enabled=true")
 class JdbcEventPublicationAutoConfigurationIntegrationTests {
 
 	@Autowired ApplicationContext context;

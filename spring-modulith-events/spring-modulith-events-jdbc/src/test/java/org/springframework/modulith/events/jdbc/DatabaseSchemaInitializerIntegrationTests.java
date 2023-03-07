@@ -52,7 +52,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	}
 
 	@Nested
-	@JdbcTest(properties = "spring.modulith.events.schema-initialization.enabled=true")
+	@JdbcTest(properties = "spring.modulith.events.jdbc-schema-initialization.enabled=true")
 	static class WithInitEnabled extends TestBase {
 
 		@Autowired JdbcOperations operations;
@@ -70,7 +70,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	}
 
 	@Nested
-	@JdbcTest(properties = "spring.modulith.events.schema-initialization.enabled=false")
+	@JdbcTest(properties = "spring.modulith.events.jdbc-schema-initialization.enabled=false")
 	static class WithInitDisabled extends TestBase {
 
 		@SpyBean JdbcOperations operations;
@@ -107,10 +107,12 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@Nested
 	@ActiveProfiles("hsqldb")
+	@Testcontainers(disabledWithoutDocker = false)
 	class HSQLDB extends WithInitEnabled {}
 
 	@Nested
 	@ActiveProfiles("h2")
+	@Testcontainers(disabledWithoutDocker = false)
 	class H2 extends WithInitEnabled {}
 
 	@Nested
