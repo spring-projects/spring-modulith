@@ -129,7 +129,7 @@ To actually write the event publication log, Spring Modulith exposes an `EventPu
 You select the persistence technology to be used by adding the corresponding JAR to your Spring Modulith application.
 We have prepared dedicated <<events.starters, starters>> to ease that task.
 
-The JDBC-based implementation can create a dedicated table for the event publication log when the respective configuration property is enabled.
+The JDBC-based implementation can create a dedicated table for the event publication log when the respective configuration property (`spring.modulith.events.jdbc-schema-initialization.enabled`) is set to `true`.
 For details, please consult the <<appendix.schemas, schema overview>> in the appendix.
 
 [[events.serialization]]

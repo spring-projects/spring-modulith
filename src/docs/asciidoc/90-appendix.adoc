@@ -86,6 +86,9 @@ a|* `spring-modulith-docs`
 [[appendix.schemas]]
 == Event publication registry schemas
 
+The JDBC-based event publication registry support expects the following database schemas to be present in the database.
+If you would like Spring Modulith to create the schema for you, set the application property `spring.modulith.events.jdbc-schema-initialization.enabled` to `true`.
+
 [[appendix.schemas.h2]]
 === H2
 
