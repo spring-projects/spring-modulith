@@ -46,19 +46,9 @@ import org.springframework.util.Assert;
  * Bean.
  *
  * @author Oliver Drotbohm
- * @author Michael Weirauch
  */
 @AutoConfiguration
 class SpringModulithRuntimeAutoConfiguration {
-
-	@AutoConfiguration
-	@ConditionalOnMissingClass("com.tngtech.archunit.core.importer.ClassFileImporter")
-	static class ArchUnitRuntimeDependencyMissingConfiguration {
-
-		ArchUnitRuntimeDependencyMissingConfiguration() {
-			throw new MissingRuntimeDependencyException("archunit");
-		}
-	}
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
 	private final AsyncTaskExecutor executor = new SimpleAsyncTaskExecutor();
@@ -178,5 +168,23 @@ class SpringModulithRuntimeAutoConfiguration {
 				throw new RuntimeException(o_O);
 			}
 		};
+	}
+
+	/**
+	 * Auto-configuration to react to ArchUnit missing on the runtime classpath.
+	 *
+	 * @author Michael Weirauch
+	 * @author Oliver Drotbohm
+	 */
+	@AutoConfiguration
+	@ConditionalOnMissingClass("com.tngtech.archunit.core.importer.ClassFileImporter")
+	static class ArchUnitRuntimeDependencyMissingConfiguration {
+
+		private static final String DESCRIPTION = "The Spring Modulith runtime support requires ArchUnit to be on the runtime classpath. This might be caused by it declared as test scope dependency, as it usually is used in tests only.";
+		private static final String SUGGESTED_ACTION = "Add ArchUnit to your project and ensure it configured to live in the runtime classpath at least.";
+
+		ArchUnitRuntimeDependencyMissingConfiguration() {
+			throw new MissingRuntimeDependency(DESCRIPTION, SUGGESTED_ACTION);
+		}
 	}
 }

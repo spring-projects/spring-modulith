@@ -20,17 +20,19 @@ import org.springframework.boot.diagnostics.FailureAnalysis;
 import org.springframework.boot.diagnostics.FailureAnalyzer;
 
 /**
- * {@link FailureAnalyzer} for {@link MissingRuntimeDependencyException}.
+ * {@link FailureAnalyzer} for {@link MissingRuntimeDependency}.
  *
  * @author Michael Weirauch
+ * @author Oliver Drotbohm
  */
-class MissingRuntimeDependencyFailureAnalyzer extends AbstractFailureAnalyzer<MissingRuntimeDependencyException> {
+class MissingRuntimeDependencyFailureAnalyzer extends AbstractFailureAnalyzer<MissingRuntimeDependency> {
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.boot.diagnostics.AbstractFailureAnalyzer#analyze(java.lang.Throwable, java.lang.Throwable)
+	 */
 	@Override
-	protected FailureAnalysis analyze(Throwable rootFailure, MissingRuntimeDependencyException cause) {
-		return new FailureAnalysis(
-				String.format("Spring Modulith requires the dependency '%s' to be on the runtime classpath.",
-						cause.getDependencyName()),
-				"Add the missing dependency to the runtime classpath of your project.", cause);
+	protected FailureAnalysis analyze(Throwable rootFailure, MissingRuntimeDependency cause) {
+		return new FailureAnalysis(cause.getDescription(), cause.getSuggestedAction(), cause);
 	}
 }

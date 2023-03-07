@@ -54,7 +54,7 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 				});
 	}
 
-	@Test
+	@Test // GH-160
 	void missingArchUnitRuntimeDependencyEscalatesOnContextStartup() {
 
 		new ApplicationContextRunner()
@@ -65,8 +65,8 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 
 					assertThat(context).hasFailed();
 					assertThat(context.getStartupFailure().getCause())
-						.isInstanceOf(BeanInstantiationException.class)
-						.cause().isInstanceOf(MissingRuntimeDependencyException.class);
+							.isInstanceOf(BeanInstantiationException.class)
+							.cause().isInstanceOf(MissingRuntimeDependency.class);
 
 					context.close();
 				});

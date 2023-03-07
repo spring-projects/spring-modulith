@@ -16,22 +16,29 @@
 package org.springframework.modulith.runtime.autoconfigure;
 
 /**
- * An Exception carrying information about a missing runtime dependency to be
- * analyzed by {@link MissingRuntimeDependencyFailureAnalyzer}.
+ * An Exception carrying information about a missing runtime dependency to be analyzed by
+ * {@link MissingRuntimeDependencyFailureAnalyzer}.
  *
  * @author Michael Weirauch
+ * @author Oliver Drotbohm
  */
-class MissingRuntimeDependencyException extends RuntimeException {
+class MissingRuntimeDependency extends RuntimeException {
 
 	private static final long serialVersionUID = 1L;
 
-	private final String dependencyName;
+	private final String description, suggestedAction;
 
-	public MissingRuntimeDependencyException(String dependencyName) {
-		this.dependencyName = dependencyName;
+	MissingRuntimeDependency(String description, String suggestedAction) {
+
+		this.description = description;
+		this.suggestedAction = suggestedAction;
 	}
 
-	public String getDependencyName() {
-		return dependencyName;
+	String getDescription() {
+		return description;
+	}
+
+	String getSuggestedAction() {
+		return suggestedAction;
 	}
 }
