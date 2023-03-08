@@ -62,7 +62,7 @@ class DatabaseSchemaInitializer implements InitializingBean {
 	public void afterPropertiesSet() {
 
 		var schemaResourceFilename = databaseType.getSchemaResourceFilename();
-		var schemaDdlResource = resourceLoader.getResource("classpath:" + schemaResourceFilename);
+		var schemaDdlResource = resourceLoader.getResource(ResourceLoader.CLASSPATH_URL_PREFIX + schemaResourceFilename);
 		var schemaDdl = asString(schemaDdlResource);
 
 		jdbcOperations.execute(schemaDdl);
