@@ -241,12 +241,27 @@ class Classes implements DescribedIterable<JavaClass> {
 		Assert.notNull(type, "Type must not be null!");
 		Assert.notNull(basePackage, "Base package must not be null!");
 
-		var prefix = type.getModifiers().contains(JavaModifier.PUBLIC) ? "+" : "o";
+		return format(type, basePackage, type.getModifiers().contains(JavaModifier.PUBLIC));
+	}
+
+	/**
+	 * Formats the given {@link JavaClass} into a {@link String}, potentially abbreviating the given base package.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @param basePackage must not be {@literal null}.
+	 * @param exposed whether the given type is considered exposed or not.
+	 * @return will never be {@literal null}.
+	 */
+	static String format(JavaClass type, String basePackage, boolean exposed) {
+
+		Assert.notNull(type, "Type must not be null!");
+		Assert.notNull(basePackage, "Base package must not be null!");
+
 		var name = StringUtils.hasText(basePackage) //
 				? type.getName().replace(basePackage, "…") //
 				: type.getName();
 
-		return String.format("%s %s", prefix, name);
+		return String.format("%s %s", exposed ? "+" : "o", name);
 	}
 
 	private static String format(JavaClass type) {

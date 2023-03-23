@@ -442,7 +442,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	@Override
 	public String toString() {
-		return this.stream().map(ApplicationModule::toString).collect(Collectors.joining("\n"));
+
+		return this.stream()
+				.map(it -> it.toString(this))
+				.collect(Collectors.joining("\n"));
 	}
 
 	private ApplicationModules withSharedModules(Set<ApplicationModule> sharedModules) {

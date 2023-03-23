@@ -362,7 +362,7 @@ public class ApplicationModule {
 
 			builder.append("> Spring beans:\n");
 			beans.forEach(it -> builder.append("  ") //
-					.append(Classes.format(it, basePackage.getName()))//
+					.append(Classes.format(it, basePackage.getName(), isExposed(it)))//
 					.append('\n'));
 		}
 
