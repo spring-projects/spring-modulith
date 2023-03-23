@@ -15,13 +15,13 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
-import java.util.List;
 import java.util.concurrent.Future;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -73,14 +73,13 @@ class SpringModulithRuntimeAutoConfiguration {
 	}
 
 	@Bean
-	ApplicationListener<ApplicationStartedEvent> applicationModuleInitialzingListener(ApplicationModulesRuntime runtime,
-			List<ApplicationModuleInitializer> initializers) {
+	ApplicationListener<ApplicationStartedEvent> applicationModuleInitializingListener(ListableBeanFactory beanFactory) {
 
 		return event -> {
 
-			var modules = runtime.get();
+			var modules = beanFactory.getBean(ApplicationModulesRuntime.class).get();
 
-			initializers.stream() //
+			beanFactory.getBeanProvider(ApplicationModuleInitializer.class).stream() //
 					.sorted(modules.getComparator()) //
 					.map(it -> LOGGER.isDebugEnabled() ? new LoggingApplicationModuleInitializerAdapter(it, modules) : it)
 					.forEach(ApplicationModuleInitializer::initialize);
