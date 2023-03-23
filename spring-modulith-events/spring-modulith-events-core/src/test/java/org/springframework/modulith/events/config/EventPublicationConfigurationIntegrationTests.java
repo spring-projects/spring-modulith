@@ -31,8 +31,12 @@ import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutd
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
+import org.springframework.context.annotation.AdviceMode;
 import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.config.EventPublicationConfiguration.AsyncPropertiesDefaulter;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.ProxyAsyncConfiguration;
+import org.springframework.scheduling.aspectj.AspectJAsyncConfiguration;
 
 /**
  * Unit tests for {@link EventPublicationConfiguration}.
@@ -81,6 +85,26 @@ class EventPublicationConfigurationIntegrationTests {
 				.run(expect(Shutdown::getAwaitTerminationPeriod, Duration.ofMinutes(10)));
 	}
 
+	@Test // GH-184
+	void enablesAsyncSupportByDefault() {
+
+		basicSetup().run(context -> {
+			assertThat(context).hasSingleBean(ProxyAsyncConfiguration.class);
+		});
+	}
+
+	@Test // GH-184
+	void doesNotEnableAsyncSupportByDefaultIfExplicitlyConfigured() {
+
+		basicSetup()
+				.withUserConfiguration(CustomAsyncConfiguration.class)
+				.run(context -> {
+					assertThat(context)
+							.doesNotHaveBean(ProxyAsyncConfiguration.class)
+							.hasSingleBean(AspectJAsyncConfiguration.class);
+				});
+	}
+
 	private <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,
 			T expected) {
 
@@ -96,4 +120,7 @@ class EventPublicationConfigurationIntegrationTests {
 						AutoConfigurations.of(EventPublicationConfiguration.class, TaskExecutionAutoConfiguration.class))
 				.withBean(EventPublicationRepository.class, () -> repository);
 	}
+
+	@EnableAsync(mode = AdviceMode.ASPECTJ)
+	static class CustomAsyncConfiguration {}
 }

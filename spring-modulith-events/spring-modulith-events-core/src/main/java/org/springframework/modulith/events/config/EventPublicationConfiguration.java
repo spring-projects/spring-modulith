@@ -24,25 +24,33 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutdown;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRepository;
+import org.springframework.modulith.events.config.EventPublicationConfiguration.AsyncEnablingConfiguration;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
+import org.springframework.scheduling.annotation.AbstractAsyncConfiguration;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
+ * Fundamental configuration for the {@link EventPublicationRegistry} support.
+ *
  * @author Oliver Drotbohm
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
 @Configuration(proxyBeanMethods = false)
+@Import(AsyncEnablingConfiguration.class)
 class EventPublicationConfiguration {
 
 	@Bean
@@ -73,6 +81,10 @@ class EventPublicationConfiguration {
 	static AsyncPropertiesDefaulter asyncPropertiesDefaulter(Environment environment) {
 		return new AsyncPropertiesDefaulter(environment);
 	}
+
+	@EnableAsync
+	@ConditionalOnMissingBean(AbstractAsyncConfiguration.class)
+	static class AsyncEnablingConfiguration {}
 
 	static class AsyncPropertiesDefaulter implements BeanPostProcessor {
 
