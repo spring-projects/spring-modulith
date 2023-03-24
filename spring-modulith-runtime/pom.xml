@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.experimental</groupId>
 		<artifactId>spring-modulith</artifactId>
-		<version>0.6.0-SNAPSHOT</version>
+		<version>0.5.1</version>
 	</parent>
 
 	<name>Spring Modulith - Runtime support</name>
