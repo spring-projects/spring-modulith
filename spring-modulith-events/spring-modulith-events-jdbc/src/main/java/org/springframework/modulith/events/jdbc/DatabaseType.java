@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import org.springframework.boot.jdbc.DatabaseDriver;
+import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
 /**
@@ -83,6 +84,6 @@ enum DatabaseType {
 	}
 
 	String getSchemaResourceFilename() {
-		return "/schema-" + value + ".sql";
+		return ResourceLoader.CLASSPATH_URL_PREFIX + "/schema-" + value + ".sql";
 	}
 }
