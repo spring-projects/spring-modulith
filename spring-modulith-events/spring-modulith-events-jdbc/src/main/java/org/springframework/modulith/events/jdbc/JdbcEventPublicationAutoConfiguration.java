@@ -17,11 +17,9 @@ package org.springframework.modulith.events.jdbc;
 
 import javax.sql.DataSource;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
@@ -42,15 +40,7 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	@Bean
 	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
 			EventSerializer serializer, DatabaseType databaseType) {
-
 		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, databaseType);
 	}
 
-	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.events.jdbc-schema-initialization.enabled", havingValue = "true")
-	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, ResourceLoader resourceLoader,
-			DatabaseType databaseType) {
-
-		return new DatabaseSchemaInitializer(jdbcTemplate, resourceLoader, databaseType);
-	}
 }

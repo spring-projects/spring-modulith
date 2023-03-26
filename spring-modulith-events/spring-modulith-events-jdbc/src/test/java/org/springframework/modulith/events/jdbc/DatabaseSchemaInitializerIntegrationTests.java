@@ -44,7 +44,8 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	private static final String COUNT_PUBLICATIONS = "SELECT COUNT(*) FROM EVENT_PUBLICATION";
 
-	@ImportAutoConfiguration(JdbcEventPublicationAutoConfiguration.class)
+	@ImportAutoConfiguration({JdbcEventPublicationAutoConfiguration.class,
+			DatabaseSchemaInitializerAutoConfiguration.class})
 	@ContextConfiguration(classes = TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
 	static class TestBase {
@@ -59,7 +60,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
 
 		@Test // GH-3
-		void doesNotRegisterAnInitializerBean() {
+		void doesRegisterAnInitializerBean() {
 			assertThat(initializer).isPresent();
 		}
 
@@ -89,19 +90,19 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@Nested
 	@JdbcTest
-	class InitializationDisabledByDefault extends TestBase {
+	class InitializationEnabledByDefault extends TestBase {
 
 		@SpyBean JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
 
 		@Test // GH-3
-		void doesNotRegisterAnInitializerBean() {
-			assertThat(initializer).isEmpty();
+		void doesRegisterAnInitializerBean() {
+			assertThat(initializer).isPresent();
 		}
 
 		@Test // GH-3
-		void shouldNotCreateDatabaseSchemaOnStartUp() {
-			verify(operations, never()).execute(anyString());
+		void shouldCreateDatabaseSchemaOnStartUp() {
+			assertThatNoException().isThrownBy(() -> operations.queryForObject(COUNT_PUBLICATIONS, Long.class));
 		}
 	}
 

@@ -57,7 +57,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@JdbcTest
 	@Import(TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
-	@ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
+	@ContextConfiguration(classes = {JdbcEventPublicationAutoConfiguration.class,
+			DatabaseSchemaInitializerAutoConfiguration.class})
 	abstract class TestBase {
 
 		@Autowired JdbcOperations operations;
