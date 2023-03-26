@@ -39,6 +39,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  * @author Oliver Drotbohm
+ * @author Nikola Kološnjaji
  */
 class DatabaseSchemaInitializerIntegrationTests {
 
@@ -106,6 +107,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 		}
 	}
 
+
 	@Nested
 	@ActiveProfiles("hsqldb")
 	@Testcontainers(disabledWithoutDocker = false)
@@ -123,4 +125,31 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("mysql")
 	class MySQL extends WithInitEnabled {}
+
+	@Nested
+	@ActiveProfiles("hsqldb")
+	@Testcontainers(disabledWithoutDocker = false)
+	class HSQLDBInitDisabled extends WithInitDisabled {}
+
+	@Nested
+	@ActiveProfiles("h2")
+	@Testcontainers(disabledWithoutDocker = false)
+	class H2InitDisabled extends WithInitDisabled {}
+
+	@Nested
+	@ActiveProfiles("postgres")
+	class PostgresInitDisabled extends WithInitDisabled {}
+
+	@Nested
+	@ActiveProfiles("mysql")
+	class MySQLInitDisabled extends WithInitDisabled {}
+
+	@Nested
+	@ActiveProfiles("hsqldb")
+	class HSQLDBByDefault extends InitializationEnabledByDefault {}
+
+	@Nested
+	@ActiveProfiles("h2")
+	class H2ByDefault extends InitializationEnabledByDefault {}
+
 }
