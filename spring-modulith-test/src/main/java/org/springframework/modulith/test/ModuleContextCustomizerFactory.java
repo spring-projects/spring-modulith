@@ -25,12 +25,12 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.ContextCustomizerFactory;
 import org.springframework.test.context.MergedContextConfiguration;
+import org.springframework.test.context.TestContextAnnotationUtils;
 
 /**
  * @author Oliver Drotbohm
@@ -45,9 +45,9 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	public ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
-		var moduleTest = AnnotatedElementUtils.getMergedAnnotation(testClass, ApplicationModuleTest.class);
+		var moduleTest = TestContextAnnotationUtils.findAnnotationDescriptor(testClass, ApplicationModuleTest.class);
 
-		return moduleTest == null ? null : new ModuleContextCustomizer(testClass);
+		return moduleTest == null ? null : new ModuleContextCustomizer(moduleTest.getRootDeclaringClass());
 	}
 
 	static class ModuleContextCustomizer implements ContextCustomizer {
