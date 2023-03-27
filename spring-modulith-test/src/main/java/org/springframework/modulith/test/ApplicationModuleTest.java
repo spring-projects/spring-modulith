@@ -15,8 +15,12 @@
  */
 package org.springframework.modulith.test;
 
+import java.lang.annotation.Documented;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Inherited;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -35,14 +39,15 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
  * Bootstraps the module containing the package of the test class annotated with {@link ApplicationModuleTest}. Will
  * apply the following modifications to the Spring Boot configuration:
  * <ul>
- * <li>Restricts the component scanning to the module's package.
- * <li>
- * <li>Sets the module's package as the only auto-configuration and entity scan package.
- * <li>
+ * <li>Restricts the component scanning to the module's package.</li>
+ * <li>Sets the module's package as the only auto-configuration and entity scan package.</li>
  * </ul>
  *
  * @author Oliver Drotbohm
  */
+@Target(value = ElementType.TYPE)
+@Documented
+@Inherited
 @Retention(RetentionPolicy.RUNTIME)
 @BootstrapWith(SpringBootTestContextBootstrapper.class)
 @TypeExcludeFilters(ModuleTypeExcludeFilter.class)
