@@ -15,17 +15,13 @@
  */
 package org.springframework.modulith.core;
 
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 
 import org.springframework.util.Assert;
 
-import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClass.Predicates;
-import com.tngtech.archunit.core.domain.JavaModifier;
-import com.tngtech.archunit.core.domain.properties.HasModifiers;
 
 /**
  * A named interface into an {@link ApplicationModule}. This can either be a package, explicitly annotated with
@@ -36,23 +32,24 @@ import com.tngtech.archunit.core.domain.properties.HasModifiers;
  * @author Oliver Drotbohm
  * @see org.springframework.modulith.ApplicationModule#allowedDependencies()
  */
-public abstract class NamedInterface implements Iterable<JavaClass> {
+public class NamedInterface implements Iterable<JavaClass> {
 
-	private static final String UNNAMED_NAME = "<<UNNAMED>>";
-	private static final String PACKAGE_INFO_NAME = "package-info";
+	static final String UNNAMED_NAME = "<<UNNAMED>>";
 
-	protected final String name;
+	private final String name;
+	private final Classes classes;
 
 	/**
 	 * Creates a new {@link NamedInterface} with the given name.
 	 *
 	 * @param name must not be {@literal null} or empty.
 	 */
-	protected NamedInterface(String name) {
+	private NamedInterface(String name, Classes classes) {
 
 		Assert.hasText(name, "Name must not be null or empty!");
 
 		this.name = name;
+		this.classes = classes;
 	}
 
 	/**
@@ -61,15 +58,17 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 	 * @param javaPackage must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static List<NamedInterface> of(JavaPackage javaPackage) {
+	static List<NamedInterface> of(JavaPackage javaPackage) {
 
-		String[] name = javaPackage.getAnnotation(org.springframework.modulith.NamedInterface.class) //
-				.map(it -> it.name()) //
+		var names = javaPackage.getAnnotation(org.springframework.modulith.NamedInterface.class) //
+				.map(it -> getDefaultedNames(it, javaPackage.getName())) //
 				.orElseThrow(() -> new IllegalArgumentException(
 						String.format("Couldn't find NamedInterface annotation on package %s!", javaPackage)));
 
-		return Arrays.stream(name) //
-				.<NamedInterface> map(it -> new PackageBasedNamedInterface(it, javaPackage)) //
+		var classes = javaPackage.toSingle().getExposedClasses();
+
+		return names.stream()
+				.<NamedInterface> map(it -> new NamedInterface(it, classes)) //
 				.toList();
 	}
 
@@ -81,8 +80,8 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 	 * @param basePackage must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static TypeBasedNamedInterface of(String name, Classes classes, JavaPackage basePackage) {
-		return new TypeBasedNamedInterface(name, classes, basePackage);
+	static NamedInterface of(String name, Classes classes) {
+		return new NamedInterface(name, classes);
 	}
 
 	/**
@@ -92,7 +91,7 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 	 * @return will never be {@literal null}.
 	 */
 	static NamedInterface unnamed(JavaPackage javaPackage) {
-		return new PackageBasedNamedInterface(UNNAMED_NAME, javaPackage);
+		return new NamedInterface(UNNAMED_NAME, javaPackage.toSingle().getExposedClasses());
 	}
 
 	/**
@@ -120,7 +119,7 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 
 		Assert.notNull(type, "JavaClass must not be null!");
 
-		return getClasses().contains(type);
+		return classes.contains(type);
 	}
 
 	/**
@@ -132,7 +131,7 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 
 		Assert.notNull(type, "Type must not be null!");
 
-		return !getClasses().that(Predicates.equivalentTo(type)).isEmpty();
+		return !classes.that(Predicates.equivalentTo(type)).isEmpty();
 	}
 
 	/**
@@ -144,7 +143,7 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 
 		Assert.notNull(other, "NamedInterface must not be null!");
 
-		return this.name.equals(other.name);
+		return name.equals(other.name);
 	}
 
 	/*
@@ -153,15 +152,8 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 	 */
 	@Override
 	public Iterator<JavaClass> iterator() {
-		return getClasses().iterator();
+		return classes.iterator();
 	}
-
-	/**
-	 * Returns all {@link Classes} making up this {@link NamedInterface}.
-	 *
-	 * @return will never be {@literal null}.
-	 */
-	protected abstract Classes getClasses();
 
 	/**
 	 * Merges the current {@link NamedInterface} with the given {@link TypeBasedNamedInterface}.
@@ -169,112 +161,40 @@ public abstract class NamedInterface implements Iterable<JavaClass> {
 	 * @param other must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public abstract NamedInterface merge(TypeBasedNamedInterface other);
+	NamedInterface merge(NamedInterface other) {
 
-	private static class PackageBasedNamedInterface extends NamedInterface {
+		Assert.isTrue(this.name.equals(other.name),
+				() -> "Named interfaces name must be equal to %s but was %s".formatted(name, other.name));
 
-		private final Classes classes;
-		private final JavaPackage javaPackage;
-
-		public PackageBasedNamedInterface(String name, JavaPackage pkg) {
-
-			super(name);
-
-			Assert.notNull(pkg, "Package must not be null!");
-			Assert.hasText(name, "Package name must not be null or empty!");
-
-			this.classes = pkg.toSingle().getClasses() //
-					.that(HasModifiers.Predicates.modifier(JavaModifier.PUBLIC)) //
-					.that(DescribedPredicate.not(JavaClass.Predicates.simpleName(PACKAGE_INFO_NAME)));
-
-			this.javaPackage = pkg;
-		}
-
-		private PackageBasedNamedInterface(String name, Classes classes, JavaPackage pkg) {
-
-			super(name);
-			this.classes = classes;
-			this.javaPackage = pkg;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.NamedInterface#getClasses()
-		 */
-		@Override
-		public Classes getClasses() {
-			return classes;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.NamedInterface#merge(org.springframework.modulith.model.NamedInterface.TypeBasedNamedInterface)
-		 */
-		@Override
-		public NamedInterface merge(TypeBasedNamedInterface other) {
-			return new PackageBasedNamedInterface(name, classes.and(other.classes), javaPackage);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.NamedInterface#toString()
-		 */
-		@Override
-		public String toString() {
-			return String.format("%s - Public types residing in %s:\n%s\n", name, javaPackage.getName(),
-					classes.format(javaPackage.getName()));
-		}
+		return new NamedInterface(name, classes.and(other.classes));
 	}
 
-	public static class TypeBasedNamedInterface extends NamedInterface {
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "NamedInterface: name=%s, types=%s".formatted(name, classes);
+	}
 
-		private final Classes classes;
-		private final JavaPackage pkg;
+	/**
+	 * Returns the names declared in the given {@link org.springframework.modulith.NamedInterface} annotation or defaults
+	 * to the local name of the given package if none declared.
+	 *
+	 * @param annotation must not be {@literal null}.
+	 * @param packageName must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static List<String> getDefaultedNames(org.springframework.modulith.NamedInterface annotation, String packageName) {
 
-		/**
-		 * Creates a new {@link TypeBasedNamedInterface} with the given name, {@link Classes} and {@link JavaPackage}.
-		 *
-		 * @param name must not be {@literal null} or empty.
-		 * @param types must not be {@literal null}.
-		 * @param pkg must not be {@literal null}.
-		 */
-		public TypeBasedNamedInterface(String name, Classes types, JavaPackage pkg) {
+		Assert.notNull(annotation, "NamedInterface must not be null!");
+		Assert.hasText(packageName, "Package name must not be null or empty!");
 
-			super(name);
+		var declaredNames = annotation.name();
 
-			Assert.notNull(types, "Classes must not be null!");
-			Assert.notNull(pkg, "JavaPackage must not be null!");
-
-			this.classes = types;
-			this.pkg = pkg;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.NamedInterface#getClasses()
-		 */
-		@Override
-		public Classes getClasses() {
-			return classes;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.NamedInterface#merge(org.springframework.modulith.model.NamedInterface.TypeBasedNamedInterface)
-		 */
-		@Override
-		public NamedInterface merge(TypeBasedNamedInterface other) {
-			return new TypeBasedNamedInterface(name, classes.and(other.classes), pkg);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.NamedInterface#toString()
-		 */
-		@Override
-		public String toString() {
-			return String.format("%s - Types underneath base package %s:\n%s\n", name, pkg.getName(),
-					classes.format(pkg.getName()));
-		}
+		return declaredNames.length == 0
+				? List.of(packageName.substring(packageName.lastIndexOf('.') + 1))
+				: List.of(declaredNames);
 	}
 }

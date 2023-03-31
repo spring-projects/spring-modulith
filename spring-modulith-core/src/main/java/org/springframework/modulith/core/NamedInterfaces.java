@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.modulith.core.NamedInterface.TypeBasedNamedInterface;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 
@@ -151,7 +150,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	 * @param others must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	NamedInterfaces and(List<TypeBasedNamedInterface> others) {
+	NamedInterfaces and(List<NamedInterface> others) {
 
 		Assert.notNull(others, "Other TypeBasedNamedInterfaces must not be null!");
 
@@ -162,23 +161,18 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 			return this;
 		}
 
-		for (TypeBasedNamedInterface candidate : others) {
+		for (NamedInterface candidate : others) {
 
-			var existing = namedInterfaces.stream() //
-					.filter(it -> it.hasSameNameAs(candidate)) //
+			var existing = this.namedInterfaces.stream() //
+					.filter(candidate::hasSameNameAs) //
 					.findFirst();
 
 			// Merge existing with new and add to result
-			existing.ifPresent(it -> {
+			existing.ifPresentOrElse(it -> {
 				namedInterfaces.add(it.merge(candidate));
-				namedInterfaces.add(it);
 				unmergedInterface.remove(it);
-			});
-
-			// Simply add candidate
-			if (!existing.isPresent()) {
-				namedInterfaces.add(candidate);
-			}
+			},
+					() -> namedInterfaces.add(candidate));
 		}
 
 		namedInterfaces.addAll(unmergedInterface);
@@ -195,7 +189,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		return new NamedInterfaces(result);
 	}
 
-	private static List<TypeBasedNamedInterface> ofAnnotatedTypes(JavaPackage basePackage) {
+	private static List<NamedInterface> ofAnnotatedTypes(JavaPackage basePackage) {
 
 		var mappings = new LinkedMultiValueMap<String, JavaClass>();
 
@@ -210,13 +204,12 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 					var annotation = AnnotatedElementUtils.getMergedAnnotation(it.reflect(),
 							org.springframework.modulith.NamedInterface.class);
 
-					for (String name : annotation.name()) {
-						mappings.add(name, it);
-					}
+					NamedInterface.getDefaultedNames(annotation, it.getPackageName())
+							.forEach(name -> mappings.add(name, it));
 				});
 
 		return mappings.entrySet().stream() //
-				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()), basePackage)) //
+				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()))) //
 				.toList();
 	}
 }

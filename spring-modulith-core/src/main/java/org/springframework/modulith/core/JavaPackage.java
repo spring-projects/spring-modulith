@@ -32,7 +32,9 @@ import org.springframework.util.Assert;
 import com.tngtech.archunit.base.DescribedIterable;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
+import com.tngtech.archunit.core.domain.properties.HasModifiers;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
 import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
@@ -121,7 +123,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 * @return will never be {@literal null}.
 	 */
 	public String getLocalName() {
-		return name.substring(name.lastIndexOf(".") + 1);
+		return name.substring(name.lastIndexOf('.') + 1);
 	}
 
 	/**
@@ -141,6 +143,17 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 */
 	public Classes getClasses() {
 		return packageClasses;
+	}
+
+	/**
+	 * Returns the classes exposed by this package, i.e. only public ones. Also filters the {@code package-info} type.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Classes getExposedClasses() {
+
+		return packageClasses.that(HasModifiers.Predicates.modifier(JavaModifier.PUBLIC)) //
+				.that(DescribedPredicate.not(JavaClass.Predicates.simpleName(PACKAGE_INFO_NAME)));
 	}
 
 	/**

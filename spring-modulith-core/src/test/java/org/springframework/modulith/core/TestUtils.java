@@ -66,6 +66,8 @@ class TestUtils {
 
 		Assert.notNull(packageType, "Package type must not be null!");
 
-		return getClasses().that(resideInAPackage(packageType.getPackage().getName()));
+		return Classes.of(new ClassFileImporter()
+				.importPackagesOf(packageType)
+				.that(resideInAPackage(packageType.getPackage().getName() + "..")));
 	}
 }

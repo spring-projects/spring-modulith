@@ -24,8 +24,7 @@ import java.lang.annotation.Target;
 import org.springframework.core.annotation.AliasFor;
 
 /**
- * Annotation to mark a package as named interface of a {@link ApplicationModule} (either implicit or explicitly
- * annotated).
+ * Annotation to mark a package as named interface of a {@link ApplicationModule} or assign a type to a named interface.
  *
  * @author Oliver Drotbohm
  */
@@ -35,19 +34,21 @@ import org.springframework.core.annotation.AliasFor;
 public @interface NamedInterface {
 
 	/**
-	 * The name(s) of the named interface. Declaring multiple values here is useful in case named interfaces are defined
-	 * based on types and a particular type is supposed to be part of multiple named interfaces.
+	 * The name(s) of the named interface. If declared on a package, the package's local name will be used as default
+	 * name. Declaring multiple values here is useful in case named interfaces are defined based on types and a particular
+	 * type is supposed to be part of multiple named interfaces.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	@AliasFor("name")
 	String[] value() default {};
 
 	/**
-	 * The name(s) of the named interface. Declaring multiple values here is useful in case named interfaces are defined
-	 * based on types and a particular type is supposed to be part of multiple named interfaces.
+	 * The name(s) of the named interface. If declared on a package, the package's local name will be used as default
+	 * name. Declaring multiple values here is useful in case named interfaces are defined based on types and a particular
+	 * type is supposed to be part of multiple named interfaces.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	@AliasFor("value")
 	String[] name() default {};
