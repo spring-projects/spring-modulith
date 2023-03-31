@@ -145,14 +145,14 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	}
 
 	/**
-	 * Creates a new {@link NamedInterfaces} instance with the given {@link TypeBasedNamedInterface}s added.
+	 * Creates a new {@link NamedInterfaces} instance with the given {@link NamedInterface}s added.
 	 *
 	 * @param others must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
 	NamedInterfaces and(List<NamedInterface> others) {
 
-		Assert.notNull(others, "Other TypeBasedNamedInterfaces must not be null!");
+		Assert.notNull(others, "Other NamedInterfaces must not be null!");
 
 		var namedInterfaces = new ArrayList<NamedInterface>();
 		var unmergedInterface = this.namedInterfaces;

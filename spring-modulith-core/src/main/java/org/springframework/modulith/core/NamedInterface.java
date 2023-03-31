@@ -53,7 +53,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 	}
 
 	/**
-	 * Returns all {@link PackageBasedNamedInterface}s for the given {@link JavaPackage}.
+	 * Returns all {@link NamedInterface}s for the given {@link JavaPackage}.
 	 *
 	 * @param javaPackage must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -73,11 +73,10 @@ public class NamedInterface implements Iterable<JavaClass> {
 	}
 
 	/**
-	 * Returns a {@link TypeBasedNamedInterface} with the given name, {@link Classes} and base {@link JavaPackage}.
+	 * Returns a {@link NamedInterface} with the given name, {@link Classes} and base {@link JavaPackage}.
 	 *
 	 * @param name must not be {@literal null} or empty.
 	 * @param classes must not be {@literal null}.
-	 * @param basePackage must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
 	static NamedInterface of(String name, Classes classes) {
@@ -156,7 +155,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 	}
 
 	/**
-	 * Merges the current {@link NamedInterface} with the given {@link TypeBasedNamedInterface}.
+	 * Merges the current {@link NamedInterface} with the given {@link NamedInterface}.
 	 *
 	 * @param other must not be {@literal null}.
 	 * @return will never be {@literal null}.
