@@ -22,6 +22,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -42,6 +43,8 @@ import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyDepth;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.core.SpringBean;
+import org.springframework.modulith.docs.Groupings.JMoleculesGroupings;
+import org.springframework.modulith.docs.Groupings.SpringGroupings;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -833,21 +836,39 @@ public class Documenter {
 			this.hideEmptyLines = hideEmptyLines;
 		}
 
+		/**
+		 * Creates a default {@link CanvasOptions} instance configuring component {@link Groupings} for jMolecules (if on
+		 * the classpath) and Spring Framework. Use {@link #withoutDefaultGroupings()} if you prefer to register component
+		 * {@link Grouping}s yourself.
+		 *
+		 * @return will never be {@literal null}.
+		 * @see #withoutDefaultGroupings()
+		 * @see Groupings
+		 */
 		public static CanvasOptions defaults() {
 
 			return withoutDefaultGroupings()
-					.groupingBy("Controllers", bean -> bean.toArchitecturallyEvidentType().isController()) //
-					.groupingBy("Services", bean -> bean.toArchitecturallyEvidentType().isService()) //
-					.groupingBy("Repositories", bean -> bean.toArchitecturallyEvidentType().isRepository()) //
-					.groupingBy("Event listeners", bean -> bean.toArchitecturallyEvidentType().isEventListener()) //
-					.groupingBy("Configuration properties",
-							bean -> bean.toArchitecturallyEvidentType().isConfigurationProperties());
+					.groupingBy(JMoleculesGroupings.getGroupings())
+					.groupingBy(SpringGroupings.getGroupings());
 		}
 
+		/**
+		 * Creates a {@link CanvasOptions} instance that does not register any default component {@link Grouping}s.
+		 *
+		 * @return will never be {@literal null}.
+		 * @see #defaults()
+		 * @see Groupings
+		 */
 		public static CanvasOptions withoutDefaultGroupings() {
 			return new CanvasOptions(new ArrayList<>(), null, null, true, true);
 		}
 
+		/**
+		 * Creates a new {@link CanvasOptions} with the given {@link Grouping}s added.
+		 *
+		 * @param groupings must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
 		public CanvasOptions groupingBy(Grouping... groupings) {
 
 			var result = new ArrayList<>(groupers);
@@ -1073,6 +1094,10 @@ public class Documenter {
 
 				return implementing(type) //
 						.and(bean -> !bean.getType().isEquivalentTo(type));
+			}
+
+			public static Predicate<SpringBean> isAnnotatedWith(Class<? extends Annotation> type) {
+				return bean -> bean.getType().isAnnotatedWith(type);
 			}
 
 			/**
