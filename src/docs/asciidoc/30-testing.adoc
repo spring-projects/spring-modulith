@@ -79,7 +79,7 @@ If you find your application module depending on too many beans of other ones, t
 The dependencies should be reviewed for whether they are candidates for replacement by publishing a domain event (see <<events>>).
 
 [[testing.scenarios]]
-== Defining integration test scenarios
+== Defining Integration Test Scenarios
 
 Integration testing application modules can become a quite elaborate effort.
 Especially if the integration of those is based on <<events.aml, asynchronous, transactional event handling>>, dealing with the concurrent execution can be subject to subtle errors.
@@ -178,4 +178,40 @@ The `result` handed into the `….andVerify(…)` method will be the value retur
 By default, non-`null` values and non-empty ``Optional``s will be considered a conclusive state change.
 This can be tweaked by using the `….andWaitForStateChange(…, Predicate)` overload.
 
+[[testing.scenarios.customize]]
+=== Customizing Scenario Execution
 
+To customize the execution of an individual scenario, call the `….customize(…)` method in the setup chain of the `Scenario`:
+
+.Customizing a `Scenario` execution
+[source, java, subs="+quotes"]
+----
+scenario.publish(new MyApplicationEvent(…))
+  **.customize(it -> it.atMost(Duration.ofSeconds(2)))**
+  .andWaitForEventOfType(SomeOtherEvent.class)
+  .matching(event -> …)
+  .toArriveAndVerify(event -> …);
+----
+
+To globally customize all `Scenario` instances of a test class, implement a `ScenarioCustomizer` and register it as JUnit extension.
+
+.Registering a `ScenarioCustomizer`
+[source, java]
+----
+@ExtendWith(MyCustomizer.class)
+class MyTests {
+
+  @Test
+  void myTestCase(Scenario scenario) {
+    // scenario will be pre-customized with logic defined in MyCustomizer
+  }
+
+  static class MyCustomizer implements ScenarioCustomizer {
+
+    @Override
+    Function<ConditionFactory, ConditionFactory> getDefaultCustomizer(Method method, ApplicationContext context) {
+      return it -> …;
+    }
+  }
+}
+----

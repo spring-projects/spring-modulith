@@ -74,6 +74,8 @@ public class Scenario {
 	private final ApplicationEventPublisher publisher;
 	private final AssertablePublishedEvents events;
 
+	private Function<ConditionFactory, ConditionFactory> defaultCustomizer;
+
 	/**
 	 * Creates a new {@link Scenario} for the given {@link TransactionTemplate}, {@link ApplicationEventPublisher} and
 	 * {@link AssertablePublishedEvents}.
@@ -95,6 +97,7 @@ public class Scenario {
 		this.transactionOperations = new TransactionTemplate(transactionTemplate.getTransactionManager(), definition);
 		this.publisher = publisher;
 		this.events = events;
+		this.defaultCustomizer = Function.identity();
 	}
 
 	/**
@@ -197,7 +200,22 @@ public class Scenario {
 
 		Assert.notNull(stimulus, "Stimulus must not be null!");
 
-		return new When<>(stimulus, __ -> {}, Function.identity());
+		return new When<>(stimulus, __ -> {}, defaultCustomizer);
+	}
+
+	/**
+	 * Extension hook to allow registration of a global customizer. If none configured we will fall back to
+	 * {@link Function#identity()}.
+	 *
+	 * @param customizer must not be {@literal null}.
+	 * @see org.springframework.modulith.test.ScenarioCustomizer
+	 */
+	Scenario setDefaultCustomizer(Function<ConditionFactory, ConditionFactory> customizer) {
+
+		Assert.notNull(customizer, "Customizer must not be null!");
+
+		this.defaultCustomizer = customizer;
+		return this;
 	}
 
 	public class When<T> {
@@ -263,6 +281,10 @@ public class Scenario {
 		}
 
 		/**
+		 * Customize the execution of the scenario. The given customizer will be added to the default one registered via a
+		 * {@link org.springframework.modulith.test.ScenarioCustomizer}. In other words, multiple invocations will replace
+		 * registrations made in previous calls but always be chained after the default customizations registered.
+		 *
 		 * @param customizer must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 */
@@ -270,7 +292,7 @@ public class Scenario {
 
 			Assert.notNull(customizer, "Customizer must not be null!");
 
-			return new When<T>(stimulus, cleanup, customizer);
+			return new When<T>(stimulus, cleanup, defaultCustomizer.andThen(customizer));
 		}
 
 		// Expect event

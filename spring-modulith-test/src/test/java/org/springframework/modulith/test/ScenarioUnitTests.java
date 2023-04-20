@@ -25,8 +25,10 @@ import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Duration;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -347,6 +349,39 @@ class ScenarioUnitTests {
 				.getTransaction(argThat(it -> it.getPropagationBehavior() == TransactionDefinition.PROPAGATION_REQUIRES_NEW));
 	}
 
+	@Test // GH-165
+	void chainsSpecialCustomizerBehindDefaultOne() {
+
+		var defaultCustomizer = new InvocationTracingCustomizer();
+		var specialCustomizer = new InvocationTracingCustomizer();
+
+		new Scenario(tx, publisher, new DefaultAssertablePublishedEvents())
+				.setDefaultCustomizer(defaultCustomizer)
+				.publish(new Object())
+				.customize(specialCustomizer)
+				.andWaitForStateChange(() -> true);
+
+		assertThat(defaultCustomizer.invoked).isTrue();
+		assertThat(specialCustomizer.invoked).isTrue();
+	}
+
+	@Test // GH-165
+	void replacesSpecialCustomizerBehindDefaultOne() {
+
+		var defaultCustomizer = new InvocationTracingCustomizer();
+		var specialCustomizer = new InvocationTracingCustomizer();
+
+		new Scenario(tx, publisher, new DefaultAssertablePublishedEvents())
+				.setDefaultCustomizer(defaultCustomizer)
+				.publish(new Object())
+				.customize(specialCustomizer)
+				.customize(Function.identity())
+				.andWaitForStateChange(() -> true);
+
+		assertThat(defaultCustomizer.invoked).isTrue();
+		assertThat(specialCustomizer.invoked).isFalse();
+	}
+
 	private Fixture givenAScenario(Consumer<Scenario> consumer) {
 		return new Fixture(consumer, DELAY, null, new DefaultAssertablePublishedEvents());
 	}
@@ -465,6 +500,19 @@ class ScenarioUnitTests {
 			}
 
 			throw new RuntimeException(caught);
+		}
+	}
+
+	static class InvocationTracingCustomizer implements Function<ConditionFactory, ConditionFactory> {
+
+		boolean invoked = false;
+
+		@Override
+		public ConditionFactory apply(ConditionFactory t) {
+
+			invoked = true;
+
+			return t;
 		}
 	}
 }
