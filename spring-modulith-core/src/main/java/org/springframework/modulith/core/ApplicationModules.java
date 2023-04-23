@@ -48,6 +48,8 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.EvaluationResult;
 import com.tngtech.archunit.lang.FailureReport;
+import com.tngtech.archunit.library.dependencies.SliceAssignment;
+import com.tngtech.archunit.library.dependencies.SliceIdentifier;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 
 /**
@@ -455,7 +457,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private FailureReport assertNoCyclesFor(JavaPackage rootPackage) {
 
 		var result = SlicesRuleDefinition.slices() //
-				.matching(rootPackage.getName().concat(".(*)..")) //
+				.assignedFrom(new ApplicationModulesSliceAssignment())
 				.should().beFreeOfCycles() //
 				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
 
@@ -726,6 +728,31 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 			} catch (IllegalArgumentException o_O) {
 				return modules.modules.values().stream().map(ApplicationModule::getName).toList();
 			}
+		}
+	}
+
+	private class ApplicationModulesSliceAssignment implements SliceAssignment {
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.library.dependencies.SliceAssignment#getIdentifierOf(com.tngtech.archunit.core.domain.JavaClass)
+		 */
+		@Override
+		public SliceIdentifier getIdentifierOf(JavaClass javaClass) {
+
+			return getModuleByType(javaClass)
+					.map(ApplicationModule::getName)
+					.map(SliceIdentifier::of)
+					.orElse(SliceIdentifier.ignore());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see com.tngtech.archunit.base.HasDescription#getDescription()
+		 */
+		@Override
+		public String getDescription() {
+			return "Appliction module slices " + ApplicationModules.this.modules.keySet();
 		}
 	}
 }
