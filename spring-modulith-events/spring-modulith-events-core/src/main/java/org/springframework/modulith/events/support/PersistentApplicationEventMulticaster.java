@@ -94,12 +94,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			return;
 		}
 
-		var txListeners = new TransactionalEventListeners(listeners);
-		var eventToPersist = getEventToPersist(event);
-
-		registry.get().store(eventToPersist, txListeners.stream() //
-				.map(TransactionalApplicationListener::getListenerId) //
-				.map(PublicationTargetIdentifier::of));
+		new TransactionalEventListeners(listeners)
+				.ifPresent(it -> storePublications(it, getEventToPersist(event)));
 
 		for (ApplicationListener listener : listeners) {
 			listener.onApplicationEvent(event);
@@ -144,6 +140,15 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		listener.processEvent(publication.getApplicationEvent());
 
 		return listener;
+	}
+
+	private void storePublications(Stream<TransactionalApplicationListener<ApplicationEvent>> listeners,
+			Object eventToPersist) {
+
+		var identifiers = listeners.map(TransactionalApplicationListener::getListenerId) //
+				.map(PublicationTargetIdentifier::of);
+
+		registry.get().store(eventToPersist, identifiers);
 	}
 
 	private static Object getEventToPersist(ApplicationEvent event) {
@@ -256,6 +261,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 					.filter(it -> it.getListenerId().equals(identifier))
 					.findFirst()
 					.ifPresent(callback);
+		}
+
+		public boolean hasListeners() {
+			return !listeners.isEmpty();
 		}
 	}
 }
