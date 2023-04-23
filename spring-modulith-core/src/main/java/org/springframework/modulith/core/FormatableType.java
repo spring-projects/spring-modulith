@@ -19,6 +19,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
@@ -77,6 +78,22 @@ public class FormatableType {
 	 */
 	public static FormatableType of(Class<?> type) {
 		return CACHE.computeIfAbsent(type.getName(), FormatableType::new);
+	}
+
+	/**
+	 * Formats the given {@link JavaClass}es by rendering a comma-separated list with the abbreviated class names.
+	 *
+	 * @param types must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static String format(Iterable<JavaClass> types) {
+
+		Assert.notNull(types, "Types must not be null!");
+
+		return StreamSupport.stream(types.spliterator(), false)
+				.map(FormatableType::of)
+				.map(FormatableType::getAbbreviatedFullName)
+				.collect(Collectors.joining(", "));
 	}
 
 	/**

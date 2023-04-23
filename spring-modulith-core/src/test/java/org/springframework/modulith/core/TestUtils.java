@@ -70,4 +70,8 @@ class TestUtils {
 				.importPackagesOf(packageType)
 				.that(resideInAPackage(packageType.getPackage().getName() + "..")));
 	}
+
+	public static JavaPackage getPackage(Class<?> packageType) {
+		return JavaPackage.of(TestUtils.getClasses(packageType), packageType.getPackageName());
+	}
 }

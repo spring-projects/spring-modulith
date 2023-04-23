@@ -15,13 +15,19 @@
  */
 package org.springframework.modulith.core;
 
+import static com.tngtech.archunit.base.DescribedPredicate.*;
+import static org.springframework.modulith.core.Types.*;
+
 import java.util.Iterator;
 import java.util.List;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 
+import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClass.Predicates;
+import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 
 /**
  * A named interface into an {@link ApplicationModule}. This can either be a package, explicitly annotated with
@@ -35,6 +41,8 @@ import com.tngtech.archunit.core.domain.JavaClass.Predicates;
 public class NamedInterface implements Iterable<JavaClass> {
 
 	static final String UNNAMED_NAME = "<<UNNAMED>>";
+	private static final DescribedPredicate<CanBeAnnotated> ANNOTATED_NAMED_INTERFACE = //
+			isAnnotatedWith(org.springframework.modulith.NamedInterface.class);
 
 	private final String name;
 	private final Classes classes;
@@ -90,7 +98,21 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 * @return will never be {@literal null}.
 	 */
 	static NamedInterface unnamed(JavaPackage javaPackage) {
-		return new NamedInterface(UNNAMED_NAME, javaPackage.toSingle().getExposedClasses());
+
+		var basePackageClasses = javaPackage.toSingle().getExposedClasses();
+
+		// Types that declare the annotation but no explicit name
+		var withDefaultedNamedInterface = basePackageClasses.stream()
+				.filter(ANNOTATED_NAMED_INTERFACE)
+				.filter(NamedInterface::withDefaultedNamedInterface)
+				.toList();
+
+		// Illegal in the base package
+		Assert.state(withDefaultedNamedInterface.isEmpty(),
+				() -> "Cannot use named interface defaulting for type(s) %s located in base package!"
+						.formatted(FormatableType.format(withDefaultedNamedInterface)));
+
+		return new NamedInterface(UNNAMED_NAME, basePackageClasses.that(not(ANNOTATED_NAMED_INTERFACE)));
 	}
 
 	/**
@@ -174,7 +196,9 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 */
 	@Override
 	public String toString() {
-		return "NamedInterface: name=%s, types=%s".formatted(name, classes);
+
+		return "NamedInterface: name=%s, types=[%s]" //
+				.formatted(name, classes.isEmpty() ? "" : " " + FormatableType.format(classes) + " ");
 	}
 
 	/**
@@ -195,5 +219,20 @@ public class NamedInterface implements Iterable<JavaClass> {
 		return declaredNames.length == 0
 				? List.of(packageName.substring(packageName.lastIndexOf('.') + 1))
 				: List.of(declaredNames);
+	}
+
+	/**
+	 * Returns whether the given {@link JavaClass} is annotated with {@link org.springframework.modulith.NamedInterface}
+	 * but does not declare a name explicitly.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return
+	 */
+	private static boolean withDefaultedNamedInterface(JavaClass type) {
+
+		var annotation = AnnotatedElementUtils.getMergedAnnotation(type.reflect(),
+				org.springframework.modulith.NamedInterface.class);
+
+		return annotation != null && annotation.name().length == 0;
 	}
 }

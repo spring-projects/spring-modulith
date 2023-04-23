@@ -17,6 +17,7 @@ package org.springframework.modulith.core;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -49,7 +50,9 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		Assert.notNull(namedInterfaces, "Named interfaces must not be null!");
 
-		this.namedInterfaces = namedInterfaces;
+		this.namedInterfaces = namedInterfaces.stream()
+				.sorted(Comparator.comparing(NamedInterface::getName))
+				.toList();
 	}
 
 	/**
@@ -60,9 +63,9 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	 */
 	static NamedInterfaces discoverNamedInterfaces(JavaPackage basePackage) {
 
-		return NamedInterfaces.ofAnnotatedPackages(basePackage) //
-				.and(NamedInterfaces.ofAnnotatedTypes(basePackage)) //
-				.and(NamedInterface.unnamed(basePackage));
+		return NamedInterfaces.of(NamedInterface.unnamed(basePackage))
+				.and(ofAnnotatedPackages(basePackage))
+				.and(ofAnnotatedTypes(basePackage));
 	}
 
 	/**
@@ -150,14 +153,14 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	 * @param others must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	NamedInterfaces and(List<NamedInterface> others) {
+	NamedInterfaces and(Iterable<NamedInterface> others) {
 
 		Assert.notNull(others, "Other NamedInterfaces must not be null!");
 
 		var namedInterfaces = new ArrayList<NamedInterface>();
-		var unmergedInterface = this.namedInterfaces;
+		var unmergedInterfaces = new ArrayList<>(this.namedInterfaces);
 
-		if (others.isEmpty()) {
+		if (!others.iterator().hasNext()) {
 			return this;
 		}
 
@@ -170,23 +173,18 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 			// Merge existing with new and add to result
 			existing.ifPresentOrElse(it -> {
 				namedInterfaces.add(it.merge(candidate));
-				unmergedInterface.remove(it);
+				unmergedInterfaces.remove(it);
 			},
 					() -> namedInterfaces.add(candidate));
 		}
 
-		namedInterfaces.addAll(unmergedInterface);
+		namedInterfaces.addAll(unmergedInterfaces);
 
 		return new NamedInterfaces(namedInterfaces);
 	}
 
-	private NamedInterfaces and(NamedInterface namedInterface) {
-
-		var result = new ArrayList<NamedInterface>(namedInterfaces.size() + 1);
-		result.addAll(namedInterfaces);
-		result.add(namedInterface);
-
-		return new NamedInterfaces(result);
+	private static NamedInterfaces of(NamedInterface interfaces) {
+		return new NamedInterfaces(List.of(interfaces));
 	}
 
 	private static List<NamedInterface> ofAnnotatedTypes(JavaPackage basePackage) {

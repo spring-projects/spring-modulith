@@ -17,11 +17,13 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import example.ni.AnnotatedNamedInterfaceType;
 import example.ni.RootType;
 import example.ni.api.ApiType;
 import example.ni.internal.AdditionalSpiType;
 import example.ni.internal.DefaultedNamedInterfaceType;
 import example.ni.spi.SpiType;
+import example.ninvalid.InvalidDefaultNamedInterface;
 
 import java.util.Arrays;
 
@@ -39,19 +41,27 @@ class NamedInterfacesUnitTests {
 	@Test
 	void discoversNamedInterfaces() {
 
-		var classes = TestUtils.getClasses(RootType.class);
-		var javaPackage = JavaPackage.of(classes, RootType.class.getPackageName());
-
+		var javaPackage = TestUtils.getPackage(RootType.class);
 		var interfaces = NamedInterfaces.discoverNamedInterfaces(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
 				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class);
-		assertInterfaceContains(interfaces, "api", ApiType.class);
+		assertInterfaceContains(interfaces, "api", ApiType.class, AnnotatedNamedInterfaceType.class);
 		assertInterfaceContains(interfaces, "spi", SpiType.class, AdditionalSpiType.class);
 		assertInterfaceContains(interfaces, "kpi", AdditionalSpiType.class);
 		assertInterfaceContains(interfaces, "internal", DefaultedNamedInterfaceType.class);
+	}
+
+	@Test // GH-183
+	void rejectsDefaultingNamedInterfaceTypeInBasePackage() {
+
+		var javaPackage = TestUtils.getPackage(InvalidDefaultNamedInterface.class);
+
+		assertThatIllegalStateException().isThrownBy(() -> NamedInterfaces.discoverNamedInterfaces(javaPackage))
+				.withMessageContaining("named interface defaulting")
+				.withMessageContaining(InvalidDefaultNamedInterface.class.getSimpleName());
 	}
 
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {
