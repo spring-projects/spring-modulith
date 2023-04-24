@@ -433,6 +433,18 @@ public class Scenario {
 
 				consumer.accept(result.first(), result.second());
 			}
+
+			/**
+			 * Verifies the underlying {@link AssertablePublishedEvents}.
+			 *
+			 * @param events must not be {@literal null}.
+			 */
+			public void andVerifyEvents(Consumer<AssertablePublishedEvents> events) {
+
+				Assert.notNull(events, "Consumer must not be null!");
+
+				events.accept(Scenario.this.events);
+			}
 		}
 
 		public class EventResult<E> {

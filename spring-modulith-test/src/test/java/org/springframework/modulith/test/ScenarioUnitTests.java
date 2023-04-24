@@ -382,6 +382,20 @@ class ScenarioUnitTests {
 		assertThat(specialCustomizer.invoked).isFalse();
 	}
 
+	@Test // GH-185
+	@SuppressWarnings("unchecked")
+	void invokesEventVerificationOnMethodInvocationStimulus() {
+
+		Consumer<AssertablePublishedEvents> consumer = mock(Consumer.class);
+
+		new Scenario(tx, publisher, new DefaultAssertablePublishedEvents())
+				.stimulate(() -> {})
+				.andWaitForStateChange(() -> true)
+				.andVerifyEvents(consumer);
+
+		verify(consumer).accept(any());
+	}
+
 	private Fixture givenAScenario(Consumer<Scenario> consumer) {
 		return new Fixture(consumer, DELAY, null, new DefaultAssertablePublishedEvents());
 	}
