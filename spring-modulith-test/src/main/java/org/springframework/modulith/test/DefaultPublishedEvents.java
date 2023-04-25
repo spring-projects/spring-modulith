@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationEvent;
@@ -77,6 +78,18 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 		return SimpleTypedPublishedEvents.of(events.stream()//
 				.filter(type::isInstance) //
 				.map(type::cast));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return events.isEmpty()
+				? "[]"
+				: events.stream().map(Object::toString).collect(Collectors.joining("[ ", ", ", " ]"));
 	}
 
 	private static Object unwrapPayloadEvent(Object source) {

@@ -15,7 +15,10 @@
  */
 package org.springframework.modulith.test;
 
+import static org.assertj.core.api.Assertions.*;
+
 import java.time.Duration;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -39,8 +42,6 @@ import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.util.Assert;
-
-import com.tngtech.archunit.thirdparty.com.google.common.base.Optional;
 
 /**
  * A DSL to define integration testing scenarios for application modules. A {@link Scenario} starts with a stimulus on
@@ -338,13 +339,16 @@ public class Scenario {
 		}
 
 		/**
+		 * Expects an event of the given type to arrive. Use API on the returned {@link EventResult} to specify more
+		 * detailed expectations and conclude those with a call a flavor of {@link EventResult#toArrive()}.
+		 *
 		 * @param <E> the type of the event.
 		 * @param type must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 * @see #forEventOfType(Class)
 		 */
 		public <E> EventResult<E> andWaitForEventOfType(Class<E> type) {
-			return new EventResult<E>(type, Function.identity());
+			return new EventResult<E>(type, Function.identity(), null);
 		}
 
 		/**
@@ -402,6 +406,11 @@ public class Scenario {
 
 		private record ExecutionResult<S, T>(S first, T second) {}
 
+		/**
+		 * The result of an expected state change.
+		 *
+		 * @author Oliver Drotbohm
+		 */
 		public class StateChangeResult<S> {
 
 			private ExecutionResult<S, T> result;
@@ -445,25 +454,48 @@ public class Scenario {
 
 				events.accept(Scenario.this.events);
 			}
+
+			/**
+			 * Expects an event of the given type to arrive eventually. Use API on the returned {@link EventResult} to specify
+			 * more detailed expectations and conclude those with a call a flavor of {@link EventResult#toArrive()}.
+			 *
+			 * @param <E> the type of the event
+			 * @param eventType must not be {@literal null}.
+			 * @return will never be {@literal null}.
+			 */
+			public <E> EventResult<E> andExpect(Class<E> eventType) {
+				return new EventResult<>(eventType, Function.identity(), result);
+			}
 		}
 
+		/**
+		 * The result of an expected event publication.
+		 *
+		 * @author Oliver Drotbohm
+		 */
 		public class EventResult<E> {
+
+			private static final String EXPECTED_EVENT = "Expected an event of type %s (potentially further constrained using matching clauses above) to be published but couldn't find one in %s!";
 
 			private final Class<E> type;
 			private final Function<TypedPublishedEvents<E>, TypedPublishedEvents<E>> filter;
+			private final ExecutionResult<?, T> previousResult;
 
 			/**
 			 * Creates a new {@link EventResult} for the given type and filter.
 			 *
 			 * @param type must not be {@literal null}.
 			 * @param filtered must not be {@literal null}.
+			 * @param previousResult a potentially previously calculated result.
 			 */
-			EventResult(Class<E> type, Function<TypedPublishedEvents<E>, TypedPublishedEvents<E>> filtered) {
+			EventResult(Class<E> type, Function<TypedPublishedEvents<E>, TypedPublishedEvents<E>> filtered,
+					ExecutionResult<?, T> previousResult) {
 
 				Assert.notNull(type, "Event type must not be null!");
 
 				this.type = type;
 				this.filter = filtered;
+				this.previousResult = previousResult;
 			}
 
 			/**
@@ -476,7 +508,7 @@ public class Scenario {
 
 				Assert.notNull(filter, "Filter must not be null!");
 
-				return new EventResult<E>(type, createOrAdd(it -> it.matching(filter)));
+				return new EventResult<E>(type, createOrAdd(it -> it.matching(filter)), previousResult);
 			}
 
 			/**
@@ -489,7 +521,7 @@ public class Scenario {
 			 * @return will never be {@literal null}.
 			 */
 			public <S> EventResult<E> matchingMapped(Function<E, S> extractor, Predicate<? super S> filter) {
-				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, filter)));
+				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, filter)), previousResult);
 			}
 
 			/**
@@ -501,7 +533,7 @@ public class Scenario {
 			 * @return will never be {@literal null}.
 			 */
 			public <S> EventResult<E> matchingMappedValue(Function<E, S> extractor, @Nullable S value) {
-				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, value)));
+				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, value)), previousResult);
 			}
 
 			/**
@@ -584,7 +616,18 @@ public class Scenario {
 			}
 
 			private void toArriveAndVerifyInternal(Consumer<T> verifications) {
-				awaitInternal(verifications, () -> getFilteredEvents(), it -> it.eventOfTypeWasPublished(type));
+
+				if (previousResult != null) {
+
+					assertThat(getFilteredEvents().eventOfTypeWasPublished(type))
+							.overridingErrorMessage(EXPECTED_EVENT, type, events)
+							.isTrue();
+
+					verifications.accept(previousResult.second());
+
+				} else {
+					awaitInternal(verifications, () -> getFilteredEvents(), it -> it.eventOfTypeWasPublished(type));
+				}
 			}
 		}
 	}

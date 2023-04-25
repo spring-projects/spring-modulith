@@ -64,4 +64,13 @@ class DefaultAssertablePublishedEvents implements AssertablePublishedEvents, App
 	public void onApplicationEvent(ApplicationEvent event) {
 		delegate.onApplicationEvent(event);
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return delegate.toString();
+	}
 }

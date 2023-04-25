@@ -23,6 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Duration;
+import java.util.List;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -34,6 +35,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.opentest4j.AssertionFailedError;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
@@ -394,6 +396,41 @@ class ScenarioUnitTests {
 				.andVerifyEvents(consumer);
 
 		verify(consumer).accept(any());
+	}
+
+	@Test // GH-185
+	void attachedEventConstraintsAreVerified() {
+
+		var runnable = mock(Runnable.class);
+		var events = new DefaultPublishedEvents(List.of(new SomeEvent("payload")));
+		var publishedEvents = new DefaultAssertablePublishedEvents(events);
+
+		assertThatNoException().isThrownBy(() -> {
+			new Scenario(tx, publisher, publishedEvents)
+					.stimulate(runnable)
+					.andWaitForStateChange(() -> true)
+					.andExpect(SomeEvent.class)
+					.matching(it -> it != null)
+					.toArrive();
+		});
+
+		verify(runnable).run();
+	}
+
+	@Test // GH-185
+	void failsAttachedEventConstraintsIfNoEventsPublished() {
+
+		var runnable = mock(Runnable.class);
+
+		assertThatExceptionOfType(AssertionFailedError.class)
+				.isThrownBy(() -> new Scenario(tx, publisher, new DefaultAssertablePublishedEvents())
+						.stimulate(runnable)
+						.andWaitForStateChange(() -> true)
+						.andExpect(SomeEvent.class)
+						.matching(it -> it != null)
+						.toArrive());
+
+		verify(runnable).run();
 	}
 
 	private Fixture givenAScenario(Consumer<Scenario> consumer) {
