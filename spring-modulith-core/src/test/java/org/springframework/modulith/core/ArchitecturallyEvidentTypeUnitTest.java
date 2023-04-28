@@ -33,6 +33,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.SpringAwareArchitecturallyEvidentType;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.SpringDataAwareArchitecturallyEvidentType;
 import org.springframework.stereotype.Repository;
@@ -72,6 +73,24 @@ class ArchitecturallyEvidentTypeUnitTest {
 
 		ArchitecturallyEvidentType type = new SpringAwareArchitecturallyEvidentType(
 				classes.getRequiredClass(SpringRepository.class), Classes.NONE);
+
+		assertThat(type.isRepository()).isTrue();
+	}
+
+	@Test // GH-187
+	void detectsSpringDataRepositories() {
+
+		var type = ArchitecturallyEvidentType.of(
+				classes.getRequiredClass(SampleRepository.class), Classes.NONE);
+
+		assertThat(type.isRepository()).isTrue();
+	}
+
+	@Test // GH-187
+	void detectsReactiveSpringDataRepositories() {
+
+		var type = ArchitecturallyEvidentType.of(
+				classes.getRequiredClass(ReactiveSampleRepository.class), Classes.NONE);
 
 		assertThat(type.isRepository()).isTrue();
 	}
@@ -196,6 +215,9 @@ class ArchitecturallyEvidentTypeUnitTest {
 	// Spring Data
 
 	interface SampleRepository extends CrudRepository<SampleEntity, UUID> {}
+
+	// GH-187
+	interface ReactiveSampleRepository extends ReactiveCrudRepository<SampleEntity, UUID> {}
 
 	@Entity
 	class OtherEntity {}
