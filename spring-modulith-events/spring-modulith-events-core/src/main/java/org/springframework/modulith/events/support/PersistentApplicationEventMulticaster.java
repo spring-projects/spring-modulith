@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.support;
 
+import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -29,6 +30,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.event.AbstractApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.NonNull;
@@ -39,6 +41,7 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.util.Assert;
+import org.springframework.util.ReflectionUtils;
 
 /**
  * An {@link ApplicationEventMulticaster} to register {@link EventPublication}s in an {@link EventPublicationRegistry}
@@ -55,8 +58,14 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		implements SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
+	private static final Field DECLARED_EVENT_TYPES_FIELD = ReflectionUtils
+			.findField(ApplicationListenerMethodAdapter.class, "declaredEventTypes");
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
+
+	static {
+		ReflectionUtils.makeAccessible(DECLARED_EVENT_TYPES_FIELD);
+	}
 
 	/**
 	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
@@ -116,6 +125,34 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		LOGGER.debug("{} found.", publications.isEmpty() ? "None" : publications.size());
 
 		publications.forEach(this::invokeTargetListener);
+	}
+
+	/**
+	 * Temporary workaround for an issue in Spring Framework that lets ApplicationListenerMethodAdapter match all generic
+	 * events with unresolved generics.
+	 *
+	 * @see <a href=
+	 *      "https://github.com/spring-projects/spring-framework/issues/30399">https://github.com/spring-projects/spring-framework/issues/30399</a>
+	 */
+	@Override
+	@SuppressWarnings("unchecked")
+	protected boolean supportsEvent(ApplicationListener<?> listener, ResolvableType eventType, Class<?> sourceType) {
+
+		var result = super.supportsEvent(listener, eventType, sourceType);
+
+		if (!super.supportsEvent(listener, eventType, sourceType)
+				|| !(listener instanceof ApplicationListenerMethodAdapter adapter)) {
+			return result;
+		}
+
+		var actualEventType = ResolvableType.forClass(PayloadApplicationEvent.class).isAssignableFrom(eventType)
+				? eventType.getGeneric()
+				: eventType;
+
+		var declaredEventTypes = (List<ResolvableType>) ReflectionUtils.getField(DECLARED_EVENT_TYPES_FIELD, adapter);
+
+		return declaredEventTypes.stream()
+				.anyMatch(it -> it.isAssignableFrom(actualEventType.getRawClass()));
 	}
 
 	private void invokeTargetListener(EventPublication publication) {
