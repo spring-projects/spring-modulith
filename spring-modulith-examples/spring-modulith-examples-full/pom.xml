@@ -1,0 +1,69 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.springframework.experimental</groupId>
+		<artifactId>spring-modulith-examples</artifactId>
+		<version>0.6.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
+	</parent>
+
+	<artifactId>spring-modulith-examples-full</artifactId>
+	<name>Spring Modulith - Examples - Full Example</name>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.springframework.experimental</groupId>
+			<artifactId>spring-modulith-starter-jpa</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-web</artifactId>
+		</dependency>
+
+		<!-- Actuator -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.experimental</groupId>
+			<artifactId>spring-modulith-actuator</artifactId>
+		</dependency>
+
+		<!-- jMolecules -->
+
+		<dependency>
+			<groupId>org.jmolecules.integrations</groupId>
+			<artifactId>jmolecules-starter-ddd</artifactId>
+		</dependency>
+
+		<!-- Persistence -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-jpa</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
+			<scope>runtime</scope>
+		</dependency>
+
+		<!-- Infrastructure -->
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-configuration-processor</artifactId>
+			<optional>true</optional>
+		</dependency>
+
+	</dependencies>
+
+</project>

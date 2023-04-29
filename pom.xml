@@ -99,7 +99,7 @@ limitations under the License.
 
 			<modules>
 				<module>spring-modulith-integration-test</module>
-				<module>spring-modulith-example</module>
+				<module>spring-modulith-examples</module>
 			</modules>
 
 		</profile>
@@ -132,7 +132,7 @@ limitations under the License.
 
 			<modules>
 				<module>spring-modulith-distribution</module>
-				<module>spring-modulith-example</module>
+				<module>spring-modulith-examples</module>
 				<module>spring-modulith-integration-test</module>
 			</modules>
 

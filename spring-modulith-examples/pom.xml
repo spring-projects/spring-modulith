@@ -1,17 +1,25 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
-
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>3.0.3</version>
+		<version>3.1.0-RC1</version>
 		<relativePath />
 	</parent>
 
-	<artifactId>spring-modulith-example</artifactId>
-	<name>Spring Modulith - Example</name>
+	<groupId>org.springframework.experimental</groupId>
+	<artifactId>spring-modulith-examples</artifactId>
 	<version>0.6.0-SNAPSHOT</version>
+	<packaging>pom</packaging>
+
+	<name>Spring Modulith - Examples</name>
+
+	<modules>
+		<module>spring-modulith-examples-epr-jdbc</module>
+		<module>spring-modulith-examples-epr-mongodb</module>
+		<module>spring-modulith-examples-full</module>
+	</modules>
 
 	<properties>
 		<java.version>17</java.version>
@@ -29,7 +37,7 @@
 			<dependency>
 				<groupId>org.jmolecules</groupId>
 				<artifactId>jmolecules-bom</artifactId>
-				<version>2022.2.2</version>
+				<version>2022.3.0</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -46,53 +54,6 @@
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-json</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.experimental</groupId>
-			<artifactId>spring-modulith-starter-jpa</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-
-		<!-- Actuator -->
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.experimental</groupId>
-			<artifactId>spring-modulith-actuator</artifactId>
-		</dependency>
-
-		<!-- jMolecules -->
-
-		<dependency>
-			<groupId>org.jmolecules</groupId>
-			<artifactId>jmolecules-ddd</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.jmolecules</groupId>
-			<artifactId>jmolecules-events</artifactId>
-		</dependency>
-
-		<!-- Persistence -->
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>runtime</scope>
 		</dependency>
 
 		<!-- Testing -->
@@ -112,12 +73,6 @@
 		<!-- Infrastructure -->
 
 		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
@@ -126,6 +81,13 @@
 	</dependencies>
 
 	<repositories>
+		<repository>
+			<id>spring-milestone</id>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 		<repository>
 			<id>spring-snapshot</id>
 			<url>https://repo.spring.io/snapshot</url>
@@ -137,6 +99,13 @@
 
 	<pluginRepositories>
 		<pluginRepository>
+			<id>spring-milestone</id>
+			<url>https://repo.spring.io/milestone</url>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</pluginRepository>
+		<pluginRepository>
 			<id>spring-snapshot</id>
 			<url>https://repo.spring.io/snapshot</url>
 			<releases>
@@ -144,4 +113,5 @@
 			</releases>
 		</pluginRepository>
 	</pluginRepositories>
+
 </project>
