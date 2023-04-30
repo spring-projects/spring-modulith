@@ -74,4 +74,20 @@ class TestUtils {
 	public static JavaPackage getPackage(Class<?> packageType) {
 		return JavaPackage.of(TestUtils.getClasses(packageType), packageType.getPackageName());
 	}
+
+	public static ApplicationModule getApplicationModule(String packageName) {
+		return new ApplicationModule(getPackage(packageName), false);
+	}
+
+	private static JavaPackage getPackage(String name) {
+		return JavaPackage.of(getClasses(name), name);
+	}
+
+	private static Classes getClasses(String packageName) {
+
+		Assert.hasText(packageName, "Package name must not be null or empty!");
+
+		return Classes.of(new ClassFileImporter()
+				.importPackages(packageName));
+	}
 }
