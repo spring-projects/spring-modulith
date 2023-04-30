@@ -20,6 +20,8 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
 import org.junit.jupiter.api.extension.ParameterResolver;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.context.ApplicationContext;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -29,6 +31,8 @@ import org.springframework.transaction.support.TransactionTemplate;
  * @author Oliver Drotbohm
  */
 class ScenarioParameterResolver implements ParameterResolver, BeforeAllCallback {
+
+	private static final String MISSING_TRANSACTION_TEMPLATE = "To use a Scenario in an integration test you need to define a bean of type TransactionTemplate! Please check your ApplicationContext setup.";
 
 	private final PublishedEventsParameterResolver delegate;
 
@@ -70,9 +74,18 @@ class ScenarioParameterResolver implements ParameterResolver, BeforeAllCallback 
 			throws ParameterResolutionException {
 
 		var context = SpringExtension.getApplicationContext(extensionContext);
-		var operations = context.getBean(TransactionTemplate.class);
+		var operations = resolveTransactionTemplate(context);
 		var events = (AssertablePublishedEvents) delegate.resolveParameter(parameterContext, extensionContext);
 
 		return new Scenario(operations, context, events);
+	}
+
+	private TransactionTemplate resolveTransactionTemplate(ApplicationContext context) {
+
+		try {
+			return context.getBean(TransactionTemplate.class);
+		} catch (NoSuchBeanDefinitionException o_O) {
+			throw new ParameterResolutionException(MISSING_TRANSACTION_TEMPLATE, o_O);
+		}
 	}
 }
