@@ -17,9 +17,11 @@ package org.springframework.modulith.events.jdbc;
 
 import javax.sql.DataSource;
 
+import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -47,10 +49,28 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	}
 
 	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.events.jdbc-schema-initialization.enabled", havingValue = "true")
+	@Conditional(SchemaInitializationEnabled.class)
 	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, ResourceLoader resourceLoader,
 			DatabaseType databaseType) {
 
 		return new DatabaseSchemaInitializer(jdbcTemplate, resourceLoader, databaseType);
+	}
+
+	/**
+	 * Combined condition to support the legacy schema initialization property as well as the new one.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	static class SchemaInitializationEnabled extends AnyNestedCondition {
+
+		public SchemaInitializationEnabled() {
+			super(ConfigurationPhase.PARSE_CONFIGURATION);
+		}
+
+		@ConditionalOnProperty(name = "spring.modulith.events.jdbc-schema-initialization.enabled", havingValue = "true")
+		static class LegacyPropertyEnabled {}
+
+		@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
+		static class NewPropertyEnabled {}
 	}
 }
