@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.test;
 
-import org.junit.jupiter.api.extension.BeforeAllCallback;
+import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolutionException;
@@ -30,7 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * @author Oliver Drotbohm
  */
-class ScenarioParameterResolver implements ParameterResolver, BeforeAllCallback {
+class ScenarioParameterResolver implements ParameterResolver, AfterEachCallback {
 
 	private static final String MISSING_TRANSACTION_TEMPLATE = "To use a Scenario in an integration test you need to define a bean of type TransactionTemplate! Please check your ApplicationContext setup.";
 
@@ -45,6 +45,15 @@ class ScenarioParameterResolver implements ParameterResolver, BeforeAllCallback 
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.junit.jupiter.api.extension.AfterEachCallback#afterEach(org.junit.jupiter.api.extension.ExtensionContext)
+	 */
+	@Override
+	public void afterEach(ExtensionContext context) throws Exception {
+		delegate.afterEach(context);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.junit.jupiter.api.extension.ParameterResolver#supportsParameter(org.junit.jupiter.api.extension.ParameterContext, org.junit.jupiter.api.extension.ExtensionContext)
 	 */
 	@Override
@@ -54,15 +63,6 @@ class ScenarioParameterResolver implements ParameterResolver, BeforeAllCallback 
 		var type = parameterContext.getParameter().getType();
 
 		return Scenario.class.isAssignableFrom(type);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.junit.jupiter.api.extension.BeforeAllCallback#beforeAll(org.junit.jupiter.api.extension.ExtensionContext)
-	 */
-	@Override
-	public void beforeAll(ExtensionContext context) throws Exception {
-		delegate.beforeAll(context);
 	}
 
 	/*

@@ -18,7 +18,6 @@ package org.springframework.modulith.test;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.extension.AfterEachCallback;
-import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.junit.jupiter.api.extension.ParameterResolver;
@@ -35,7 +34,7 @@ import org.springframework.util.ClassUtils;
  *
  * @author Oliver Drotbohm
  */
-class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCallback, AfterEachCallback {
+class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCallback {
 
 	private static final boolean ASSERT_J_PRESENT = ClassUtils.isPresent("org.assertj.core.api.Assert",
 			PublishedEventsParameterResolver.class.getClassLoader());
@@ -49,32 +48,6 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 
 	PublishedEventsParameterResolver(Function<ExtensionContext, ApplicationContext> supplier) {
 		this.lookup = supplier;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.junit.jupiter.api.extension.BeforeAllCallback#beforeAll(org.junit.jupiter.api.extension.ExtensionContext)
-	 */
-	@Override
-	public void beforeAll(ExtensionContext extensionContext) {
-
-		ApplicationContext context = lookup.apply(extensionContext);
-
-		if (!(context instanceof AbstractApplicationContext aac)) {
-			throw new IllegalStateException();
-		}
-
-		listener = aac.getApplicationListeners().stream()
-				.filter(ThreadBoundApplicationListenerAdapter.class::isInstance)
-				.map(ThreadBoundApplicationListenerAdapter.class::cast)
-				.findFirst()
-				.orElseGet(() -> {
-
-					var adapter = new ThreadBoundApplicationListenerAdapter();
-					aac.addApplicationListener(adapter);
-
-					return adapter;
-				});
 	}
 
 	/*
@@ -105,9 +78,35 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 				? new DefaultAssertablePublishedEvents()
 				: new DefaultPublishedEvents();
 
+		initializeListener(extensionContext);
 		listener.registerDelegate(publishedEvents);
 
 		return publishedEvents;
+	}
+
+	private void initializeListener(ExtensionContext extensionContext) {
+
+		if (listener != null) {
+			return;
+		}
+
+		ApplicationContext context = lookup.apply(extensionContext);
+
+		if (!(context instanceof AbstractApplicationContext aac)) {
+			throw new IllegalStateException();
+		}
+
+		listener = aac.getApplicationListeners().stream()
+				.filter(ThreadBoundApplicationListenerAdapter.class::isInstance)
+				.map(ThreadBoundApplicationListenerAdapter.class::cast)
+				.findFirst()
+				.orElseGet(() -> {
+
+					var adapter = new ThreadBoundApplicationListenerAdapter();
+					aac.addApplicationListener(adapter);
+
+					return adapter;
+				});
 	}
 
 	/*
@@ -116,7 +115,10 @@ class PublishedEventsParameterResolver implements ParameterResolver, BeforeAllCa
 	 */
 	@Override
 	public void afterEach(ExtensionContext context) {
-		listener.unregisterDelegate();
+
+		if (listener != null) {
+			listener.unregisterDelegate();
+		}
 	}
 
 	/**

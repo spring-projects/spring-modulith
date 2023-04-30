@@ -56,8 +56,6 @@ class PublishedEventsParameterResolverUnitTests {
 		PublishedEventsParameterResolver resolver = new PublishedEventsParameterResolver(__ -> context);
 		context.refresh();
 
-		resolver.beforeAll(null);
-
 		Map<String, PublishedEvents> allEvents = new ConcurrentHashMap<>();
 		List<String> keys = Arrays.asList("first", "second", "third");
 		CountDownLatch latch = new CountDownLatch(3);
@@ -75,7 +73,6 @@ class PublishedEventsParameterResolverUnitTests {
 				latch.countDown();
 
 			}).start();
-
 		}
 
 		latch.await(50, TimeUnit.MILLISECONDS);
