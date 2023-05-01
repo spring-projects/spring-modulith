@@ -16,7 +16,10 @@
 package org.springframework.modulith.events.mongodb;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.transaction.TransactionAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.mongodb.MongoDatabaseFactory;
 import org.springframework.data.mongodb.MongoTransactionManager;
@@ -31,6 +34,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * @author Oliver Drotbohm
  */
 @AutoConfiguration
+@AutoConfigureBefore(TransactionAutoConfiguration.class)
 @ConditionalOnProperty(//
 		name = "spring.modulith.events.mongobd.transaction-management.enabled",
 		havingValue = "true",
@@ -38,11 +42,13 @@ import org.springframework.transaction.support.TransactionTemplate;
 class MongoDbTransactionAutoConfiguration {
 
 	@Bean
+	@ConditionalOnMissingBean
 	MongoTransactionManager transactionManager(MongoDatabaseFactory factory) {
 		return new MongoTransactionManager(factory);
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	TransactionTemplate transactionTemplate(PlatformTransactionManager txManager) {
 		return new TransactionTemplate(txManager);
 	}
