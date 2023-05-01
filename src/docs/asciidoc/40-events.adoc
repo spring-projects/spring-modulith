@@ -147,8 +147,11 @@ To ease that task, Spring Modulith provides starter POMs that are centered aroun
 The following starters are available:
 
 * `spring-modulith-starter-jpa` -- Using JPA as persistence technology.
-* `spring-modulith-starter-jdbc` -- Using JDBC as persistence technology. Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
+* `spring-modulith-starter-jdbc` -- Using JDBC as persistence technology.
+Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
 * `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
+Also enables MongoDB transactions and requires a replica set setup of the server to interact with.
+The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
 
 [[events.integration-testing]]
 == Integration Testing Application Modules Working with Events

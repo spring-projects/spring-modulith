@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.testapp.TestApplication;
 
@@ -34,10 +35,11 @@ class MongoDbEventPublicationAutoConfigurationIntegrationTests {
 
 	@Autowired ApplicationContext context;
 
-	@Test // GH-4
+	@Test // GH-4, GH-175
 	void bootstrapsApplicationComponents() {
 
 		assertThat(context.getBean(EventPublicationRegistry.class)).isNotNull();
 		assertThat(context.getBean(MongoDbEventPublicationRepository.class)).isNotNull();
+		assertThat(context.getBean(MongoTransactionManager.class)).isNotNull();
 	}
 }
