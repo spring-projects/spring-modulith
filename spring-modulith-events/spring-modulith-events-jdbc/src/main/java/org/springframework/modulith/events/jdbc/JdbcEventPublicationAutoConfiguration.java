@@ -15,15 +15,20 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import java.util.List;
+
 import javax.sql.DataSource;
 
-import org.springframework.boot.autoconfigure.condition.AnyNestedCondition;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionOutcome;
+import org.springframework.boot.autoconfigure.condition.SpringBootCondition;
 import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ConditionContext;
 import org.springframework.context.annotation.Conditional;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.core.type.AnnotatedTypeMetadata;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
@@ -61,16 +66,27 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	 *
 	 * @author Oliver Drotbohm
 	 */
-	static class SchemaInitializationEnabled extends AnyNestedCondition {
+	static class SchemaInitializationEnabled extends SpringBootCondition {
 
-		public SchemaInitializationEnabled() {
-			super(ConfigurationPhase.PARSE_CONFIGURATION);
+		private static final String LEGACY = "spring.modulith.events.jdbc-schema-initialization.enabled";
+		private static final String CURRENT = "spring.modulith.events.jdbc.schema-initialization.enabled";
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.boot.autoconfigure.condition.SpringBootCondition#getMatchOutcome(org.springframework.context.annotation.ConditionContext, org.springframework.core.type.AnnotatedTypeMetadata)
+		 */
+		@Override
+		public ConditionOutcome getMatchOutcome(ConditionContext context, AnnotatedTypeMetadata metadata) {
+
+			Environment environment = context.getEnvironment();
+
+			var enabled = List.of(CURRENT, LEGACY).stream()
+					.map(it -> environment.getProperty(it, Boolean.class))
+					.anyMatch(Boolean.TRUE::equals);
+
+			return enabled //
+					? ConditionOutcome.match("Schema initialization explicitly enabled.") //
+					: ConditionOutcome.noMatch("Schema initialization disabled by default.");
 		}
-
-		@ConditionalOnProperty(name = "spring.modulith.events.jdbc-schema-initialization.enabled", havingValue = "true")
-		static class LegacyPropertyEnabled {}
-
-		@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
-		static class NewPropertyEnabled {}
 	}
 }
