@@ -9,7 +9,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>spring-modulith-examples-epr-jdbc</artifactId>
+	<artifactId>spring-modulith-example-epr-jdbc</artifactId>
 	<name>Spring Modulith - Examples - EPR JDBC Example</name>
 
 	<dependencies>
