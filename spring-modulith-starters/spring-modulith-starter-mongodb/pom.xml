@@ -4,15 +4,16 @@
 
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
-		<artifactId>spring-modulith</artifactId>
+		<artifactId>spring-modulith-starters</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>spring-modulith-starter-jdbc</artifactId>
-	<name>Spring Modulith - Starter JDBC</name>
+	<artifactId>spring-modulith-starter-mongodb</artifactId>
+	<name>Spring Modulith - Starters - Starter MongoDB</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.starter.jdbc</module.name>
+		<module.name>org.springframework.modulith.starter.mongodb</module.name>
 	</properties>
 
 	<dependencies>
@@ -38,7 +39,7 @@
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-jdbc</artifactId>
+			<artifactId>spring-modulith-events-mongodb</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>

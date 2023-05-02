@@ -27,12 +27,7 @@
 		<module>spring-modulith-moments</module>
 		<module>spring-modulith-observability</module>
 		<module>spring-modulith-runtime</module>
-		<module>spring-modulith-starter-core</module>
-		<module>spring-modulith-starter-insight</module>
-		<module>spring-modulith-starter-jdbc</module>
-		<module>spring-modulith-starter-jpa</module>
-		<module>spring-modulith-starter-mongodb</module>
-		<module>spring-modulith-starter-test</module>
+		<module>spring-modulith-starters</module>
 		<module>spring-modulith-test</module>
 	</modules>
 

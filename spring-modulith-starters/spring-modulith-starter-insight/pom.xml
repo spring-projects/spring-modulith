@@ -4,42 +4,37 @@
 
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
-		<artifactId>spring-modulith</artifactId>
+		<artifactId>spring-modulith-starters</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>spring-modulith-starter-mongodb</artifactId>
-	<name>Spring Modulith - Starter MongoDB</name>
+	<artifactId>spring-modulith-starter-insight</artifactId>
+	<name>Spring Modulith - Starters - Starter Insight</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.starter.mongodb</module.name>
+		<module.name>org.springframework.modulith.starter.insight</module.name>
 	</properties>
 
 	<dependencies>
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-starter-core</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-
-		<!-- Events -->
-
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-core</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-jackson</artifactId>
+			<artifactId>spring-modulith-actuator</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-mongodb</artifactId>
+			<artifactId>spring-modulith-observability</artifactId>
 			<version>1.0.0-SNAPSHOT</version>
+			<scope>runtime</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
 			<scope>runtime</scope>
 		</dependency>
 
