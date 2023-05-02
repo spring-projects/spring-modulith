@@ -48,8 +48,8 @@ class ApplicationIntegrationTests {
 	@TestConfiguration
 	static class Infrastructure {
 
+		@Bean
 		@ServiceConnection
-		@Bean(initMethod = "start", destroyMethod = "stop")
 		PostgreSQLContainer<?> database() {
 			return new PostgreSQLContainer<>("postgres:15.2");
 		}

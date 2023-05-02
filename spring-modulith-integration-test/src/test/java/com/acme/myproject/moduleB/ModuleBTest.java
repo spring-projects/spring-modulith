@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.mockito.internal.creation.bytebuddy.MockAccess;
+import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -62,7 +62,7 @@ class ModuleBTest {
 
 			context.getBean(ServiceComponentB.class);
 
-			assertThat(context.getBean(ServiceComponentA.class)).isInstanceOf(MockAccess.class);
+			assertThat(Mockito.mockingDetails(context.getBean(ServiceComponentA.class)).isMock()).isTrue();
 		}
 
 		@Test

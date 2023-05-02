@@ -51,8 +51,8 @@ class ApplicationIntegrationTests {
 	@TestConfiguration
 	static class MongoDbInfrastructureConfiguration {
 
+		@Bean
 		@ServiceConnection
-		@Bean(initMethod = "start", destroyMethod = "stop")
 		MongoDBContainer mongoDBContainer() {
 			return new MongoDBContainer("mongo:6.0.3");
 		}
