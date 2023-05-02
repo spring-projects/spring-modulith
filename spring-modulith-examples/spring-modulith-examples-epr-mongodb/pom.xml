@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.springframework.experimental</groupId>
+		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-examples</artifactId>
-		<version>0.7.0-SNAPSHOT</version>
+		<version>1.0.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -15,7 +15,7 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>org.springframework.experimental</groupId>
+			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-starter-mongodb</artifactId>
 		</dependency>
 
@@ -38,7 +38,7 @@
 			<artifactId>junit-jupiter</artifactId>
 			<scope>test</scope>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>mongodb</artifactId>

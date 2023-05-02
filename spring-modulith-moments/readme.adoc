@@ -19,7 +19,7 @@ Moments will auto-activate in a Spring Boot application if you put it on the cla
 [source, xml]
 ----
 <dependency>
-  <groupId>org.springframework.experimental</groupId>
+  <groupId>org.springframework.modulith</groupId>
   <artifactId>spring-modulith-moments</artifactId>
   <version>…</version>
 </dependency>

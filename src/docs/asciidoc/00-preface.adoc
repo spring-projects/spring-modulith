@@ -5,8 +5,8 @@
 [[preface.project-metadata]]
 == Project Metadata
 
-* Version control https://github.com/spring-projects-experimental/spring-modulith
-* Bug tracker: https://github.com/spring-projects-experimental/spring-modulith
+* Version control https://github.com/spring-projects/spring-modulith
+* Bug tracker: https://github.com/spring-projects/spring-modulith
 * Release repository: Maven central
 * Milestone repository: https://repo.spring.io/milestone
 * Snapshot repository: https://repo.spring.io/snapshot
@@ -23,7 +23,7 @@ To ease the declaration of the individual modules, we recommend to declare the f
 <dependencyManagement>
   <dependencies>
     <dependency>
-      <groupId>org.springframework.experimental</groupId>
+      <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-bom</artifactId>
       <version>{projectVersion}</version>
       <scope>import</scope>

@@ -8,7 +8,7 @@ As  a production-ready application is likely to require both, the most convenien
 [source, xml]
 ----
 <dependency>
-  <groupId>org.springframework.experimental</groupId>
+  <groupId>org.springframework.modulith</groupId>
   <artifactId>spring-modulith-starter-insight</artifactId>
   <version>{projectVersion}</version>
   <scope>runtime</scope>
@@ -29,7 +29,7 @@ To enable the actuator, add the `spring-modulith-actuator` dependency to the pro
 [source, xml]
 ----
 <dependency>
-  <groupId>org.springframework.experimental</groupId>
+  <groupId>org.springframework.modulith</groupId>
   <artifactId>spring-modulith-actuator</artifactId>
   <version>{projectVersion}</version>
   <scope>runtime</scope>

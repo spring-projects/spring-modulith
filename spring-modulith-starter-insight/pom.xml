@@ -3,9 +3,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.springframework.experimental</groupId>
+		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith</artifactId>
-		<version>0.7.0-SNAPSHOT</version>
+		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
 	<artifactId>spring-modulith-starter-insight</artifactId>
@@ -18,16 +18,16 @@
 	<dependencies>
 
 		<dependency>
-			<groupId>org.springframework.experimental</groupId>
+			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-actuator</artifactId>
-			<version>0.7.0-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework.experimental</groupId>
+			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-observability</artifactId>
-			<version>0.7.0-SNAPSHOT</version>
+			<version>1.0.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
