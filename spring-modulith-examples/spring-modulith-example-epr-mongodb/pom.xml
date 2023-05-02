@@ -9,7 +9,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>spring-modulith-examples-epr-mongodb</artifactId>
+	<artifactId>spring-modulith-example-epr-mongodb</artifactId>
 	<name>Spring Modulith - Examples - EPR MongoDB Example</name>
 
 	<dependencies>

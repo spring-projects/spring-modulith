@@ -9,7 +9,7 @@
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
-	<artifactId>spring-modulith-examples-full</artifactId>
+	<artifactId>spring-modulith-example-full</artifactId>
 	<name>Spring Modulith - Examples - Full Example</name>
 
 	<dependencies>

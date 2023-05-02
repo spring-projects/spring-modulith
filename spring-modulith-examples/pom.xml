@@ -16,9 +16,9 @@
 	<name>Spring Modulith - Examples</name>
 
 	<modules>
-		<module>spring-modulith-examples-epr-jdbc</module>
-		<module>spring-modulith-examples-epr-mongodb</module>
-		<module>spring-modulith-examples-full</module>
+		<module>spring-modulith-example-epr-jdbc</module>
+		<module>spring-modulith-example-epr-mongodb</module>
+		<module>spring-modulith-example-full</module>
 	</modules>
 
 	<properties>
