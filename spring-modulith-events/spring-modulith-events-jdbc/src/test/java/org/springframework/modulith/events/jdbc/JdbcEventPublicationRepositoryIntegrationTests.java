@@ -54,7 +54,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
-	@JdbcTest
+	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
 	@Import(TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
 	@ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
@@ -126,144 +126,132 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			repository.create(publication);
 		}
 
-		@Nested
-		class Update {
+		@Test // GH-3
+		void shouldUpdateSingleEventPublication() {
 
-			@Test // GH-3
-			void shouldUpdateSingleEventPublication() {
+			var testEvent1 = new TestEvent("id1");
+			var testEvent2 = new TestEvent("id2");
+			var serializedEvent1 = "{\"eventId\":\"id1\"}";
+			var serializedEvent2 = "{\"eventId\":\"id2\"}";
 
-				var testEvent1 = new TestEvent("id1");
-				var testEvent2 = new TestEvent("id2");
-				var serializedEvent1 = "{\"eventId\":\"id1\"}";
-				var serializedEvent2 = "{\"eventId\":\"id2\"}";
+			when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+			when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-				when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-				when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-				when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-				when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+			var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
+			var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
 
-				var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
-				var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+			// Store publication
+			repository.create(publication1);
+			repository.create(publication2);
 
-				// Store publication
-				repository.create(publication1);
-				repository.create(publication2);
+			// Complete publication
+			repository.update(publication2.markCompleted());
 
-				// Complete publication
-				repository.update(publication2.markCompleted());
-
-				assertThat(repository.findIncompletePublications()).hasSize(1)
-						.element(0).extracting(EventPublication::getEvent).isEqualTo(testEvent1);
-			}
+			assertThat(repository.findIncompletePublications()).hasSize(1)
+					.element(0).extracting(EventPublication::getEvent).isEqualTo(testEvent1);
 		}
 
-		@Nested
-		class FindByEventAndTargetIdentifier {
+		@Test // GH-3
+		void shouldTolerateEmptyResult() {
 
-			@Test // GH-3
-			void shouldTolerateEmptyResult() {
+			var testEvent = new TestEvent("id");
+			var serializedEvent = "{\"eventId\":\"id\"}";
 
-				var testEvent = new TestEvent("id");
-				var serializedEvent = "{\"eventId\":\"id\"}";
+			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 
-				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-
-				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
-						.isEmpty();
-			}
-
-			@Test // GH-3
-			void shouldNotReturnCompletedEvents() {
-
-				var testEvent = new TestEvent("id1");
-				var serializedEvent = "{\"eventId\":\"id1\"}";
-
-				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-				when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
-
-				var publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
-
-				repository.create(publication);
-				repository.update(publication.markCompleted());
-
-				var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
-
-				assertThat(actual).isEmpty();
-			}
-
-			@Test // GH-3
-			void shouldReturnTheOldestEvent() throws Exception {
-
-				var testEvent = new TestEvent("id");
-				var serializedEvent = "{\"eventId\":\"id\"}";
-
-				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-				when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
-
-				var publicationOld = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
-				Thread.sleep(10);
-				var publicationNew = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
-
-				repository.create(publicationNew);
-				repository.create(publicationOld);
-
-				var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
-
-				assertThat(actual).hasValueSatisfying(it -> {
-					assertThat(it.getPublicationDate()) //
-							.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
-				});
-			}
-
-			@Test
-			// GH-3
-			void shouldSilentlyIgnoreNotSerializableEvents() {
-
-				var testEvent = new TestEvent("id");
-				var serializedEvent = "{\"eventId\":\"id\"}";
-
-				when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-				when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
-
-				// Store publication
-				repository.create(CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER));
-
-				operations.update("UPDATE EVENT_PUBLICATION SET EVENT_TYPE='abc'");
-
-				assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
-						.isEmpty();
-			}
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+					.isEmpty();
 		}
 
-		@Nested
-		class DeleteCompletedPublications {
+		@Test // GH-3
+		void shouldNotReturnCompletedEvents() {
 
-			@Test // GH-20
-			void shouldDeleteCompletedEvents() {
+			var testEvent = new TestEvent("id1");
+			var serializedEvent = "{\"eventId\":\"id1\"}";
 
-				var testEvent1 = new TestEvent("abc");
-				var serializedEvent1 = "{\"eventId\":\"abc\"}";
-				var testEvent2 = new TestEvent("def");
-				var serializedEvent2 = "{\"eventId\":\"def\"}";
+			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-				when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-				when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-				when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-				when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+			var publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
 
-				var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
-				var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+			repository.create(publication);
+			repository.update(publication.markCompleted());
 
-				repository.create(publication1);
-				repository.create(publication2);
+			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
-				repository.update(publication1.markCompleted());
+			assertThat(actual).isEmpty();
+		}
 
-				repository.deleteCompletedPublications();
+		@Test // GH-3
+		void shouldReturnTheOldestEvent() throws Exception {
 
-				assertThat(operations.query("SELECT * FROM EVENT_PUBLICATION", (rs, __) -> rs.getString("SERIALIZED_EVENT")))
-						.hasSize(1).element(0).isEqualTo(serializedEvent2);
-			}
+			var testEvent = new TestEvent("id");
+			var serializedEvent = "{\"eventId\":\"id\"}";
+
+			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+
+			var publicationOld = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+			Thread.sleep(10);
+			var publicationNew = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+
+			repository.create(publicationNew);
+			repository.create(publicationOld);
+
+			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+
+			assertThat(actual).hasValueSatisfying(it -> {
+				assertThat(it.getPublicationDate()) //
+						.isCloseTo(publicationOld.getPublicationDate(), within(1, ChronoUnit.MILLIS));
+			});
+		}
+
+		@Test
+		// GH-3
+		void shouldSilentlyIgnoreNotSerializableEvents() {
+
+			var testEvent = new TestEvent("id");
+			var serializedEvent = "{\"eventId\":\"id\"}";
+
+			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+
+			// Store publication
+			repository.create(CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER));
+
+			operations.update("UPDATE EVENT_PUBLICATION SET EVENT_TYPE='abc'");
+
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+					.isEmpty();
+		}
+
+		@Test // GH-20
+		void shouldDeleteCompletedEvents() {
+
+			var testEvent1 = new TestEvent("abc");
+			var serializedEvent1 = "{\"eventId\":\"abc\"}";
+			var testEvent2 = new TestEvent("def");
+			var serializedEvent2 = "{\"eventId\":\"def\"}";
+
+			when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+			when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+
+			var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
+			var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
+
+			repository.create(publication1);
+			repository.create(publication2);
+
+			repository.update(publication1.markCompleted());
+
+			repository.deleteCompletedPublications();
+
+			assertThat(operations.query("SELECT * FROM EVENT_PUBLICATION", (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+					.hasSize(1).element(0).isEqualTo(serializedEvent2);
 		}
 	}
 
