@@ -3,12 +3,13 @@
 
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
-		<artifactId>spring-modulith</artifactId>
+		<artifactId>spring-modulith-starters</artifactId>
 		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>../pom.xml</relativePath>
 	</parent>
 
 	<artifactId>spring-modulith-starter-test</artifactId>
-	<name>Spring Modulith - Starter Test</name>
+	<name>Spring Modulith - Starters - Starter Test</name>
 
 	<properties>
 		<module.name>org.springframework.modulith.starter.test</module.name>
