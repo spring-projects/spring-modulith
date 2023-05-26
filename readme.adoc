@@ -7,6 +7,34 @@ It supports the link:{docs}#verification[verification] of such modular arrangeme
 == Quickstart
 
 . Create a Spring Boot application on https://start.spring.io
+. Add Spring Modulith to your application by adding this to your `pom.xml`:
++
+[source, xml]
+----
+<repositories>
+  <repository>
+    <id>spring-snapshots</id>
+    <url>https://repo.spring.io/snapshot</url>
+  </repository>
+</repositories>
+<dependencyManagement>
+  <dependencies>
+    <dependency>
+      <groupId>org.springframework.modulith</groupId>
+      <artifactId>spring-modulith-bom</artifactId>
+      <version>1.0.0-SNAPSHOT</version>
+      <scope>import</scope>
+      <type>pom</type>
+    </dependency>
+  </dependencies>
+</dependencyManagement>
+<dependencies>
+  <dependency>
+    <groupId>org.springframework.modulith</groupId>
+    <artifactId>spring-modulith-starter-core</artifactId>
+  </dependency>
+</dependencies>
+----
 . Create a Java package arrangement that puts business modules as link:{docs}#fundamentals[direct sub-packages of the application's main package].
 +
 [source, text, subs="macros"]
