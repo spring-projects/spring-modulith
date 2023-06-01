@@ -11,12 +11,15 @@ It supports the link:{docs}#verification[verification] of such modular arrangeme
 +
 [source, xml]
 ----
+<!-- The Maven repository to pull the dependencies from -->
 <repositories>
   <repository>
     <id>spring-snapshots</id>
     <url>https://repo.spring.io/snapshot</url>
   </repository>
 </repositories>
+
+<!-- Include the BOM for simplified version management -->
 <dependencyManagement>
   <dependencies>
     <dependency>
@@ -28,11 +31,17 @@ It supports the link:{docs}#verification[verification] of such modular arrangeme
     </dependency>
   </dependencies>
 </dependencyManagement>
+
 <dependencies>
+
+  <!-- The test dependency to pull in verification APIs -->
+
   <dependency>
     <groupId>org.springframework.modulith</groupId>
-    <artifactId>spring-modulith-starter-core</artifactId>
+    <artifactId>spring-modulith-starter-test</artifactId>
+    <scope>test</scope>
   </dependency>
+
 </dependencies>
 ----
 . Create a Java package arrangement that puts business modules as link:{docs}#fundamentals[direct sub-packages of the application's main package].
