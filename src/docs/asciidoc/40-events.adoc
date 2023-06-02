@@ -87,7 +87,7 @@ To run a transactional event listener in a transaction itself, it would need to 
 class InventoryManagement {
 
   @Async
-  @Transactional
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
   @TransactionalEventListener
   void on(OrderCompleted event) { /* … */ }
 }
