@@ -178,8 +178,8 @@ The `result` handed into the `….andVerify(…)` method will be the value retur
 By default, non-`null` values and non-empty ``Optional``s will be considered a conclusive state change.
 This can be tweaked by using the `….andWaitForStateChange(…, Predicate)` overload.
 
-[[testing.efferent-dependencies.in.scenarios]]
-=== Dealing with Efferent Dependencies In Integration Test Scenarios
+[[testing.scenarios.of.event-driven-modules]]
+=== Integration Test Scenarios of Event-Driven Modules
 
 Consider the following scenario: `order` module publishes an event which is consumed by `inventory` module which in its turn sends another event:
 
