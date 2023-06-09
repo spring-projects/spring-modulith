@@ -179,9 +179,9 @@ By default, non-`null` values and non-empty ``Optional``s will be considered a c
 This can be tweaked by using the `….andWaitForStateChange(…, Predicate)` overload.
 
 [[testing.efferent-dependencies.in.scenarios]]
-=== Dealing with Efferent Dependencies In Scenarios
+=== Dealing with Efferent Dependencies In Integration Test Scenarios
 
-Consider the following scenario: `order` module sends an event which is consumed by `inventory` module which in its turn sends another event:
+Consider the following scenario: `order` module publishes an event which is consumed by `inventory` module which in its turn sends another event:
 
 [source, java]
 ----
@@ -216,7 +216,7 @@ class InventoryManagement {
 
 ----
 
-If we were to write an integration test which checks that `InventoryUpdated` event is fired after `InventoryManagement` receives `OrderCompleted` under `order` test package, it could look as follows:
+If we were to write an integration test which checks that `InventoryUpdated` event is fired after `InventoryManagement` receives `OrderCompleted` in `order` test package, it could look as follows:
 
 [source, java]
 ----
@@ -236,7 +236,7 @@ class OrderManagementTests {
 
 ----
 
-Since `order` doesn't have a direct dependency on `inventory` module using `DIRECT_DEPENDENCIES` or `ALL_DEPENDENCIES` bootstrap modes will not import `inventory` module related logic, hence `InventoryUpdated` event will not be fired and the test will fail.
+Since `order` doesn't have a direct dependency on `inventory` module using `DIRECT_DEPENDENCIES` or `ALL_DEPENDENCIES` bootstrap modes will not import `inventory` module related logic. As a result `InventoryUpdated` event will not be fired and the test will fail.
 In such cases `ApplicationModuleTest` annotation provides `extraIncludes` parameter where extra dependencies may be specified.
 
 One could argue that the above test doesn't really belong to `order` test package but rather it's an application-wide integration test. It could probably be placed directly under the root test package:
@@ -261,7 +261,7 @@ class ApplicationIntegrationTests {
 
 In such case the combination of `@SpringBootTest` and `@EnableScenarios` can be used (specifying `ApplicationModuleTest` will result in error since the root package is not part of any module).
 
-To summarize when writing integration tests for modules which interact via events instead of directly depending on another module (via Spring dependency injection mechanisms) Spring Modulith provides
+To summarize when writing integration tests for application modules which interact via events instead of directly depending on another module (via Spring dependency injection mechanisms) Spring Modulith provides
 two options to include dependencies:
 
 * Specifying the dependencies in `extraIncludes` parameter of `@ApplicationModuleTest`
