@@ -1,0 +1,7 @@
+actions:
+  - generate:
+      to: src/main/java/{{root-package-dir}}/{{name}}/{{capitalize name}}Component.java
+      from: ApplicationModuleComponent.java
+  - generate:
+      to: src/test/java/{{root-package-dir}}/{{name}}/{{capitalize name}}ModuleIntegrationTests.java
+      from: ApplicationModuleIntegrationTests.java

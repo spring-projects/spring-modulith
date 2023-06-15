@@ -1,0 +1,6 @@
+command:
+  description: Add an application module
+  options:
+    - name: name
+      description: The name of the application module.
+      required: true

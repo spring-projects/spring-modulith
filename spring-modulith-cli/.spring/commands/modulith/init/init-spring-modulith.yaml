@@ -1,0 +1,24 @@
+actions:
+  - inject-maven-dependency-management:
+      text: |
+        <dependency>
+          <groupId>org.springframework.modulith</groupId>
+          <artifactId>spring-modulith-bom</artifactId>
+          <version>1.1.0</version>
+          <type>pom</type>
+          <scope>import</scope>
+        </dependency>
+  - inject-maven-dependency:
+      text: |
+        <dependency>
+          <groupId>org.springframework.modulith</groupId>
+          <artifactId>spring-modulith-starter-test</artifactId>
+          <scope>test</scope>
+        </dependency>
+        {{#if enable-observability}}
+        <dependency>
+          <groupId>org.springframework.modulith</groupId>
+          <artifactId>spring-modulith-starter-insight</artifactId>
+          <scope>runtime</scope>
+        </dependency>
+        {{/if}}

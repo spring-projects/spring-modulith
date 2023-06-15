@@ -1,0 +1,15 @@
+command:
+  description: Add an application module listener
+  options:
+
+    - name: module
+      description: The name of the module to create the listener in.
+      required: true
+
+    - name: name
+      description: The name of the listener type.
+      required: true
+
+    - name: eventType
+      description: The event type to listen to.
+      required: true

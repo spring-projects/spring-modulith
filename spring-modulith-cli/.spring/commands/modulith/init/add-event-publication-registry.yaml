@@ -1,0 +1,26 @@
+actions:
+  # if: enable-event-publication-registry
+  - exec:
+      command: ./mvnw dependency:list | grep 'jakarta.persistence-api' || echo ''
+      define:
+        name: jpa-present
+  - exec:
+      command: ./mvnw dependency:list | grep 'spring-jdbc' || echo ''
+      define:
+        name: spring-jdbc-present
+  - exec:
+      command: ./mvnw dependency:list | grep 'spring-data-mongodb' || echo ''
+      define:
+        name: spring-data-mongodb-present
+  - inject-maven-dependency:
+      text: |
+        <dependency>
+          <groupId>org.springframework.modulith</groupId>
+          {{#if jpa-present}}
+          <artifactId>spring-modulith-starter-jpa</artifactId>
+          {{else if spring-jdbc-present}}
+          <artifactId>spring-modulith-starter-jdbc</artifactId>
+          {{else if spring-jdbc-present}}
+          <artifactId>spring-modulith-starter-mongodb</artifactId>
+          {{/if}}
+        </dependency>

@@ -1,0 +1,96 @@
+= Spring Modulith CLI Integration
+
+This module contains the Spring CLI integration for Spring Modulith.
+To install the Spring Modulith support into the CLI, issue `command add` and point it to this repo:
+
+[source, bash]
+----
+$ command add https://github.com/spring-projects/spring-modulith/tree/main/spring-modulith-cli
+----
+
+Verify the commands have been installed correctly by issuing `help`.
+
+== Commands
+
+=== Initializing Spring Modulith
+
+`modulith init` initializes Spring Modulith with the current project.
+
+
+[source]
+----
+NAME
+  modulith init - Initializes Spring Modulith
+
+SYNOPSIS
+  modulith init --enable-event-publication-registry String --enable-observability Boolean --help
+
+OPTIONS
+  --enable-event-publication-registry String
+  Valid values ["jdbc", "jpa", "mongodb"]
+  [Optional]
+
+  --enable-observability Boolean
+  Whether to include the modules for observability.
+  [Optional, default = false]
+
+  --help or -h
+  help for modulith init
+  [Optional]
+----
+
+=== Adding an Application Module
+
+`modulith add-module` adds a new application module to the application, including:
+
+* A new Java package with the given name.
+* A Spring component named after the module.
+* An `@ApplicationModuleTest` in the application module package in the test sources.
+
+[source]
+----
+NAME
+  modulith add-module - Add an application module
+
+SYNOPSIS
+  modulith add-module [--name String] --help
+
+OPTIONS
+  --name String
+  The name of the application module.
+  [Mandatory]
+
+  --help or -h
+  help for modulith add-module
+  [Optional]
+----
+
+=== Adding an Application Module Listener
+
+`modulith add-listener`
+
+[source]
+----
+NAME
+  modulith add-listener - Add an application module listener
+
+SYNOPSIS
+  modulith add-listener [--module String] [--name String] [--eventType String] --help
+
+OPTIONS
+  --module String
+  The name of the module to create the listener in.
+  [Mandatory]
+
+  --name String
+  The name of the listener type.
+  [Mandatory]
+
+  --eventType String
+  The event type to listen to.
+  [Mandatory]
+
+  --help or -h
+  help for modulith add-listener
+  [Optional]
+----
