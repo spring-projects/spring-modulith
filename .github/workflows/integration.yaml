@@ -9,7 +9,7 @@ jobs:
   integration:
     strategy:
       matrix:
-        version: ['3.0.7', '3.0.8-SNAPSHOT', '3.1.1-SNAPSHOT', '3.2.0-SNAPSHOT']
+        version: ['3.0.7', '3.0.8-SNAPSHOT', '3.1.1-SNAPSHOT', '3.2.0-SNAPSHOT -Dspring-framework.version=6.1.0-SNAPSHOT']
     name: Build against Boot ${{ matrix.version }}
     runs-on: ubuntu-latest
 
