@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-starters</artifactId>
-		<version>1.0.0-M1</version>
+		<version>1.0.0-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -21,7 +21,7 @@
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-starter-core</artifactId>
-			<version>1.0.0-M1</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 
 		<!-- Events -->
@@ -29,18 +29,18 @@
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-events-core</artifactId>
-			<version>1.0.0-M1</version>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-events-jackson</artifactId>
-			<version>1.0.0-M1</version>
+			<version>1.0.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-events-jpa</artifactId>
-			<version>1.0.0-M1</version>
+			<version>1.0.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
