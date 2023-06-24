@@ -16,13 +16,17 @@
 package org.springframework.modulith.test;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.InvocationInterceptor;
 import org.junit.jupiter.api.extension.ReflectiveInvocationContext;
 import org.springframework.context.ApplicationContext;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.Assert;
 
@@ -42,6 +46,30 @@ public interface ScenarioCustomizer extends InvocationInterceptor {
 	 * @return must not be {@literal null}.
 	 */
 	Function<ConditionFactory, ConditionFactory> getDefaultCustomizer(Method method, ApplicationContext context);
+
+	/**
+	 * Creates a default scenario customizer that will try to find an {@link ExecutorService} in the given
+	 * {@link ApplicationContext} in the following order:
+	 * <ol>
+	 * <li>A unique {@link ExecutorService} bean defined</li>
+	 * <li>A {@link ThreadPoolTaskExecutor} bean defined (the default Spring Boot creates in case no {@link Executor} is
+	 * explicitly defined in the {@link ApplicationContext}</li>
+	 * </ol>
+	 *
+	 * @param context must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static Function<ConditionFactory, ConditionFactory> forwardExecutorService(ApplicationContext context) {
+
+		Supplier<ExecutorService> fallback = () -> {
+			var executor = context.getBeanProvider(ThreadPoolTaskExecutor.class).getIfUnique();
+			return executor == null ? null : executor.getThreadPoolExecutor();
+		};
+
+		var executorService = context.getBeanProvider(ExecutorService.class).getIfUnique(fallback);
+
+		return executorService != null ? it -> it.pollExecutorService(executorService) : Function.identity();
+	}
 
 	/*
 	 * (non-Javadoc)
