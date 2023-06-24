@@ -67,7 +67,7 @@ The execution order of those beans will automatically follow the application mod
 class MyInitializer implements ApplicationModuleInitializer {
 
   @Override
-  void initialize() {
+  public void initialize() {
     // Initialization code goes here
   }
 }
