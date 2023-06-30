@@ -199,7 +199,8 @@ class DocumentationTests {
 }
 ----
 
-A canvas generated looks like this:
+By default, the documentation will be generated to `target/spring-modulith-docs` in a Maven project or `build/spring-modulith-docs` in a Gradle project.
+A generated canvas looks like this:
 
 .A sample Application Module Canvas
 [cols="1h,4a"]
