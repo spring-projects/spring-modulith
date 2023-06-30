@@ -33,10 +33,14 @@ public class ApplicationModulesExporterUnitTests {
 	@Test // #119
 	void rendersApplicationModulesAsJson() {
 
-		var json = new ApplicationModulesExporter(ApplicationModules.of(Application.class)).toJson();
+		var exporter = new ApplicationModulesExporter(ApplicationModules.of(Application.class));
 
 		assertThatNoException().isThrownBy(() -> {
-			new ObjectMapper().readTree(json);
+			new ObjectMapper().readTree(exporter.toFullJson());
+		});
+
+		assertThatNoException().isThrownBy(() -> {
+			new ObjectMapper().readTree(exporter.toJson());
 		});
 	}
 }

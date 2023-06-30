@@ -17,6 +17,7 @@ package org.springframework.modulith.core.util;
 
 import static java.util.stream.Collectors.*;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -24,12 +25,17 @@ import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependency;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
+import org.springframework.modulith.core.NamedInterface;
+import org.springframework.modulith.core.NamedInterfaces;
 import org.springframework.util.Assert;
+
+import com.tngtech.archunit.core.domain.JavaClass;
 
 /**
  * Export the structure of {@link ApplicationModules} as JSON.
@@ -38,6 +44,8 @@ import org.springframework.util.Assert;
  */
 public class ApplicationModulesExporter {
 
+	private static final Function<NamedInterface, Stream<String>> TO_EXPOSED_TYPES = it -> it.asJavaClasses()
+			.map(JavaClass::getName);
 	private static final Function<Set<DependencyType>, Set<DependencyType>> REMOVE_DEFAULT_DEPENDENCY_TYPE_IF_OTHERS_PRESENT = it -> {
 
 		if (it.stream().anyMatch(type -> type != DependencyType.DEFAULT)) {
@@ -77,7 +85,7 @@ public class ApplicationModulesExporter {
 		Assert.notNull(args, "Arguments must not be null!");
 		Assert.isTrue(args.length == 1, "A java package name is required as only argument!");
 
-		System.out.println(new ApplicationModulesExporter(ApplicationModules.of(args[0])).toJson());
+		System.out.println(new ApplicationModulesExporter(ApplicationModules.of(args[0])).toFullJson());
 	}
 
 	/**
@@ -86,28 +94,52 @@ public class ApplicationModulesExporter {
 	 * @return will never be {@literal null}.
 	 */
 	public String toJson() {
-		return Json.toString(toMap());
+		return Json.toString(toMap(Details.SIMPLE));
 	}
 
-	private Map<String, Object> toMap() {
+	/**
+	 * Returns the {@link ApplicationModules} structure as JSON String including full details, such as named interfaces
+	 * etc.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public String toFullJson() {
+		return Json.toString(toMap(Details.FULL));
+	}
+
+	private Map<String, Object> toMap(Details details) {
 
 		return modules.stream()
 				.collect(
-						Collectors.toMap(ApplicationModule::getName, it -> toInfo(it, modules), (l, r) -> r, LinkedHashMap::new));
+						Collectors.toMap(ApplicationModule::getName, it -> toInfo(it, modules, details), (l, r) -> r,
+								LinkedHashMap::new));
 	}
 
-	private static Map<String, Object> toInfo(ApplicationModule module, ApplicationModules modules) {
+	private static Map<String, Object> toInfo(ApplicationModule module, ApplicationModules modules, Details details) {
 
-		return Map.of( //
-				"displayName", module.getDisplayName(), //
-				"basePackage", module.getBasePackage().getName(), //
-				"dependencies", module.getDependencies(modules).stream() //
-						.collect(Collectors.groupingBy(ApplicationModuleDependency::getTargetModule, MAPPER))
-						.entrySet() //
-						.stream() //
-						.map(ApplicationModulesExporter::toInfo) //
-						.toList() //
-		);
+		Map<String, Object> json = new LinkedHashMap<>();
+
+		json.put("displayName", module.getDisplayName());
+		json.put("basePackage", module.getBasePackage().getName());
+
+		if (details.equals(Details.FULL)) {
+			json.put("namedInterfaces", toNamedInterfaces(module.getNamedInterfaces()));
+		}
+
+		json.put("dependencies", module.getDependencies(modules).stream() //
+				.collect(Collectors.groupingBy(ApplicationModuleDependency::getTargetModule, MAPPER))
+				.entrySet() //
+				.stream() //
+				.map(ApplicationModulesExporter::toInfo) //
+				.toList());
+
+		return Collections.unmodifiableMap(json);
+	}
+
+	private static Map<String, Set<String>> toNamedInterfaces(NamedInterfaces interfaces) {
+
+		return interfaces.stream()
+				.collect(groupingBy(it -> it.getName(), flatMapping(TO_EXPOSED_TYPES, toSet())));
 	}
 
 	private static Map<String, Object> toInfo(Entry<ApplicationModule, ? extends Set<DependencyType>> types) {
@@ -116,5 +148,9 @@ public class ApplicationModulesExporter {
 				"target", types.getKey().getName(), //
 				"types", types.getValue() //
 		);
+	}
+
+	private static enum Details {
+		SIMPLE, FULL;
 	}
 }

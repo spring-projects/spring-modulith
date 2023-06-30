@@ -20,6 +20,7 @@ import static org.springframework.modulith.core.Types.*;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
@@ -153,6 +154,15 @@ public class NamedInterface implements Iterable<JavaClass> {
 		Assert.notNull(type, "Type must not be null!");
 
 		return !classes.that(Predicates.equivalentTo(type)).isEmpty();
+	}
+
+	/**
+	 * Returns a {@link Stream} of all {@link JavaClass}es contained in this interface.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Stream<JavaClass> asJavaClasses() {
+		return classes.stream();
 	}
 
 	/**
