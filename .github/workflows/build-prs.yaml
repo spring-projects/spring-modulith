@@ -1,7 +1,7 @@
-name: CI Build
+name: PR Build
 
 on:
-  push:
+  pull_request:
     branches: [ main ]
 
 jobs:
@@ -23,9 +23,3 @@ jobs:
 
     - name: Build with Maven
       run: ./mvnw -B
-
-    - name: Deploy to Artifactory
-      env:
-        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-      run: ./mvnw -B clean deploy -Pci,artifactory
