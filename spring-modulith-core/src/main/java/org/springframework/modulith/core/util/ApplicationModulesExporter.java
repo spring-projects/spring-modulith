@@ -17,6 +17,9 @@ package org.springframework.modulith.core.util;
 
 import static java.util.stream.Collectors.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -75,17 +78,26 @@ public class ApplicationModulesExporter {
 
 	/**
 	 * Simple main method to render the {@link ApplicationModules} instance defined for the Java package given as first
-	 * argument.
+	 * argument and an optional, second element to name a file to write the output to.
 	 *
-	 * @param args a single-element array containing a Java package name to bootstrap an {@link ApplicationModules}
-	 *          instance from.
+	 * @param args an array containing a Java package name to bootstrap an {@link ApplicationModules} instance from and an
+	 *          optional, second element to name a file to write the output to.
+	 * @throws IOException
 	 */
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
 
 		Assert.notNull(args, "Arguments must not be null!");
-		Assert.isTrue(args.length == 1, "A java package name is required as only argument!");
+		Assert.isTrue(args.length >= 1 && args.length <= 2, "Usage java … $packageName ($filename).");
 
-		System.out.println(new ApplicationModulesExporter(ApplicationModules.of(args[0])).toFullJson());
+		var output = new ApplicationModulesExporter(ApplicationModules.of(args[0])).toFullJson();
+
+		if (args.length == 1) {
+			System.out.println(output);
+			return;
+		}
+
+		var path = Path.of(args[1]);
+		Files.writeString(path, output);
 	}
 
 	/**
