@@ -35,7 +35,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @AutoConfiguration
 @AutoConfigureBefore(TransactionAutoConfiguration.class)
-@ConditionalOnProperty(//
+@ConditionalOnProperty(
 		name = "spring.modulith.events.mongodb.transaction-management.enabled",
 		havingValue = "true",
 		matchIfMissing = true)
