@@ -20,6 +20,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static java.util.stream.Collectors.*;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -58,7 +59,7 @@ import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
  */
 public class ApplicationModules implements Iterable<ApplicationModule> {
 
-	private static final Map<CacheKey, ApplicationModules> CACHE = new HashMap<>();
+	private static final Map<CacheKey, ApplicationModules> CACHE = new ConcurrentHashMap<>();
 	private static final ApplicationModuleDetectionStrategy DETECTION_STRATEGY;
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
 	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
