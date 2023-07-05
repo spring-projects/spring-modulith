@@ -25,6 +25,10 @@
 		<java.version>17</java.version>
 	</properties>
 
+	<build>
+		<defaultGoal>verify</defaultGoal>
+	</build>
+
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
