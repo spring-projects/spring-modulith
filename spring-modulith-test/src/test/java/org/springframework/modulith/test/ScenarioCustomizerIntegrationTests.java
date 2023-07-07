@@ -19,12 +19,17 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Function;
 
+import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ExecutorLifecycle;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -50,7 +55,14 @@ class ScenarioCustomizerIntegrationTests {
 		TransactionTemplate transactionTemplate() {
 			return mock(TransactionTemplate.class);
 		}
+
+		@Bean
+		ExecutorService executorService() {
+			return Executors.newSingleThreadExecutor();
+		}
 	}
+
+	@Autowired ExecutorService executorService;
 
 	@BeforeEach
 	void setUp() {
@@ -61,6 +73,8 @@ class ScenarioCustomizerIntegrationTests {
 	void customizerGetsAppliedForScenarioParameter(Scenario scenario) {
 
 		assertThat(TestScenarioCustomizer.invoked).isTrue();
+		assertThat(TestScenarioCustomizer.SAMPLE).isNotNull();
+
 		assertThat(ReflectionTestUtils.getField(scenario, "defaultCustomizer"))
 				.isSameAs(TestScenarioCustomizer.SAMPLE);
 	}
@@ -70,9 +84,23 @@ class ScenarioCustomizerIntegrationTests {
 		assertThat(TestScenarioCustomizer.invoked).isFalse();
 	}
 
+	@Test // GH-165
+	@SuppressWarnings("unchecked")
+	void forwardsExecutorServiceFromApplicationContext(Scenario scenario) {
+
+		var customizer = (Function<ConditionFactory, ConditionFactory>) ReflectionTestUtils.getField(scenario,
+				"defaultCustomizer");
+
+		var factory = customizer.apply(Awaitility.await());
+		var lifecycle = (ExecutorLifecycle) ReflectionTestUtils.getField(factory, "executorLifecycle");
+
+		assertThat(lifecycle).isNotNull();
+		assertThat(lifecycle.supplyExecutorService()).isEqualTo(executorService);
+	}
+
 	static class TestScenarioCustomizer implements ScenarioCustomizer {
 
-		static Function<ConditionFactory, ConditionFactory> SAMPLE = it -> it;
+		static Function<ConditionFactory, ConditionFactory> SAMPLE;
 		static boolean invoked = false;
 
 		@Override
@@ -80,6 +108,8 @@ class ScenarioCustomizerIntegrationTests {
 				ApplicationContext context) {
 
 			invoked = true;
+
+			SAMPLE = ScenarioCustomizer.forwardExecutorService(context);
 
 			return SAMPLE;
 		}

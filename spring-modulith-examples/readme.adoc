@@ -1,0 +1,13 @@
+= Spring Modulith Examples
+
+This folder contains a few sample projects that show the fundamental setup of Spring Modulith as well as a couple of advanced features.
+They all use the same domain to showcase the provided integration support.
+An _order_ application module that completes an `Order` instance as well as an _inventory_ that reacts to the completion of the `Order`.
+
+To run the examples, execute the Maven build via `./mvnw`.
+
+* `spring-modulith-example-full` -- shows the fundamental module setup, its verification (`ModularityTests.verifiesModularStructure()`) and the documentation derived from the arrangement (`ModularityTests.createModuleDocumentation()`).
+It also shows the Event Publication Registry working and how it keeps track of the incomplete event publication caused by the `FailingAsyncTransactionalEventListener`.
+Finally, it shows how to write integration tests using the `Scenario` APIs in `OrderIntegrationTests`.
+* `spring-modulith-example-epr-jdbc` -- shows the Event Publication Registry working on top of Spring Data JDBC (in `ApplicationIntegrationTests`).
+* `spring-modulith-example-epr-mongodb` -- shows the Event Publication Registry working on top of MongoDB (in `ApplicationIntegrationTests`).

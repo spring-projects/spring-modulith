@@ -15,12 +15,12 @@
  */
 package org.springframework.modulith.test;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -56,7 +56,7 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 
 		Assert.notNull(events, "Events must not be null!");
 
-		this.events = new ArrayList<>(events);
+		this.events = new CopyOnWriteArrayList<>(events);
 	}
 
 	/*

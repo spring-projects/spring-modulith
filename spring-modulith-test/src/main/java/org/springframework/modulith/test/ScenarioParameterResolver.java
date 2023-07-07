@@ -77,7 +77,8 @@ class ScenarioParameterResolver implements ParameterResolver, AfterEachCallback 
 		var operations = resolveTransactionTemplate(context);
 		var events = (AssertablePublishedEvents) delegate.resolveParameter(parameterContext, extensionContext);
 
-		return new Scenario(operations, context, events);
+		return new Scenario(operations, context, events)
+				.setDefaultCustomizer(ScenarioCustomizer.forwardExecutorService(context));
 	}
 
 	private TransactionTemplate resolveTransactionTemplate(ApplicationContext context) {
