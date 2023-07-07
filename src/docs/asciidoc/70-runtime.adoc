@@ -58,7 +58,7 @@ ComponentB --> ComponentA
 
 ....
 
-While developers could of course define the execution order via Spring's standard `@DependsOn` annotation, Spring Modulith provides an `ApplicationModuleInitializer` interface for beans to be run on application startup.
+While developers could of course define the execution order via Spring's standard `@Order` annotation or `Ordered` interface, Spring Modulith provides an `ApplicationModuleInitializer` interface for beans to be run on application startup.
 The execution order of those beans will automatically follow the application module dependency structure.
 
 [source, java]
