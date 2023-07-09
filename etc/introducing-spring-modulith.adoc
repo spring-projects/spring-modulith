@@ -144,7 +144,7 @@ class OrderIntegrationTests {
 
     // Find all OrderCompleted events referring to our reference order
     var matchingMapped = events.ofType(OrderCompleted.class)
-        .matchingMapped(OrderCompleted::getOrderId, reference.getId()::equals);
+        .matching(OrderCompleted::orderId, reference.getId());
 
     assertThat(matchingMapped).hasSize(1);
   }
