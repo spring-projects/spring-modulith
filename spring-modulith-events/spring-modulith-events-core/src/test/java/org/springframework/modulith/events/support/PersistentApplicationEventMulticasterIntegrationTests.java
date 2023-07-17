@@ -60,7 +60,7 @@ class PersistentApplicationEventMulticasterIntegrationTests {
 	@Autowired ApplicationEventPublisher publisher;
 	@Autowired EventPublicationRepository repository;
 
-	@Test // GH-186
+	@Test // GH-186, GH-239
 	void doesNotPublishGenericEventsToListeners() throws Exception {
 
 		publisher.publishEvent(new SomeGenericEvent<>());

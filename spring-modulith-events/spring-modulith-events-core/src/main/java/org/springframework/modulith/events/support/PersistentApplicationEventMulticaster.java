@@ -127,34 +127,6 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		publications.forEach(this::invokeTargetListener);
 	}
 
-	/**
-	 * Temporary workaround for an issue in Spring Framework that lets ApplicationListenerMethodAdapter match all generic
-	 * events with unresolved generics.
-	 *
-	 * @see <a href=
-	 *      "https://github.com/spring-projects/spring-framework/issues/30399">https://github.com/spring-projects/spring-framework/issues/30399</a>
-	 */
-	@Override
-	@SuppressWarnings("unchecked")
-	protected boolean supportsEvent(ApplicationListener<?> listener, ResolvableType eventType, Class<?> sourceType) {
-
-		var result = super.supportsEvent(listener, eventType, sourceType);
-
-		if (!super.supportsEvent(listener, eventType, sourceType)
-				|| !(listener instanceof ApplicationListenerMethodAdapter adapter)) {
-			return result;
-		}
-
-		var actualEventType = ResolvableType.forClass(PayloadApplicationEvent.class).isAssignableFrom(eventType)
-				? eventType.getGeneric()
-				: eventType;
-
-		var declaredEventTypes = (List<ResolvableType>) ReflectionUtils.getField(DECLARED_EVENT_TYPES_FIELD, adapter);
-
-		return declaredEventTypes.stream()
-				.anyMatch(it -> it.isAssignableFrom(actualEventType.getRawClass()));
-	}
-
 	private void invokeTargetListener(EventPublication publication) {
 
 		var listeners = new TransactionalEventListeners(
