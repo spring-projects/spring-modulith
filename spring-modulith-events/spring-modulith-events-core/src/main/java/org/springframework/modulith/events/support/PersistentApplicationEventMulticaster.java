@@ -33,6 +33,7 @@ import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.env.Environment;
 import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublicationRegistry;
@@ -60,8 +61,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
 	private static final Field DECLARED_EVENT_TYPES_FIELD = ReflectionUtils
 			.findField(ApplicationListenerMethodAdapter.class, "declaredEventTypes");
+	static final String REPUBLISH_ON_RESTART = "spring.modulith.republish-outstanding-events-on-restart";
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
+	private final @NonNull Supplier<Environment> environment;
 
 	static {
 		ReflectionUtils.makeAccessible(DECLARED_EVENT_TYPES_FIELD);
@@ -71,12 +74,16 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
 	 *
 	 * @param registry must not be {@literal null}.
+	 * @param environment must not be {@literal null}.
 	 */
-	public PersistentApplicationEventMulticaster(Supplier<EventPublicationRegistry> registry) {
+	public PersistentApplicationEventMulticaster(Supplier<EventPublicationRegistry> registry,
+			Supplier<Environment> environment) {
 
 		Assert.notNull(registry, "EventPublicationRegistry must not be null!");
+		Assert.notNull(environment, "Environment must not be null!");
 
 		this.registry = registry;
+		this.environment = environment;
 	}
 
 	/*
@@ -117,6 +124,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 */
 	@Override
 	public void afterSingletonsInstantiated() {
+
+		if (Boolean.FALSE.equals(environment.get().getProperty(REPUBLISH_ON_RESTART, Boolean.class))) {
+			return;
+		}
 
 		LOGGER.debug("Looking up previously pending event publications…");
 

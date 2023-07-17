@@ -62,8 +62,10 @@ class EventPublicationConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	static PersistentApplicationEventMulticaster applicationEventMulticaster(
-			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry) {
-		return new PersistentApplicationEventMulticaster(() -> eventPublicationRegistry.getObject());
+			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment) {
+
+		return new PersistentApplicationEventMulticaster(() -> eventPublicationRegistry.getObject(),
+				() -> environment.getObject());
 	}
 
 	@Bean
