@@ -42,7 +42,6 @@ import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * An {@link ApplicationEventMulticaster} to register {@link EventPublication}s in an {@link EventPublicationRegistry}
@@ -59,16 +58,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		implements SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
-	private static final Field DECLARED_EVENT_TYPES_FIELD = ReflectionUtils
-			.findField(ApplicationListenerMethodAdapter.class, "declaredEventTypes");
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.republish-outstanding-events-on-restart";
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
 	private final @NonNull Supplier<Environment> environment;
-
-	static {
-		ReflectionUtils.makeAccessible(DECLARED_EVENT_TYPES_FIELD);
-	}
 
 	/**
 	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
