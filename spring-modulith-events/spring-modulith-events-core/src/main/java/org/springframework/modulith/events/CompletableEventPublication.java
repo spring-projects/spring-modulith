@@ -34,9 +34,9 @@ public interface CompletableEventPublication extends EventPublication {
 	Optional<Instant> getCompletionDate();
 
 	/**
-	 * Returns whether the publication o
+	 * Returns whether the publication of the event has completed.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	default boolean isPublicationCompleted() {
 		return getCompletionDate().isPresent();
@@ -45,7 +45,7 @@ public interface CompletableEventPublication extends EventPublication {
 	/**
 	 * Marks the event publication as completed.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	CompletableEventPublication markCompleted();
 
