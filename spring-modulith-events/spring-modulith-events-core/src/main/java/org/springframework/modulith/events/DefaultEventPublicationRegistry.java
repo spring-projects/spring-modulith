@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events;
 
+import java.time.Clock;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
@@ -40,17 +41,21 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEventPublicationRegistry.class);
 
 	private final EventPublicationRepository events;
+	private final Clock clock;
 
 	/**
 	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository}.
 	 *
 	 * @param events must not be {@literal null}.
+	 * @param clock must not be {@literal null}.
 	 */
-	public DefaultEventPublicationRegistry(EventPublicationRepository events) {
+	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock) {
 
 		Assert.notNull(events, "EventPublicationRepository must not be null!");
+		Assert.notNull(clock, "Clock must not be null!");
 
 		this.events = events;
+		this.clock = clock;
 	}
 
 	/*
@@ -58,10 +63,11 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 	 * @see org.springframework.modulith.events.EventPublicationRegistry#store(java.lang.Object, java.util.stream.Stream)
 	 */
 	@Override
-	public void store(Object event, Stream<PublicationTargetIdentifier> listeners) {
+	public Collection<EventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
-		listeners.map(it -> map(event, it))
-				.forEach(events::create);
+		return listeners.map(it -> map(event, it))
+				.map(events::create)
+				.toList();
 	}
 
 	/*
@@ -118,7 +124,7 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 	private EventPublication map(Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		EventPublication result = CompletableEventPublication.of(event, targetIdentifier);
+		var result = CompletableEventPublication.of(event, targetIdentifier, clock.instant());
 
 		LOGGER.debug("Registering publication of {} for {}.", //
 				result.getEvent().getClass().getName(), result.getTargetIdentifier().getValue());

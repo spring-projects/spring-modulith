@@ -36,7 +36,7 @@ public interface EventPublicationRegistry {
 	 * @param event must not be {@literal null}.
 	 * @param listeners must not be {@literal null}.
 	 */
-	void store(Object event, Stream<PublicationTargetIdentifier> listeners);
+	Collection<EventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners);
 
 	/**
 	 * Returns all {@link EventPublication}s that have not been completed yet.

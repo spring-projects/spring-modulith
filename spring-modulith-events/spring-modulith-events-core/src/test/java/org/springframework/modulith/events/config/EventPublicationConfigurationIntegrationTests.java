@@ -17,7 +17,10 @@ package org.springframework.modulith.events.config;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.function.Function;
 
 import org.junit.jupiter.api.Test;
@@ -32,11 +35,13 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.config.EventPublicationConfiguration.AsyncPropertiesDefaulter;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.ProxyAsyncConfiguration;
 import org.springframework.scheduling.aspectj.AspectJAsyncConfiguration;
+import org.springframework.test.util.ReflectionTestUtils;
 
 /**
  * Unit tests for {@link EventPublicationConfiguration}.
@@ -102,6 +107,21 @@ class EventPublicationConfigurationIntegrationTests {
 					assertThat(context)
 							.doesNotHaveBean(ProxyAsyncConfiguration.class)
 							.hasSingleBean(AspectJAsyncConfiguration.class);
+				});
+	}
+
+	@Test // GH-206
+	void wiresCustomClockIntoEventPublicationRegistryIfConfigured() {
+
+		var clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+
+		basicSetup()
+				.withBean(Clock.class, () -> clock)
+				.run(context -> {
+
+					var registry = context.getBean(EventPublicationRegistry.class);
+
+					assertThat(ReflectionTestUtils.getField(registry, "clock")).isSameAs(clock);
 				});
 	}
 

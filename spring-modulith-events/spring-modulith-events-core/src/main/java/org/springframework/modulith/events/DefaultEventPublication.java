@@ -39,15 +39,17 @@ class DefaultEventPublication implements CompletableEventPublication {
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param targetIdentifier must not be {@literal null}.
+	 * @param publicationDate must not be {@literal null}.
 	 */
-	DefaultEventPublication(Object event, PublicationTargetIdentifier targetIdentifier) {
+	DefaultEventPublication(Object event, PublicationTargetIdentifier targetIdentifier, Instant publicationDate) {
 
 		Assert.notNull(event, "Event must not be null!");
 		Assert.notNull(targetIdentifier, "PublicationTargetIdentifier must not be null!");
+		Assert.notNull(publicationDate, "Publication date must not be null!");
 
 		this.event = event;
 		this.targetIdentifier = targetIdentifier;
-		this.publicationDate = Instant.now();
+		this.publicationDate = publicationDate;
 		this.completionDate = Optional.empty();
 	}
 

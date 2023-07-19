@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.config;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 
@@ -22,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
@@ -55,8 +57,9 @@ class EventPublicationConfiguration {
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	EventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository) {
-		return new DefaultEventPublicationRegistry(repository);
+	EventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
+			ObjectProvider<Clock> clock) {
+		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()));
 	}
 
 	@Bean

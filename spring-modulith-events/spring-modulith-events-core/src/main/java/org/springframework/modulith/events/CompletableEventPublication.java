@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Optional;
 
@@ -49,13 +50,28 @@ public interface CompletableEventPublication extends EventPublication {
 	CompletableEventPublication markCompleted();
 
 	/**
-	 * Creates a {@link CompletableEventPublication} for the given event an listener identifier.
+	 * Creates a {@link CompletableEventPublication} for the given event an listener identifier using a default
+	 * {@link Instant}. Prefer using {@link #of(Object, PublicationTargetIdentifier, Instant)} with a dedicated
+	 * {@link Instant} obtained from a {@link Clock}.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param id must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
+	 * @see #of(Object, PublicationTargetIdentifier, Instant)
 	 */
 	static CompletableEventPublication of(Object event, PublicationTargetIdentifier id) {
-		return new DefaultEventPublication(event, id);
+		return new DefaultEventPublication(event, id, Instant.now());
+	}
+
+	/**
+	 * Creates a {@link CompletableEventPublication} for the given event an listener identifier and publication date.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param id must not be {@literal null}.
+	 * @param publicationDate must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static CompletableEventPublication of(Object event, PublicationTargetIdentifier id, Instant publicationDate) {
+		return new DefaultEventPublication(event, id, publicationDate);
 	}
 }
