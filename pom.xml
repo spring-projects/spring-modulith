@@ -463,6 +463,8 @@ limitations under the License.
 						<doclint>accessibility,html,reference,syntax</doclint>
 						<show>package</show>
 						<quiet>true</quiet>
+						<excludePackageNames>com.tngtech.archunit.core.importer</excludePackageNames>
+						<javadocVersion>8</javadocVersion>
 						<links>
 							<link>https://docs.spring.io/spring-boot/docs/${spring-boot.version}/api/</link>
 							<link>https://docs.spring.io/spring/docs/${spring.version}/javadoc-api/</link>
