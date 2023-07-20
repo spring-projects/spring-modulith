@@ -27,6 +27,7 @@ import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
 
@@ -78,7 +79,7 @@ class DocumenterTest {
 
 		try {
 
-			documenter.withOutputFolder(customOutputFolder).writeModuleCanvases();
+			new Documenter(ApplicationModules.of(Application.class), customOutputFolder).writeModuleCanvases();
 
 			assertThat(Files.list(path)).isNotEmpty();
 			assertThat(path).exists();
