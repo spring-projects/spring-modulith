@@ -42,8 +42,8 @@ import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.util.Assert;
 
 /**
- * Auto-configuration to register a {@link SpringBootApplicationRuntime} and {@link ApplicationModulesRuntime} as Spring
- * Bean.
+ * Auto-configuration to register a {@link SpringBootApplicationRuntime}, a {@link ApplicationModulesRuntime} and an
+ * {@link ApplicationListener} to invoke all {@link ApplicationModuleInitializer}s as Spring Bean.
  *
  * @author Oliver Drotbohm
  */
@@ -51,29 +51,31 @@ import org.springframework.util.Assert;
 class SpringModulithRuntimeAutoConfiguration {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
-	private final AsyncTaskExecutor executor = new SimpleAsyncTaskExecutor();
+	private static final AsyncTaskExecutor EXECUTOR = new SimpleAsyncTaskExecutor();
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean(ApplicationRuntime.class)
-	SpringBootApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
+	static SpringBootApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
 		return new SpringBootApplicationRuntime(context);
 	}
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean
-	ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
+	static ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
 
 		var mainClass = runtime.getMainApplicationClass();
-		var modules = executor
+		var modules = EXECUTOR
 				.submit(() -> ApplicationModulesBootstrap.initializeApplicationModules(mainClass));
 
 		return new ApplicationModulesRuntime(toSupplier(modules), runtime);
 	}
 
 	@Bean
-	ApplicationListener<ApplicationStartedEvent> applicationModuleInitializingListener(ListableBeanFactory beanFactory) {
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	static ApplicationListener<ApplicationStartedEvent> applicationModuleInitializingListener(
+			ListableBeanFactory beanFactory) {
 
 		return event -> {
 
