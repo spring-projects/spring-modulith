@@ -27,13 +27,12 @@ import org.junit.jupiter.api.TestInstance.Lifecycle;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.filter.TypeExcludeFilters;
-import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.modulith.core.DependencyDepth;
-import org.springframework.test.context.BootstrapWith;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.TestConstructor.AutowireMode;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 /**
  * Bootstraps the module containing the package of the test class annotated with {@link ApplicationModuleTest}. Will
@@ -49,10 +48,10 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 @Documented
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
-@BootstrapWith(SpringBootTestContextBootstrapper.class)
+@SpringBootTest
 @TypeExcludeFilters(ModuleTypeExcludeFilter.class)
 @ImportAutoConfiguration(ModuleTestAutoConfiguration.class)
-@ExtendWith({ SpringExtension.class, PublishedEventsParameterResolver.class, ScenarioParameterResolver.class })
+@ExtendWith({ PublishedEventsParameterResolver.class, ScenarioParameterResolver.class })
 @TestInstance(Lifecycle.PER_CLASS)
 @TestConstructor(autowireMode = AutowireMode.ALL)
 public @interface ApplicationModuleTest {
@@ -76,6 +75,14 @@ public @interface ApplicationModuleTest {
 	 * @return
 	 */
 	String[] extraIncludes() default {};
+
+	/**
+	 * The type of web environment to create when applicable. Defaults to {@link WebEnvironment#MOCK}.
+	 *
+	 * @return the type of web environment
+	 */
+	@AliasFor(annotation = SpringBootTest.class)
+	WebEnvironment webEnvironment() default WebEnvironment.MOCK;
 
 	public enum BootstrapMode {
 

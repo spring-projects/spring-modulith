@@ -15,9 +15,16 @@
  */
 package com.acme.myproject.moduleA;
 
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
+import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.test.ApplicationModuleTest;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.web.reactive.server.WebTestClient;
 
 /**
  * Integration tests for {@link ApplicationModuleTest}.
@@ -35,5 +42,20 @@ class ApplicationModuleTestIntegrationTests {
 
 		@Test // GH-173
 		void bootstrapsSecondLevelMestMethod() {}
+	}
+
+	// GH-253
+	@Nested
+	@ApplicationModuleTest(verifyAutomatically = false)
+	@ContextConfiguration
+	@AutoConfigureWebTestClient
+	class SampleTest {
+
+		@Autowired ApplicationContext context;
+
+		@Test
+		void registersTestWebClient() {
+			assertThat(context.getBean(WebTestClient.class)).isNotNull();
+		}
 	}
 }
