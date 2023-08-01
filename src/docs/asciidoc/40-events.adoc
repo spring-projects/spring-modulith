@@ -139,6 +139,23 @@ Each log entry contains the original event in serialized form.
 The `EventSerializer` abstraction contained in `spring-modulith-events-core` allows plugging different strategies for how to turn the event instances into a format suitable for the datastore.
 Spring Modulith provides a Jackson-based JSON implementation through the `spring-modulith-events-jackson` artifact, which registers a `JacksonEventSerializer` consuming an `ObjectMapper` through standard Spring Boot auto-configuration by default.
 
+[[events.customize-publication-date]]
+== Customizing the Event Publication Date
+By default, the Event Publication Registry will use the date returned by the `Clock.systemUTC()` as event publication date.
+If you want to customize this, register a bean of type clock with the application context:
+
+[source, java]
+----
+@Configuration
+class MyConfiguration {
+
+  @Bean
+  Clock myCustomClock() {
+    return … // Your custom Clock instance created here.
+  }
+}
+----
+
 [[events.starters]]
 == Spring Boot Event Registry Starters
 
