@@ -18,16 +18,18 @@ package org.springframework.modulith.events;
 import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.util.Assert;
 
 /**
- * Default {@link CompletableEventPublication} implementation.
+ * Default {@link Completable} implementation.
  *
  * @author Oliver Drotbohm
  */
-class DefaultEventPublication implements CompletableEventPublication {
+class DefaultEventPublication implements EventPublication {
 
+	private final UUID identifier;
 	private final Object event;
 	private final PublicationTargetIdentifier targetIdentifier;
 	private final Instant publicationDate;
@@ -47,10 +49,20 @@ class DefaultEventPublication implements CompletableEventPublication {
 		Assert.notNull(targetIdentifier, "PublicationTargetIdentifier must not be null!");
 		Assert.notNull(publicationDate, "Publication date must not be null!");
 
+		this.identifier = UUID.randomUUID();
 		this.event = event;
 		this.targetIdentifier = targetIdentifier;
 		this.publicationDate = publicationDate;
 		this.completionDate = Optional.empty();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getPublicationIdentifier()
+	 */
+	@Override
+	public UUID getIdentifier() {
+		return identifier;
 	}
 
 	/*
@@ -89,13 +101,11 @@ class DefaultEventPublication implements CompletableEventPublication {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.CompletableEventPublication#markCompleted()
+	 * @see org.springframework.modulith.events.CompletableEventPublication#markCompleted(java.time.Instant)
 	 */
 	@Override
-	public CompletableEventPublication markCompleted() {
-
-		this.completionDate = Optional.of(Instant.now());
-		return this;
+	public void markCompleted(Instant instant) {
+		this.completionDate = Optional.of(instant);
 	}
 
 	/*

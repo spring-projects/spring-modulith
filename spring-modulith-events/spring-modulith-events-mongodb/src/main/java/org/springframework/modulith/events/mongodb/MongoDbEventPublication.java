@@ -16,8 +16,8 @@
 package org.springframework.modulith.events.mongodb;
 
 import java.time.Instant;
+import java.util.UUID;
 
-import org.bson.types.ObjectId;
 import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.lang.Nullable;
@@ -32,7 +32,7 @@ import org.springframework.util.Assert;
 @Document(collection = "org_springframework_modulith_events")
 class MongoDbEventPublication {
 
-	final ObjectId id;
+	final UUID id;
 	final Instant publicationDate;
 	final String listenerId;
 	final Object event;
@@ -50,7 +50,7 @@ class MongoDbEventPublication {
 	 * @param completionDate can be {@literal null}.
 	 */
 	@PersistenceCreator
-	MongoDbEventPublication(ObjectId id, Instant publicationDate, String listenerId, Object event,
+	MongoDbEventPublication(UUID id, Instant publicationDate, String listenerId, Object event,
 			@Nullable Instant completionDate) {
 
 		Assert.notNull(id, "Id must not be null!");
@@ -72,8 +72,8 @@ class MongoDbEventPublication {
 	 * @param listenerId must not be {@literal null}.
 	 * @param event must not be {@literal null}.
 	 */
-	MongoDbEventPublication(Instant publicationDate, String listenerId, Object event) {
-		this(new ObjectId(), publicationDate, listenerId, event, null);
+	MongoDbEventPublication(UUID id, Instant publicationDate, String listenerId, Object event) {
+		this(id, publicationDate, listenerId, event, null);
 	}
 
 	/**

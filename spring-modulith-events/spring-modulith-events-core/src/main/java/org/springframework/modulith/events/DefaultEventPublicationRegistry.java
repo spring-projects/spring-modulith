@@ -16,6 +16,7 @@
 package org.springframework.modulith.events;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Stream;
@@ -39,6 +40,7 @@ import org.springframework.util.Assert;
 public class DefaultEventPublicationRegistry implements DisposableBean, EventPublicationRegistry {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEventPublicationRegistry.class);
+	private static final String REGISTER = "Registering publication of {} for {}.";
 
 	private final EventPublicationRepository events;
 	private final Clock clock;
@@ -65,7 +67,8 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 	@Override
 	public Collection<EventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
-		return listeners.map(it -> map(event, it))
+		return listeners.map(it -> EventPublication.of(event, it, clock.instant()))
+				.peek(it -> LOGGER.debug(REGISTER, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue()))
 				.map(events::create)
 				.toList();
 	}
@@ -90,11 +93,23 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 		Assert.notNull(event, "Domain event must not be null!");
 		Assert.notNull(targetIdentifier, "Listener identifier must not be null!");
 
-		events.findIncompletePublicationsByEventAndTargetIdentifier(event, targetIdentifier) //
-				.map(DefaultEventPublicationRegistry::logCompleted) //
-				.map(e -> CompletableEventPublication.of(e.getEvent(), e.getTargetIdentifier()))
-				.ifPresent(it -> events.update(it.markCompleted()));
+		LOGGER.debug("Marking publication of event {} to listener {} completed.", //
+				event.getClass().getName(), targetIdentifier.getValue());
+
+		events.markCompleted(event, targetIdentifier, clock.instant());
 	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublicationRegistry#deleteCompletedPublicationsOlderThan(java.time.Duration)
+	 */
+	@Override
+	public void deleteCompletedPublicationsOlderThan(Duration duration) {
+
+		Assert.notNull(duration, "Duration must not be null!");
+
+		events.deleteCompletedPublicationsBefore(clock.instant().minus(duration));
+	};
 
 	/*
 	 * (non-Javadoc)
@@ -121,23 +136,4 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 			LOGGER.info("{} {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
 		}
 	}
-
-	private EventPublication map(Object event, PublicationTargetIdentifier targetIdentifier) {
-
-		var result = CompletableEventPublication.of(event, targetIdentifier, clock.instant());
-
-		LOGGER.debug("Registering publication of {} for {}.", //
-				result.getEvent().getClass().getName(), result.getTargetIdentifier().getValue());
-
-		return result;
-	}
-
-	private static EventPublication logCompleted(EventPublication publication) {
-
-		LOGGER.debug("Marking publication of event {} to listener {} completed.", //
-				publication.getEvent().getClass().getName(), publication.getTargetIdentifier().getValue());
-
-		return publication;
-	}
-
 }

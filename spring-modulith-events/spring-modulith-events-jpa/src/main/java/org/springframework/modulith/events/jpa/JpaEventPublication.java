@@ -51,14 +51,15 @@ class JpaEventPublication {
 	 * @param serializedEvent must not be {@literal null} or empty.
 	 * @param eventType must not be {@literal null}.
 	 */
-	JpaEventPublication(Instant publicationDate, String listenerId, String serializedEvent, Class<?> eventType) {
+	JpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent, Class<?> eventType) {
 
+		Assert.notNull(id, "Identifier must not be null!");
 		Assert.notNull(publicationDate, "Publication date must not be null!");
 		Assert.notNull(listenerId, "Listener id must not be null or empty!");
 		Assert.notNull(serializedEvent, "Serialized event must not be null or empty!");
 		Assert.notNull(eventType, "Event type must not be null!");
 
-		this.id = UUID.randomUUID();
+		this.id = id;
 		this.publicationDate = publicationDate;
 		this.listenerId = listenerId;
 		this.serializedEvent = serializedEvent;

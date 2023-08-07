@@ -24,13 +24,13 @@ import org.junit.jupiter.api.Test;
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
-class CompletableEventPublicationUnitTests {
+class EventPublicationUnitTests {
 
 	@Test
 	void rejectsNullEvent() {
 
 		assertThatExceptionOfType(IllegalArgumentException.class)//
-				.isThrownBy(() -> CompletableEventPublication.of(null, PublicationTargetIdentifier.of("foo")))//
+				.isThrownBy(() -> EventPublication.of(null, PublicationTargetIdentifier.of("foo")))//
 				.withMessageContaining("Event");
 	}
 
@@ -38,27 +38,17 @@ class CompletableEventPublicationUnitTests {
 	void rejectsNullTargetIdentifier() {
 
 		assertThatExceptionOfType(IllegalArgumentException.class)//
-				.isThrownBy(() -> CompletableEventPublication.of(new Object(), null))//
+				.isThrownBy(() -> EventPublication.of(new Object(), null))//
 				.withMessageContaining("TargetIdentifier");
 	}
 
 	@Test
 	void publicationIsIncompleteByDefault() {
 
-		CompletableEventPublication publication = CompletableEventPublication.of(new Object(),
+		EventPublication publication = EventPublication.of(new Object(),
 				PublicationTargetIdentifier.of("foo"));
 
 		assertThat(publication.isPublicationCompleted()).isFalse();
 		assertThat(publication.getCompletionDate()).isNotPresent();
-	}
-
-	@Test
-	void completionCapturesDate() {
-
-		CompletableEventPublication publication = CompletableEventPublication
-				.of(new Object(), PublicationTargetIdentifier.of("foo")).markCompleted();
-
-		assertThat(publication.isPublicationCompleted()).isTrue();
-		assertThat(publication.getCompletionDate()).isPresent();
 	}
 }

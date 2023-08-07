@@ -23,13 +23,15 @@ import jakarta.persistence.EntityManagerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
-import java.util.List;
+import java.util.UUID;
 
 import javax.sql.DataSource;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.context.annotation.Bean;
@@ -38,7 +40,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
-import org.springframework.modulith.events.CompletableEventPublication;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
@@ -64,7 +65,6 @@ import org.springframework.transaction.annotation.Transactional;
 class JpaEventPublicationRepositoryIntegrationTests {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
-
 	private static final EventSerializer eventSerializer = mock(EventSerializer.class);
 
 	@Configuration
@@ -113,29 +113,31 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	private final JpaEventPublicationRepository repository;
 	private final EntityManager em;
 
+	@AfterEach
+	public void flush() {
+		em.flush();
+	}
+
 	@Test
 	void persistsJpaEventPublication() {
 
-		TestEvent testEvent = new TestEvent("abc");
-		String serializedEvent = "{\"eventId\":\"abc\"}";
+		var testEvent = new TestEvent("abc");
+		var serializedEvent = "{\"eventId\":\"abc\"}";
 
 		when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
 		when(eventSerializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-		CompletableEventPublication publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+		var publication = repository.create(EventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-		// Store publication
-		repository.create(publication);
+		var eventPublications = repository.findIncompletePublications();
 
-		List<EventPublication> eventPublications = repository.findIncompletePublications();
 		assertThat(eventPublications).hasSize(1);
 		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
 		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
 				.isPresent();
 
-		// Complete publication
-		repository.update(publication.markCompleted());
+		repository.markCompleted(publication, Instant.now());
 
 		assertThat(repository.findIncompletePublications()).isEmpty();
 	}
@@ -160,11 +162,10 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
 		when(eventSerializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-		CompletableEventPublication publication = CompletableEventPublication.of(testEvent, TARGET_IDENTIFIER);
+		var publication = EventPublication.of(testEvent, TARGET_IDENTIFIER);
 
-		// Store publication
 		repository.create(publication);
-		repository.update(publication.markCompleted());
+		repository.markCompleted(publication, Instant.now());
 
 		var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
@@ -184,14 +185,9 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		when(eventSerializer.serialize(testEvent2)).thenReturn(serializedEvent2);
 		when(eventSerializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-		var publication1 = CompletableEventPublication.of(testEvent1, TARGET_IDENTIFIER);
-		var publication2 = CompletableEventPublication.of(testEvent2, TARGET_IDENTIFIER);
-
-		repository.create(publication1);
-		repository.create(publication2);
-
-		repository.update(publication1.markCompleted());
-
+		repository.create(EventPublication.of(testEvent1, TARGET_IDENTIFIER));
+		repository.create(EventPublication.of(testEvent2, TARGET_IDENTIFIER));
+		repository.markCompleted(testEvent1, TARGET_IDENTIFIER, Instant.now());
 		repository.deleteCompletedPublications();
 
 		assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
@@ -212,8 +208,35 @@ class JpaEventPublicationRepositoryIntegrationTests {
 				.isSortedAccordingTo(Comparator.comparing(EventPublication::getPublicationDate));
 	}
 
+	@Test // GH-251
+	void shouldDeleteCompletedEventsBefore() {
+
+		var testEvent1 = new TestEvent("abc");
+		var serializedEvent1 = "{\"eventId\":\"abc\"}";
+		var testEvent2 = new TestEvent("def");
+		var serializedEvent2 = "{\"eventId\":\"def\"}";
+
+		when(eventSerializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+		when(eventSerializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+		when(eventSerializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+		when(eventSerializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+
+		repository.create(EventPublication.of(testEvent1, TARGET_IDENTIFIER));
+		repository.create(EventPublication.of(testEvent2, TARGET_IDENTIFIER));
+
+		var now = Instant.now();
+
+		repository.markCompleted(testEvent1, TARGET_IDENTIFIER, now.minusSeconds(30));
+		repository.markCompleted(testEvent2, TARGET_IDENTIFIER, now);
+		repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
+
+		assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
+				.hasSize(1) //
+				.element(0).extracting(it -> it.serializedEvent).isEqualTo(serializedEvent2);
+	}
+
 	private void savePublicationAt(LocalDateTime date) {
-		em.persist(new JpaEventPublication(date.toInstant(ZoneOffset.UTC), "", "", Object.class));
+		em.persist(new JpaEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class));
 	}
 
 	@Value

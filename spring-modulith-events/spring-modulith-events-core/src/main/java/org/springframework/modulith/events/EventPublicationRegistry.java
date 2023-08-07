@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.stream.Stream;
 
@@ -52,4 +53,11 @@ public interface EventPublicationRegistry {
 	 * @param targetIdentifier must not be {@literal null}.
 	 */
 	void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier);
+
+	/**
+	 * Deletes all completed {@link EventPublication}s that have been completed before the given {@link Duration}.
+	 *
+	 * @param duration must not be {@literal null}.
+	 */
+	void deleteCompletedPublicationsOlderThan(Duration duration);
 }

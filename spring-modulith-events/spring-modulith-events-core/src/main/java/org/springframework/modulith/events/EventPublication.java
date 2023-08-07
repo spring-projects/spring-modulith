@@ -15,7 +15,10 @@
  */
 package org.springframework.modulith.events;
 
+import java.time.Clock;
 import java.time.Instant;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
@@ -28,7 +31,40 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
-public interface EventPublication extends Comparable<EventPublication> {
+public interface EventPublication extends Comparable<EventPublication>, Completable {
+
+	/**
+	 * Creates a {@link EventPublication} for the given event an listener identifier using a default {@link Instant}.
+	 * Prefer using {@link #of(Object, PublicationTargetIdentifier, Instant)} with a dedicated {@link Instant} obtained
+	 * from a {@link Clock}.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param id must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see #of(Object, PublicationTargetIdentifier, Instant)
+	 */
+	static EventPublication of(Object event, PublicationTargetIdentifier id) {
+		return new DefaultEventPublication(event, id, Instant.now());
+	}
+
+	/**
+	 * Creates a {@link EventPublication} for the given event an listener identifier and publication date.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param id must not be {@literal null}.
+	 * @param publicationDate must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	static EventPublication of(Object event, PublicationTargetIdentifier id, Instant publicationDate) {
+		return new DefaultEventPublication(event, id, publicationDate);
+	}
+
+	/**
+	 * Returns a unique identifier for this publication.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	UUID getIdentifier();
 
 	/**
 	 * Returns the event that is published.
@@ -77,6 +113,22 @@ public interface EventPublication extends Comparable<EventPublication> {
 		Assert.notNull(identifier, "Identifier must not be null!");
 
 		return this.getTargetIdentifier().equals(identifier);
+	}
+
+	/**
+	 * Returns the completion date of the publication.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	Optional<Instant> getCompletionDate();
+
+	/**
+	 * Returns whether the publication of the event has completed.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	default boolean isPublicationCompleted() {
+		return getCompletionDate().isPresent();
 	}
 
 	/*

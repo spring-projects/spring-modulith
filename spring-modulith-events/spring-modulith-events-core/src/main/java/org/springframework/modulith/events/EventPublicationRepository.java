@@ -15,8 +15,11 @@
  */
 package org.springframework.modulith.events;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.util.Assert;
 
 /**
  * Repository to store {@link EventPublication}s.
@@ -36,12 +39,30 @@ public interface EventPublicationRepository {
 	EventPublication create(EventPublication publication);
 
 	/**
-	 * Update the data store to mark the backing log entry as completed.
+	 * Marks the given {@link EventPublication} as completed.
 	 *
 	 * @param publication must not be {@literal null}.
-	 * @return will never be {@literal null}.
+	 * @param completionDate must not be {@literal null}.
 	 */
-	EventPublication update(CompletableEventPublication publication);
+	default void markCompleted(EventPublication publication, Instant completionDate) {
+
+		Assert.notNull(publication, "EventPublication must not be null!");
+		Assert.notNull(completionDate, "Instant must not be null!");
+
+		publication.markCompleted(completionDate);
+
+		markCompleted(publication.getEvent(), publication.getTargetIdentifier(), completionDate);
+	}
+
+	/**
+	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} to be completed at the given
+	 * {@link Instant}.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param identifier must not be {@literal null}.
+	 * @param completionDate must not be {@literal null}.
+	 */
+	void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate);
 
 	/**
 	 * Returns all {@link EventPublication} that have not been completed yet.
@@ -64,4 +85,11 @@ public interface EventPublicationRepository {
 	 * Deletes all publications that were already marked as completed.
 	 */
 	void deleteCompletedPublications();
+
+	/**
+	 * Deletes all publication that were already marked as completed with a completion date before the given one.
+	 *
+	 * @param instant must not be {@literal null}.
+	 */
+	void deleteCompletedPublicationsBefore(Instant instant);
 }
