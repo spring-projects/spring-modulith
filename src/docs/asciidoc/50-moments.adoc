@@ -1,7 +1,7 @@
 [[moments]]
 = Moments -- a Passage of Time Events API
 
-`modulith-moments` is a Passage of Time Events implementation heavily inspired by Matthias Verraes https://verraes.net/2019/05/patterns-for-decoupling-distsys-passage-of-time-event/[blog post].
+`spring-modulith-moments` is a Passage of Time Events implementation heavily inspired by Matthias Verraes https://verraes.net/2019/05/patterns-for-decoupling-distsys-passage-of-time-event/[blog post].
 It's an event-based approach to time to trigger actions that are tied to a particular period of time having passed.
 
 To use the abstraction, include the following dependency in your project:

@@ -3,20 +3,44 @@
 :jdbc-schema-base: ../../../spring-modulith-events/spring-modulith-events-jdbc/src/main/resources
 
 [appendix]
-[[appendix.migrating-from-moduliths]]
-== Migrating from Moduliths
+[[appendix.configuration-properties]]
+== Spring Modulith Configuration Properties
+[cols="2,1,3", options="header, unbreakable"]
+|===
+|Property|Default value|Description
 
+|`spring.modulith.default-async-termination`
+|`true`
+|Whether to configure defaults for the async processing termination, namely to wait for task completion for 2 seconds. See `TaskExecutionProperties` for details.
 
-* `o.m.model.Modules` has been renamed to `o.s.m.model.ApplicationModules`
-* `o.m.model.ModuleDetectionStrategy` has been renamed to `o.s.m.model.ApplicationModuleDetectionStrategy`
+|`spring.modulith.events.jdbc.schema-initialization.enabled`
+|`false`
+|Whether to initialize the JDBC event publication schema.
 
-* `@o.m.test.ModuleTest` has been renamed to `@o.s.m.test.ApplicationModuleTest`
+|`spring.modulith.events.mongodb.transaction-management.enabled`
+|`true`
+|Whether to automatically enable transactions for MongoDB. Requires the database to be run with a replica set.
 
-* `o.m.docs.Documenter.Options` has been renamed to `o.s.m.docs.Documenter.DiagramOptions`
-* The diagram style of component diagrams now defaults to `DiagramStyle.C4` (override by calling `DiagramOptions.withStyle(DiagramStyle.UML)`)
-* The module canvas hides non exposed types by default.
-To include application-module-internal types in the canvas, configure `CanvasOptions` to `….revealInternals()`.
-* The output folder for component diagrams and application module canvases has moved from `moduliths-docs` to `spring-modulith-docs` located in your build's target folder (such as `target` for Maven).
+|`spring.modulith.moments.enableTimeMachine`
+|`false`
+|Whether to enable the <<moments, `TimeMachine`>>.
+
+|`spring.modulith.moments.granularity`
+|`HOURS`
+|The granularity of events to publish. (`HOURS`, `DAYS`)
+
+|`spring.modulith.moments.locale`
+|`Locale.getDefault()`
+|The `Locale` to use when determining week boundaries.
+
+|`spring.modulith.moments.zoneId`
+|`ZoneOffset.UTC`
+|The timezone of the dates for the events being published.
+
+|`spring.modulith.republish-outstanding-events-on-restart`
+|`false`
+|Whether to republish outstanding event publications on restarts of the application.
+|===
 
 [appendix]
 [[appendix.artifacts]]
@@ -120,3 +144,19 @@ include::{jdbc-schema-base}/schema-mysql.sql[]
 ----
 include::{jdbc-schema-base}/schema-postgresql.sql[]
 ----
+
+[appendix]
+[[appendix.migrating-from-moduliths]]
+== Migrating from Moduliths
+
+
+* `o.m.model.Modules` has been renamed to `o.s.m.model.ApplicationModules`
+* `o.m.model.ModuleDetectionStrategy` has been renamed to `o.s.m.model.ApplicationModuleDetectionStrategy`
+
+* `@o.m.test.ModuleTest` has been renamed to `@o.s.m.test.ApplicationModuleTest`
+
+* `o.m.docs.Documenter.Options` has been renamed to `o.s.m.docs.Documenter.DiagramOptions`
+* The diagram style of component diagrams now defaults to `DiagramStyle.C4` (override by calling `DiagramOptions.withStyle(DiagramStyle.UML)`)
+* The module canvas hides non exposed types by default.
+To include application-module-internal types in the canvas, configure `CanvasOptions` to `….revealInternals()`.
+* The output folder for component diagrams and application module canvases has moved from `moduliths-docs` to `spring-modulith-docs` located in your build's target folder (such as `target` for Maven).
