@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.events.support;
 
-import java.lang.reflect.Field;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
@@ -30,7 +29,6 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.event.AbstractApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationEventMulticaster;
-import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
@@ -118,7 +116,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	@Override
 	public void afterSingletonsInstantiated() {
 
-		if (Boolean.FALSE.equals(environment.get().getProperty(REPUBLISH_ON_RESTART, Boolean.class))) {
+		if (!Boolean.TRUE.equals(environment.get().getProperty(REPUBLISH_ON_RESTART, Boolean.class))) {
 			return;
 		}
 

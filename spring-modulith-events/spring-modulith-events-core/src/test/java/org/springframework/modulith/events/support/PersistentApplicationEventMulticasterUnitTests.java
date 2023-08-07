@@ -42,20 +42,20 @@ class PersistentApplicationEventMulticasterUnitTests {
 		this.multicaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment);
 	}
 
-	@Test // GH-240
-	void doesNotRepublishEventsOnRestartIfExplicitlyDisabled() {
-
-		var source = new MapPropertySource("test",
-				Map.of(PersistentApplicationEventMulticaster.REPUBLISH_ON_RESTART, "false"));
-		environment.getPropertySources().addFirst(source);
+	@Test // GH-240, GH-251
+	void doesNotRepublishEventsOnRestartByDefault() {
 
 		multicaster.afterSingletonsInstantiated();
 
 		verify(registry, never()).findIncompletePublications();
 	}
 
-	@Test // GH-240
+	@Test // GH-240, GH-251
 	void triggersRepublicationIfExplicitlyEnabled() {
+
+		var source = new MapPropertySource("test",
+				Map.of(PersistentApplicationEventMulticaster.REPUBLISH_ON_RESTART, "true"));
+		environment.getPropertySources().addFirst(source);
 
 		multicaster.afterSingletonsInstantiated();
 

@@ -20,12 +20,15 @@ import static org.assertj.core.api.Assertions.*;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+import java.util.Map;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublicationRegistry;
 import org.springframework.modulith.events.PublicationTargetIdentifier;
@@ -45,6 +48,8 @@ class PersistentDomainEventIntegrationTest {
 	void exposesEventPublicationForFailedListener() throws Exception {
 
 		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
+		context.getEnvironment().getPropertySources().addFirst(
+				new MapPropertySource("test", Map.of("spring.modulith.republish-outstanding-events-on-restart", "true")));
 		context.register(ApplicationConfiguration.class, InfrastructureConfiguration.class);
 		context.refresh();
 

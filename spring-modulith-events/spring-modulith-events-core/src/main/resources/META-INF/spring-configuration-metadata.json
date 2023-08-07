@@ -10,7 +10,7 @@
 			"name": "spring.modulith.republish-outstanding-events-on-restart",
 			"type": "java.lang.boolean",
 			"description": "Whether to republish outstanding event publications on restarts of the application.",
-			"defaultValue": "true"
+			"defaultValue": "false"
 		}
 	]
 }
