@@ -24,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
 import org.springframework.modulith.ApplicationModuleListener;
-import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.modulith.test.Scenario;
 import org.springframework.test.annotation.DirtiesContext;

@@ -19,8 +19,8 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventSerializationConfigurationExtension;
+import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.databind.Module;

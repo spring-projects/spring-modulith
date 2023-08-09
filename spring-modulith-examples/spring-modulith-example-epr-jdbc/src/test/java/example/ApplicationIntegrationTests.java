@@ -26,7 +26,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.test.EnableScenarios;
 import org.springframework.modulith.test.Scenario;
 import org.testcontainers.containers.PostgreSQLContainer;

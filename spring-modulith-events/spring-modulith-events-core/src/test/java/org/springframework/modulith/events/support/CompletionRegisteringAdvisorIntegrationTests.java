@@ -27,7 +27,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
-import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor.CompletionRegisteringMethodInterceptor;
 import org.springframework.scheduling.annotation.AnnotationAsyncExecutionInterceptor;
 import org.springframework.scheduling.annotation.Async;

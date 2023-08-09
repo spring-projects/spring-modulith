@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2023 the original author or authors.
+ * Copyright 2023 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events;
+package org.springframework.modulith.events.core;
+
+import java.time.Instant;
 
 /**
+ * Internal interface to be able to mark {@link EventPublication} instances as completed.
+ *
  * @author Oliver Drotbohm
  */
-public interface EventSerializer {
+interface Completable {
 
 	/**
-	 * Serializes the given event into a storable format.
+	 * Marks the instance as completed at the given {@link Instant}.
 	 *
-	 * @param event must not be {@literal null}.
-	 * @return will never be {@literal null}.
+	 * @param instant must not be {@literal null}.
 	 */
-	Object serialize(Object event);
-
-	/**
-	 * Deserializes the event from the serialization format into an instance of the given type.
-	 *
-	 * @param serialized must not be {@literal null}.
-	 * @param type must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 */
-	<T> T deserialize(Object serialized, Class<T> type);
+	void markCompleted(Instant instant);
 }

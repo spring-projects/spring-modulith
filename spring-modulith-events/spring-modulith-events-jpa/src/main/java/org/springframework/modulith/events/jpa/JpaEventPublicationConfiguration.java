@@ -19,8 +19,8 @@ import jakarta.persistence.EntityManager;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.events.EventSerializer;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
+import org.springframework.modulith.events.core.EventSerializer;
 
 /**
  * @author Oliver Drotbohm

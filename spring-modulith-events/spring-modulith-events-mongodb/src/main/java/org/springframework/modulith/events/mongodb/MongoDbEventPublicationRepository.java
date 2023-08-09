@@ -29,9 +29,9 @@ import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.modulith.events.EventPublication;
-import org.springframework.modulith.events.EventPublicationRepository;
-import org.springframework.modulith.events.PublicationTargetIdentifier;
+import org.springframework.modulith.events.core.EventPublication;
+import org.springframework.modulith.events.core.EventPublicationRepository;
+import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.util.Assert;
 
 /**

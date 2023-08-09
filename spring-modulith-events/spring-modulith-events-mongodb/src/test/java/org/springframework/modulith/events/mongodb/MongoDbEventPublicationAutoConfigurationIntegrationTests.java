@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.data.mongodb.MongoTransactionManager;
-import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.testapp.TestApplication;
 
 /**

@@ -18,7 +18,7 @@ package org.springframework.modulith.events.jackson;
 import java.io.IOException;
 import java.util.function.Supplier;
 
-import org.springframework.modulith.events.EventSerializer;
+import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.util.Assert;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

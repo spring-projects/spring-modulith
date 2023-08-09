@@ -23,7 +23,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.modulith.events.EventPublicationRegistry;
+import org.springframework.modulith.events.core.EventPublicationRegistry;
 
 /**
  * Unit tests for {@link PersistentApplicationEventMulticaster}.

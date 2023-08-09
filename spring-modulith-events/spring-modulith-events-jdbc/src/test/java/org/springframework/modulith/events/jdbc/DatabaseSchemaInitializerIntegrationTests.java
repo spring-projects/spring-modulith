@@ -29,7 +29,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.modulith.events.EventSerializer;
+import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;

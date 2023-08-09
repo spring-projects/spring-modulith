@@ -23,10 +23,10 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import org.springframework.modulith.events.EventPublication;
-import org.springframework.modulith.events.EventPublicationRepository;
-import org.springframework.modulith.events.EventSerializer;
-import org.springframework.modulith.events.PublicationTargetIdentifier;
+import org.springframework.modulith.events.core.EventPublication;
+import org.springframework.modulith.events.core.EventPublicationRepository;
+import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 

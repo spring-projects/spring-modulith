@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events;
+package org.springframework.modulith.events.core;
 
 import static org.assertj.core.api.Assertions.*;
 

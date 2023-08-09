@@ -25,7 +25,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.modulith.events.EventSerializer;
+import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestConstructor;
 import org.springframework.test.context.TestConstructor.AutowireMode;

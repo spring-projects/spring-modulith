@@ -35,9 +35,9 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
-import org.springframework.modulith.events.EventPublicationRegistry;
-import org.springframework.modulith.events.EventPublicationRepository;
 import org.springframework.modulith.events.config.EventPublicationConfiguration.AsyncPropertiesDefaulter;
+import org.springframework.modulith.events.core.EventPublicationRegistry;
+import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.ProxyAsyncConfiguration;
 import org.springframework.scheduling.aspectj.AspectJAsyncConfiguration;
