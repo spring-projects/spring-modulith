@@ -3,6 +3,8 @@ changelog:
   sections:
   - title: ":star: New Features"
     labels: ["type: enhancement"]
+  - title: ":bulb: Improvements"
+    labels: ["type: improvement"]
   - title: ":beetle: Bugs"
     labels: ["type: bug"]
   - title: ":book: Documentation"
