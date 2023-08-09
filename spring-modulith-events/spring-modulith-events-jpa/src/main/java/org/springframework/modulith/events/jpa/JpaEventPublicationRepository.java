@@ -57,6 +57,13 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				p.publicationDate asc
 			""";
 
+	private static final String MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID = """
+			update JpaEventPublication p
+			   set p.completionDate = ?3
+			 where p.serializedEvent = ?1
+			   and p.listenerId = ?2
+			""";
+
 	private static final String DELETE_COMPLETED = """
 			delete
 			from JpaEventPublication p
@@ -111,8 +118,11 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Transactional
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		findEntityBySerializedEventAndListenerIdAndCompletionDateNull(event, identifier)
-				.map(it -> it.completionDate = completionDate);
+		entityManager.createQuery(MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID)
+				.setParameter(1, serializeEvent(event))
+				.setParameter(2, identifier.getValue())
+				.setParameter(3, completionDate)
+				.executeUpdate();
 	}
 
 	/*
