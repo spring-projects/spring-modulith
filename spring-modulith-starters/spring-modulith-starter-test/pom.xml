@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-starters</artifactId>
-		<version>1.0.0-SNAPSHOT</version>
+		<version>1.0.0-RC1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -25,13 +25,13 @@
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-test</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>1.0.0-RC1</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-docs</artifactId>
-			<version>1.0.0-SNAPSHOT</version>
+			<version>1.0.0-RC1</version>
 		</dependency>
 
 		<dependency>
