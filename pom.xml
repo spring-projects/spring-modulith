@@ -33,7 +33,7 @@
 
 	<properties>
 
-		<archunit.version>1.0.1</archunit.version>
+		<archunit.version>1.1.0</archunit.version>
 		<artifactory-maven-plugin.version>3.5.1</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>4.6.1</flapdoodle-mongodb.version>
 		<jmolecules-bom.version>2023.0.0</jmolecules-bom.version>
@@ -463,8 +463,6 @@ limitations under the License.
 						<doclint>accessibility,html,reference,syntax</doclint>
 						<show>package</show>
 						<quiet>true</quiet>
-						<excludePackageNames>com.tngtech.archunit.core.importer</excludePackageNames>
-						<javadocVersion>8</javadocVersion>
 						<links>
 							<link>https://docs.spring.io/spring-boot/docs/${spring-boot.version}/api/</link>
 							<link>https://docs.spring.io/spring/docs/${spring.version}/javadoc-api/</link>
