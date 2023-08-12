@@ -18,6 +18,7 @@ package org.springframework.modulith.events.jpa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -32,6 +33,7 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  */
 @Entity
+@Table(name = "EVENT_PUBLICATION")
 class JpaEventPublication {
 
 	final @Id @Column(length = 16) UUID id;
