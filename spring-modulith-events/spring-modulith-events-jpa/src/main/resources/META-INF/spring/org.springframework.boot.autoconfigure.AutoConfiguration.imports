@@ -1,2 +1,1 @@
 org.springframework.modulith.events.jpa.JpaEventPublicationAutoConfiguration
-org.springframework.modulith.events.jpa.JpaEventPublicationConfiguration

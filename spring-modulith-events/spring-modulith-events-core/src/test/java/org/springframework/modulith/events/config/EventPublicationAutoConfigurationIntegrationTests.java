@@ -35,7 +35,7 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
-import org.springframework.modulith.events.config.EventPublicationConfiguration.AsyncPropertiesDefaulter;
+import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncPropertiesDefaulter;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -49,7 +49,7 @@ import org.springframework.test.util.ReflectionTestUtils;
  * @author Oliver Drotbohm
  */
 @ExtendWith(MockitoExtension.class)
-class EventPublicationConfigurationIntegrationTests {
+class EventPublicationAutoConfigurationIntegrationTests {
 
 	@Mock EventPublicationRepository repository;
 
@@ -137,7 +137,7 @@ class EventPublicationConfigurationIntegrationTests {
 
 		return new ApplicationContextRunner()
 				.withConfiguration(
-						AutoConfigurations.of(EventPublicationConfiguration.class, TaskExecutionAutoConfiguration.class))
+						AutoConfigurations.of(EventPublicationAutoConfiguration.class, TaskExecutionAutoConfiguration.class))
 				.withBean(EventPublicationRepository.class, () -> repository);
 	}
 

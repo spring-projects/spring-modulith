@@ -1,1 +1,1 @@
-org.springframework.modulith.events.config.EventPublicationConfiguration
+org.springframework.modulith.events.config.EventPublicationAutoConfiguration
