@@ -29,7 +29,7 @@ import org.springframework.util.Assert;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  */
-@Document(collection = "org_springframework_modulith_events")
+@Document(collection = "event_publication")
 class MongoDbEventPublication {
 
 	final UUID id;
