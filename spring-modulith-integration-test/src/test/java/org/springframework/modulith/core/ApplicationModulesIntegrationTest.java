@@ -17,6 +17,11 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import example.declared.first.First;
+import example.declared.fourth.Fourth;
+import example.declared.second.Second;
+import example.declared.third.Third;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -162,6 +167,22 @@ class ApplicationModulesIntegrationTest {
 
 		// Expect A before B before non-module type.
 		assertThat(source).containsExactly(ServiceComponentA.class, ServiceComponentB.class, String.class);
+	}
+
+	@Test // GH-267
+	void explicitEmptyAllowedModulesResultsInAllDependenciesRejected() {
+
+		var modules = ApplicationModules.of("example.declared");
+		var first = modules.getModuleByType(First.class).orElseThrow();
+		var second = modules.getModuleByType(Second.class).orElseThrow();
+		var third = modules.getModuleByType(Third.class).orElseThrow();
+
+		// Disallowed due to allowedDependencies = {}
+		assertThat(first.getDeclaredDependencies(modules).isAllowedDependency(Second.class)).isFalse();
+
+		// Allowed as allowedDependencies not set
+		assertThat(second.getDeclaredDependencies(modules).isAllowedDependency(Third.class)).isTrue();
+		assertThat(third.getDeclaredDependencies(modules).isAllowedDependency(Fourth.class)).isTrue();
 	}
 
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {

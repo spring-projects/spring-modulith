@@ -374,20 +374,20 @@ public class ApplicationModule {
 	}
 
 	/**
-	 * Returns all allowed module dependencies, either explicitly declared or defined as shared on the given
+	 * Returns all declared module dependencies, either explicitly declared or defined as shared on the given
 	 * {@link ApplicationModules} instance.
 	 *
 	 * @param modules must not be {@literal null}.
 	 * @return
 	 */
-	DeclaredDependencies getAllowedDependencies(ApplicationModules modules) {
+	DeclaredDependencies getDeclaredDependencies(ApplicationModules modules) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 
-		var allowedDependencyNames = information.getAllowedDependencies();
+		var allowedDependencyNames = information.getDeclaredDependencies();
 
-		if (allowedDependencyNames.isEmpty()) {
-			return new DeclaredDependencies(Collections.emptyList());
+		if (DeclaredDependencies.isOpen(allowedDependencyNames)) {
+			return DeclaredDependencies.open();
 		}
 
 		var explicitlyDeclaredModules = allowedDependencyNames.stream() //
@@ -398,7 +398,7 @@ public class ApplicationModule {
 
 		return Stream.concat(explicitlyDeclaredModules, sharedDependencies) //
 				.distinct() //
-				.collect(Collectors.collectingAndThen(Collectors.toList(), DeclaredDependencies::new));
+				.collect(Collectors.collectingAndThen(Collectors.toList(), DeclaredDependencies::closed));
 	}
 
 	/**
@@ -655,6 +655,19 @@ public class ApplicationModule {
 			return namedInterface.contains(type);
 		}
 
+		/**
+		 * Returns whether the {@link DeclaredDependency} contains the given {@link Class}.
+		 *
+		 * @param type must not be {@literal null}.
+		 * @return
+		 */
+		public boolean contains(Class<?> type) {
+
+			Assert.notNull(type, "Type must not be null!");
+
+			return namedInterface.contains(type);
+		}
+
 		/*
 		 * (non-Javadoc)
 		 * @see java.lang.Object#toString()
@@ -701,38 +714,55 @@ public class ApplicationModule {
 	 */
 	static class DeclaredDependencies {
 
+		private static final String OPEN_TOKEN = "¯\\_(ツ)_/¯";
+
 		private final List<DeclaredDependency> dependencies;
+		private final boolean closed;
+
+		static boolean isOpen(List<String> declaredDependencies) {
+			return declaredDependencies.size() == 1 && declaredDependencies.get(0).equals(OPEN_TOKEN);
+		}
+
+		public static DeclaredDependencies open() {
+			return new DeclaredDependencies(Collections.emptyList(), false);
+		}
+
+		public static DeclaredDependencies closed(List<DeclaredDependency> dependencies) {
+			return new DeclaredDependencies(dependencies, true);
+		}
 
 		/**
 		 * Creates a new {@link DeclaredDependencies} for the given {@link List} of {@link DeclaredDependency}.
 		 *
 		 * @param dependencies must not be {@literal null}.
 		 */
-		public DeclaredDependencies(List<DeclaredDependency> dependencies) {
+		private DeclaredDependencies(List<DeclaredDependency> dependencies, boolean closed) {
 
 			Assert.notNull(dependencies, "Dependencies must not be null!");
 
 			this.dependencies = dependencies;
+			this.closed = closed;
 		}
 
 		/**
-		 * Returns whether any of the dependencies contains the given {@link JavaClass}.
+		 * Returns whether the given {@link JavaClass} is a valid dependency.
 		 *
 		 * @param type must not be {@literal null}.
+		 * @return
 		 */
-		public boolean contains(JavaClass type) {
-
-			Assert.notNull(type, "JavaClass must not be null!");
-
-			return dependencies.stream() //
-					.anyMatch(it -> it.contains(type));
+		public boolean isAllowedDependency(JavaClass type) {
+			return isAllowedDependency(it -> it.contains(type));
 		}
 
-		/**
-		 * Returns whether the {@link DeclaredDependencies} are empty.
-		 */
-		public boolean isEmpty() {
-			return dependencies.isEmpty();
+		public boolean isAllowedDependency(Class<?> type) {
+			return isAllowedDependency(it -> it.contains(type));
+		}
+
+		private boolean isAllowedDependency(Predicate<DeclaredDependency> predicate) {
+
+			Assert.notNull(predicate, "Predicate must not be null!");
+
+			return closed ? !dependencies.isEmpty() && contains(predicate) : dependencies.isEmpty() || contains(predicate);
 		}
 
 		/*
@@ -742,9 +772,9 @@ public class ApplicationModule {
 		@Override
 		public String toString() {
 
-			return dependencies.stream() //
-					.map(DeclaredDependency::toString)
-					.collect(Collectors.joining(", "));
+			return dependencies.isEmpty() //
+					? "none" //
+					: dependencies.stream().map(DeclaredDependency::toString).collect(Collectors.joining(", "));
 		}
 
 		/*
@@ -772,6 +802,18 @@ public class ApplicationModule {
 		@Override
 		public int hashCode() {
 			return Objects.hash(dependencies);
+		}
+
+		/**
+		 * Returns whether any of the dependencies contains the given {@link JavaClass}.
+		 *
+		 * @param type must not be {@literal null}.
+		 */
+		private boolean contains(Predicate<DeclaredDependency> condition) {
+
+			Assert.notNull(condition, "Condition must not be null!");
+
+			return dependencies.stream().anyMatch(condition);
 		}
 	}
 
@@ -880,16 +922,15 @@ public class ApplicationModule {
 			var originModule = getExistingModuleOf(source, modules);
 			var targetModule = getExistingModuleOf(target, modules);
 
-			DeclaredDependencies allowedTargets = originModule.getAllowedDependencies(modules);
+			DeclaredDependencies declaredDependencies = originModule.getDeclaredDependencies(modules);
 			Violations violations = Violations.NONE;
 
 			// Check explicitly defined allowed targets
-
-			if (!allowedTargets.isEmpty() && !allowedTargets.contains(target)) {
+			if (!declaredDependencies.isAllowedDependency(target)) {
 
 				var message = "Module '%s' depends on module '%s' via %s -> %s. Allowed targets: %s." //
 						.formatted(originModule.getName(), targetModule.getName(), source.getName(), target.getName(),
-								allowedTargets.toString());
+								declaredDependencies.toString());
 
 				return violations.and(new IllegalStateException(message));
 			}

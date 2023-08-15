@@ -29,6 +29,8 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApplicationModule {
 
+	public static final String OPEN_TOKEN = "¯\\_(ツ)_/¯";
+
 	/**
 	 * The human readable name of the module to be used for display and documentation purposes.
 	 *
@@ -37,14 +39,17 @@ public @interface ApplicationModule {
 	String displayName() default "";
 
 	/**
-	 * List the names of modules that the module is allowed to depend on. Shared modules defined in {@link Modulith} will
-	 * be allowed, too. Names listed are local ones, unless the application has configured
-	 * {@link Modulithic#useFullyQualifiedModuleNames()} to {@literal true}. Explicit references to
+	 * List the names of modules that the module is allowed to depend on. Shared modules defined in
+	 * {@link Modulith}/{@link Modulithic} will be allowed, too. Names listed are local ones, unless the application has
+	 * configured {@link Modulithic#useFullyQualifiedModuleNames()} to {@literal true}. Explicit references to
 	 * {@link NamedInterface}s need to be separated by a double colon {@code ::}, e.g. {@code module::API} if
 	 * {@code module} is the logical module name and {@code API} is the name of the named interface.
+	 * <p>
+	 * Declaring an empty array will allow no dependencies to other modules. To not restrict the dependencies at all,
+	 * leave the attribute at its default value.
 	 *
 	 * @return will never be {@literal null}.
 	 * @see NamedInterface
 	 */
-	String[] allowedDependencies() default {};
+	String[] allowedDependencies() default { OPEN_TOKEN };
 }

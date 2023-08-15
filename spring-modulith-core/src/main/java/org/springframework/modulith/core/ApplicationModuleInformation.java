@@ -16,7 +16,6 @@
 package org.springframework.modulith.core;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
@@ -67,7 +66,7 @@ interface ApplicationModuleInformation {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	List<String> getAllowedDependencies();
+	List<String> getDeclaredDependencies();
 
 	/**
 	 * An {@link ApplicationModuleInformation} for the jMolecules {@link Module} annotation.
@@ -106,11 +105,11 @@ interface ApplicationModuleInformation {
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ApplicationModuleInformation#getAllowedDependencies()
+		 * @see org.springframework.modulith.core.ApplicationModuleInformation#getDeclaredDependencies()
 		 */
 		@Override
-		public List<String> getAllowedDependencies() {
-			return Collections.emptyList();
+		public List<String> getDeclaredDependencies() {
+			return List.of(ApplicationModule.OPEN_TOKEN);
 		}
 	}
 
@@ -158,14 +157,14 @@ interface ApplicationModuleInformation {
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ApplicationModuleInformation#getAllowedDependencies()
+		 * @see org.springframework.modulith.core.ApplicationModuleInformation#getDeclaredDependencies()
 		 */
 		@Override
-		public List<String> getAllowedDependencies() {
+		public List<String> getDeclaredDependencies() {
 
 			return annotation //
 					.map(it -> Arrays.stream(it.allowedDependencies())) //
-					.orElse(Stream.empty()) //
+					.orElse(Stream.of(ApplicationModule.OPEN_TOKEN)) //
 					.toList();
 		}
 	}
