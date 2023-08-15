@@ -44,7 +44,7 @@ To enable the actuator, add the `spring-modulith-actuator` dependency to the pro
 </dependency>
 ----
 
-Running the application will now expose an `applicationmodules` actuator resource:
+Running the application will now expose an `modulith` actuator resource:
 
 .Accessing the actuator HTTP resource
 [source, json]
@@ -65,16 +65,16 @@ GET http://localhost:8080/actuator
       "href": "http://localhost:8080/actuator/health",
       "templated": false
     },
-    "applicationmodules": { <1>
-      "href": "http://localhost:8080/actuator/applicationmodules",
+    "modulith": { <1>
+      "href": "http://localhost:8080/actuator/modulith",
       "templated": false
     }
   }
 }
 ----
-<1> The `applicationmodules` actuator resource advertised.
+<1> The `modulith` actuator resource advertised.
 
-The `applicationmodules` resource adheres to the following structure:
+The `modulith` resource adheres to the following structure:
 
 .The JSON structure of the application modules actuator
 [%autowidth.stretch]
