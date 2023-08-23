@@ -9,6 +9,7 @@ target/
 target/
 .factorypath
 changelog.txt
+.mvn/.gradle-enterprise
 
 #IntelliJ Stuff
 .idea

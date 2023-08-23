@@ -1,4 +1,5 @@
-= Spring Modulith
+= Spring Modulith image:https://img.shields.io/badge/Revved%20up%20by-Gradle%20Enterprise-06A0CE?logo=Gradle&labelColor=02303A["Revved up by Gradle Enterprise", link="https://ge.spring.io/scans?search.rootProjectNames=Spring Modulith"]
+
 :docs: https://docs.spring.io/spring-modulith/docs/current-SNAPSHOT/reference/html/
 
 Spring Modulith allows developers to build well-structured Spring Boot applications and guides developers in finding and working with link:{docs}#fundamentals.modules.application-modules[application modules] driven by the domain.
