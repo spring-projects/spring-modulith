@@ -1,0 +1,10 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.events.kafka.json-enabled",
+			"type": "java.lang.boolean",
+			"description": "Whether to auto-configure Spring for Apache Kafka to use JSON for message serialization.",
+			"defaultValue": "true"
+		}
+	]
+}

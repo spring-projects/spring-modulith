@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>%d{HH:mm:ss.SSS} %1.-1level - %8.8t : %m%n</pattern>
+		</encoder>
+	</appender>
+
+	<root level="OFF">
+		<appender-ref ref="console" />
+	</root>
+
+</configuration>

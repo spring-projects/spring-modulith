@@ -19,6 +19,7 @@
 		<module>spring-modulith-example-epr-jdbc</module>
 		<module>spring-modulith-example-epr-mongodb</module>
 		<module>spring-modulith-example-full</module>
+		<module>spring-modulith-example-kafka</module>
 	</modules>
 
 	<properties>

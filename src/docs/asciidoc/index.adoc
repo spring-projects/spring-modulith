@@ -20,9 +20,9 @@ include::10-fundamentals.adoc[]
 
 include::20-verification.adoc[]
 
-include::30-testing.adoc[]
+include::30-events.adoc[]
 
-include::40-events.adoc[]
+include::40-testing.adoc[]
 
 include::50-moments.adoc[]
 

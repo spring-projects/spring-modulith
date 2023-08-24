@@ -14,12 +14,15 @@
 	<name>Spring Modulith - Events</name>
 
 	<modules>
+		<module>spring-modulith-events-amqp</module>
 		<module>spring-modulith-events-api</module>
 		<module>spring-modulith-events-core</module>
-		<module>spring-modulith-events-jpa</module>
-		<module>spring-modulith-events-jdbc</module>
-		<module>spring-modulith-events-mongodb</module>
 		<module>spring-modulith-events-jackson</module>
+		<module>spring-modulith-events-jdbc</module>
+		<module>spring-modulith-events-jms</module>
+		<module>spring-modulith-events-jpa</module>
+		<module>spring-modulith-events-kafka</module>
+		<module>spring-modulith-events-mongodb</module>
 	</modules>
 
 	<profiles>

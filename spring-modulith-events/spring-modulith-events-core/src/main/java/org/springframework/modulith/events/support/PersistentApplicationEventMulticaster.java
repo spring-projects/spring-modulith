@@ -38,6 +38,7 @@ import org.springframework.lang.NonNull;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.IncompleteEventPublications;
+import org.springframework.modulith.events.core.ConditionalEventListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
@@ -115,6 +116,22 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	}
 
 	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.context.event.AbstractApplicationEventMulticaster#getApplicationListeners(org.springframework.context.ApplicationEvent, org.springframework.core.ResolvableType)
+	 */
+	@Override
+	protected Collection<ApplicationListener<?>> getApplicationListeners(ApplicationEvent event,
+			ResolvableType eventType) {
+
+		Object eventToPersist = getEventToPersist(event);
+
+		return super.getApplicationListeners(event, eventType)
+				.stream()
+				.filter(it -> matches(eventToPersist, it))
+				.toList();
+	}
+
+		/*
 	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublications(java.util.function.Predicate)
 	 */
@@ -200,6 +217,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		return PayloadApplicationEvent.class.isInstance(event) //
 				? ((PayloadApplicationEvent<?>) event).getPayload() //
 				: event;
+	}
+
+	private static boolean matches(Object event, ApplicationListener<?> listener) {
+
+		return ConditionalEventListener.class.isInstance(listener)
+				? ConditionalEventListener.class.cast(listener).supports(event)
+				: true;
 	}
 
 	private static String getConfirmationMessage(Collection<?> publications) {

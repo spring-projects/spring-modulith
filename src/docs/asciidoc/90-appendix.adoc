@@ -17,9 +17,17 @@
 |`false`
 |Whether to initialize the JDBC event publication schema.
 
+|`spring.modulith.events.kafka.json-enabled`
+|`true`
+|Whether to enable JSON support for `KafkaTemplate`.
+
 |`spring.modulith.events.mongodb.transaction-management.enabled`
 |`true`
 |Whether to automatically enable transactions for MongoDB. Requires the database to be run with a replica set.
+
+|`spring.modulith.events.rabbitmq.json-enabled`
+|`true`
+|Whether to enable JSON support for `RabbitTemplate`.
 
 |`spring.modulith.moments.enableTimeMachine`
 |`false`
@@ -102,10 +110,14 @@ a|* `spring-modulith-docs`
 |`spring-modulith-api`|`compile`|The abstractions to be used in your production code to customize Spring Modulith's default behavior.
 |`spring-modulith-core`|`runtime`|The core application module model and API.
 |`spring-modulith-docs`|`test`|The `Documenter` API to create Asciidoctor and PlantUML documentation from the module model.
+|`spring-modulith-events-amqp`|`runtime`|Event externalization support for AMQP.
+|`spring-modulith-events-api`|`runtime`|API to customize the event features of Spring Modulith.
 |`spring-modulith-events-core`|`runtime`|The core implementation of the event publication registry as well as the integration abstractions `EventPublicationRegistry` and `EventPublicationSerializer`.
 |`spring-modulith-events-jackson`|`runtime`|A Jackson-based implementation of the `EventPublicationSerializer`.
 |`spring-modulith-events-jdbc`|`runtime`|A JDBC-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-events-jms`|`runtime`|Event externalization support for JMS.
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-events-kafka`|`runtime`|Event externalization support for Kafka.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-moments`|`compile`|The Passage of Time events implementation described <<moments, here>>.
 |`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.

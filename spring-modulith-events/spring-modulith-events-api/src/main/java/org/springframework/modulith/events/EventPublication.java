@@ -40,7 +40,7 @@ public interface EventPublication {
 	/**
 	 * Returns the event that is published.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	Object getEvent();
 
@@ -48,7 +48,7 @@ public interface EventPublication {
 	 * Returns the event as Spring {@link ApplicationEvent}, effectively wrapping it into a
 	 * {@link PayloadApplicationEvent} in case it's not one already.
 	 *
-	 * @return
+	 * @return the underlying event as {@link ApplicationEvent}.
 	 */
 	default ApplicationEvent getApplicationEvent() {
 
@@ -62,7 +62,7 @@ public interface EventPublication {
 	/**
 	 * Returns the time the event is published at.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	Instant getPublicationDate();
 
@@ -86,6 +86,7 @@ public interface EventPublication {
 	 * (non-Javadoc)
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
+	@SuppressWarnings("javadoc")
 	default int compareTo(EventPublication that) {
 		return this.getPublicationDate().compareTo(that.getPublicationDate());
 	}

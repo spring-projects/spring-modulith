@@ -1,0 +1,29 @@
+= Spring Modulith -- Kafka event externalization example
+
+This examples how domain events can automatically be externalized to Kafka.
+The two fundamentally required steps are:
+
+1. Add the `spring-modulith-events-kafka` dependency to the project (`runtime` scope is sufficient).
+2. Add the `spring-modulith-events-api` dependency to annotate the event types to be externalized automatically with `@Externalized` (see `OrderCompleted`).
+
+`TestApplication` (in `src/test/java`) declares a `KafkaOperations` instance so that we do not need an actual Kafka instance running for the sample.
+The bean declared simply triggers some log output simulating the actual interaction with Kafka.
+Running the test application using `./mvnw spring-boot:test-run` should show the following output.
+
+[source]
+----
+22:20:20.398 D -     main : Registering domain event externalization to Kafka… <1>
+…
+22:20:21.267 I -     main : Triggering order completion… <2>
+22:20:21.277 D -     main : Registering publication of example.order.OrderCompleted for org.springframework.modulith.events.support.DelegatingEventExternalizer.externalize(java.lang.Object). <3>
+22:20:21.325 D -   task-1 : Externalizing event of type class example.order.OrderCompleted to RoutingTarget[value=order.OrderCompleted]. <4>
+22:20:21.327 I -   task-1 : Sending message {"orderId":{"id":"ef3521e8-d498-4539-8745-3a1c74bbe90d"}} to RoutingTarget[value=order.OrderCompleted]. <5>
+22:20:21.376 D -   task-1 : Marking publication of event example.order.OrderCompleted to listener org.springframework.modulith.events.support.DelegatingEventExternalizer.externalize(java.lang.Object) completed. <6>
+----
+<1> On application bootstrap, the `spring-modulith-events-kafka` module registers an `ApplicationModuleListener` that will listen to domain events to be externalized.
+<2> Once started, the application's `main` method invokes a business method on the `OrderManagement` that ultimately results in the publication of an `OrderCompleted` event.
+That in turn is annotated with Spring Modulith's `@Externalized` and thus qualifies for externalization.
+<3> The event publication infrastructure detects an `@ApplicationModuleListener` interested in the event, it creates an entry in the Event Publication Registry to track the processing of the event.
+<4> The externalizing `@ApplicationModuleListener` gets triggered (note how it runs asynchronously, indicated by the `task-1` thread).
+<5> Our mock `KafkaOperations` is invoked and triggers the log message simulating the actual sending.
+<6> The Event Publication Registry eventually marks the publication completed as the sending has completed successfully.
