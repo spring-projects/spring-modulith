@@ -37,6 +37,7 @@
 		<artifactory-maven-plugin.version>3.5.1</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>4.6.1</flapdoodle-mongodb.version>
 		<jmolecules-bom.version>2023.1.0</jmolecules-bom.version>
+		<lombok.version>1.18.28</lombok.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.0.11</spring.version> <!-- For Javadoc links only -->
@@ -492,7 +493,7 @@ limitations under the License.
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
-							<version>1.18.28</version>
+							<version>${lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>

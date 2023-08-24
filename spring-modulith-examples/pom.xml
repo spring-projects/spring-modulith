@@ -23,6 +23,7 @@
 
 	<properties>
 		<java.version>17</java.version>
+		<spring-boot.version>3.1.2</spring-boot.version>
 	</properties>
 
 	<build>
@@ -38,12 +39,12 @@
 						<path>
 							<groupId>org.springframework.boot</groupId>
 							<artifactId>spring-boot-configuration-processor</artifactId>
-							<version>3.1.2</version>
+							<version>${spring-boot.version}</version>
 						</path>
 						<path>
 							<groupId>org.projectlombok</groupId>
 							<artifactId>lombok</artifactId>
-							<version>1.18.28</version>
+							<version>${lombok.version}</version>
 						</path>
 					</annotationProcessorPaths>
 				</configuration>
