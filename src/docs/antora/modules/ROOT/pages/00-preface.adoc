@@ -12,6 +12,7 @@
 * Snapshot repository: https://repo.spring.io/snapshot
 * Javadoc: https://docs.spring.io/spring-modulith/docs/{projectVersion}/api
 
+[[using-spring-modulith]]
 == Using Spring Modulith
 
 Spring Modulith consists of a set of libraries that can be used individually and depending on which features of it you would like to use.
@@ -36,6 +37,7 @@ To ease the declaration of the individual modules, we recommend to declare the f
 The individual sections describing Spring Modulith features will refer to the individual artifacts that are needed to make use of the feature.
 For an overview about all modules available, have a look at <<appendix.artifacts>>.
 
+[[examples]]
 == Examples
 
 If you would like to play with the features of the project and see them live in action, check out the examples https://github.com/spring-projects/spring-modulith/tree/{projectVersion}/spring-modulith-examples[here]

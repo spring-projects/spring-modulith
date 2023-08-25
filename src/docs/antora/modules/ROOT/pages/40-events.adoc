@@ -1,5 +1,6 @@
 [[events]]
 :imagesdir: images
+[[working-with-application-events]]
 = Working with Application Events
 
 To keep application modules as decoupled as possible from each other, their primary means of interaction should be event publication and consumption.

@@ -1,3 +1,4 @@
+[[spring-modulith-reference-documentation]]
 = Spring Modulith -- Reference documentation
 Oliver Drotbohm
 :revnumber: {version}
