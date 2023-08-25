@@ -1,6 +1,6 @@
 [[appendix]]
 = Appendix
-:jdbc-schema-base: ../../../spring-modulith-events/spring-modulith-events-jdbc/src/main/resources
+:jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources
 
 [appendix]
 [[appendix.configuration-properties]]
