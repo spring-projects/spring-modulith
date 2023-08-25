@@ -23,7 +23,7 @@
 
 |`spring.modulith.moments.enableTimeMachine`
 |`false`
-|Whether to enable the <<moments, `TimeMachine`>>.
+|Whether to enable the xref:50-moments.adoc[`TimeMachine`].
 
 |`spring.modulith.moments.granularity`
 |`HOURS`
@@ -101,7 +101,7 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-jdbc`|`runtime`|A JDBC-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
-|`spring-modulith-moments`|`compile`|The Passage of Time events implementation described <<moments, here>>.
+|`spring-modulith-moments`|`compile`|The Passage of Time events implementation described xref:50-moments.adoc[here].
 |`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
 |`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
 |===

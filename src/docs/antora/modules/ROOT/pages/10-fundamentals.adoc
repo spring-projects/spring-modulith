@@ -87,7 +87,7 @@ package example.inventory;
 ----
 
 In this case code within the __inventory__ module was only allowed to refer to code in the __order__ module (and code not assigned to any module in the first place).
-Find out about how to monitor that in <<verification>>.
+Find out about how to monitor that in xref:20-verification.adoc[Verifying Application Module Structure].
 
 [[fundamentals.modules.application-modules]]
 === The `ApplicationModules` Type
@@ -132,7 +132,7 @@ Note, how each module is listed and the contained Spring components are identifi
 [[fundamentals.modules.named-interfaces]]
 === Named Interfaces
 
-By default and as described in <<fundamentals.modules.advanced>>, an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
+By default and as described in xref:10-fundamentals.adoc#fundamentals.modules.advanced[Advanced Application Modules], an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
 In case you would like to expose additional packages to other modules, you need to use __named interfaces__.
 You achieve that by annotating the `package-info.java` file of those package with `@NamedInterface`.
 

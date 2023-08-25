@@ -24,7 +24,7 @@ Adding this JAR will cause Spring Boot auto-configuration to run that registers 
 
 * An `ApplicationModulesRuntime` that allows to access the `ApplicationModules`.
 * A `SpringBootApplicationRuntime` to back the former bean to detect the main application class.
-* An event listener for https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners[`ApplicationStartedEvent`]s that will invoke <<runtime.application-module-initializer, `ApplicationModuleInitializer`>> beans defined in the application context.
+* An event listener for https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners[`ApplicationStartedEvent`]s that will invoke xref:70-runtime.adoc#runtime.application-module-initializer[`ApplicationModuleInitializer`] beans defined in the application context.
 
 [[runtime.application-module-initializer]]
 == Application Module Initializers
@@ -73,4 +73,4 @@ class MyInitializer implements ApplicationModuleInitializer {
 }
 ----
 
-Note, that the `ApplicationModuleInitializer` beans will only be invoked if the `spring-modulith-runtime` JAR is on the classpath (see <<runtime.setup>>) as that pulls in the dependencies that are needed to topologically sort the initializers according to the application module structure.
+Note, that the `ApplicationModuleInitializer` beans will only be invoked if the `spring-modulith-runtime` JAR is on the classpath (see xref:70-runtime.adoc#runtime.setup[Setting up Runtime Support for Application Modules]) as that pulls in the dependencies that are needed to topologically sort the initializers according to the application module structure.

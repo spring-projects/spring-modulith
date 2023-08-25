@@ -246,7 +246,7 @@ _Others_
 It consists of the following sections:
 
 * __The application module's base package.__
-* __The Spring beans exposed by the application module, grouped by stereotype.__ -- In other words, beans that are located in either the API package or any <<fundamentals.modules.named-interfaces, named interface package>>.
+* __The Spring beans exposed by the application module, grouped by stereotype.__ -- In other words, beans that are located in either the API package or any xref:10-fundamentals.adoc#fundamentals.modules.named-interfaces[named interface package].
 This will detect component stereotypes defined by https://github.com/xmolecules/jmolecules/tree/main/jmolecules-architecture[jMolecules architecture abstractions], but also standard Spring stereotype annotations.
 * __Exposed aggregate roots__ -- Any entities that we find repositories for or explicitly declared as aggregate via jMolecules.
 * __Application events published by the module__ -- Those event types need to be demarcated using jMolecules `@DomainEvent` or implement its `DomainEvent` interface.
