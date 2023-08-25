@@ -1,0 +1,241 @@
+[[events]]
+:imagesdir: images
+= Working with Application Events
+
+To keep application modules as decoupled as possible from each other, their primary means of interaction should be event publication and consumption.
+This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see <<testing>>).
+
+Often we will find application components defined like this:
+
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class OrderManagement {
+
+  private final InventoryManagement inventory;
+
+  @Transactional
+  public void complete(Order order) {
+
+    // State transition on the order aggregate go here
+
+    // Invoke related functionality
+    inventory.updateStockFor(order);
+  }
+}
+----
+
+The `complete(…)` method creates functional gravity in the sense that it attracts related functionality and thus interaction with Spring beans defined in other application modules.
+This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see <<testing.efferent-dependencies>>).
+It also means that we will have to touch the class whenever we would like to integrate further functionality with the business event order completion.
+
+We can change the application module interaction as follows:
+
+.Publishing an application event via Spring's `ApplicationEventPublisher`
+[source, java]
+----
+@Service
+@RequiredArgsConstructor
+public class OrderManagement {
+
+  private final ApplicationEventPublisher events;
+  private final OrderInternal dependency;
+
+  @Transactional
+  public void complete(Order order) {
+
+    // State transition on the order aggregate go here
+
+    events.publishEvent(new OrderCompleted(order.getId()));
+  }
+}
+----
+
+Note, how, instead of depending on the other application module's Spring bean, we use Spring's `ApplicationEventPublisher` to publish a domain event, once we have completed the state transitions on the primary aggregate.
+For a more aggregate-driven approach to event publication, see https://docs.spring.io/spring-data/data-commons/docs/current/reference/html/#core.domain-events[Spring Data's application event publication mechanism] for details.
+As event publication happens synchronously by default, the transactional semantics of the overall arrangement stay the same as in the example above.
+Both for the good, as we get to a very simple consistency model (either both the status change of the order _and_ the inventory update succeed or none of them does), but also for the bad as more triggered related functionality will widen the transaction boundary and potentially cause the entire transaction to fail, even if the functionality that is causing the error is not crucial.
+
+A different way of approaching this is by moving the event consumption to asynchronous handling at transaction commit and treat secondary functionality exactly as that:
+
+.An async, transactional event listener
+[source, java]
+----
+@Component
+class InventoryManagement {
+
+  @Async
+  @TransactionalEventListener
+  void on(OrderCompleted event) { /* … */ }
+}
+----
+
+This now effectively decouples the original transaction from the execution of the listener.
+While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
+Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
+
+[[events.aml]]
+== Application Module Listener
+
+To run a transactional event listener in a transaction itself, it would need to be annotated with `@Transactional` in turn.
+
+.An async, transactional event listener running in a transaction itself
+[source, java]
+----
+@Component
+class InventoryManagement {
+
+  @Async
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @TransactionalEventListener
+  void on(OrderCompleted event) { /* … */ }
+}
+----
+
+To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleListener` to shortcut the declaration
+
+.An application module listener
+[source, java]
+----
+@Component
+class InventoryManagement {
+
+  @ApplicationModuleListener
+  void on(OrderCompleted event) { /* … */ }
+}
+----
+
+[[events.publication-registry]]
+== The Event Publication Registry
+
+Spring Modulith ships with an event publication registry that hooks into the core event publication mechanism of Spring Framework.
+On event publication, it finds out about the transactional event listeners that will get the event delivered and writes entries for each of them (dark blue) into an event publication log as part of the original business transaction.
+
+.The transactional event listener arrangement before execution
+image::event-publication-registry-start.png[]
+
+Each transactional event listener is wrapped into an aspect that marks that log entry as completed if the execution of the listener succeeds.
+In case the listener fails, the log entry stays untouched so that retry mechanisms can be deployed depending on the application's needs.
+By default, all incomplete event publications are resubmitted at application startup.
+
+.The transactional event listener arrangement after execution
+image::event-publication-registry-end.png[]
+
+[[events.publication-repositories]]
+== Event Publication Repositories
+
+To actually write the event publication log, Spring Modulith exposes an `EventPublicationRepository` SPI and implementations for popular persistence technologies that support transactions, like JPA, JDBC and MongoDB.
+You select the persistence technology to be used by adding the corresponding JAR to your Spring Modulith application.
+We have prepared dedicated <<events.starters, starters>> to ease that task.
+
+The JDBC-based implementation can create a dedicated table for the event publication log when the respective configuration property (`spring.modulith.events.jdbc-schema-initialization.enabled`) is set to `true`.
+For details, please consult the <<appendix.schemas, schema overview>> in the appendix.
+
+[[events.serialization]]
+== Event Serializer
+
+Each log entry contains the original event in serialized form.
+The `EventSerializer` abstraction contained in `spring-modulith-events-core` allows plugging different strategies for how to turn the event instances into a format suitable for the datastore.
+Spring Modulith provides a Jackson-based JSON implementation through the `spring-modulith-events-jackson` artifact, which registers a `JacksonEventSerializer` consuming an `ObjectMapper` through standard Spring Boot auto-configuration by default.
+
+[[events.customize-publication-date]]
+== Customizing the Event Publication Date
+By default, the Event Publication Registry will use the date returned by the `Clock.systemUTC()` as event publication date.
+If you want to customize this, register a bean of type clock with the application context:
+
+[source, java]
+----
+@Configuration
+class MyConfiguration {
+
+  @Bean
+  Clock myCustomClock() {
+    return … // Your custom Clock instance created here.
+  }
+}
+----
+
+[[events.starters]]
+== Spring Boot Event Registry Starters
+
+Using the transactional event publication log requires a combination of artifacts added to your application.
+To ease that task, Spring Modulith provides starter POMs that are centered around the <<events.publication-repositories, persistence technology>> to be used and default to the Jackson-based `EventSerializer` implementation.
+The following starters are available:
+
+* `spring-modulith-starter-jpa` -- Using JPA as persistence technology.
+* `spring-modulith-starter-jdbc` -- Using JDBC as persistence technology.
+Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
+* `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
+Also enables MongoDB transactions and requires a replica set setup of the server to interact with.
+The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
+
+[[events.integration-testing]]
+== Integration Testing Application Modules Working with Events
+
+Integration tests for application modules that interact with other modules' Spring beans usually have those mocked and the test cases verify the interaction by verifying that that mock bean was invoked in a particular way.
+
+.Traditional integration testing of the application module interaction
+[source, java, subs="quotes"]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  **@MockBean SomeOtherComponent someOtherComponent;**
+
+  @Test
+  void someTestMethod() {
+
+    // Given
+    // When
+    // Then
+    **verify(someOtherComponent).someMethodCall();**
+  }
+}
+----
+
+In an event-based application interaction model, the dependency to the other application module's Spring bean is gone and we have nothing to verify.
+Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `PublishedEvents` instance injected into the test method to verify a particular set of events has been published during the course of the business operation under test.
+
+.Event-based integration testing of the application module arrangement
+[source, java, subs="quotes"]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  @Test
+  void someTestMethod(**PublishedEvents events**) {
+
+    // …
+    var matchingMapped = events.ofType(OrderCompleted.class)
+      .matching(OrderCompleted::getOrderId, reference.getId());
+
+    assertThat(matchingMapped).hasSize(1);
+  }
+}
+----
+
+Note, how `PublishedEvents` exposes API to select events matching a certain criteria.
+The verification is concluded by an AssertJ assertion that verifies the number of elements expected.
+If you are using AssertJ for those assertions anyway, you can also use `AssertablePublishedEvents` as test method parameter type and use the fluent assertion APIs provided through that.
+
+.Using `AssertablePublishedEvents` to verify event publications
+[source, java, subs="quotes"]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  @Test
+  void someTestMethod(**AssertablePublishedEvents events**) {
+
+    // …
+    assertThat(events)
+      .contains(OrderCompleted.class)
+      .matching(OrderCompleted::getOrderId, reference.getId());
+  }
+}
+----
+
+Note, how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
+
+
