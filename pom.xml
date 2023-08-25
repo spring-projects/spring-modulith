@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.springframework.modulith</groupId>
+	<artifactId>spring-modulith-docs-build</artifactId>
+	<version>0.0.0-SNAPSHOT</version>
+
+	<name>Spring Modulith Docs Build</name>
+	<description>Builds Spring Modulith Docs.</description>
+	<url>https://spring.io/projects/spring-modulith</url>
+	<scm>
+		<connection>scm:git:https://github.com/spring-projects/spring-modulith.git
+		</connection>
+		<developerConnection>
+			scm:git:git@github.com:spring-projects/spring-modulith.git
+		</developerConnection>
+		<url>https://github.com/spring-projects/spring-modulith</url>
+	</scm>
+	<issueManagement>
+		<url>https://github.com/spring-projects/spring-modulith/issues</url>
+	</issueManagement>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>io.spring.maven.antora</groupId>
+				<artifactId>antora-maven-plugin</artifactId>
+				<version>0.0.4</version>
+				<extensions>true</extensions>
+				<configuration>
+					<packages>
+						<package>@antora/atlas-extension@1.0.0-alpha.1</package>
+						<package>@antora/collector-extension@1.0.0-alpha.3</package>
+						<package>@asciidoctor/tabs@1.0.0-beta.3</package>
+						<package>@springio/antora-extensions@1.5.0</package>
+						<package>@springio/asciidoctor-extensions@1.0.0-alpha.9</package>
+						<package>asciidoctor-kroki</package>
+					</packages>
+					<options>
+						<option>--to-dir=target/antora/site</option>
+						<option>--stacktrace</option>
+						<option>--fetch</option>
+					</options>
+					<environment>
+						<ALGOLIA_API_KEY>9d489079e5ec46dbb238909fee5c9c29</ALGOLIA_API_KEY>
+						<ALGOLIA_APP_ID>WB1FQYI187</ALGOLIA_APP_ID>
+						<ALGOLIA_INDEX_NAME>springmodulith</ALGOLIA_INDEX_NAME>
+					</environment>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>
