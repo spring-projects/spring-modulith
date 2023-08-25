@@ -1,4 +1,4 @@
-* xref:index.adoc[Preface]
+* xref:index.adoc[Overview]
 * xref:10-fundamentals.adoc[]
 * xref:20-verification.adoc[]
 * xref:30-testing.adoc[]
