@@ -1,0 +1,17 @@
+name: modulith
+version: true
+title: Spring Modulith
+nav:
+  - modules/ROOT/nav.adoc
+ext:
+  collector:
+    run:
+      command: mvnw -N antora-component-version:antora-component-version resources:resources -am -Pdocumentation
+      local: true
+    scan:
+      dir: target/classes/antora-resources/
+
+asciidoc:
+  attributes:
+    attribute-missing: 'warn'
+    chomp: 'all'

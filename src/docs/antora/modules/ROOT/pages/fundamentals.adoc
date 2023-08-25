@@ -5,7 +5,7 @@ Spring Modulith supports developers implementing logical modules in Spring Boot 
 It allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules interaction at runtime and generally implement module interaction in a loosely-coupled way.
 This section will discuss the fundamental concepts that developers need to understand before diving into the technical support.
 
-[[fundamentals.modules]]
+[[modules]]
 == Application modules
 
 In a Spring Boot application, an application module is a unit of functionality that consists of the following parts:
@@ -17,7 +17,7 @@ In a Spring Boot application, an application module is a unit of functionality t
 Spring Moduliths provides different ways of expressing modules within Spring Boot applications, primarily differing in the level of complexity involved in the overall arrangement.
 This allows developers to start simple and naturally move to more sophisticated means as and if needed.
 
-[[fundamentals.modules.simple]]
+[[modules.simple]]
 === Simple Application Modules
 
 The application's _main package_ is the one that the main application class resides in.
@@ -44,7 +44,7 @@ icon:cubes[] Example
 <1> The application's main package `example`.
 <2> An application module package `inventory`.
 
-[[fundamentals.modules.advanced]]
+[[modules.advanced]]
 === Advanced Application Modules
 
 If an application module package contains sub-packages, types in those might need to be made public so that it can be referred to from code of the very same module.
@@ -73,7 +73,7 @@ Note, how `SomethingOrderInternal` is a public type, likely because `OrderManage
 This unfortunately means, that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
-[[fundamentals.modules.explicit-dependencies]]
+[[modules.explicit-dependencies]]
 === Explicit Application Module Dependencies
 A module can opt into declaring its allowed dependencies by using the `@ApplicationModule` annotation on the `package-info.java` type.
 
@@ -87,9 +87,9 @@ package example.inventory;
 ----
 
 In this case code within the __inventory__ module was only allowed to refer to code in the __order__ module (and code not assigned to any module in the first place).
-Find out about how to monitor that in <<verification>>.
+Find out about how to monitor that in xref:verification.adoc[Verifying Application Module Structure].
 
-[[fundamentals.modules.application-modules]]
+[[modules.application-modules]]
 === The `ApplicationModules` Type
 
 Spring Moduliths allows to inspect a codebase to derive an application module model based on the given arrangement and optional configuration.
@@ -129,10 +129,10 @@ modules.forEach(System.out::println);
 
 Note, how each module is listed and the contained Spring components are identified and the respective visibility is rendered, too.
 
-[[fundamentals.modules.named-interfaces]]
+[[modules.named-interfaces]]
 === Named Interfaces
 
-By default and as described in <<fundamentals.modules.advanced>>, an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
+By default and as described in xref:fundamentals.adoc#modules.advanced[Advanced Application Modules], an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
 In case you would like to expose additional packages to other modules, you need to use __named interfaces__.
 You achieve that by annotating the `package-info.java` file of those package with `@NamedInterface`.
 
@@ -176,7 +176,7 @@ Note how we concatenate the named interface's name `spi` via the double colon `:
 In this setup, code in __inventory__ would be allowed to depend on `SomeSpiInterface` and other code residing in the `order.spi` interface, but not on `OrderManagement` for example.
 For modules without explicitly described dependencies, both the application module root package *and* the SPI one are accessible.
 
-[[fundamentals.customizing-modules]]
+[[customizing-modules]]
 === Customizing Module Detection
 
 If the default application module model does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.

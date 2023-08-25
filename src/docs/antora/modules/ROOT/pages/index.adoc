@@ -1,6 +1,14 @@
-[preface]
-[[preface]]
-= Preface
+[[spring-modulith-reference-documentation]]
+= Spring Modulith
+Oliver Drotbohm
+:revnumber: {version}
+:revdate: {localdate}
+:icons: font
+
+© 2022-2023 The original authors.
+
+NOTE: Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.
+
 
 [[preface.project-metadata]]
 == Project Metadata
@@ -12,6 +20,7 @@
 * Snapshot repository: https://repo.spring.io/snapshot
 * Javadoc: https://docs.spring.io/spring-modulith/docs/{projectVersion}/api
 
+[[using-spring-modulith]]
 == Using Spring Modulith
 
 Spring Modulith consists of a set of libraries that can be used individually and depending on which features of it you would like to use.
@@ -34,8 +43,10 @@ To ease the declaration of the individual modules, we recommend to declare the f
 ----
 
 The individual sections describing Spring Modulith features will refer to the individual artifacts that are needed to make use of the feature.
-For an overview about all modules available, have a look at <<appendix.artifacts>>.
+For an overview about all modules available, have a look at xref:appendix.adoc#artifacts[Spring Modulith modules].
 
+[[examples]]
 == Examples
 
 If you would like to play with the features of the project and see them live in action, check out the examples https://github.com/spring-projects/spring-modulith/tree/{projectVersion}/spring-modulith-examples[here]
+

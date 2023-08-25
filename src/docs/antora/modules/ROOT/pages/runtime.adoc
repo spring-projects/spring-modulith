@@ -4,7 +4,7 @@
 The functionality described in previous chapters have all used the application module arrangement in either testing scenarios for verification and documentation purposes or were general support functionality that help to loosely couple modules but did not work with the application module structure directly.
 In this section we are going to describe Spring Modulith's support for
 
-[[runtime.setup]]
+[[setup]]
 == Setting up Runtime Support for Application Modules
 
 To enable the runtime support for Spring Modulith, make sure you include the `spring-modulith-runtime` JAR in your project.
@@ -24,9 +24,9 @@ Adding this JAR will cause Spring Boot auto-configuration to run that registers 
 
 * An `ApplicationModulesRuntime` that allows to access the `ApplicationModules`.
 * A `SpringBootApplicationRuntime` to back the former bean to detect the main application class.
-* An event listener for https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners[`ApplicationStartedEvent`]s that will invoke <<runtime.application-module-initializer, `ApplicationModuleInitializer`>> beans defined in the application context.
+* An event listener for https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners[`ApplicationStartedEvent`]s that will invoke xref:runtime.adoc#application-module-initializer[`ApplicationModuleInitializer`] beans defined in the application context.
 
-[[runtime.application-module-initializer]]
+[[application-module-initializer]]
 == Application Module Initializers
 
 When working with application modules, it is pretty common to need to execute some code specific to an individual module on application startup.
@@ -73,4 +73,4 @@ class MyInitializer implements ApplicationModuleInitializer {
 }
 ----
 
-Note, that the `ApplicationModuleInitializer` beans will only be invoked if the `spring-modulith-runtime` JAR is on the classpath (see <<runtime.setup>>) as that pulls in the dependencies that are needed to topologically sort the initializers according to the application module structure.
+Note, that the `ApplicationModuleInitializer` beans will only be invoked if the `spring-modulith-runtime` JAR is on the classpath (see xref:runtime.adoc#setup[Setting up Runtime Support for Application Modules]) as that pulls in the dependencies that are needed to topologically sort the initializers according to the application module structure.

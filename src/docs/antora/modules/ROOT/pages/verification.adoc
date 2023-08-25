@@ -1,5 +1,6 @@
 [[verification]]
 = Verifying Application Module Structure
+:page-section-summary-toc: 1
 
 We can verify whether our code arrangement adheres to the intended constraints by calling the `….verify()` method on our `ApplicationModules` instance:
 
@@ -12,9 +13,9 @@ The verification includes the following rules:
 
 * _No cycles on the application module level_ -- the dependencies between modules have to form directed, acyclic graph.
 * _Efferent module access via API packages only_ -- All references to types that reside in application module internal packages are rejected.
-See <<fundamentals.modules.advanced>> for details.
+See xref:fundamentals.adoc#modules.advanced[Advanced Application Modules] for details.
 * _Explicitly allowed application module dependencies only_ (optional) -- An application module can optionally define allowed dependencies via  `@ApplicationModule(allowedDependencies = …)`.
 If those are configured, dependencies to other application modules are rejected.
-See <<fundamentals.modules.explicit-dependencies>> and <<fundamentals.modules.named-interfaces>> for details.
+See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Module Dependencies] and xref:fundamentals.adoc#modules.named-interfaces[Named Interfaces] for details.
 
 Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].

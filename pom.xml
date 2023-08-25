@@ -41,7 +41,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.0.11</spring.version> <!-- For Javadoc links only -->
-		<spring-asciidoctor-backends.version>0.0.7</spring-asciidoctor-backends.version>
 		<spring-boot.version>3.2.0-M2</spring-boot.version>
 
 	</properties>
@@ -277,76 +276,34 @@ limitations under the License.
 					<plugins>
 
 						<!--
-							Asciidoctor
+							Antora
 						-->
 
 						<plugin>
-							<groupId>org.asciidoctor</groupId>
-							<artifactId>asciidoctor-maven-plugin</artifactId>
-							<version>2.2.2</version>
-							<dependencies>
-								<dependency>
-									<groupId>org.jruby</groupId>
-									<artifactId>jruby</artifactId>
-									<version>9.3.7.0</version>
-								</dependency>
-								<dependency>
-									<groupId>org.asciidoctor</groupId>
-									<artifactId>asciidoctorj</artifactId>
-									<version>2.5.7</version>
-								</dependency>
-								<dependency>
-									<groupId>org.asciidoctor</groupId>
-									<artifactId>asciidoctorj-diagram</artifactId>
-									<version>2.2.3</version>
-								</dependency>
-								<dependency>
-									<groupId>io.spring.asciidoctor.backends</groupId>
-									<artifactId>spring-asciidoctor-backends</artifactId>
-									<version>${spring-asciidoctor-backends.version}</version>
-								</dependency>
-							</dependencies>
-
+							<groupId>io.spring.maven.antora</groupId>
+							<artifactId>antora-component-version-maven-plugin</artifactId>
+							<version>0.0.4</version>
 							<executions>
-
 								<execution>
-									<id>html</id>
-									<phase>generate-resources</phase>
 									<goals>
-										<goal>process-asciidoc</goal>
+										<goal>antora-component-version</goal>
 									</goals>
-									<configuration>
-										<backend>spring-html</backend>
-										<sourceDirectory>../src/docs/asciidoc</sourceDirectory>
-										<sourceDocumentName>index.adoc</sourceDocumentName>
-										<outputDirectory>${generated-docs.directory}/html</outputDirectory>
-										<attributes>
-											<source-highlighter>highlight.js</source-highlighter>
-											<highlightjsdir>js/highlight</highlightjsdir>
-											<highlightjs-theme>github</highlightjs-theme>
-										</attributes>
-									</configuration>
 								</execution>
 							</executions>
-
+						</plugin>
+						<plugin>
+							<groupId>io.spring.maven.antora</groupId>
+							<artifactId>antora-maven-plugin</artifactId>
+							<version>0.0.4</version>
+							<extensions>true</extensions>
 							<configuration>
-								<doctype>book</doctype>
-								<attributes>
-									<docinfo>shared</docinfo>
-									<icons>font</icons>
-									<sectids>false</sectids>
-									<imagesdir>images</imagesdir>
-									<projectName>${project.name}</projectName>
-									<projectVersion>${project.version}</projectVersion>
-									<springVersion>${spring.version}</springVersion>
-									<toclevels>4</toclevels>
-									<numbered>true</numbered>
-								</attributes>
-								<requires>
-									<require>asciidoctor-diagram</require>
-								</requires>
+								<playbook>../src/docs/antora/antora-playbook.yml</playbook>
+								<options>
+									<option>--to-dir=target/antora/site</option>
+									<option>--stacktrace</option>
+									<option>--fetch</option>
+								</options>
 							</configuration>
-
 						</plugin>
 
 						<!--
@@ -415,6 +372,12 @@ limitations under the License.
 
 					</plugins>
 				</pluginManagement>
+				<resources>
+					<resource>
+						<directory>src/docs/antora/resources</directory>
+						<filtering>true</filtering>
+					</resource>
+				</resources>
 			</build>
 		</profile>
 

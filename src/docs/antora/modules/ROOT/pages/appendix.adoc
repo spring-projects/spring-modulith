@@ -1,9 +1,9 @@
 [[appendix]]
 = Appendix
-:jdbc-schema-base: ../../../spring-modulith-events/spring-modulith-events-jdbc/src/main/resources
+:jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources
 
 [appendix]
-[[appendix.configuration-properties]]
+[[configuration-properties]]
 == Spring Modulith Configuration Properties
 [cols="2,1,3", options="header, unbreakable"]
 |===
@@ -31,7 +31,7 @@
 
 |`spring.modulith.moments.enableTimeMachine`
 |`false`
-|Whether to enable the <<moments, `TimeMachine`>>.
+|Whether to enable the xref:moments.adoc[`TimeMachine`].
 
 |`spring.modulith.moments.granularity`
 |`HOURS`
@@ -51,7 +51,7 @@
 |===
 
 [appendix]
-[[appendix.artifacts]]
+[[artifacts]]
 == Spring Modulith modules
 
 .Spring Modulith starter POMs
@@ -119,19 +119,19 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-kafka`|`runtime`|Event externalization support for Kafka.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
-|`spring-modulith-moments`|`compile`|The Passage of Time events implementation described <<moments, here>>.
+|`spring-modulith-moments`|`compile`|The Passage of Time events implementation described xref:moments.adoc[here].
 |`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
 |`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
 |===
 
 [appendix]
-[[appendix.schemas]]
+[[schemas]]
 == Event publication registry schemas
 
 The JDBC-based event publication registry support expects the following database schemas to be present in the database.
 If you would like Spring Modulith to create the schema for you, set the application property `spring.modulith.events.jdbc-schema-initialization.enabled` to `true`.
 
-[[appendix.schemas.h2]]
+[[schemas.h2]]
 === H2
 
 [source, sql]
@@ -139,7 +139,7 @@ If you would like Spring Modulith to create the schema for you, set the applicat
 include::{jdbc-schema-base}/schema-h2.sql[]
 ----
 
-[[appendix.schemas.hsqldb]]
+[[schemas.hsqldb]]
 === HSQLDB
 
 [source, sql]
@@ -147,7 +147,7 @@ include::{jdbc-schema-base}/schema-h2.sql[]
 include::{jdbc-schema-base}/schema-hsqldb.sql[]
 ----
 
-[[appendix.schemas.mysql]]
+[[schemas.mysql]]
 === MySQL
 
 [source, sql]
@@ -155,7 +155,7 @@ include::{jdbc-schema-base}/schema-hsqldb.sql[]
 include::{jdbc-schema-base}/schema-mysql.sql[]
 ----
 
-[[appendix.schemas.postgresql]]
+[[schemas.postgresql]]
 === PostgreSQL
 
 [source, sql]
@@ -164,7 +164,7 @@ include::{jdbc-schema-base}/schema-postgresql.sql[]
 ----
 
 [appendix]
-[[appendix.migrating-from-moduliths]]
+[[migrating-from-moduliths]]
 == Migrating from Moduliths
 
 
