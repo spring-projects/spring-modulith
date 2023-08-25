@@ -14,3 +14,9 @@ changelog.txt
 #IntelliJ Stuff
 .idea
 *.iml
+
+# Antora
+node
+node_modules
+package.json
+package-lock.json

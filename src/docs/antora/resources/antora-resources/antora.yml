@@ -1,0 +1,5 @@
+version: ${antora-component.version}
+prerelease: ${antora-component.prerelease}
+asciidoc:
+  attributes:
+    attribute-missing: 'warn'

@@ -6,27 +6,24 @@ antora:
     - '@antora/collector-extension'
     - '@antora/atlas-extension'
     - require: '@springio/antora-extensions/root-component-extension'
-      root_component_name: 'shell' # FIXME: Change this to match `name:` in antora.yml
+      root_component_name: 'modulith'
       # FIXME: Run antora once using this extension to migrate to the Asciidoc Tabs syntax
       # and then remove this extension
     - require: '@springio/antora-extensions/tabs-migration-extension'
       unwrap_example_block: always
       save_result: true
 site:
-  title: Spring Shell # FIXME: Change to your Project's title
-  url: https://docs.spring.io/spring-shell/reference/ # FIXME: Change to your Project's URL
+  title: Spring Modulith
+  url: https://docs.spring.io/spring-modulith/reference/
 content:
   sources:
-    - url: ./..
+    - url: ./../../..
       branches: HEAD
-      # FIXME: Change this to the path to the directory containing antora.yml in your project
-      # See https://docs.antora.org/antora/latest/playbook/content-source-start-path/#start-path-key
-      start_path: spring-shell-docs
+      start_path: src/docs/antora
       worktrees: true
 asciidoc:
   attributes:
-    # FIXME: Change to your stackoverflow URL or remove
-    page-stackoverflow-url: https://stackoverflow.com/tags/spring-shell
+    page-stackoverflow-url: https://stackoverflow.com/tags/spring-modulith
     page-pagination: ''
     hide-uri-scheme: '@'
     tabs-sync-option: '@'
