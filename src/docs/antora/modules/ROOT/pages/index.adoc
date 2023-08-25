@@ -43,7 +43,7 @@ To ease the declaration of the individual modules, we recommend to declare the f
 ----
 
 The individual sections describing Spring Modulith features will refer to the individual artifacts that are needed to make use of the feature.
-For an overview about all modules available, have a look at xref:90-appendix.adoc#appendix.artifacts[Spring Modulith modules].
+For an overview about all modules available, have a look at xref:appendix.adoc#appendix.artifacts[Spring Modulith modules].
 
 [[examples]]
 == Examples

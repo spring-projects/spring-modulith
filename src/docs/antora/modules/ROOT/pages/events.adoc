@@ -4,7 +4,7 @@
 = Working with Application Events
 
 To keep application modules as decoupled as possible from each other, their primary means of interaction should be event publication and consumption.
-This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see xref:30-testing.adoc[Integration Testing Application Modules]).
+This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see xref:testing.adoc[Integration Testing Application Modules]).
 
 Often we will find application components defined like this:
 
@@ -28,7 +28,7 @@ public class OrderManagement {
 ----
 
 The `complete(…)` method creates functional gravity in the sense that it attracts related functionality and thus interaction with Spring beans defined in other application modules.
-This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see xref:30-testing.adoc#testing.efferent-dependencies[Dealing with Efferent Dependencies]).
+This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see xref:testing.adoc#testing.efferent-dependencies[Dealing with Efferent Dependencies]).
 It also means that we will have to touch the class whenever we would like to integrate further functionality with the business event order completion.
 
 We can change the application module interaction as follows:
@@ -128,10 +128,10 @@ image::event-publication-registry-end.png[]
 
 To actually write the event publication log, Spring Modulith exposes an `EventPublicationRepository` SPI and implementations for popular persistence technologies that support transactions, like JPA, JDBC and MongoDB.
 You select the persistence technology to be used by adding the corresponding JAR to your Spring Modulith application.
-We have prepared dedicated xref:40-events.adoc#events.starters[starters] to ease that task.
+We have prepared dedicated xref:events.adoc#events.starters[starters] to ease that task.
 
 The JDBC-based implementation can create a dedicated table for the event publication log when the respective configuration property (`spring.modulith.events.jdbc-schema-initialization.enabled`) is set to `true`.
-For details, please consult the xref:90-appendix.adoc#appendix.schemas[schema overview] in the appendix.
+For details, please consult the xref:appendix.adoc#appendix.schemas[schema overview] in the appendix.
 
 [[events.serialization]]
 == Event Serializer
@@ -161,7 +161,7 @@ class MyConfiguration {
 == Spring Boot Event Registry Starters
 
 Using the transactional event publication log requires a combination of artifacts added to your application.
-To ease that task, Spring Modulith provides starter POMs that are centered around the xref:40-events.adoc#events.publication-repositories[persistence technology] to be used and default to the Jackson-based `EventSerializer` implementation.
+To ease that task, Spring Modulith provides starter POMs that are centered around the xref:events.adoc#events.publication-repositories[persistence technology] to be used and default to the Jackson-based `EventSerializer` implementation.
 The following starters are available:
 
 * `spring-modulith-starter-jpa` -- Using JPA as persistence technology.

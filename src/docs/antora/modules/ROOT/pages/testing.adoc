@@ -60,7 +60,7 @@ The application module test can be bootstrapped in a variety of modes:
 == Dealing with Efferent Dependencies
 
 When an application module is bootstrapped, the Spring beans it contains will be instantiated.
-If those contain bean references that cross module boundaries, the bootstrap will fail if those other modules are not included in the test run (see xref:30-testing.adoc#testing.bootstrap-modes[Bootstrap Modes] for details).
+If those contain bean references that cross module boundaries, the bootstrap will fail if those other modules are not included in the test run (see xref:testing.adoc#testing.bootstrap-modes[Bootstrap Modes] for details).
 While a natural reaction might be to expand the scope of the application modules included, it is usually a better option to mock the target beans.
 
 .Mocking Spring bean dependencies in other application modules
@@ -76,13 +76,13 @@ class InventoryIntegrationTests {
 Spring Boot will create bean definitions and instances for the types defined as `@MockBean` and add them to the `ApplicationContext` bootstrapped for the test run.
 
 If you find your application module depending on too many beans of other ones, that is usually a sign of high coupling between them.
-The dependencies should be reviewed for whether they are candidates for replacement by publishing a domain event (see xref:40-events.adoc#events[null]).
+The dependencies should be reviewed for whether they are candidates for replacement by publishing a domain event (see xref:events.adoc#events[null]).
 
 [[testing.scenarios]]
 == Defining Integration Test Scenarios
 
 Integration testing application modules can become a quite elaborate effort.
-Especially if the integration of those is based on xref:40-events.adoc#events.aml[asynchronous, transactional event handling], dealing with the concurrent execution can be subject to subtle errors.
+Especially if the integration of those is based on xref:events.adoc#events.aml[asynchronous, transactional event handling], dealing with the concurrent execution can be subject to subtle errors.
 Also, it requires dealing with quite a few infrastructure components: `TransactionOperations` and `ApplicationEventProcessor` to make sure events are published and delivered to transactional listeners, Awaitility to handle concurrency and AssertJ assertions to formulate expectations on the test execution's outcome.
 
 To ease the definition of application module integration tests, Spring Modulith provides the `Scenario` abstraction that can be used by declaring it as test method parameter in tests declared as `@ApplicationModuleTest`.
