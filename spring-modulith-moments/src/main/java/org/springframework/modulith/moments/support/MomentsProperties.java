@@ -39,7 +39,7 @@ import org.springframework.util.Assert;
 @ConfigurationProperties(prefix = "spring.modulith.moments")
 public class MomentsProperties {
 
-	public static final MomentsProperties DEFAULTS = new MomentsProperties(null, null, null, (Month) null, false);
+	public static final MomentsProperties DEFAULTS = new MomentsProperties();
 
 	private final Granularity granularity;
 	private final ZoneId zoneId;
@@ -50,12 +50,21 @@ public class MomentsProperties {
 	private final ShiftedQuarters quarters;
 
 	/**
+	 * Creates a new {@link MomentsProperties} with default granularity of {@value Granularity#HOURS}, a {@link ZoneId} of
+	 * {@code UTC}, the JVM's default {@link Locale} to determine starts of weeks, an unshifted {@link ShiftedQuarter} and
+	 * not enabling the {@link TimeMachine}.
+	 */
+	private MomentsProperties() {
+		this(null, null, null, (Month) null, false);
+	}
+
+	/**
 	 * Creates a new {@link MomentsProperties} for the given {@link Granularity}, {@link ZoneId}, {@link Locale} and
 	 * quarter start {@link Month}.
 	 *
 	 * @param granularity can be {@literal null}, defaults to {@value Granularity#HOURS}.
 	 * @param zoneId the time zone id to use, defaults to {@code UTC}.
-	 * @param locale
+	 * @param locale the locale to determine starts of weeks.
 	 * @param quarterStartMonth the {@link Month} at which quarters start. Defaults to {@value Month#JANUARY}, resulting
 	 *          in {@link ShiftedQuarter}s without any shift.
 	 */
