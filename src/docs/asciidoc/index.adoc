@@ -1,6 +1,6 @@
 = Spring Modulith -- Reference documentation
 Oliver Drotbohm
-:revnumber: {version}
+:revnumber: {projectVersion}
 :revdate: {localdate}
 :toc: left
 :iconfont-fontawesome:

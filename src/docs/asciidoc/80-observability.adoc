@@ -5,7 +5,7 @@ Spring Modulith provides support to expose architectural information about your 
 As  a production-ready application is likely to require both, the most convenient way to activate those features is to use the Spring Modulith Insight starter as follows:
 
 .Using the Spring Modulith Insight starter
-[source, xml]
+[source, xml,subs="+attributes"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -26,7 +26,7 @@ The application module structure can be exposed as Spring Boot actuator.
 To enable the actuator, add the `spring-modulith-actuator` dependency to the project:
 
 .Using the Spring Modulith actuator support
-[source, xml]
+[source, xml,subs="+attributes"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -119,7 +119,7 @@ The interaction between application modules can be intercepted to create Microme
 To activate the instrumentation add the following runtime dependency to your project:
 
 .Using the Spring Modulith observability support
-[source, xml]
+[source, xml,subs="+attributes"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
