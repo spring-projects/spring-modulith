@@ -335,7 +335,6 @@ limitations under the License.
 									<icons>font</icons>
 									<sectids>false</sectids>
 									<imagesdir>images</imagesdir>
-									<version>${project.version}</version>
 									<projectName>${project.name}</projectName>
 									<projectVersion>${project.version}</projectVersion>
 									<springVersion>${spring.version}</springVersion>
