@@ -117,7 +117,9 @@ image::event-publication-registry-start.png[]
 
 Each transactional event listener is wrapped into an aspect that marks that log entry as completed if the execution of the listener succeeds.
 In case the listener fails, the log entry stays untouched so that retry mechanisms can be deployed depending on the application's needs.
-By default, all incomplete event publications are resubmitted at application startup.
+Automatic republication on application restart can be enabled by setting the `spring.modulith.republish-outstanding-events-on-restart` property to `true`.
+Note, that this is only recommended for single-instance application deployments.
+For a more flexible arrangement, `EventPublicationRegistry` exposes a method `….findIncompletePublications()` that can be called from user code.
 
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
