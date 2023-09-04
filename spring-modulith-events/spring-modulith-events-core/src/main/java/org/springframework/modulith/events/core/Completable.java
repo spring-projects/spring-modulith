@@ -18,7 +18,7 @@ package org.springframework.modulith.events.core;
 import java.time.Instant;
 
 /**
- * Internal interface to be able to mark {@link EventPublication} instances as completed.
+ * Internal interface to be able to mark {@link TargetEventPublication} instances as completed.
  *
  * @author Oliver Drotbohm
  */

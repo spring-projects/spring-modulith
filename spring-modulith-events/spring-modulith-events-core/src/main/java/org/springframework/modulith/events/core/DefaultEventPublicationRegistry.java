@@ -18,13 +18,15 @@ package org.springframework.modulith.events.core;
 import java.time.Clock;
 import java.time.Duration;
 import java.util.Collection;
-import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.context.ApplicationListener;
+import org.springframework.modulith.events.CompletedEventPublications;
+import org.springframework.modulith.events.EventPublication;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -37,7 +39,8 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
-public class DefaultEventPublicationRegistry implements DisposableBean, EventPublicationRegistry {
+public class DefaultEventPublicationRegistry
+		implements DisposableBean, EventPublicationRegistry, CompletedEventPublications {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultEventPublicationRegistry.class);
 	private static final String REGISTER = "Registering publication of {} for {}.";
@@ -65,9 +68,9 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 	 * @see org.springframework.modulith.events.EventPublicationRegistry#store(java.lang.Object, java.util.stream.Stream)
 	 */
 	@Override
-	public Collection<EventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners) {
+	public Collection<TargetEventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
-		return listeners.map(it -> EventPublication.of(event, it, clock.instant()))
+		return listeners.map(it -> TargetEventPublication.of(event, it, clock.instant()))
 				.peek(it -> LOGGER.debug(REGISTER, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue()))
 				.map(events::create)
 				.toList();
@@ -78,8 +81,20 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 	 * @see org.springframework.modulith.events.EventPublicationRegistry#findIncompletePublications()
 	 */
 	@Override
-	public Collection<EventPublication> findIncompletePublications() {
+	public Collection<TargetEventPublication> findIncompletePublications() {
 		return events.findIncompletePublications();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#findIncompletePublicationsOlderThan(java.time.Duration)
+	 */
+	@Override
+	public Collection<TargetEventPublication> findIncompletePublicationsOlderThan(Duration duration) {
+
+		var reference = clock.instant().minus(duration);
+
+		return events.findIncompletePublicationsPublishedBefore(reference);
 	}
 
 	/*
@@ -113,12 +128,50 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.CompletedEventPublications#findAll()
+	 */
+	@Override
+	public Collection<? extends TargetEventPublication> findAll() {
+		return findIncompletePublications();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.CompletedEventPublications#deletePublications(java.util.function.Predicate)
+	 */
+	@Override
+	public void deletePublications(Predicate<EventPublication> filter) {
+
+		var identifiers = findIncompletePublications().stream()
+				.filter(filter)
+				.map(TargetEventPublication::getIdentifier)
+				.toList();
+
+		events.deletePublications(identifiers);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.CompletedEventPublications#deletePublicationsOlderThan(java.time.Duration)
+	 */
+	@Override
+	public void deletePublicationsOlderThan(Duration duration) {
+
+		var now = clock.instant();
+
+		deletePublications(event -> event.getCompletionDate()
+				.filter(date -> date.isBefore(now.minus(duration)))
+				.isPresent());
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.beans.factory.DisposableBean#destroy()
 	 */
 	@Override
 	public void destroy() {
 
-		List<EventPublication> publications = events.findIncompletePublications();
+		var publications = events.findIncompletePublications();
 
 		if (publications.isEmpty()) {
 
@@ -130,8 +183,8 @@ public class DefaultEventPublicationRegistry implements DisposableBean, EventPub
 
 		for (int i = 0; i < publications.size(); i++) {
 
-			String prefix = i + 1 == publications.size() ? "└─" : "├─";
-			EventPublication it = publications.get(i);
+			var prefix = i + 1 == publications.size() ? "└─" : "├─";
+			var it = publications.get(i);
 
 			LOGGER.info("{} {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
 		}

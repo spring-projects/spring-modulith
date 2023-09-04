@@ -32,19 +32,29 @@ import org.springframework.context.ApplicationListener;
 public interface EventPublicationRegistry {
 
 	/**
-	 * Stores {@link EventPublication}s for the given event and {@link ApplicationListener}s.
+	 * Stores {@link TargetEventPublication}s for the given event and {@link ApplicationListener}s.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param listeners must not be {@literal null}.
 	 */
-	Collection<EventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners);
+	Collection<TargetEventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners);
 
 	/**
-	 * Returns all {@link EventPublication}s that have not been completed yet.
+	 * Returns all {@link TargetEventPublication}s that have not been completed yet.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	Collection<EventPublication> findIncompletePublications();
+	Collection<TargetEventPublication> findIncompletePublications();
+
+	/**
+	 * Returns all {@link TargetEventPublication}s that have not been completed yet and have been published before the
+	 * given duration in relation to "now".
+	 *
+	 * @param duration must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.1
+	 */
+	Collection<TargetEventPublication> findIncompletePublicationsOlderThan(Duration duration);
 
 	/**
 	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as completed.
@@ -55,7 +65,7 @@ public interface EventPublicationRegistry {
 	void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier);
 
 	/**
-	 * Deletes all completed {@link EventPublication}s that have been completed before the given {@link Duration}.
+	 * Deletes all completed {@link TargetEventPublication}s that have been completed before the given {@link Duration}.
 	 *
 	 * @param duration must not be {@literal null}.
 	 */

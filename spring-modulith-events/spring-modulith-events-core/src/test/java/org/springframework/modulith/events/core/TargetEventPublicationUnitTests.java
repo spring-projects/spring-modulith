@@ -24,13 +24,13 @@ import org.junit.jupiter.api.Test;
  * @author Björn Kieling
  * @author Dmitry Belyaev
  */
-class EventPublicationUnitTests {
+class TargetEventPublicationUnitTests {
 
 	@Test
 	void rejectsNullEvent() {
 
 		assertThatExceptionOfType(IllegalArgumentException.class)//
-				.isThrownBy(() -> EventPublication.of(null, PublicationTargetIdentifier.of("foo")))//
+				.isThrownBy(() -> TargetEventPublication.of(null, PublicationTargetIdentifier.of("foo")))//
 				.withMessageContaining("Event");
 	}
 
@@ -38,14 +38,14 @@ class EventPublicationUnitTests {
 	void rejectsNullTargetIdentifier() {
 
 		assertThatExceptionOfType(IllegalArgumentException.class)//
-				.isThrownBy(() -> EventPublication.of(new Object(), null))//
+				.isThrownBy(() -> TargetEventPublication.of(new Object(), null))//
 				.withMessageContaining("TargetIdentifier");
 	}
 
 	@Test
 	void publicationIsIncompleteByDefault() {
 
-		EventPublication publication = EventPublication.of(new Object(),
+		var publication = TargetEventPublication.of(new Object(),
 				PublicationTargetIdentifier.of("foo"));
 
 		assertThat(publication.isPublicationCompleted()).isFalse();

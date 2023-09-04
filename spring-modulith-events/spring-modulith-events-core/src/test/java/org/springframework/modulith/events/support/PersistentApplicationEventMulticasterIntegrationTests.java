@@ -26,7 +26,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
-import org.springframework.modulith.events.core.EventPublication;
+import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
@@ -64,10 +64,10 @@ class PersistentApplicationEventMulticasterIntegrationTests {
 	void doesNotPublishGenericEventsToListeners() throws Exception {
 
 		publisher.publishEvent(new SomeGenericEvent<>());
-		verify(repository, never()).create(any(EventPublication.class));
+		verify(repository, never()).create(any(TargetEventPublication.class));
 
 		publisher.publishEvent(new SomeOtherEvent());
-		verify(repository).create(any(EventPublication.class));
+		verify(repository).create(any(TargetEventPublication.class));
 	}
 
 	@Component

@@ -27,21 +27,32 @@ import java.util.UUID;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.TypeInformation;
-import org.springframework.modulith.events.core.EventPublication;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
+import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 /**
- * Repository to store {@link EventPublication}s in a MongoDB.
+ * Repository to store {@link TargetEventPublication}s in a MongoDB.
  *
  * @author Björn Kieling
  * @author Dmitry Belyaev
  * @author Oliver Drotbohm
  */
+@Transactional
 class MongoDbEventPublicationRepository implements EventPublicationRepository {
+
+	private static final String COMPLETION_DATE = "completionDate";
+	private static final String EVENT = "event";
+	private static final String ID = "id";
+	private static final String LISTENER_ID = "listenerId";
+	private static final String PUBLICATION_DATE = "publicationDate";
+
+	private static final Sort DEFAULT_SORT = Sort.by(PUBLICATION_DATE).ascending();
 
 	private final MongoTemplate mongoTemplate;
 
@@ -62,7 +73,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 * @see org.springframework.modulith.events.EventPublicationRepository#create(org.springframework.modulith.events.EventPublication)
 	 */
 	@Override
-	public EventPublication create(EventPublication publication) {
+	public TargetEventPublication create(TargetEventPublication publication) {
 
 		mongoTemplate.save(domainToDocument(publication));
 
@@ -76,35 +87,53 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		var criteria = byEventAndListenerId(event, identifier);
-		var update = Update.update("completionDate", completionDate);
+		var update = Update.update(COMPLETION_DATE, completionDate);
 
-		mongoTemplate.updateFirst(query(criteria), update, MongoDbEventPublication.class);
+		mongoTemplate.updateFirst(byEventAndListenerId(event, identifier), update, MongoDbEventPublication.class);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublications()
+	 */
 	@Override
-	public List<EventPublication> findIncompletePublications() {
-
-		var query = query(where("completionDate").isNull())
-				.with(Sort.by("publicationDate").ascending());
-
-		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
-				.map(this::documentToDomain) //
-				.toList();
+	@Transactional(readOnly = true)
+	public List<TargetEventPublication> findIncompletePublications() {
+		return readMapped(defaultQuery(where(COMPLETION_DATE).isNull()));
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublicationsPublishedBefore(java.time.Instant)
+	 */
 	@Override
-	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
+	@Transactional(readOnly = true)
+	public List<TargetEventPublication> findIncompletePublicationsPublishedBefore(Instant instant) {
+		return readMapped(defaultQuery(where(COMPLETION_DATE).isNull().and(PUBLICATION_DATE).lt(instant)));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublicationsByEventAndTargetIdentifier(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public Optional<TargetEventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		var documents = findDocumentsByEventAndTargetIdentifierAndCompletionDateNull(event, targetIdentifier);
-		var results = documents
-				.stream() //
-				.map(this::documentToDomain) //
-				.toList();
+		var results = readMapped(byEventAndListenerId(event, targetIdentifier));
 
 		// if there are several events with exactly the same payload we return the oldest one first
 		return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deletePublications(java.util.List)
+	 */
+	@Override
+	public void deletePublications(List<UUID> identifiers) {
+		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class);
 	}
 
 	/*
@@ -113,7 +142,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		mongoTemplate.remove(query(where("completionDate").ne(null)), MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where(COMPLETION_DATE).ne(null)), MongoDbEventPublication.class);
 	}
 
 	/*
@@ -125,28 +154,28 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		mongoTemplate.remove(query(where("completionDate").lt(instant)), MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where(COMPLETION_DATE).lt(instant)), MongoDbEventPublication.class);
 	}
 
-	private List<MongoDbEventPublication> findDocumentsByEventAndTargetIdentifierAndCompletionDateNull( //
-			Object event, PublicationTargetIdentifier targetIdentifier) {
+	private List<TargetEventPublication> readMapped(Query query) {
 
-		var criteria = byEventAndListenerId(event, targetIdentifier);
-		var query = query(criteria).with(Sort.by("publicationDate").ascending());
-
-		return mongoTemplate.find(query, MongoDbEventPublication.class);
+		return mongoTemplate.query(MongoDbEventPublication.class)
+				.matching(query)
+				.stream()
+				.map(MongoDbEventPublicationRepository::documentToDomain)
+				.toList();
 	}
 
-	private Criteria byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
+	private Query byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
 
 		var eventAsMongoType = mongoTemplate.getConverter().convertToMongoType(event, TypeInformation.OBJECT);
 
-		return where("event").is(eventAsMongoType) //
-				.and("listenerId").is(identifier.getValue())
-				.and("completionDate").isNull();
+		return defaultQuery(where(EVENT).is(eventAsMongoType) //
+				.and(LISTENER_ID).is(identifier.getValue())
+				.and(COMPLETION_DATE).isNull());
 	}
 
-	private MongoDbEventPublication domainToDocument(EventPublication publication) {
+	private static MongoDbEventPublication domainToDocument(TargetEventPublication publication) {
 
 		return new MongoDbEventPublication( //
 				publication.getIdentifier(), //
@@ -155,11 +184,15 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 				publication.getEvent());
 	}
 
-	private EventPublication documentToDomain(MongoDbEventPublication document) {
+	private static TargetEventPublication documentToDomain(MongoDbEventPublication document) {
 		return new MongoDbEventPublicationAdapter(document);
 	}
 
-	private static class MongoDbEventPublicationAdapter implements EventPublication {
+	private static Query defaultQuery(Criteria criteria) {
+		return query(criteria).with(DEFAULT_SORT);
+	}
+
+	private static class MongoDbEventPublicationAdapter implements TargetEventPublication {
 
 		private final MongoDbEventPublication publication;
 

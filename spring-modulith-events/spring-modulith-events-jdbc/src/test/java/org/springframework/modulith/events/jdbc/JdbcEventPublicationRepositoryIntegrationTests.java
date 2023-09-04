@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
+import java.util.List;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -35,9 +36,9 @@ import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.modulith.events.core.EventPublication;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
+import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -79,7 +80,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			var publication = repository.create(EventPublication.of(testEvent, TARGET_IDENTIFIER));
+			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
 			var eventPublications = repository.findIncompletePublications();
 
@@ -110,11 +111,11 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			createPublicationAt(now.withHour(1));
 
 			assertThat(repository.findIncompletePublications())
-					.isSortedAccordingTo(Comparator.comparing(EventPublication::getPublicationDate));
+					.isSortedAccordingTo(Comparator.comparing(TargetEventPublication::getPublicationDate));
 		}
 
 		private void createPublicationAt(LocalDateTime publicationDate) {
-			repository.create(EventPublication.of("", TARGET_IDENTIFIER, publicationDate.toInstant(ZoneOffset.UTC)));
+			repository.create(TargetEventPublication.of("", TARGET_IDENTIFIER, publicationDate.toInstant(ZoneOffset.UTC)));
 		}
 
 		@Test // GH-3
@@ -130,14 +131,14 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
 			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-			repository.create(EventPublication.of(testEvent1, TARGET_IDENTIFIER));
-			var publication = repository.create(EventPublication.of(testEvent2, TARGET_IDENTIFIER));
+			repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+			var publication = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 
 			// Complete publication
 			repository.markCompleted(publication, Instant.now());
 
 			assertThat(repository.findIncompletePublications()).hasSize(1)
-					.element(0).extracting(EventPublication::getEvent).isEqualTo(testEvent1);
+					.element(0).extracting(TargetEventPublication::getEvent).isEqualTo(testEvent1);
 		}
 
 		@Test // GH-3
@@ -161,7 +162,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			var publication = EventPublication.of(testEvent, TARGET_IDENTIFIER);
+			var publication = TargetEventPublication.of(testEvent, TARGET_IDENTIFIER);
 
 			repository.create(publication);
 			repository.markCompleted(publication, Instant.now());
@@ -180,9 +181,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			var publication = repository.create(EventPublication.of(testEvent, TARGET_IDENTIFIER));
+			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 			Thread.sleep(10);
-			repository.create(EventPublication.of(testEvent, TARGET_IDENTIFIER));
+			repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
 			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
@@ -202,7 +203,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
 			// Store publication
-			repository.create(EventPublication.of(testEvent, TARGET_IDENTIFIER));
+			repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
 			operations.update("UPDATE EVENT_PUBLICATION SET EVENT_TYPE='abc'");
 
@@ -223,9 +224,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
 			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-			var publication = repository.create(EventPublication.of(testEvent1, TARGET_IDENTIFIER));
+			var publication = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
 
-			repository.create(EventPublication.of(testEvent2, TARGET_IDENTIFIER));
+			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 			repository.markCompleted(publication, Instant.now());
 			repository.deleteCompletedPublications();
 
@@ -246,8 +247,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
 			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-			repository.create(EventPublication.of(testEvent1, TARGET_IDENTIFIER));
-			repository.create(EventPublication.of(testEvent2, TARGET_IDENTIFIER));
+			repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 
 			var now = Instant.now();
 
@@ -257,6 +258,50 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			assertThat(operations.query("SELECT * FROM EVENT_PUBLICATION", (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
+		}
+
+		@Test // GH-294
+		void deletesPublicationsByIdentifier() {
+
+			var first = createPublication(new TestEvent("first"));
+			var second = createPublication(new TestEvent("second"));
+
+			repository.deletePublications(List.of(first.getIdentifier()));
+
+			assertThat(repository.findIncompletePublications())
+					.hasSize(1)
+					.element(0)
+					.matches(it -> it.getIdentifier().equals(second.getIdentifier()))
+					.matches(it -> it.getEvent().equals(second.getEvent()));
+		}
+
+		@Test // GH-294
+		void findsPublicationsOlderThanReference() throws Exception {
+
+			var first = createPublication(new TestEvent("first"));
+
+			Thread.sleep(100);
+
+			var now = Instant.now();
+			var second = createPublication(new TestEvent("second"));
+
+			assertThat(repository.findIncompletePublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(first.getIdentifier(), second.getIdentifier());
+
+			assertThat(repository.findIncompletePublicationsPublishedBefore(now))
+					.hasSize(1)
+					.element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
+		}
+
+		private TargetEventPublication createPublication(Object event) {
+
+			var token = event.toString();
+
+			doReturn(token).when(serializer).serialize(event);
+			doReturn(event).when(serializer).deserialize(token, event.getClass());
+
+			return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
 		}
 	}
 

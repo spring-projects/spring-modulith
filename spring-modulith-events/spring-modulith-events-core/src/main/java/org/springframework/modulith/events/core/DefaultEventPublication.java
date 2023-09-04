@@ -20,6 +20,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -27,7 +28,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-class DefaultEventPublication implements EventPublication {
+class DefaultEventPublication implements TargetEventPublication {
 
 	private final UUID identifier;
 	private final Object event;
@@ -124,7 +125,7 @@ class DefaultEventPublication implements EventPublication {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(@Nullable Object obj) {
 
 		if (this == obj) {
 			return true;

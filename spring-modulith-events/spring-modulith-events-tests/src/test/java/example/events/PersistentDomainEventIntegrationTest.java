@@ -29,11 +29,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
-import org.springframework.modulith.events.core.EventPublication;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
-import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
+import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.transaction.annotation.Transactional;
@@ -74,7 +74,7 @@ class PersistentDomainEventIntegrationTest {
 		} finally {
 
 			assertThat(registry.findIncompletePublications()) //
-					.extracting(EventPublication::getTargetIdentifier) //
+					.extracting(TargetEventPublication::getTargetIdentifier) //
 					.extracting(PublicationTargetIdentifier::getValue) //
 					.hasSize(2) //
 					.allSatisfy(id -> {
@@ -86,9 +86,8 @@ class PersistentDomainEventIntegrationTest {
 
 		}
 
-		// Simulate application restart with pending publications
-		PersistentApplicationEventMulticaster multicaster = context.getBean(PersistentApplicationEventMulticaster.class);
-		multicaster.afterSingletonsInstantiated();
+		// Resubmit failed publications
+		context.getBean(IncompleteEventPublications.class).resubmitIncompletePublications(__ -> true);
 
 		Thread.sleep(200);
 

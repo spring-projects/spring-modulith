@@ -18,11 +18,12 @@ package org.springframework.modulith.events.core;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.util.Assert;
 
 /**
- * Repository to store {@link EventPublication}s.
+ * Repository to store {@link TargetEventPublication}s.
  *
  * @author Björn Kieling
  * @author Dmitry Belyaev
@@ -31,20 +32,20 @@ import org.springframework.util.Assert;
 public interface EventPublicationRepository {
 
 	/**
-	 * Persists the given {@link EventPublication}.
+	 * Persists the given {@link TargetEventPublication}.
 	 *
 	 * @param publication must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	EventPublication create(EventPublication publication);
+	TargetEventPublication create(TargetEventPublication publication);
 
 	/**
-	 * Marks the given {@link EventPublication} as completed.
+	 * Marks the given {@link TargetEventPublication} as completed.
 	 *
 	 * @param publication must not be {@literal null}.
 	 * @param completionDate must not be {@literal null}.
 	 */
-	default void markCompleted(EventPublication publication, Instant completionDate) {
+	default void markCompleted(TargetEventPublication publication, Instant completionDate) {
 
 		Assert.notNull(publication, "EventPublication must not be null!");
 		Assert.notNull(completionDate, "Instant must not be null!");
@@ -65,21 +66,39 @@ public interface EventPublicationRepository {
 	void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate);
 
 	/**
-	 * Returns all {@link EventPublication} that have not been completed yet.
+	 * Returns all {@link TargetEventPublication}s that have not been completed yet.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	List<EventPublication> findIncompletePublications();
+	List<TargetEventPublication> findIncompletePublications();
 
 	/**
-	 * Return the incomplete {@link EventPublication} for the given serialized event and listener identifier.
+	 * Returns all {@link TargetEventPublication}s that have not been completed and were published before the given
+	 * {@link Instant}.
+	 *
+	 * @param instant must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.1
+	 */
+	List<TargetEventPublication> findIncompletePublicationsPublishedBefore(Instant instant);
+
+	/**
+	 * Return the incomplete {@link TargetEventPublication} for the given serialized event and listener identifier.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param targetIdentifier must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
+	Optional<TargetEventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
 			Object event, PublicationTargetIdentifier targetIdentifier);
+
+	/**
+	 * Deletes all publications with the given identifiers.
+	 *
+	 * @param identifiers must not be {@literal null}.
+	 * @since 1.1
+	 */
+	void deletePublications(List<UUID> identifiers);
 
 	/**
 	 * Deletes all publications that were already marked as completed.

@@ -67,18 +67,24 @@ a|* `spring-modulith-actuator` (runtime)
 |`spring-modulith-starter-jdbc`
 |`compile`
 a|* `spring-modulith-starter-core`
+* `spring-modulith-events-api`
+* `spring-modulith-events-core` (runtime)
 * `spring-modulith-events-jdbc` (runtime)
 * `spring-modulith-events-jackson` (runtime)
 
 |`spring-modulith-starter-jpa`
 |`compile`
 a|* `spring-modulith-starter-core`
+* `spring-modulith-events-api`
+* `spring-modulith-events-core` (runtime)
 * `spring-modulith-events-jpa` (runtime)
 * `spring-modulith-events-jackson` (runtime)
 
 |`spring-modulith-starter-mongodb`
 |`compile`
 a|* `spring-modulith-starter-core`
+* `spring-modulith-events-api`
+* `spring-modulith-events-core` (runtime)
 * `spring-modulith-events-mongodb` (runtime)
 * `spring-modulith-events-jackson` (runtime)
 

@@ -22,30 +22,32 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
-import org.springframework.modulith.events.core.EventPublication;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
+import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 /**
- * Repository to store {@link EventPublication}s.
+ * Repository to store {@link TargetEventPublication}s.
  *
  * @author Oliver Drotbohm
  * @author Dmitry Belyaev
  * @author Björn Kieling
  */
+@Transactional
 class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static String BY_EVENT_AND_LISTENER_ID = """
 			select p
 			from JpaEventPublication p
-				where
-					p.serializedEvent = ?1
-					and p.listenerId = ?2
-					and p.completionDate is null
+			where
+				p.serializedEvent = ?1
+				and p.listenerId = ?2
+				and p.completionDate is null
 			""";
 
 	private static String INCOMPLETE = """
@@ -57,11 +59,28 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				p.publicationDate asc
 			""";
 
+	private static String INCOMPLETE_BEFORE = """
+			select p
+			from JpaEventPublication p
+			where
+				p.completionDate is null
+				and p.publicationDate < ?1
+			order by
+				p.publicationDate asc
+			""";
+
 	private static final String MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID = """
 			update JpaEventPublication p
 			   set p.completionDate = ?3
 			 where p.serializedEvent = ?1
 			   and p.listenerId = ?2
+			""";
+
+	private static final String DELETE = """
+			delete
+			from JpaEventPublication p
+			where
+				p.id in ?1
 			""";
 
 	private static final String DELETE_COMPLETED = """
@@ -77,6 +96,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			where
 				p.completionDate < ?1
 			""";
+
+	private static final int DELETE_BATCH_SIZE = 100;
 
 	private final EntityManager entityManager;
 	private final EventSerializer serializer;
@@ -102,8 +123,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	 * @see org.springframework.modulith.events.EventPublicationRepository#create(org.springframework.modulith.events.EventPublication)
 	 */
 	@Override
-	@Transactional
-	public EventPublication create(EventPublication publication) {
+	public TargetEventPublication create(TargetEventPublication publication) {
 
 		entityManager.persist(domainToEntity(publication));
 
@@ -115,7 +135,6 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	 * @see org.springframework.modulith.events.EventPublicationRepository#markCompleted(java.lang.Object, org.springframework.modulith.events.PublicationTargetIdentifier, java.time.Instant)
 	 */
 	@Override
-	@Transactional
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
 		entityManager.createQuery(MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID)
@@ -131,9 +150,24 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public List<EventPublication> findIncompletePublications() {
+	public List<TargetEventPublication> findIncompletePublications() {
 
 		return entityManager.createQuery(INCOMPLETE, JpaEventPublication.class)
+				.getResultStream()
+				.map(this::entityToDomain)
+				.toList();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublicationsPublishedBefore(java.time.Instant)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<TargetEventPublication> findIncompletePublicationsPublishedBefore(Instant instant) {
+
+		return entityManager.createQuery(INCOMPLETE_BEFORE, JpaEventPublication.class)
+				.setParameter(1, instant)
 				.getResultStream()
 				.map(this::entityToDomain)
 				.toList();
@@ -145,7 +179,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	@Transactional(readOnly = true)
-	public Optional<EventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
+	public Optional<TargetEventPublication> findIncompletePublicationsByEventAndTargetIdentifier( //
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		return findEntityBySerializedEventAndListenerIdAndCompletionDateNull(event, targetIdentifier)
@@ -154,10 +188,21 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deletePublications(java.util.List)
+	 */
+	@Override
+	public void deletePublications(List<UUID> identifiers) {
+
+		batch(identifiers, DELETE_BATCH_SIZE).forEach(it -> {
+			entityManager.createQuery(DELETE).setParameter(1, identifiers).executeUpdate();
+		});
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.EventPublicationRepository#deleteCompletedPublications()
 	 */
 	@Override
-	@Transactional
 	public void deleteCompletedPublications() {
 		entityManager.createQuery(DELETE_COMPLETED).executeUpdate();
 	}
@@ -171,10 +216,9 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		var query = entityManager.createQuery(DELETE_COMPLETED_BEFORE);
-
-		query.setParameter(1, instant);
-		query.executeUpdate();
+		entityManager.createQuery(DELETE_COMPLETED_BEFORE)
+				.setParameter(1, instant)
+				.executeUpdate();
 	}
 
 	private Optional<JpaEventPublication> findEntityBySerializedEventAndListenerIdAndCompletionDateNull( //
@@ -193,17 +237,26 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		return serializer.serialize(event).toString();
 	}
 
-	private JpaEventPublication domainToEntity(EventPublication domain) {
+	private JpaEventPublication domainToEntity(TargetEventPublication domain) {
 		return new JpaEventPublication(domain.getIdentifier(), domain.getPublicationDate(),
 				domain.getTargetIdentifier().getValue(),
 				serializeEvent(domain.getEvent()), domain.getEvent().getClass());
 	}
 
-	private EventPublication entityToDomain(JpaEventPublication entity) {
+	private TargetEventPublication entityToDomain(JpaEventPublication entity) {
 		return new JpaEventPublicationAdapter(entity, serializer);
 	}
 
-	private static class JpaEventPublicationAdapter implements EventPublication {
+	private static <T> List<List<T>> batch(List<T> input, int batchSize) {
+
+		var inputSize = input.size();
+
+		return IntStream.range(0, (inputSize + batchSize - 1) / batchSize)
+				.mapToObj(i -> input.subList(i * batchSize, Math.min((i + 1) * batchSize, inputSize)))
+				.toList();
+	}
+
+	private static class JpaEventPublicationAdapter implements TargetEventPublication {
 
 		private final JpaEventPublication publication;
 		private final EventSerializer serializer;

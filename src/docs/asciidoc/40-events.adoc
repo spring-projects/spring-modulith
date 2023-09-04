@@ -124,6 +124,30 @@ For a more flexible arrangement, `EventPublicationRegistry` exposes a method `â€
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
 
+[[events.managing-publications]]
+== Managing Event Publications
+
+Event publications may need to be managed in a variety of ways during the runtime of an application.
+Incomplete publications might have to be re-submitted to the corresponding listeners after a given amount of time.
+Completed publications on the other hand, will likely have to be purged from the database or moved into an archive store.
+As the needs for that kind of housekeeping strongly vary from application to application, Spring Modulith offers API to deal with both kinds of publications.
+That API is available through the `spring-modulith-events-api` artifact, that you can add to your application:
+
+.Using Spring Modulith Events API artifact
+[source, xml, subs="+attributes"]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>spring-modulith-events-api</artifactId>
+  <version>{projectVersion}</version>
+</dependency>
+----
+
+This artifact contains two primary abstractions, that are available to application code as Spring Beans:
+
+* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides API to immediately purge all of them from the database or the completed publications older that a given duration (for example, 1 minute).
+* `IncompleteEventPublications`-- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
+
 [[events.publication-repositories]]
 == Event Publication Repositories
 

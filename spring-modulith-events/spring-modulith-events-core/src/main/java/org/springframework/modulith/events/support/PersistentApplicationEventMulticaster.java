@@ -15,9 +15,11 @@
  */
 package org.springframework.modulith.events.support;
 
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
@@ -33,9 +35,12 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.NonNull;
-import org.springframework.modulith.events.core.EventPublication;
+import org.springframework.lang.Nullable;
+import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
+import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -53,7 +58,7 @@ import org.springframework.util.Assert;
  * @see CompletionRegisteringAdvisor
  */
 public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
-		implements SmartInitializingSingleton {
+		implements IncompleteEventPublications, SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.republish-outstanding-events-on-restart";
@@ -92,7 +97,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 */
 	@Override
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public void multicastEvent(ApplicationEvent event, ResolvableType eventType) {
+	public void multicastEvent(ApplicationEvent event, @Nullable ResolvableType eventType) {
 
 		var type = eventType == null ? ResolvableType.forInstance(event) : eventType;
 		var listeners = getApplicationListeners(event, type);
@@ -111,6 +116,24 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublications(java.util.function.Predicate)
+	 */
+	@Override
+	public void resubmitIncompletePublications(Predicate<EventPublication> filter) {
+		doResubmitUncompletedPublicationsOlderThan(null);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublicationsOlderThan(java.time.Duration)
+	 */
+	@Override
+	public void resubmitIncompletePublicationsOlderThan(Duration duration) {
+		doResubmitUncompletedPublicationsOlderThan(duration);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.beans.factory.SmartInitializingSingleton#afterSingletonsInstantiated()
 	 */
 	@Override
@@ -120,16 +143,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			return;
 		}
 
-		LOGGER.debug("Looking up previously pending event publications…");
-
-		var publications = registry.get().findIncompletePublications();
-
-		LOGGER.debug("{} found.", publications.isEmpty() ? "None" : publications.size());
-
-		publications.forEach(this::invokeTargetListener);
+		resubmitIncompletePublications(__ -> true);
 	}
 
-	private void invokeTargetListener(EventPublication publication) {
+	private void invokeTargetListener(TargetEventPublication publication) {
 
 		var listeners = new TransactionalEventListeners(
 				getApplicationListeners());
@@ -145,7 +162,23 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				});
 	}
 
-	private ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
+	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration) {
+
+		var message = duration != null ? "" : " older than %s".formatted(duration);
+		var registry = this.registry.get();
+
+		LOGGER.debug("Looking up incomplete event publications {}… ", message);
+
+		var publications = duration == null //
+				? registry.findIncompletePublications() //
+				: registry.findIncompletePublicationsOlderThan(duration);
+
+		LOGGER.debug(getConfirmationMessage(publications) + " found.");
+
+		publications.forEach(this::invokeTargetListener);
+	}
+
+	private static ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
 			TransactionalApplicationListener<ApplicationEvent> listener) {
 
 		listener.processEvent(publication.getApplicationEvent());
@@ -167,6 +200,17 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		return PayloadApplicationEvent.class.isInstance(event) //
 				? ((PayloadApplicationEvent<?>) event).getPayload() //
 				: event;
+	}
+
+	private static String getConfirmationMessage(Collection<?> publications) {
+
+		var size = publications.size();
+
+		return switch (publications.size()) {
+			case 0 -> "No publication";
+			case 1 -> "1 publication";
+			default -> size + " publications";
+		};
 	}
 
 	/**

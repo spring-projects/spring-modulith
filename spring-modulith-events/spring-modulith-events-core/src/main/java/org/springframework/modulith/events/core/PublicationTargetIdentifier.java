@@ -17,6 +17,7 @@ package org.springframework.modulith.events.core;
 
 import java.util.Objects;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -82,7 +83,7 @@ public class PublicationTargetIdentifier {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(@Nullable Object obj) {
 
 		if (this == obj) {
 			return true;
