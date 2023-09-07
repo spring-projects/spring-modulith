@@ -36,6 +36,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
@@ -109,6 +110,7 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 		 * (non-Javadoc)
 		 * @see org.springframework.beans.factory.config.BeanPostProcessor#postProcessAfterInitialization(java.lang.Object, java.lang.String)
 		 */
+		@NonNull
 		@Override
 		public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
 

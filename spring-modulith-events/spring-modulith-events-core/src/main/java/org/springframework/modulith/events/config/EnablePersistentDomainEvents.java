@@ -43,6 +43,11 @@ import org.springframework.modulith.events.config.EnablePersistentDomainEvents.P
 @Import(PersistentDomainEventsImportSelector.class)
 public @interface EnablePersistentDomainEvents {
 
+	/**
+	 * {@link ImportSelector} to dynamically pick up configuration types from the classpath.
+	 *
+	 * @author Oliver Drotbohm
+	 */
 	static class PersistentDomainEventsImportSelector implements ImportSelector, ResourceLoaderAware {
 
 		private ResourceLoader resourceLoader;
@@ -65,6 +70,7 @@ public @interface EnablePersistentDomainEvents {
 		 * @see org.springframework.context.annotation.ImportSelector#selectImports(org.springframework.core.type.AnnotationMetadata)
 		 */
 		@Override
+		@SuppressWarnings("deprecation")
 		public String[] selectImports(AnnotationMetadata importingClassMetadata) {
 
 			List<String> result = new ArrayList<>();
