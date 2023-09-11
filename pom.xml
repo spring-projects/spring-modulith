@@ -41,7 +41,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.0.11</spring.version> <!-- For Javadoc links only -->
-		<spring-asciidoctor-backends.version>0.0.7</spring-asciidoctor-backends.version>
 		<spring-boot.version>3.2.0-M2</spring-boot.version>
 
 	</properties>
@@ -298,7 +297,7 @@ limitations under the License.
 							<version>0.0.4</version>
 							<extensions>true</extensions>
 							<configuration>
-								<playbook>src/docs/antora/antora-playbook.yml</playbook>
+								<playbook>../src/docs/antora/antora-playbook.yml</playbook>
 								<options>
 									<option>--to-dir=target/antora/site</option>
 									<option>--stacktrace</option>
