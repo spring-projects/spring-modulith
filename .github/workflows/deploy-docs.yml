@@ -8,7 +8,8 @@ on:
   #schedule:
   #- cron: '0 10 * * *' # Once per day at 10am UTC
   workflow_dispatch:
-permissions: read-all
+permissions:
+  actions: write
 jobs:
   build:
     runs-on: ubuntu-latest
