@@ -22,10 +22,10 @@ jobs:
     - name: Dispatch (partial build)
       if: github.ref_type == 'branch'
       env:
-        GH_TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: gh workflow run deploy-docs.yml -r $(git rev-parse --abbrev-ref HEAD) -f build-refname=${{ github.ref_name }}
     - name: Dispatch (full build)
       if: github.ref_type == 'tag'
       env:
-        GH_TOKEN: ${{ secrets.GH_ACTIONS_REPO_TOKEN }}
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       run: gh workflow run deploy-docs.yml -r $(git rev-parse --abbrev-ref HEAD)
