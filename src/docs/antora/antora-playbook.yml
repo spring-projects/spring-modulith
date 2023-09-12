@@ -22,7 +22,9 @@ asciidoc:
     hide-uri-scheme: '@'
     tabs-sync-option: '@'
     chomp: 'all'
+    kroki-fetch-diagram: true
   extensions:
+    - asciidoctor-kroki
     - '@asciidoctor/tabs'
     - '@springio/asciidoctor-extensions'
   sourcemap: true
