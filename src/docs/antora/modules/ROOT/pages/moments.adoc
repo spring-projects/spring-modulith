@@ -6,13 +6,27 @@ It's an event-based approach to time to trigger actions that are tied to a parti
 
 To use the abstraction, include the following dependency in your project:
 
-[source, xml]
+[tabs]
+======
+Maven::
++
+[source, xml, role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
   <artifactId>spring-modulith-moments</artifactId>
 </dependency>
 ----
+
+Gradle::
++
+[source, role="secondary"]
+----
+dependencies {
+  implementation 'org.springframework.modulith:spring-modulith-moments'
+}
+----
+======
 
 The dependency added to the project's classpath causes the following things in your application:
 

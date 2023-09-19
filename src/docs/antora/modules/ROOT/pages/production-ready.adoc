@@ -5,7 +5,11 @@ Spring Modulith provides support to expose architectural information about your 
 As  a production-ready application is likely to require both, the most convenient way to activate those features is to use the Spring Modulith Insight starter as follows:
 
 .Using the Spring Modulith Insight starter
-[source, xml, subs="+attributes"]
+[tabs]
+======
+Maven::
++
+[source, xml, subs="+attributes", role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -14,6 +18,16 @@ As  a production-ready application is likely to require both, the most convenien
   <scope>runtime</scope>
 </dependency>
 ----
+
+Gradle::
++
+[source, subs="+attributes", role="secondary"]
+----
+dependencies {
+  runtimeOnly 'org.springframework.modulith:spring-modulith-starter-insight:{projectVersion}'
+}
+----
+======
 
 This will include the actuator and observability support as well as Spring Boot's actuator startup for general support for actuators.
 Note, that you will still have to add further dependencies to connect your application to your monitoring tools such as https://zipkin.io/[Zipkin], https://docs.wavefront.com/[Wavefront] etc. usually via https://opentelemetry.io/[OpenTelemetry] or https://github.com/openzipkin/brave[Brave].
@@ -26,7 +40,11 @@ The application module structure can be exposed as Spring Boot actuator.
 To enable the actuator, add the `spring-modulith-actuator` dependency to the project:
 
 .Using the Spring Modulith actuator support
-[source, xml, subs="+attributes"]
+[tabs]
+======
+Maven::
++
+[source, xml, subs="+attributes", role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -43,6 +61,21 @@ To enable the actuator, add the `spring-modulith-actuator` dependency to the pro
   <scope>runtime</scope>
 </dependency>
 ----
+
+Gradle::
++
+[source, subs="+attributes", role="secondary"]
+----
+dependencies {
+  runtimeOnly 'org.springframework.modulith:spring-modulith-actuator:{projectVersion}'
+}
+
+<!-- Spring Boot actuator starter required to enable actuators in general -->
+dependencies {
+  runtimeOnly 'org.springframework.boot:spring-boot-starter-actuator'
+}
+----
+======
 
 Running the application will now expose an `modulith` actuator resource:
 
@@ -119,7 +152,11 @@ The interaction between application modules can be intercepted to create Microme
 To activate the instrumentation add the following runtime dependency to your project:
 
 .Using the Spring Modulith observability support
-[source, xml, subs="+attributes"]
+[tabs]
+======
+Maven::
++
+[source, xml, subs="+attributes", role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -128,6 +165,16 @@ To activate the instrumentation add the following runtime dependency to your pro
   <scope>runtime</scope>
 </dependency>
 ----
+
+Gradle::
++
+[source, subs="+attributes", role="secondary"]
+----
+dependencies {
+  runtimeOnly 'org.springframework.modulith:spring-modulith-observability:{projectVersion}'
+}
+----
+======
 
 NOTE: You will have to configure additional infrastructure dependencies depending on the tooling you want to pipe the observability metadata in.
 For details, please check the corresponding https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.micrometer-tracing[Spring Boot documentation] on which dependencies to include for your setup.

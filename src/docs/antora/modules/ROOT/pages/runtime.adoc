@@ -8,8 +8,11 @@ In this section we are going to describe Spring Modulith's support for
 == Setting up Runtime Support for Application Modules
 
 To enable the runtime support for Spring Modulith, make sure you include the `spring-modulith-runtime` JAR in your project.
-
-[source, xml]
+[tabs]
+======
+Maven::
++
+[source, xml, role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -17,6 +20,16 @@ To enable the runtime support for Spring Modulith, make sure you include the `sp
   <scope>runtime</scope>
 </dependency>
 ----
+
+Gradle::
++
+[source, xml, role="secondary"]
+----
+dependencies {
+  runtimeOnly 'org.springframework.modulith:spring-modulith-runtime'
+}
+----
+======
 
 IMPORTANT: It's worth noting that using the runtime support of Spring Modulith will mean that you include both https://www.archunit.org/[ArchUnit] and the https://jgrapht.org/[JGraphT] (required to topologically sort application modules) library in your application.
 

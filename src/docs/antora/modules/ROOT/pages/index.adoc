@@ -26,8 +26,12 @@ NOTE: Copies of this document may be made for your own use and for distribution 
 Spring Modulith consists of a set of libraries that can be used individually and depending on which features of it you would like to use.
 To ease the declaration of the individual modules, we recommend to declare the following BOM in your Maven POM:
 
-.Using the Spring Modulith  BOM
-[source, xml, subs="+attributes"]
+.Using the Spring Modulith BOM
+[tabs]
+======
+Maven::
++
+[source, xml, subs="+attributes", role="primary"]
 ----
 <dependencyManagement>
   <dependencies>
@@ -41,6 +45,18 @@ To ease the declaration of the individual modules, we recommend to declare the f
   </dependencies>
 </dependencyManagement>
 ----
+
+Gradle::
++
+[source, subs="+attributes", role="secondary"]
+----
+dependencyManagement {
+	imports {
+		mavenBom 'org.springframework.modulith:spring-modulith-bom:{projectVersion}'
+	}
+}
+----
+======
 
 The individual sections describing Spring Modulith features will refer to the individual artifacts that are needed to make use of the feature.
 For an overview about all modules available, have a look at xref:appendix.adoc#artifacts[Spring Modulith modules].
