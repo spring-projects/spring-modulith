@@ -1,0 +1,10 @@
+{
+  "properties": [
+    {
+      "name": "spring.modulith.events.neo4j.event-index.enabled",
+      "type": "java.lang.boolean",
+      "description": "Whether to initialize the index on the Neo4j event publication event hash property.",
+      "defaultValue": "false"
+    }
+  ]
+}
