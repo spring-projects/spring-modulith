@@ -133,7 +133,11 @@ As the needs for that kind of housekeeping strongly vary from application to app
 That API is available through the `spring-modulith-events-api` artifact, that you can add to your application:
 
 .Using Spring Modulith Events API artifact
-[source, xml, subs="+attributes"]
+[tabs]
+======
+Maven::
++
+[source, xml, subs="+attributes", role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -141,6 +145,16 @@ That API is available through the `spring-modulith-events-api` artifact, that yo
   <version>{projectVersion}</version>
 </dependency>
 ----
+
+Gradle::
++
+[source, subs="+attributes", role="secondary"]
+----
+dependencies {
+  implementation 'org.springframework.modulith:spring-modulith-events-api:{projectVersion}'
+}
+----
+======
 
 This artifact contains two primary abstractions, that are available to application code as Spring Beans:
 
