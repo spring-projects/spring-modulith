@@ -19,6 +19,7 @@
 		<module>spring-modulith-starter-jdbc</module>
 		<module>spring-modulith-starter-jpa</module>
 		<module>spring-modulith-starter-mongodb</module>
+		<module>spring-modulith-starter-neo4j</module>
 		<module>spring-modulith-starter-test</module>
 	</modules>
 
