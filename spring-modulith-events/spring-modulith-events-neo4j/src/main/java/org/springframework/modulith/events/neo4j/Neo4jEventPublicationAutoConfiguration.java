@@ -12,14 +12,19 @@ import org.springframework.modulith.events.config.EventPublicationConfigurationE
 import org.springframework.modulith.events.core.EventSerializer;
 
 /**
+ * Auto-configuration to register a {@link Neo4jEventPublicationRepository}, a default {@link Configuration} and a
+ * {@link Neo4jIndexInitializer} if enabled.
+ *
  * @author Gerrit Meier
+ * @since 1.1
  */
 @AutoConfiguration
 @AutoConfigureBefore(EventPublicationAutoConfiguration.class)
-public class Neo4jEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
+class Neo4jEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean
-	Neo4jEventPublicationRepository neo4jEventPublicationRepository(Neo4jClient neo4jClient, Configuration cypherDslConfiguration, EventSerializer eventSerializer) {
+	Neo4jEventPublicationRepository neo4jEventPublicationRepository(Neo4jClient neo4jClient,
+			Configuration cypherDslConfiguration, EventSerializer eventSerializer) {
 		return new Neo4jEventPublicationRepository(neo4jClient, cypherDslConfiguration, eventSerializer);
 	}
 

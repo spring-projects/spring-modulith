@@ -1,4 +1,23 @@
+/*
+ * Copyright 2023 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.modulith.events.neo4j;
+
+import static org.assertj.core.api.Assertions.*;
+
+import java.util.Optional;
 
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -20,34 +39,28 @@ import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.utility.DockerImageName;
 
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-
 /**
  * @author Gerrit Meier
  */
-public class Neo4jIndexInitializerTest {
+class Neo4jIndexInitializerTest {
 
-	@ImportAutoConfiguration({Neo4jEventPublicationAutoConfiguration.class, TestBase.Config.class})
+	@ImportAutoConfiguration({ Neo4jEventPublicationAutoConfiguration.class, TestBase.Config.class })
 	@Testcontainers(disabledWithoutDocker = true)
 	@ContextConfiguration(classes = TestApplication.class)
 	static class TestBase {
 
-		@Container
-		private static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
-			.withRandomPassword();
+		@Container private static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
+				.withRandomPassword();
 
-		@MockBean
-		EventSerializer eventSerializer;
-
+		@MockBean EventSerializer eventSerializer;
 
 		@Configuration
 		static class Config {
 
 			@Bean
 			Driver driver() {
-				return GraphDatabase.driver(neo4jContainer.getBoltUrl(), AuthTokens.basic("neo4j", neo4jContainer.getAdminPassword()));
+				return GraphDatabase.driver(neo4jContainer.getBoltUrl(),
+						AuthTokens.basic("neo4j", neo4jContainer.getAdminPassword()));
 			}
 		}
 	}
@@ -55,11 +68,9 @@ public class Neo4jIndexInitializerTest {
 	@Nested
 	@DataNeo4jTest(properties = "spring.modulith.events.neo4j.event-index.enabled=true")
 	class WithIndexEnabled extends TestBase {
-		@Autowired
-		Neo4jClient neo4jClient;
 
-		@Autowired
-		Optional<Neo4jIndexInitializer> neo4jIndexInitializer;
+		@Autowired Neo4jClient neo4jClient;
+		@Autowired Optional<Neo4jIndexInitializer> neo4jIndexInitializer;
 
 		@Test
 		void indexInitializerBeanIsPresent() {
@@ -69,19 +80,17 @@ public class Neo4jIndexInitializerTest {
 		@Test
 		void indexWasCreated() {
 			assertThat(neo4jClient.query("SHOW INDEX YIELD name")
-				.fetchAs(String.class)
-				.all()).contains("eventHashIndex");
+					.fetchAs(String.class)
+					.all()).contains("eventHashIndex");
 		}
 	}
 
 	@Nested
 	@DataNeo4jTest(properties = "spring.modulith.events.neo4j.event-index.enabled=false")
 	class WithoutIndexEnabled extends TestBase {
-		@Autowired
-		Neo4jClient neo4jClient;
 
-		@Autowired
-		Optional<Neo4jIndexInitializer> neo4jIndexInitializer;
+		@Autowired Neo4jClient neo4jClient;
+		@Autowired Optional<Neo4jIndexInitializer> neo4jIndexInitializer;
 
 		@Test
 		void indexInitializerBeanIsNotPresent() {
@@ -91,9 +100,8 @@ public class Neo4jIndexInitializerTest {
 		@Test
 		void indexWasNotCreated() {
 			assertThat(neo4jClient.query("SHOW INDEX YIELD name")
-				.fetchAs(String.class)
-				.all()).doesNotContain("eventHashIndex");
+					.fetchAs(String.class)
+					.all()).doesNotContain("eventHashIndex");
 		}
 	}
-
 }

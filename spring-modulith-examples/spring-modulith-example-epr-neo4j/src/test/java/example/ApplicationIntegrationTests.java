@@ -17,6 +17,9 @@ package example;
 
 import example.inventory.InventoryUpdated;
 import example.order.OrderManagement;
+
+import java.util.Collection;
+
 import org.junit.jupiter.api.Test;
 import org.neo4j.cypherdsl.core.renderer.Configuration;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
@@ -34,8 +37,6 @@ import org.springframework.modulith.test.Scenario;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.util.Collection;
-
 /**
  * @author Oliver Drotbohm
  * @author Gerrit Meier
@@ -46,7 +47,7 @@ import java.util.Collection;
 class ApplicationIntegrationTests {
 
 	@TestConfiguration
-	static class MongoDbInfrastructureConfiguration {
+	static class InfrastructureConfiguration {
 
 		@Bean
 		@ServiceConnection
@@ -55,12 +56,12 @@ class ApplicationIntegrationTests {
 		}
 
 		@Bean
-		public Driver driver(Neo4jContainer<?> container) {
+		Driver driver(Neo4jContainer<?> container) {
 			return GraphDatabase.driver(container.getBoltUrl(), AuthTokens.basic("neo4j", container.getAdminPassword()));
 		}
 
 		@Bean
-		public Configuration cypherDslConfiguration() {
+		Configuration cypherDslConfiguration() {
 			return Configuration.newConfig().withDialect(Dialect.NEO4J_5).build();
 		}
 	}
