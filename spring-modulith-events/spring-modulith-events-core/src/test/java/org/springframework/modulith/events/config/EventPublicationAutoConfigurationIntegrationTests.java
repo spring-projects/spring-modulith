@@ -35,6 +35,8 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.modulith.events.CompletedEventPublications;
+import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncPropertiesDefaulter;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
@@ -123,6 +125,16 @@ class EventPublicationAutoConfigurationIntegrationTests {
 
 					assertThat(ReflectionTestUtils.getField(registry, "clock")).isSameAs(clock);
 				});
+	}
+
+	@Test // GH-294
+	void exposesCompletedAndIncompleteEventPublications() {
+
+		basicSetup().run(context -> {
+			assertThat(context)
+					.hasSingleBean(CompletedEventPublications.class)
+					.hasSingleBean(IncompleteEventPublications.class);
+		});
 	}
 
 	private <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,
