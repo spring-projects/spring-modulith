@@ -15,15 +15,25 @@
  */
 package org.springframework.modulith.events.support;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
+
+import lombok.AllArgsConstructor;
 
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.context.event.EventListenerMethodProcessor;
+import org.springframework.core.ResolvableType;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
  * Unit tests for {@link PersistentApplicationEventMulticaster}.
@@ -60,5 +70,40 @@ class PersistentApplicationEventMulticasterUnitTests {
 		multicaster.afterSingletonsInstantiated();
 
 		verify(registry).findIncompletePublications();
+	}
+
+	@Test // GH-277
+	void honorsListenerCondition() throws Exception {
+
+		try (var ctx = new AnnotationConfigApplicationContext()) {
+
+			ctx.addBeanFactoryPostProcessor(new EventListenerMethodProcessor());
+			ctx.registerBean("applicationEventMulticaster", ApplicationEventMulticaster.class, () -> multicaster);
+			ctx.registerBean("conditionalListener", ConditionalListener.class);
+			ctx.refresh();
+
+			assertListenerSelected(new SampleEvent(true), true);
+			assertListenerSelected(new SampleEvent(false), false);
+		}
+	}
+
+	private void assertListenerSelected(SampleEvent event, boolean expected) {
+
+		var listeners = multicaster.getApplicationListeners(new PayloadApplicationEvent<>(this, event),
+				ResolvableType.forClass(event.getClass()));
+
+		assertThat(listeners).hasSize(expected ? 1 : 0);
+	}
+
+	@Component
+	static class ConditionalListener {
+
+		@TransactionalEventListener(condition = "#event.supported")
+		void on(SampleEvent event) {}
+	}
+
+	@AllArgsConstructor
+	static class SampleEvent {
+		public boolean supported;
 	}
 }
