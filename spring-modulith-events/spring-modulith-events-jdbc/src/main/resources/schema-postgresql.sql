@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS event_publication
   listener_id      TEXT NOT NULL,
   event_type       TEXT NOT NULL,
   serialized_event TEXT NOT NULL,
-  publication_date TIMESTAMP WITH TIME ZONE NOT NULL,
-  completion_date  TIMESTAMP WITH TIME ZONE,
+  publication_date TIMESTAMP NOT NULL,
+  completion_date  TIMESTAMP,
   PRIMARY KEY (id)
 )
