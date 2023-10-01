@@ -15,11 +15,11 @@
  */
 package example.inventory;
 
+import example.order.Order;
 import example.order.OrderCompleted;
+import example.order.internal.OrderInternalA;
 import lombok.RequiredArgsConstructor;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.modulith.ApplicationModuleListener;
 import org.springframework.stereotype.Service;
 
@@ -30,22 +30,12 @@ import org.springframework.stereotype.Service;
  */
 @Service
 @RequiredArgsConstructor
-class InventoryManagement {
-
-	private static final Logger LOG = LoggerFactory.getLogger(InventoryManagement.class);
-
-	private final InventoryInternal dependency;
+public class InventoryManagement {
 
 	@ApplicationModuleListener
-	void on(OrderCompleted event) throws InterruptedException {
-
-		var orderId = event.orderId();
-
-		LOG.info("Received order completion for {}.", orderId);
-
-		// Simulate busy work
-		Thread.sleep(1000);
-
-		LOG.info("Finished order completion for {}.", orderId);
+	void on(OrderCompleted event) {
+		OrderInternalA orderInternal = new OrderInternalA();
+		new Order();
+		// ...
 	}
 }

@@ -24,4 +24,8 @@ import org.springframework.stereotype.Component;
  * @author Oliver Drotbohm
  */
 @Component
-public class OrderInternal {}
+public class OrderInternalA {
+    public void doSomething() {
+        //...
+    }
+}
