@@ -15,7 +15,8 @@
  */
 package example.order;
 
-import example.order.internal.OrderInternal;
+import example.inventory.InventoryManagement;
+import example.order.internal.OrderInternalA;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -31,10 +32,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class OrderManagement {
 
 	private final @NonNull ApplicationEventPublisher events;
-	private final @NonNull OrderInternal dependency;
+//	private final @NonNull OrderInternalA dependency;
 
 	@Transactional
 	public void complete(Order order) {
+//		new InventoryManagement();
 		events.publishEvent(new OrderCompleted(order.getId()));
 	}
 }
