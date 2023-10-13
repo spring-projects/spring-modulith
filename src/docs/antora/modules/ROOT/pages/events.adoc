@@ -7,8 +7,11 @@ To keep application modules as decoupled as possible from each other, their prim
 This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see xref:testing.adoc[Integration Testing Application Modules]).
 
 Often we will find application components defined like this:
-
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Service
 @RequiredArgsConstructor
@@ -26,6 +29,20 @@ public class OrderManagement {
   }
 }
 ----
+Kotlin::
++
+[source, java, role="secondary"]
+----
+@Service
+class OrderManagement(val inventory: InventoryManagement) {
+
+  @Transactional
+  fun complete(order: Order) {
+    inventory.updateStockFor(order)
+  }
+}
+----
+======
 
 The `complete(…)` method creates functional gravity in the sense that it attracts related functionality and thus interaction with Spring beans defined in other application modules.
 This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see xref:testing.adoc#efferent-dependencies[Dealing with Efferent Dependencies]).
@@ -34,7 +51,11 @@ It also means that we will have to touch the class whenever we would like to int
 We can change the application module interaction as follows:
 
 .Publishing an application event via Spring's `ApplicationEventPublisher`
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Service
 @RequiredArgsConstructor
@@ -53,6 +74,21 @@ public class OrderManagement {
 }
 ----
 
+Kotlin::
++
+[source, java, role="secondary"]
+----
+@Service
+class OrderManagement(val events: ApplicationEventPublisher, val dependency: OrderInternal) {
+  
+  @Transactional
+  fun complete(order: Order) {
+    events.publishEvent(OrderCompleted(order.id))
+  }
+}
+----
+======
+
 Note, how, instead of depending on the other application module's Spring bean, we use Spring's `ApplicationEventPublisher` to publish a domain event, once we have completed the state transitions on the primary aggregate.
 For a more aggregate-driven approach to event publication, see https://docs.spring.io/spring-data/data-commons/docs/current/reference/html/#core.domain-events[Spring Data's application event publication mechanism] for details.
 As event publication happens synchronously by default, the transactional semantics of the overall arrangement stay the same as in the example above.
@@ -61,7 +97,11 @@ Both for the good, as we get to a very simple consistency model (either both the
 A different way of approaching this is by moving the event consumption to asynchronous handling at transaction commit and treat secondary functionality exactly as that:
 
 .An async, transactional event listener
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Component
 class InventoryManagement {
@@ -71,7 +111,19 @@ class InventoryManagement {
   void on(OrderCompleted event) { /* … */ }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Component
+class InventoryManagement {
 
+  @Async
+  @TransactionalEventListener
+  fun on(event: OrderCompleted) { /* … */ }
+}
+----
+======
 This now effectively decouples the original transaction from the execution of the listener.
 While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
 Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
@@ -82,7 +134,11 @@ Even worse, that doesn't even fully work, as the system might fail before the me
 To run a transactional event listener in a transaction itself, it would need to be annotated with `@Transactional` in turn.
 
 .An async, transactional event listener running in a transaction itself
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Component
 class InventoryManagement {
@@ -93,11 +149,29 @@ class InventoryManagement {
   void on(OrderCompleted event) { /* … */ }
 }
 ----
+Kotlin::
++
+[source, java, role="secondary"]
+----
+@Component
+class InventoryManagement {
+
+  @Async
+  @Transactional(propagation = Propagation.REQUIRES_NEW)
+  @TransactionalEventListener
+  fun on(event: OrderCompleted) { /* … */ }
+}
+----
+======
 
 To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleListener` to shortcut the declaration
 
 .An application module listener
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Component
 class InventoryManagement {
@@ -106,6 +180,18 @@ class InventoryManagement {
   void on(OrderCompleted event) { /* … */ }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Component
+class InventoryManagement {
+
+  @ApplicationModuleListener
+  fun on(event: OrderCompleted) { /* … */ }
+}
+----
+======
 
 [[publication-registry]]
 == The Event Publication Registry
@@ -257,7 +343,11 @@ To define a custom routing key via the `@Externalized` annotations, a pattern of
 The key can be a SpEL expression which will get the event instance configured as root object.
 
 .Defining a dynamic routing key via SpEL expression
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Externalized("customer-created::#{#this.getLastname()}") // <2>
 class CustomerCreated {
@@ -267,6 +357,18 @@ class CustomerCreated {
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Externalized("customer-created::#{#this.getLastname()}") // <2>
+class CustomerCreated {
+  fun getLastname(): String { // <1>
+    // …
+  }
+}
+----
+======
 
 The `CustomerCreated` event exposes the lastname of the customer via an accessor method.
 That method is then used via the ``&#35;this.getLastname()`` expression in key expression following the `::` delimiter of the target declaration.
@@ -274,10 +376,21 @@ That method is then used via the ``&#35;this.getLastname()`` expression in key e
 If the key calculation becomes more involved, it is advisable to rather delegate that into a Spring bean that takes the event as argument:
 
 .Invoking a Spring bean to calculate a routing key
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Externalized("…::#{@beanName.someMethod(#this)}")
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Externalized("…::#{@beanName.someMethod(#this)}")
+----
+======
 
 [[externalization.api]]
 === Programmatic Event Externalization Configuration
@@ -286,7 +399,11 @@ If the key calculation becomes more involved, it is advisable to rather delegate
 The `spring-modulith-events-api` artifact contains `EventExternalizationConfiguration` that allows developers to customize all of the above mentioned steps.
 
 .Programmatically configuring event externalization
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Configuration
 class ExternalizationConfiguration {
@@ -302,6 +419,26 @@ class ExternalizationConfiguration {
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Configuration
+class ExternalizationConfiguration {
+
+  @Bean
+  fun eventExternalizationConfiguration(): EventExternalizationConfiguration {
+
+        EventExternalizationConfiguration.externalizing()                 // <1>
+        .select(EventExternalizationConfiguration.annotatedAsExternalized()) // <2>
+        .mapping(SomeEvent::class, it -> …)                                   // <3>
+        .routeKey(WithKeyProperty::class, WithKeyProperty::getKey)            // <4>
+        .build()
+  }
+}
+----
+======
+
 <1> We start by creating a default instance of `EventExternalizationConfiguration`.
 <2> We customize the event selection by calling one of the `select(…)` methods on the `Selector` instance returned by the previous call.
 This step fundamentally disables the application base package filter as we only look for the annotation now.
@@ -321,7 +458,11 @@ For a more holistic approach on testing modules that use <<events.aml, `@Applica
 Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `PublishedEvents` instance injected into the test method to verify a particular set of events has been published during the course of the business operation under test.
 
 .Event-based integration testing of the application module arrangement
-[source, java, subs="quotes"]
+[tabs]
+======
+Java::
++
+[source, java, subs="quotes", role="primary"]
 ----
 @ApplicationModuleTest
 class OrderIntegrationTests {
@@ -337,13 +478,35 @@ class OrderIntegrationTests {
   }
 }
 ----
+Kotlin::
++
+[source, java, subs="quotes", role="secondary"]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  @Test
+  fun someTestMethod(events: PublishedEvents events) {
+
+    // …
+    var matchingMapped = events.ofType(OrderCompleted::class)
+      .matching(OrderCompleted::getOrderId, reference.getId())
+    assertThat(matchingMapped).hasSize(1)
+  }
+}
+----
+======
 
 Note, how `PublishedEvents` exposes API to select events matching a certain criteria.
 The verification is concluded by an AssertJ assertion that verifies the number of elements expected.
 If you are using AssertJ for those assertions anyway, you can also use `AssertablePublishedEvents` as test method parameter type and use the fluent assertion APIs provided through that.
 
 .Using `AssertablePublishedEvents` to verify event publications
-[source, java, subs="quotes"]
+[tabs]
+======
+Java::
++
+[source, java, subs="quotes", role="primary"]
 ----
 @ApplicationModuleTest
 class OrderIntegrationTests {
@@ -358,6 +521,24 @@ class OrderIntegrationTests {
   }
 }
 ----
+Kotlin::
++
+[source, java, subs="quotes", role="secondary"]
+----
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  @Test
+  fun someTestMethod(events: AssertablePublishedEvents) {
+
+    // …
+    assertThat(events)
+      .contains(OrderCompleted::class)
+      .matching(OrderCompleted::getOrderId, reference.getId())
+  }
+}
+----
+======
 
 Note, how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
 

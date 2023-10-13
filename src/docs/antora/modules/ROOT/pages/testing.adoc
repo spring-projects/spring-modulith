@@ -5,7 +5,11 @@ Spring Modulith allows to run integration tests bootstrapping individual applica
 To achieve this, place JUnit test class in an application module package or any sub-package of that and annotate it with `@ApplicationModuleTest`:
 
 .A application module integration test class
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 package example.order;
 
@@ -15,6 +19,19 @@ class OrderIntegrationTests {
   // Individual test cases go here
 }
 ----
+Kotlin::
++
+[source, kortlin, role="secondary"]
+----
+package example.order
+
+@ApplicationModuleTest
+class OrderIntegrationTests {
+
+  // Individual test cases go here
+}
+----
+======
 
 This will run your integration test similar to what `@SpringBootTest` would have achieved but with the bootstrap actually limited to the application module the test resides in.
 If you configure the log level for `org.springframework.modulith` to `DEBUG`, you will see detailed information about how the test execution customizes the Spring Boot bootstrap:
@@ -64,7 +81,11 @@ If those contain bean references that cross module boundaries, the bootstrap wil
 While a natural reaction might be to expand the scope of the application modules included, it is usually a better option to mock the target beans.
 
 .Mocking Spring bean dependencies in other application modules
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @ApplicationModuleTest
 class InventoryIntegrationTests {
@@ -72,7 +93,17 @@ class InventoryIntegrationTests {
   @MockBean SomeOtherComponent someOtherComponent;
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@ApplicationModuleTest
+class InventoryIntegrationTests {
 
+  @MockBean SomeOtherComponent someOtherComponent
+}
+----
+======
 Spring Boot will create bean definitions and instances for the types defined as `@MockBean` and add them to the `ApplicationContext` bootstrapped for the test run.
 
 If you find your application module depending on too many beans of other ones, that is usually a sign of high coupling between them.
@@ -88,7 +119,11 @@ Also, it requires dealing with quite a few infrastructure components: `Transacti
 To ease the definition of application module integration tests, Spring Modulith provides the `Scenario` abstraction that can be used by declaring it as test method parameter in tests declared as `@ApplicationModuleTest`.
 
 .Using the `Scenario` API in a JUnit 5 test
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @ApplicationModuleTest
 class SomeApplicationModuleTest {
@@ -99,6 +134,20 @@ class SomeApplicationModuleTest {
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@ApplicationModuleTest
+class SomeApplicationModuleTest {
+
+  @Test
+  fun someModuleIntegrationTest(scenario: Scenario) {
+    // Use the Scenario API to define your integration test
+  }
+}
+----
+======
 
 The test definition itself usually follows the following skeleton:
 
@@ -110,7 +159,11 @@ The test definition itself usually follows the following skeleton:
 `Scenario` exposes API to define these steps and guide you through the definition.
 
 .Defining a stimulus as starting point of the `Scenario`
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 // Start with an event publication
 scenario.publish(new MyApplicationEvent(…)).…
@@ -118,6 +171,17 @@ scenario.publish(new MyApplicationEvent(…)).…
 // Start with a bean invocation
 scenario.stimulate(() -> someBean.someMethod(…)).…
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+// Start with an event publication
+scenario.publish(MyApplicationEvent(…)).…
+
+// Start with a bean invocation
+scenario.stimulate(() -> someBean.someMethod(…)).…
+----
+======
 
 Both the event publication and bean invocation will happen within a transaction callback to make sure the given event or any ones published during the bean invocation will be delivered to transactional event listeners.
 Note, that this will require a *new* transaction to be started, no matter whether the test case is already running inside a transaction or not.
@@ -130,12 +194,25 @@ The setup phase will be concluded by defining the actual expectation of the outc
 This can be an event of a particular type in turn, optionally further constraint by matchers:
 
 .Expecting an event being published as operation result
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 ….andWaitForEventOfType(SomeOtherEvent.class)
  .matching(event -> …) // Use some predicate here
  .…
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+….andWaitForEventOfType(SomeOtherEvent.class)
+ .matching(event -> …) // Use some predicate here
+ .…
+----
+======
 
 These lines set up a completion criteria that the eventual execution will wait for to proceed.
 In other words, the example above will cause the execution to eventually block until either the default timeout is reached or a `SomeOtherEvent` is published that matches the predicate defined.
@@ -143,7 +220,11 @@ In other words, the example above will cause the execution to eventually block u
 The terminal operations to execute the event-based `Scenario` are named `….toArrive…()` and allow to optionally access the expected event published, or the result object of the bean invocation defined in the original stimulus.
 
 .Triggering the verification
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 // Executes the scenario
 ….toArrive(…)
@@ -151,28 +232,66 @@ The terminal operations to execute the event-based `Scenario` are named `….toA
 // Execute and define assertions on the event received
 ….toArriveAndVerify(event -> …)
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+// Executes the scenario
+….toArrive(…)
+
+// Execute and define assertions on the event received
+….toArriveAndVerify(event -> …)
+----
+======
 
 The choice of method names might look a bit weird when looking at the steps individually but they actually read quite fluent when combined.
 
 .A complete `Scenario` definition
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
   .andWaitForEventOfType(SomeOtherEvent.class)
   .matching(event -> …)
   .toArriveAndVerify(event -> …);
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+scenario.publish(new MyApplicationEvent(…))
+  .andWaitForEventOfType(SomeOtherEvent::class)
+  .matching(event -> …)
+  .toArriveAndVerify(event -> …)
+----
+======
 
 Alternatively to an event publication acting as expected completion signal, we can also inspect the state of the application module by invoking a method on one of the components exposed.
 The scenario would then rather look like this:
 
 .Expecting a state change
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
   .andWaitForStateChange(() -> someBean.someMethod(…)))
   .andVerify(result -> …);
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+scenario.publish(new MyApplicationEvent(…))
+  .andWaitForStateChange(() -> someBean.someMethod(…)))
+  .andVerify(result -> …)
+----
+======
 
 The `result` handed into the `….andVerify(…)` method will be the value returned by the method invocation to detect the state change.
 By default, non-`null` values and non-empty ``Optional``s will be considered a conclusive state change.
@@ -184,7 +303,11 @@ This can be tweaked by using the `….andWaitForStateChange(…, Predicate)` ove
 To customize the execution of an individual scenario, call the `….customize(…)` method in the setup chain of the `Scenario`:
 
 .Customizing a `Scenario` execution
-[source, java, subs="+quotes"]
+[tabs]
+======
+Java::
++
+[source, java, subs="+quotes", role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
   **.customize(it -> it.atMost(Duration.ofSeconds(2)))**
@@ -192,11 +315,26 @@ scenario.publish(new MyApplicationEvent(…))
   .matching(event -> …)
   .toArriveAndVerify(event -> …);
 ----
+Kotlin::
++
+[source, kotlin, subs="+quotes", role="secondary"]
+----
+scenario.publish(MyApplicationEvent(…))
+  **.customize(it -> it.atMost(Duration.ofSeconds(2)))**
+  .andWaitForEventOfType(SomeOtherEvent::class)
+  .matching(event -> …)
+  .toArriveAndVerify(event -> …)
+----
+======
 
 To globally customize all `Scenario` instances of a test class, implement a `ScenarioCustomizer` and register it as JUnit extension.
 
 .Registering a `ScenarioCustomizer`
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @ExtendWith(MyCustomizer.class)
 class MyTests {
@@ -215,3 +353,25 @@ class MyTests {
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@ExtendWith(MyCustomizer::class)
+class MyTests {
+
+  @Test
+  fun myTestCase(scenario : Scenario) {
+    // scenario will be pre-customized with logic defined in MyCustomizer
+  }
+
+  class MyCustomizer : ScenarioCustomizer {
+
+    @Override
+    override fun getDefaultCustomizer(method : Method, context : ApplicationContext) : Function<ConditionFactory, ConditionFactory> {
+      return it -> …
+    }
+  }
+}
+----
+======

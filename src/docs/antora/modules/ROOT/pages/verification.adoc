@@ -4,11 +4,21 @@
 
 We can verify whether our code arrangement adheres to the intended constraints by calling the `….verify()` method on our `ApplicationModules` instance:
 
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 ApplicationModules.of(Application.class).verify();
 ----
-
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+ApplicationModules.of(Application::class).verify()
+----
+======
 The verification includes the following rules:
 
 * _No cycles on the application module level_ -- the dependencies between modules have to form directed, acyclic graph.
