@@ -74,7 +74,11 @@ ComponentB --> ComponentA
 While developers could of course define the execution order via Spring's standard `@Order` annotation or `Ordered` interface, Spring Modulith provides an `ApplicationModuleInitializer` interface for beans to be run on application startup.
 The execution order of those beans will automatically follow the application module dependency structure.
 
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Component
 class MyInitializer implements ApplicationModuleInitializer {
@@ -85,5 +89,18 @@ class MyInitializer implements ApplicationModuleInitializer {
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Component
+class MyInitializer : ApplicationModuleInitializer {
 
+  
+  override fun initialize() {
+    // Initialization code goes here
+  }
+}
+----
+======
 Note, that the `ApplicationModuleInitializer` beans will only be invoked if the `spring-modulith-runtime` JAR is on the classpath (see xref:runtime.adoc#setup[Setting up Runtime Support for Application Modules]) as that pulls in the dependencies that are needed to topologically sort the initializers according to the application module structure.

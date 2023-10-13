@@ -78,13 +78,27 @@ In this case, the Java compiler is not of much use to prevent these illegal refe
 A module can opt into declaring its allowed dependencies by using the `@ApplicationModule` annotation on the `package-info.java` type.
 
 .Inventory explicitly configuring module dependencies
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary", chomp="none"]
 ----
 @org.springframework.modulith.ApplicationModule(
   allowedDependencies = "order"
 )
 package example.inventory;
 ----
+Kotlin::
++
+[source, kotlin, role="secondary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order"
+)
+package example.inventory
+----
+======
 
 In this case code within the __inventory__ module was only allowed to refer to code in the __order__ module (and code not assigned to any module in the first place).
 Find out about how to monitor that in xref:verification.adoc[Verifying Application Module Structure].
@@ -96,19 +110,39 @@ Spring Moduliths allows to inspect a codebase to derive an application module mo
 The `spring-modulith-core` artifact contains `ApplicationModules` that can be pointed to a Spring Boot application class:
 
 .Creating an application module model
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 var modules = ApplicationModules.of(Application.class);
 ----
-
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+var modules = ApplicationModules.of(Application::class)
+----
+======
 To get an impression about what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
 
 .Writing the application module arranagement to the console
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 modules.forEach(System.out::println);
 ----
-
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+modules.forEach(println(it))
+----
+======
 .The console output of our application module arrangement
 [source]
 ----
@@ -154,23 +188,48 @@ icon:cubes[] Example
 ----
 
 .`package-info.java` in `example.order.spi`
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary", chomp="none"]
 ----
 @org.springframework.modulith.NamedInterface("spi")
 package example.order.spi;
 ----
-
+Kotlin::
++
+[source, kotlin, role="secondary", chomp="none"]
+----
+@org.springframework.modulith.NamedInterface("spi")
+package example.order.spi
+----
+======
 The effect of that declaration is two fold: first, code in other application modules is allowed to refer to `SomeSpiInterface`.
 Application modules are able to refer to the named interface in explicit dependency declarations.
 Assume the __inventory__ module was making use of that, it could refer to the above declared named interface like this:
 
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary", chomp="none"]
 ----
 @org.springframework.modulith.ApplicationModule(
   allowedDependencies = "order::spi"
 )
 package example.inventory;
 ----
+Kotlin::
++
+[source, kotlin, role="secondary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order::spi"
+)
+package example.inventory
+----
+======
 
 Note how we concatenate the named interface's name `spi` via the double colon `::`.
 In this setup, code in __inventory__ would be allowed to depend on `SomeSpiInterface` and other code residing in the `order.spi` interface, but not on `OrderManagement` for example.
@@ -185,7 +244,11 @@ You can then inspect the packages residing within that and select the ones to be
 
 Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:
 
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 package example;
 
@@ -197,6 +260,20 @@ class CustomApplicationModuleDetectionStrategy implements ApplicationModuleDetec
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+package example
+
+class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
+
+  override fun getModuleBasePackages(basePackage: JavaPackage): Stream<JavaPackage> {
+    // Your module detection goes here
+  }
+}
+----
+======
 
 This class needs to be registered in `META-INF/spring.factories` as follows:
 

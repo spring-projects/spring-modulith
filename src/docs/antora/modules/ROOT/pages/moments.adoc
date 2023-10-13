@@ -36,7 +36,11 @@ The dependency added to the project's classpath causes the following things in y
 
 By default, Moments uses a `Clock.systemUTC()` instance. To customize this, declare a bean of type `Clock`.
 
-[source, java]
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
 ----
 @Configuration
 class MyConfiguration {
@@ -47,6 +51,20 @@ class MyConfiguration {
   }
 }
 ----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+@Configuration
+class MyConfiguration {
+
+  @Bean
+  fun myCustomClock(): Clock {
+    // Create a custom Clock here
+  }
+}
+----
+======
 
 Moments exposes the following application properties for advanced customization:
 
