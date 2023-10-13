@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -227,7 +228,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		return Arrays.stream(annotation.extraIncludes()) //
 				.map(modules::getModuleByName) //
-				.flatMap(it -> it.map(Stream::of).orElseGet(Stream::empty));
+				.flatMap(Optional::stream);
 	}
 
 	private static record Key(String moduleBasePackage, ApplicationModuleTest annotation) {}
