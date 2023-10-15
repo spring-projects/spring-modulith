@@ -17,6 +17,7 @@ package com.acme.myproject;
 
 import static org.assertj.core.api.Assertions.*;
 
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependencies;
@@ -56,7 +57,22 @@ class ModulithTest {
 
 	@Test
 	void verifyModulesWithoutInvalid() {
-		ApplicationModules.of(Application.class, DEFAULT_EXCLUSIONS.or(Filters.withoutModule("invalid"))).verify();
+
+		assertThatExceptionOfType(Violations.class).isThrownBy(() -> {
+
+			ApplicationModules
+					.of(Application.class, DEFAULT_EXCLUSIONS.or(Filters.withoutModule("invalid")))
+					.verify();
+
+		}).satisfies(it -> {
+
+			assertThat(it.getMessages())
+					.hasSize(1)
+					.element(0, as(InstanceOfAssertFactories.STRING))
+					.contains("root:com.acme.myproject")
+					.contains(InternalComponentB.class.getName());
+		});
+
 	}
 
 	@Test

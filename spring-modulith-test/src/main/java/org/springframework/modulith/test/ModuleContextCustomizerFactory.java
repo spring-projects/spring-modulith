@@ -18,6 +18,7 @@ package org.springframework.modulith.test;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -191,14 +192,14 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	 * @since 1.1
 	 */
 	private static class ModuleTestExecutionBeanDefinitionSelector implements BeanDefinitionRegistryPostProcessor {
-		
+
 		private static final Logger LOGGER = LoggerFactory.getLogger(ModuleTestExecutionBeanDefinitionSelector.class);
 
 		private final ModuleTestExecution execution;
 
 		/**
 		 * Creates a new {@link ModuleTestExecutionBeanDefinitionSelector} for the given {@link ModuleTestExecution}.
-		 * 
+		 *
 		 * @param execution must not be {@literal null}.
 		 */
 		private ModuleTestExecutionBeanDefinitionSelector(ModuleTestExecution execution) {
@@ -208,7 +209,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			this.execution = execution;
 		}
 
-		/* 
+		/*
 		 * (non-Javadoc)
 		 * @see org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor#postProcessBeanDefinitionRegistry(org.springframework.beans.factory.support.BeanDefinitionRegistry)
 		 */
@@ -224,7 +225,8 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			for (String name : registry.getBeanDefinitionNames()) {
 
 				var type = factory.getType(name, false);
-				var module = modules.getModuleByType(type);
+				var module = modules.getModuleByType(type)
+						.filter(Predicate.not(ApplicationModule::isRootModule));
 
 				// Not a module type -> pass
 				if (module.isEmpty()) {
@@ -239,15 +241,17 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 						.filter(packagesIncludedInTestRun::contains).isPresent()) {
 					continue;
 				}
-				
-				LOGGER.trace("Dropping bean definition {} for type {} as it is not included in an application module to be bootstrapped!", name, type.getName());
+
+				LOGGER.trace(
+						"Dropping bean definition {} for type {} as it is not included in an application module to be bootstrapped!",
+						name, type.getName());
 
 				// Remove bean definition from bootstrap
 				registry.removeBeanDefinition(name);
 			}
 		}
 
-		/* 
+		/*
 		 * (non-Javadoc)
 		 * @see org.springframework.beans.factory.config.BeanFactoryPostProcessor#postProcessBeanFactory(org.springframework.beans.factory.config.ConfigurableListableBeanFactory)
 		 */

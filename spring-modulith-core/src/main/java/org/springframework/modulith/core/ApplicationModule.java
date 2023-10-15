@@ -317,6 +317,28 @@ public class ApplicationModule {
 				.reduce(Violations.NONE, Violations::and);
 	}
 
+	/**
+	 * Returns whether the module is considered a root one, i.e., it is an artificial one created for each base package
+	 * configured.
+	 * 
+	 * @return whether the module is considered a root one.
+	 * @since 1.1
+	 */
+	public boolean isRootModule() {
+		return false;
+	}
+
+	/**
+	 * Returns whether the module has a base package with the given name.
+	 *
+	 * @param candidate must not be {@literal null} or empty.
+	 * @return whether the module has a base package with the given name.
+	 * @since 1.1
+	 */
+	boolean hasBasePackage(String candidate) {
+		return basePackage.getName().equals(candidate);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
