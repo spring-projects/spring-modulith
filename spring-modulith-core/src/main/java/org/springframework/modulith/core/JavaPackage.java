@@ -23,11 +23,13 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
+import org.springframework.util.function.SingletonSupplier;
 
 import com.tngtech.archunit.base.DescribedIterable;
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -35,8 +37,6 @@ import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.HasModifiers;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
  * An abstraction of a Java package.
@@ -67,7 +67,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 		this.classes = classes;
 		this.packageClasses = classes.that(resideInAPackage(includeSubPackages ? name.concat("..") : name));
 		this.name = name;
-		this.directSubPackages = Suppliers.memoize(() -> packageClasses.stream() //
+		this.directSubPackages = SingletonSupplier.of(() -> packageClasses.stream() //
 				.map(it -> it.getPackageName()) //
 				.filter(it -> !it.equals(name)) //
 				.map(it -> extractDirectSubPackage(it)) //
