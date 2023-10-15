@@ -83,4 +83,13 @@ class ModuleUnitTest {
 				.<Class<?>> extracting(JavaClass::reflect)
 				.containsExactly(SampleAggregate.class);
 	}
+
+	@Test // GH-319, GH-326
+	void containsPackage() {
+
+		assertThat(module.containsPackage(packageName)).isTrue();
+		assertThat(module.containsPackage(packageName + ".foo")).isTrue();
+
+		assertThat(module.containsPackage(packageName + "foo")).isFalse();
+	}
 }
