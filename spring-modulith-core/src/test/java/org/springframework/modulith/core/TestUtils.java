@@ -17,16 +17,17 @@ package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 
+import java.util.function.Supplier;
+
 import org.jmolecules.ddd.annotation.AggregateRoot;
 import org.springframework.data.repository.Repository;
 import org.springframework.util.Assert;
+import org.springframework.util.function.SingletonSupplier;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
  * Utilities for testing.
@@ -35,13 +36,14 @@ import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
  */
 class TestUtils {
 
-	private static Supplier<JavaClasses> imported = Suppliers.memoize(() -> new ClassFileImporter() //
+	private static Supplier<JavaClasses> imported = SingletonSupplier.of(() -> new ClassFileImporter() //
 			.importPackagesOf(ApplicationModules.class, Repository.class, AggregateRoot.class));
 
 	private static DescribedPredicate<JavaClass> IS_MODULE_TYPE = JavaClass.Predicates
 			.resideInAPackage(ApplicationModules.class.getPackage().getName());
 
-	private static Supplier<Classes> classes = Suppliers.memoize(() -> Classes.of(imported.get()).that(IS_MODULE_TYPE));
+	private static Supplier<Classes> classes = SingletonSupplier
+			.of(() -> Classes.of(imported.get()).that(IS_MODULE_TYPE));
 
 	/**
 	 * Returns all {@link Classes} of this module.

@@ -17,6 +17,7 @@ package org.springframework.modulith.core;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -25,10 +26,9 @@ import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
+import org.springframework.util.function.SingletonSupplier;
 
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
  * Wrapper around {@link JavaClass} that allows creating additional formatted names.
@@ -106,7 +106,7 @@ public class FormatableType {
 		Assert.hasText(type, "Type must not be null or empty!");
 
 		this.type = type;
-		this.abbreviatedName = Suppliers.memoize(() -> {
+		this.abbreviatedName = SingletonSupplier.of(() -> {
 
 			String abbreviatedPackage = Stream //
 					.of(ClassUtils.getPackageName(type).split("\\.")) //

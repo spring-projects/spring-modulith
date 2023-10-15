@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -32,9 +33,7 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
-
-import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * @author Oliver Drotbohm
@@ -65,7 +64,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		this.extraIncludes = getExtraModules(annotation, modules).toList();
 
-		this.basePackages = Suppliers.memoize(() -> {
+		this.basePackages = SingletonSupplier.of(() -> {
 
 			var moduleBasePackages = module.getBootstrapBasePackages(modules, bootstrapMode.getDepth());
 			var sharedBasePackages = modules.getSharedModules().stream().map(it -> it.getBasePackage());
@@ -76,7 +75,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 			return Stream.concat(intermediate, sharedBasePackages).distinct().toList();
 		});
 
-		this.dependencies = Suppliers.memoize(() -> {
+		this.dependencies = SingletonSupplier.of(() -> {
 
 			var bootstrapDependencies = module.getBootstrapDependencies(modules,
 					bootstrapMode.getDepth());
@@ -88,7 +87,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		}
 	}
 
-	public static java.util.function.Supplier<ModuleTestExecution> of(Class<?> type) {
+	public static Supplier<ModuleTestExecution> of(Class<?> type) {
 
 		return () -> {
 

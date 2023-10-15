@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -38,6 +39,7 @@ import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.modulith.core.Types.SpringTypes;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
+import org.springframework.util.function.SingletonSupplier;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.Dependency;
@@ -48,8 +50,6 @@ import com.tngtech.archunit.core.domain.JavaField;
 import com.tngtech.archunit.core.domain.JavaMember;
 import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.SourceCodeLocation;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Supplier;
-import com.tngtech.archunit.thirdparty.com.google.common.base.Suppliers;
 
 /**
  * An application module.
@@ -89,11 +89,11 @@ public class ApplicationModule {
 		this.namedInterfaces = NamedInterfaces.discoverNamedInterfaces(basePackage);
 		this.useFullyQualifiedModuleNames = useFullyQualifiedModuleNames;
 
-		this.springBeans = Suppliers.memoize(() -> filterSpringBeans(basePackage));
-		this.aggregateRoots = Suppliers.memoize(() -> findAggregateRoots(basePackage));
-		this.valueTypes = Suppliers
-				.memoize(() -> findArchitecturallyEvidentType(ArchitecturallyEvidentType::isValueObject));
-		this.publishedEvents = Suppliers.memoize(() -> findPublishedEvents());
+		this.springBeans = SingletonSupplier.of(() -> filterSpringBeans(basePackage));
+		this.aggregateRoots = SingletonSupplier.of(() -> findAggregateRoots(basePackage));
+		this.valueTypes = SingletonSupplier
+				.of(() -> findArchitecturallyEvidentType(ArchitecturallyEvidentType::isValueObject));
+		this.publishedEvents = SingletonSupplier.of(() -> findPublishedEvents());
 	}
 
 	/**
@@ -417,7 +417,7 @@ public class ApplicationModule {
 	/**
 	 * Returns whether the {@link ApplicationModule} contains the package with the given name, which means the given
 	 * package is either the module's base package or a sub package of it.
-	 * 
+	 *
 	 * @param packageName must not be {@literal null} or empty.
 	 * @return whether the {@link ApplicationModule} contains the package with the given name.
 	 * @since 1.0.2
