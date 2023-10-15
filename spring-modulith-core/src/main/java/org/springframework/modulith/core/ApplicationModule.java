@@ -414,6 +414,24 @@ public class ApplicationModule {
 		return getType(candidate).isPresent();
 	}
 
+	/**
+	 * Returns whether the {@link ApplicationModule} contains the package with the given name, which means the given
+	 * package is either the module's base package or a sub package of it.
+	 * 
+	 * @param packageName must not be {@literal null} or empty.
+	 * @return whether the {@link ApplicationModule} contains the package with the given name.
+	 * @since 1.0.2
+	 */
+	boolean containsPackage(String packageName) {
+
+		Assert.hasText(packageName, "Package name must not be null or empty!");
+
+		var basePackageName = basePackage.getName();
+
+		return packageName.equals(basePackageName)
+				|| packageName.startsWith(basePackageName + ".");
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)

@@ -326,10 +326,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return getModuleByType(candidate.getName());
 	}
 
+	/**
+	 * Returns the {@link ApplicationModule} containing the given package.
+	 * 
+	 * @param name must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 */
 	public Optional<ApplicationModule> getModuleForPackage(String name) {
 
 		return modules.values().stream() //
-				.filter(it -> name.startsWith(it.getBasePackage().getName())) //
+				.filter(it -> it.containsPackage(name)) //
 				.findFirst();
 	}
 

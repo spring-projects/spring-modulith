@@ -16,11 +16,13 @@
 package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
@@ -82,5 +84,14 @@ class ModuleUnitTest {
 		assertThat(module.getAggregateRoots())
 				.<Class<?>> extracting(JavaClass::reflect)
 				.containsExactly(SampleAggregate.class);
+	}
+	
+	@Test // GH-319
+	void containsPackage() {	
+		
+		assertThat(module.containsPackage(packageName)).isTrue();
+		assertThat(module.containsPackage(packageName + ".foo")).isTrue();
+		
+		assertThat(module.containsPackage(packageName + "foo")).isFalse();
 	}
 }
