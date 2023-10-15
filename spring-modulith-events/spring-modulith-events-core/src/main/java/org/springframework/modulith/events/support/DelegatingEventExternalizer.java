@@ -17,7 +17,7 @@ package org.springframework.modulith.events.support;
 
 import java.util.function.BiConsumer;
 
-import org.springframework.modulith.ApplicationModuleListener;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.stereotype.Component;

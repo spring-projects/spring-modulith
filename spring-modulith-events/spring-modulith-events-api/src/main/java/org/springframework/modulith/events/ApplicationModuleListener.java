@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith;
+package org.springframework.modulith.events;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
@@ -38,8 +38,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * Registry to make sure that the event publication does not get lost in case of an application or listener failure.
  *
  * @author Oliver Drotbohm
- * @deprecated since, 1.1. Prefer {@code org.springframework.modulith.events.ApplicationModuleListener} in
- *             {@code spring-modulith-events-api}.
  * @see <a href="https://docs.spring.io/spring-modulith/reference/events.html#publication-registry">Spring Modulith
  *      Event Publication Registry - Reference Documentation</a>
  */
@@ -49,7 +47,6 @@ import org.springframework.transaction.event.TransactionalEventListener;
 @Documented
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
-@Deprecated(since = "1.1", forRemoval = true)
 public @interface ApplicationModuleListener {
 
 	/**

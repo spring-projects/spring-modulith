@@ -20,12 +20,6 @@
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-api</artifactId>
-			<version>${project.version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-events-api</artifactId>
 			<version>${project.version}</version>
 		</dependency>
