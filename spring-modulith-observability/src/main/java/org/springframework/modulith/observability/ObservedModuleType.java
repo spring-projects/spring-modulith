@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 
 import org.springframework.aop.TargetClassAware;
 import org.springframework.aop.framework.Advised;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
@@ -34,7 +35,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Oliver Drotbohm
  */
-public class ObservedModuleType {
+class ObservedModuleType {
 
 	private static Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
 
@@ -62,16 +63,20 @@ public class ObservedModuleType {
 	}
 
 	/**
-	 * Returns whether the type should be traced at all. Can be skipped for types not exposed by the module unless they
+	 * Returns whether the type should be observed at all. Can be skipped for types not exposed by the module unless they
 	 * listen to events of other modules.
 	 *
 	 * @return
 	 */
-	public boolean shouldBeTraced() {
+	public boolean shouldBeObserved() {
 
-		boolean isApiType = module.exposes(type.getType());
+		if (type.getType().isMetaAnnotatedWith(Configuration.class)) {
+			return false;
+		}
 
-		return type.isController() || listensToOtherModulesEvents() || isApiType;
+		return type.isController()
+				|| listensToOtherModulesEvents()
+				|| module.exposes(type.getType());
 	}
 
 	/**

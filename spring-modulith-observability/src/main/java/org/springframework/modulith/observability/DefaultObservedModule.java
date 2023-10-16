@@ -140,7 +140,7 @@ class DefaultObservedModule implements ObservedModule {
 				.map(SpringBean::toArchitecturallyEvidentType)
 				.findFirst()
 				.map(it -> new ObservedModuleType(modules, this, it))
-				.filter(ObservedModuleType::shouldBeTraced)
+				.filter(ObservedModuleType::shouldBeObserved)
 				.orElse(null);
 	}
 
