@@ -25,6 +25,7 @@ import brave.propagation.TraceContext;
 import io.micrometer.tracing.Tracer;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -42,8 +43,8 @@ class ModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static ModuleTracingBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
-			ObjectProvider<Tracer> tracer) {
-		return new ModuleTracingBeanPostProcessor(runtime, () -> tracer.getObject());
+			ObjectProvider<Tracer> tracer, ConfigurableListableBeanFactory factory) {
+		return new ModuleTracingBeanPostProcessor(runtime, () -> tracer.getObject(), factory);
 	}
 
 	@Bean
