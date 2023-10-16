@@ -159,8 +159,9 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Creates a new {@link ApplicationModules} relative to the given modulith type. Will inspect the {@link Modulith}
-	 * annotation on the class given for advanced customizations of the module setup.
+	 * Creates a new {@link ApplicationModules} relative to the given modulith type. Will inspect the
+	 * {@link org.springframework.modulith.Modulith} annotation on the class given for advanced customizations of the
+	 * module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -172,8 +173,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	/**
 	 * Creates a new {@link ApplicationModules} relative to the given modulith type, a
 	 * {@link ApplicationModuleDetectionStrategy} and a {@link DescribedPredicate} which types and packages to ignore.
-	 * Will inspect the {@link Modulith} and {@link Modulithic} annotations on the class given for advanced customizations
-	 * of the module setup.
+	 * Will inspect the {@link org.springframework.modulith.Modulith} and {@link org.springframework.modulith.Modulithic}
+	 * annotations on the class given for advanced customizations of the module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @param ignored must not be {@literal null}.
@@ -421,7 +422,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * Returns a {@link Comparator} that will sort objects based on their types' application module. In other words,
 	 * objects of types in more fundamental modules will be ordered before ones residing in downstream modules. For
 	 * example, if module A depends on B, objects of types residing in B will be ordered before ones in A. For objects
-	 * residing in the same module, standard Spring-based ordering (via {@link Order} or {@link Ordered}) will be applied.
+	 * residing in the same module, standard Spring-based ordering (via {@link org.springframework.core.annotation.Order}
+	 * or {@link org.springframework.core.Ordered}) will be applied.
 	 *
 	 * @return will never be {@literal null}.
 	 */

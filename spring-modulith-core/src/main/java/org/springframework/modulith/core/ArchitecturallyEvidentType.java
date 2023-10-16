@@ -56,8 +56,8 @@ public abstract class ArchitecturallyEvidentType {
 	}
 
 	/**
-	 * Creates a new {@link ArchitecturallyEvidentType} for the given {@link JavaType} and {@link Classes} of Spring
-	 * components.
+	 * Creates a new {@link ArchitecturallyEvidentType} for the given {@link com.tngtech.archunit.core.domain.JavaType}
+	 * and {@link Classes} of Spring components.
 	 *
 	 * @param type must not be {@literal null}.
 	 * @param beanTypes must not be {@literal null}.
