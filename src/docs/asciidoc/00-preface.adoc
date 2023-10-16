@@ -2,6 +2,13 @@
 [[preface]]
 = Preface
 
+[[preface.overview]]
+== Overview
+
+Spring Modulith is an opinionated toolkit to build domain-driven, modular applications with Spring Boot.
+In the same way that Spring Boot has an opinion on the technical arrangement of an application, Spring Modulith implements an opinion on how to structure an app functionally and allows its individual, logical parts to interact with each other.
+As a result, Spring Modulith enables developers to build applications that are easier to update so they can accommodate changing business requirements over time.
+
 [[preface.project-metadata]]
 == Project Metadata
 
