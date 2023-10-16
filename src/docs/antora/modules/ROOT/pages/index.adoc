@@ -9,6 +9,12 @@ Oliver Drotbohm
 
 NOTE: Copies of this document may be made for your own use and for distribution to others, provided that you do not charge any fee for such copies and further provided that each copy contains this Copyright Notice, whether distributed in print or electronically.
 
+[[overview]]
+== Overview
+
+Spring Modulith is an opinionated toolkit to build domain-driven, modular applications with Spring Boot.
+In the same way that Spring Boot has an opinion on the technical arrangement of an application, Spring Modulith implements an opinion on how to structure an app functionally and allows its individual, logical parts to interact with each other.
+As a result, Spring Modulith enables developers to build applications that are easier to update so they can accommodate changing business requirements over time.
 
 [[preface.project-metadata]]
 == Project Metadata
