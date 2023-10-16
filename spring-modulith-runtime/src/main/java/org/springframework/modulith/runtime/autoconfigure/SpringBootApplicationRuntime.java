@@ -16,6 +16,7 @@
 package org.springframework.modulith.runtime.autoconfigure;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -38,6 +39,7 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 
 	private final ApplicationContext context;
 	private Class<?> mainApplicationClass;
+	private List<String> resolvedAutoConfigurationPackages;
 
 	/**
 	 * Creates a new {@link SpringBootApplicationRuntime} for the given {@link ApplicationContext}.
@@ -113,6 +115,15 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 		}
 
 		return fqn.startsWith(applicationClass.getPackage().getName())
-				|| AutoConfigurationPackages.get(context).stream().anyMatch(pkg -> fqn.startsWith(pkg));
+				|| getAutoConfigurationPackages().stream().anyMatch(pkg -> fqn.startsWith(pkg));
+	}
+
+	private List<String> getAutoConfigurationPackages() {
+
+		if (resolvedAutoConfigurationPackages == null) {
+			this.resolvedAutoConfigurationPackages = AutoConfigurationPackages.get(context);
+		}
+
+		return resolvedAutoConfigurationPackages;
 	}
 }
