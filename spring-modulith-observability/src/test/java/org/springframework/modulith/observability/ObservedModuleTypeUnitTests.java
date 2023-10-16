@@ -18,6 +18,7 @@ package org.springframework.modulith.observability;
 import static org.assertj.core.api.Assertions.*;
 
 import example.sample.SampleComponent;
+import example.sample.SampleConfiguration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.Advised;
@@ -55,6 +56,15 @@ public class ObservedModuleTypeUnitTests {
 
 	@Test // GH-106
 	void considersExposedTypeAsToBeIntercepted() {
-		assertThat(observedType.shouldBeTraced()).isTrue();
+		assertThat(observedType.shouldBeObserved()).isTrue();
+	}
+
+	@Test // GH-332
+	void doesNotObserveConfigurationClasses() {
+
+		var type = module.getArchitecturallyEvidentType(SampleConfiguration.class);
+		var observedType = new ObservedModuleType(modules, new DefaultObservedModule(module), type);
+
+		assertThat(observedType.shouldBeObserved()).isFalse();
 	}
 }
