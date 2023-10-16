@@ -25,6 +25,10 @@
 |`true`
 |Whether to automatically enable transactions for MongoDB. Requires the database to be run with a replica set.
 
+|`spring.modulith.events.neo4j.event-index.enabled`
+|`false`
+|Whether to create indexes on the .
+
 |`spring.modulith.events.rabbitmq.json-enabled`
 |`true`
 |Whether to enable JSON support for `RabbitTemplate`.

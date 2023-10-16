@@ -365,7 +365,7 @@ Note, how the type returned by the `assertThat(…)` expression allows to define
 == Spring Boot Event Registry Starters
 
 Using the transactional event publication log requires a combination of artifacts added to your application.
-To ease that task, Spring Modulith provides starter POMs that are centered around the xref:events.adoc#publication-repositories[persistence technology] to be used and default to the Jackson-based `EventSerializer` implementation.
+To ease that task, Spring Modulith provides starter POMs that are centered around the xref:events.adoc#publication-registry.publication-repositories[persistence technology] to be used and default to the Jackson-based `EventSerializer` implementation.
 The following starters are available:
 
 * `spring-modulith-starter-jpa` -- Using JPA as persistence technology.
@@ -374,3 +374,4 @@ Also works in JPA-based applications but bypasses your JPA provider for actual e
 * `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
 Also enables MongoDB transactions and requires a replica set setup of the server to interact with.
 The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
+* `spring-modulith-starter-neo4j` -- Using Neo4j behind Spring Data Neo4j.
