@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.events.support;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -31,7 +30,6 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.event.AbstractApplicationEventMulticaster;
-import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
@@ -46,9 +44,7 @@ import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
-import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * An {@link ApplicationEventMulticaster} to register {@link EventPublication}s in an {@link EventPublicationRegistry}
@@ -65,16 +61,11 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		implements IncompleteEventPublications, SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
-	private static final Method SUPPORTS_METHOD = ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
-			"shouldHandle", ApplicationEvent.class, Object[].class);
+
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.republish-outstanding-events-on-restart";
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
 	private final @NonNull Supplier<Environment> environment;
-
-	static {
-		ReflectionUtils.makeAccessible(SUPPORTS_METHOD);
-	}
 
 	/**
 	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
@@ -228,18 +219,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				: event;
 	}
 
-	@SuppressWarnings("null")
 	private static boolean matches(ApplicationEvent event, Object payload, ApplicationListener<?> listener) {
 
 		// Verify general listener matching by eagerly evaluating the condition
-		if (ApplicationListenerMethodAdapter.class.isInstance(listener)) {
+		if (ApplicationListenerMethodAdapter.class.isInstance(listener)
+				&& !((ApplicationListenerMethodAdapter) listener).shouldHandle(event)) {
 
-			boolean result = (boolean) ReflectionUtils.invokeMethod(SUPPORTS_METHOD, listener, event,
-					new Object[] { payload });
-
-			if (!result) {
-				return false;
-			}
+			return false;
 		}
 
 		return ConditionalEventListener.class.isInstance(listener)
