@@ -47,9 +47,9 @@ import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.util.Assert;
 
 /**
- * An {@link ApplicationEventMulticaster} to register {@link EventPublication}s in an {@link EventPublicationRegistry}
- * so that potentially failing transactional event listeners can get re-invoked upon application restart or via a
- * schedule.
+ * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register {@link EventPublication}s in an
+ * {@link EventPublicationRegistry} so that potentially failing transactional event listeners can get re-invoked upon
+ * application restart or via a schedule.
  * <p>
  * Republication is handled in {@link #afterSingletonsInstantiated()} inspecting the {@link EventPublicationRegistry}
  * for incomplete publications and
@@ -249,7 +249,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 * implement {@link TransactionalApplicationListener}.
 	 *
 	 * @author Oliver Drotbohm
-	 * @see TransactionalEventListener
+	 * @see org.springframework.transaction.event.TransactionalEventListener
 	 * @see TransactionalApplicationListener
 	 */
 	static class TransactionalEventListeners {
