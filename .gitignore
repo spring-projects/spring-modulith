@@ -1,15 +1,25 @@
+# Maven
 target/
-.idea/
 .flattened-pom.xml
 .settings/
-*.iml
+.mvn/.gradle-enterprise
+
+# Eclipse
 .project
 .classpath
 .springBeans
-target/
 .factorypath
+
+# General
 changelog.txt
 
-#IntelliJ Stuff
+# Antora
+node_modules/
+node/
+package-lock.json
+package.json
+
+
+# IDEA
 .idea
 *.iml
