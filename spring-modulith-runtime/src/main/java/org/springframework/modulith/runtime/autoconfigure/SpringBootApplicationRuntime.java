@@ -118,6 +118,11 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 				|| getAutoConfigurationPackages().stream().anyMatch(pkg -> fqn.startsWith(pkg));
 	}
 
+	/**
+	 * Looks up the auto configuration packages and caches them to prevent further lookups.
+	 *
+	 * @return will never be {@literal null}.
+	 */
 	private List<String> getAutoConfigurationPackages() {
 
 		if (resolvedAutoConfigurationPackages == null) {
