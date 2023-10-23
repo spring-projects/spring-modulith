@@ -78,6 +78,15 @@ public interface EventExternalizationConfiguration {
 	}
 
 	/**
+	 * Disables event externalization by not matching any events at all.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public static EventExternalizationConfiguration disabled() {
+		return externalizing().select(__ -> false).build();
+	}
+
+	/**
 	 * A {@link Predicate} to select all events annotated as to be externalized. The currently supported annotations are:
 	 * <ul>
 	 * <li>Spring Modulith's {@link Externalized}</li>

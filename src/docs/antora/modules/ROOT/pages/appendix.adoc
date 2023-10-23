@@ -13,6 +13,10 @@
 |`true`
 |Whether to configure defaults for the async processing termination, namely to wait for task completion for 2 seconds. See `TaskExecutionProperties` for details.
 
+|`spring.modulith.events.externalization.enabled`
+|`true`
+|Whether to enable event externalization.
+
 |`spring.modulith.events.jdbc.schema-initialization.enabled`
 |`false`
 |Whether to initialize the JDBC event publication schema.

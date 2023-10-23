@@ -21,6 +21,7 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
@@ -37,9 +38,13 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
  * @author Oliver Drotbohm
  * @since 1.1
  */
+
 @AutoConfiguration
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
 @ConditionalOnClass(KafkaTemplate.class)
+@ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
+		havingValue = "true",
+		matchIfMissing = true)
 class KafkaEventExternalizerConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(KafkaEventExternalizerConfiguration.class);

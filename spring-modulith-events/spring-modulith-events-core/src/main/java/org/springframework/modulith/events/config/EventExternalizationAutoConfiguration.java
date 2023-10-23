@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
@@ -30,7 +31,6 @@ import org.springframework.context.event.EventListenerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.ConditionalEventListener;
-import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.transaction.event.TransactionalEventListenerFactory;
 
@@ -40,6 +40,9 @@ import org.springframework.transaction.event.TransactionalEventListenerFactory;
  * @author Oliver Drotbohm
  * @since 1.1
  */
+@ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
+		havingValue = "true",
+		matchIfMissing = true)
 @AutoConfiguration
 @AutoConfigureAfter(EventPublicationConfiguration.class)
 public class EventExternalizationAutoConfiguration {

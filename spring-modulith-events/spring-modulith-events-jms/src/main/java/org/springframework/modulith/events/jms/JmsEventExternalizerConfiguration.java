@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.jms.core.JmsOperations;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
@@ -36,6 +37,9 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 @AutoConfiguration
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
 @ConditionalOnClass(JmsOperations.class)
+@ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
+		havingValue = "true",
+		matchIfMissing = true)
 class JmsEventExternalizerConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(JmsEventExternalizerConfiguration.class);
