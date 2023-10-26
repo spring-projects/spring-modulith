@@ -15,10 +15,13 @@
  */
 package org.springframework.modulith.events.support;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.core.ConditionalEventListener;
 import org.springframework.util.Assert;
@@ -61,14 +64,15 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 	 * Externalizes the given event.
 	 *
 	 * @param event must not be {@literal null}.
+	 * @return the externalization result, will never be {@literal null}.
 	 */
 	@ApplicationModuleListener
-	public void externalize(Object event) {
+	public CompletableFuture<?> externalize(Object event) {
 
 		Assert.notNull(event, "Object must not be null!");
 
 		if (!configuration.supports(event)) {
-			return;
+			return CompletableFuture.completedFuture(null);
 		}
 
 		var target = configuration.determineTarget(event);
@@ -80,7 +84,8 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 			logger.debug("Externalizing event of type {} to {}.", event.getClass(), target);
 		}
 
-		externalize(mapped, target);
+		return externalize(mapped, target)
+				.thenApply(it -> new EventExternalized<>(event, mapped, target, it));
 	}
 
 	/**
@@ -88,6 +93,7 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 	 *
 	 * @param payload must not be {@literal null}.
 	 * @param target must not be {@literal null}.
+	 * @return the externalization result, will never be {@literal null}.
 	 */
-	protected abstract void externalize(Object payload, RoutingTarget target);
+	protected abstract CompletableFuture<?> externalize(Object payload, RoutingTarget target);
 }

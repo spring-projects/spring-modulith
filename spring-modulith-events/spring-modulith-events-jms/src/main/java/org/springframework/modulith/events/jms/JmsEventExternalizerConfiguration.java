@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.events.jms;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -55,6 +57,8 @@ class JmsEventExternalizerConfiguration {
 			var serialized = serializer.serialize(payload);
 
 			operations.send(target.getTarget(), session -> session.createTextMessage(serialized.toString()));
+
+			return CompletableFuture.completedFuture(null);
 		});
 	}
 }

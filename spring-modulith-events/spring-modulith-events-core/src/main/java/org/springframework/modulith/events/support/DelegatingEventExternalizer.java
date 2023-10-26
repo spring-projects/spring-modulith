@@ -15,7 +15,8 @@
  */
 package org.springframework.modulith.events.support;
 
-import java.util.function.BiConsumer;
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
@@ -24,7 +25,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.Assert;
 
 /**
- * An {@link EventExternalizationSupport} delegating to a {@link BiConsumer} for the actual externalization. Note, that
+ * An {@link EventExternalizationSupport} delegating to a {@link BiFunction} for the actual externalization. Note, that
  * this <em>needs</em> to be a {@link Component} to make sure it is considered an event listener, as without the
  * annotation Spring Framework would skip it as it lives in the {@code org.springframework} package.
  *
@@ -34,17 +35,17 @@ import org.springframework.util.Assert;
 @Component
 public class DelegatingEventExternalizer extends EventExternalizationSupport {
 
-	private final BiConsumer<RoutingTarget, Object> delegate;
+	private final BiFunction<RoutingTarget, Object, CompletableFuture<?>> delegate;
 
 	/**
 	 * Creates a new {@link DelegatingEventExternalizer} for the given {@link EventExternalizationConfiguration} and
-	 * {@link BiConsumer} implementing the actual externalization.
+	 * {@link BiFunction} implementing the actual externalization.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param delegate must not be {@literal null}.
 	 */
 	public DelegatingEventExternalizer(EventExternalizationConfiguration configuration,
-			BiConsumer<RoutingTarget, Object> delegate) {
+			BiFunction<RoutingTarget, Object, CompletableFuture<?>> delegate) {
 
 		super(configuration);
 
@@ -59,8 +60,8 @@ public class DelegatingEventExternalizer extends EventExternalizationSupport {
 	 */
 	@Override
 	@ApplicationModuleListener
-	public void externalize(Object event) {
-		super.externalize(event);
+	public CompletableFuture<?> externalize(Object event) {
+		return super.externalize(event);
 	}
 
 	/*
@@ -68,7 +69,18 @@ public class DelegatingEventExternalizer extends EventExternalizationSupport {
 	 * @see org.springframework.modulith.events.support.EventExternalizationSupport#externalize(org.springframework.modulith.events.RoutingTarget, java.lang.Object)
 	 */
 	@Override
-	protected void externalize(Object payload, RoutingTarget target) {
-		delegate.accept(target, payload);
+	protected CompletableFuture<?> externalize(Object payload, RoutingTarget target) {
+
+		try {
+
+			var result = delegate.apply(target, payload);
+
+			return result != null
+					? result
+					: CompletableFuture.failedFuture(new IllegalStateException("Delegate must not return null!"));
+
+		} catch (RuntimeException o_O) {
+			return CompletableFuture.failedFuture(o_O);
+		}
 	}
 }

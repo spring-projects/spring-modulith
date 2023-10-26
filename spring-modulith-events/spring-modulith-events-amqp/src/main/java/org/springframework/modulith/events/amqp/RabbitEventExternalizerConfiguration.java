@@ -62,6 +62,8 @@ class RabbitEventExternalizerConfiguration {
 			var routing = BrokerRouting.of(target, context);
 
 			operations.convertAndSend(routing.getTarget(), routing.getKey(payload), payload);
+
+			return null;
 		});
 	}
 }

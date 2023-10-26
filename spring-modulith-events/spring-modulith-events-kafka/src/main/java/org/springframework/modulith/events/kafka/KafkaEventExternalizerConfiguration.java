@@ -61,8 +61,7 @@ class KafkaEventExternalizerConfiguration {
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
 
 			var routing = BrokerRouting.of(target, context);
-
-			operations.send(routing.getTarget(), routing.getKey(payload), payload);
+			return operations.send(routing.getTarget(), routing.getKey(payload), payload);
 		});
 	}
 }
