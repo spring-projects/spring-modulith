@@ -50,7 +50,7 @@ class SqsEventExternalizerConfiguration {
 	private static final Logger logger = LoggerFactory.getLogger(SqsEventExternalizerConfiguration.class);
 
 	@Bean
-	DelegatingEventExternalizer rabbitEventExternalizer(EventExternalizationConfiguration configuration,
+	DelegatingEventExternalizer sqsEventExternalizer(EventExternalizationConfiguration configuration,
 			SqsOperations operations, BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization to SQS…");
