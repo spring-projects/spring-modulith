@@ -16,6 +16,8 @@
 	<modules>
 		<module>spring-modulith-events-amqp</module>
 		<module>spring-modulith-events-api</module>
+		<module>spring-modulith-events-aws-sns</module>
+		<module>spring-modulith-events-aws-sqs</module>
 		<module>spring-modulith-events-core</module>
 		<module>spring-modulith-events-jackson</module>
 		<module>spring-modulith-events-jdbc</module>

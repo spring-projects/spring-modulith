@@ -316,6 +316,18 @@ The logical routing key will be used as AMQP routing key.
 |`spring-modulith-events-jms`
 |Uses Spring's core JMS support.
 Does not support routing keys.
+
+|SQS
+|`spring-modulith-events-aws-sqs`
+|Uses Spring Cloud AWS SQS support.
+The logical routing key will be used as SQS message group id.
+When routing key is set, requires SQS queue to be configured as a FIFO queue.
+
+|SNS
+|`spring-modulith-events-aws-sns`
+|Uses Spring Cloud AWS SNS support.
+The logical routing key will be used as SNS message group id.
+When routing key is set, requires SNS to be configured as a FIFO topic with content based deduplication enabled.
 |===
 
 [[externalization.fundamentals]]
