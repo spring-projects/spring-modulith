@@ -15,6 +15,9 @@
  */
 package org.springframework.modulith.events.aws.sqs;
 
+import io.awspring.cloud.sqs.operations.SqsOperations;
+import io.awspring.cloud.sqs.operations.SqsSendOptions;
+import io.awspring.cloud.sqs.operations.SqsTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
@@ -33,26 +36,26 @@ import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
- * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to RabbitMQ.
+ * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to SQS.
  *
- * @author Oliver Drotbohm
+ * @author Maciej Walkowiak
  * @since 1.1
  */
 @AutoConfiguration
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
-@ConditionalOnClass(RabbitTemplate.class)
+@ConditionalOnClass(SqsTemplate.class)
 @ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
 		havingValue = "true",
 		matchIfMissing = true)
-class RabbitEventExternalizerConfiguration {
+class SqsEventExternalizerConfiguration {
 
-	private static final Logger logger = LoggerFactory.getLogger(RabbitEventExternalizerConfiguration.class);
+	private static final Logger logger = LoggerFactory.getLogger(SqsEventExternalizerConfiguration.class);
 
 	@Bean
 	DelegatingEventExternalizer rabbitEventExternalizer(EventExternalizationConfiguration configuration,
-			RabbitMessageOperations operations, BeanFactory factory) {
+			SqsOperations operations, BeanFactory factory) {
 
-		logger.debug("Registering domain event externalization to RabbitMQ…");
+		logger.debug("Registering domain event externalization to SQS…");
 
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
@@ -61,7 +64,13 @@ class RabbitEventExternalizerConfiguration {
 
 			var routing = BrokerRouting.of(target, context);
 
-			operations.convertAndSend(routing.getTarget(), routing.getKey(payload), payload);
+			operations.send(sqsSendOptions -> {
+				var options = sqsSendOptions.queue(routing.getTarget()).payload(payload);
+				var key = routing.getKey(payload);
+				if (key != null) {
+					options.messageGroupId(key);
+				}
+			});
 		});
 	}
 }

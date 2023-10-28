@@ -1,2 +1,1 @@
-org.springframework.modulith.events.aws.sqs.RabbitEventExternalizerConfiguration
-org.springframework.modulith.events.aws.sqs.RabbitJacksonConfiguration
+org.springframework.modulith.events.aws.sqs.SqsEventExternalizerConfiguration

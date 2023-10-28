@@ -18,21 +18,21 @@ package org.springframework.modulith.events.aws.sqs;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import io.awspring.cloud.sqs.operations.SqsOperations;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
-import org.springframework.modulith.events.aws.sqs.RabbitEventExternalizerConfiguration;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
- * Integration tests for {@link RabbitEventExternalizerConfiguration}.
+ * Integration tests for {@link SqsEventExternalizerConfiguration}.
  *
- * @author Oliver Drotbohm
+ * @author Maciej Walkowiak
  * @since 1.1
  */
-class RabbitEventExternalizerConfigurationIntegrationTests {
+class SqsEventExternalizerConfigurationIntegrationTests {
 
 	@Test // GH-342
 	void registersExternalizerByDefault() {
@@ -57,8 +57,8 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 
 		return new ApplicationContextRunner()
 				.withConfiguration(
-						AutoConfigurations.of(RabbitEventExternalizerConfiguration.class))
+						AutoConfigurations.of(SqsEventExternalizerConfiguration.class))
 				.withBean(EventExternalizationConfiguration.class, () -> EventExternalizationConfiguration.disabled())
-				.withBean(RabbitMessageOperations.class, () -> mock(RabbitMessageOperations.class));
+				.withBean(SqsOperations.class, () -> mock(SqsOperations.class));
 	}
 }

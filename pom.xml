@@ -42,7 +42,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.1.0-RC1</spring.version> <!-- For Javadoc links only -->
 		<spring-boot.version>3.2.0-RC1</spring-boot.version>
-
+		<spring-cloud-aws-bom.version>3.0.2</spring-cloud-aws-bom.version>
 	</properties>
 
 	<developers>
@@ -404,6 +404,13 @@ limitations under the License.
 				<groupId>org.jmolecules</groupId>
 				<artifactId>jmolecules-bom</artifactId>
 				<version>${jmolecules-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.awspring.cloud</groupId>
+				<artifactId>spring-cloud-aws-dependencies</artifactId>
+				<version>${spring-cloud-aws-bom.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
