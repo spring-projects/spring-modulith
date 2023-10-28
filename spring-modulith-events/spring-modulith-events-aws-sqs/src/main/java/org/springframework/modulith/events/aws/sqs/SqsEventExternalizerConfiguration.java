@@ -16,12 +16,10 @@
 package org.springframework.modulith.events.aws.sqs;
 
 import io.awspring.cloud.sqs.operations.SqsOperations;
-import io.awspring.cloud.sqs.operations.SqsSendOptions;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
-import org.springframework.amqp.rabbit.core.RabbitTemplate;
+
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;

@@ -11,7 +11,6 @@
 	</root>
 
 	<logger name="org.springframework.modulith" level="INFO" />
-	<logger name="org.springframework.amqp" level="INFO" />
-	<logger name="com.rabbitmq" level="INFO" />
+	<logger name="io.awspring.cloud.sqs" level="INFO" />
 
 </configuration>

@@ -15,16 +15,16 @@
  */
 package org.springframework.modulith.events.aws.sqs;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 import io.awspring.cloud.sqs.operations.SqsOperations;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
+
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 /**
  * Integration tests for {@link SqsEventExternalizerConfiguration}.
