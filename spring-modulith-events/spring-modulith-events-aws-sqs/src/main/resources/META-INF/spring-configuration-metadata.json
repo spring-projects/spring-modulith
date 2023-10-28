@@ -1,0 +1,10 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.events.aws.sqs.json-enabled",
+			"type": "java.lang.boolean",
+			"description": "Whether to auto-configure RabbitTemplate to use JSON for message serialization.",
+			"defaultValue": "true"
+		}
+	]
+}
