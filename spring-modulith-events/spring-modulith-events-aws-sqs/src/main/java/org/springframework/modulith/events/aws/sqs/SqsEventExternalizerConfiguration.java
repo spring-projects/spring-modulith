@@ -17,9 +17,11 @@ package org.springframework.modulith.events.aws.sqs;
 
 import io.awspring.cloud.sqs.operations.SqsOperations;
 import io.awspring.cloud.sqs.operations.SqsTemplate;
+
+import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -37,6 +39,7 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to SQS.
  *
  * @author Maciej Walkowiak
+ * @author Oliver Drotbohm
  * @since 1.1
  */
 @AutoConfiguration
@@ -62,13 +65,15 @@ class SqsEventExternalizerConfiguration {
 
 			var routing = BrokerRouting.of(target, context);
 
-			operations.send(sqsSendOptions -> {
+			return CompletableFuture.completedFuture(operations.send(sqsSendOptions -> {
+
 				var options = sqsSendOptions.queue(routing.getTarget()).payload(payload);
 				var key = routing.getKey(payload);
+
 				if (key != null) {
 					options.messageGroupId(key);
 				}
-			});
+			}));
 		});
 	}
 }

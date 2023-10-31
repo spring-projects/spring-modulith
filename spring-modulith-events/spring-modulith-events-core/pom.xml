@@ -15,7 +15,7 @@
 	<properties>
 		<module.name>org.springframework.modulith.events.core</module.name>
 	</properties>
-	
+
 	<dependencies>
 
 		<dependency>

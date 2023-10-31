@@ -15,15 +15,17 @@
  */
 package org.springframework.modulith.events.aws.sqs;
 
-import java.util.Map;
+import static org.assertj.core.api.Assertions.*;
+import static org.awaitility.Awaitility.*;
 
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
+import lombok.Value;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,14 +35,15 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.Externalized;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * Integration tests for SQS-based event publication.
  *
  * @author Maciej Walkowiak
+ * @author Oliver Drotbohm
+ * @since 1.1
  */
 @SpringBootTest
 class SqsEventPublicationIntegrationTests {
@@ -53,11 +56,14 @@ class SqsEventPublicationIntegrationTests {
 
 		@Bean
 		LocalStackContainer localStackContainer(DynamicPropertyRegistry registry) {
+
 			var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:2.3.2"));
+
 			registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
 			registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
 			registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
 			registry.add("spring.cloud.aws.region.static", localstack::getRegion);
+
 			return localstack;
 		}
 
@@ -92,7 +98,7 @@ class SqsEventPublicationIntegrationTests {
 	void publishesEventWithGroupIdToSqs() throws Exception {
 
 		var queueUrl = sqsAsyncClient.createQueue(request -> request.queueName("target.fifo")
-						.attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")))
+				.attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")))
 				.join()
 				.queueUrl();
 
@@ -108,17 +114,10 @@ class SqsEventPublicationIntegrationTests {
 	@Externalized("target")
 	static class TestEvent {}
 
+	@Value
 	@Externalized("target.fifo::#{getKey()}")
 	static class TestEventWithKey {
-		private final String key;
-
-		TestEventWithKey(String key) {
-			this.key = key;
-		}
-
-		public String getKey() {
-			return key;
-		}
+		String key;
 	}
 
 	@RequiredArgsConstructor

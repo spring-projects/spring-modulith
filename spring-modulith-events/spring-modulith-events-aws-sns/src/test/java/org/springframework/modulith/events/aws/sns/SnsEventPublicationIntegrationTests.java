@@ -15,16 +15,18 @@
  */
 package org.springframework.modulith.events.aws.sns;
 
-import java.util.Map;
+import static org.assertj.core.api.Assertions.*;
+import static org.awaitility.Awaitility.*;
 
 import lombok.RequiredArgsConstructor;
-import org.junit.jupiter.api.Test;
-import org.testcontainers.containers.localstack.LocalStackContainer;
-import org.testcontainers.utility.DockerImageName;
+import lombok.Value;
 import software.amazon.awssdk.services.sns.SnsClient;
 import software.amazon.awssdk.services.sqs.SqsAsyncClient;
 import software.amazon.awssdk.services.sqs.model.QueueAttributeName;
 
+import java.util.Map;
+
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -34,137 +36,132 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.Externalized;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.transaction.annotation.Transactional;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.await;
+import org.testcontainers.containers.localstack.LocalStackContainer;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * Integration tests for SQS-based event publication.
  *
  * @author Maciej Walkowiak
+ * @author Oliver Drotbohm
  */
 @SpringBootTest
 class SnsEventPublicationIntegrationTests {
 
-    @Autowired TestPublisher publisher;
-    @Autowired SnsClient snsClient;
-    @Autowired SqsAsyncClient sqsAsyncClient;
+	@Autowired TestPublisher publisher;
+	@Autowired SnsClient snsClient;
+	@Autowired SqsAsyncClient sqsAsyncClient;
 
-    @SpringBootApplication
-    static class TestConfiguration {
+	@SpringBootApplication
+	static class TestConfiguration {
 
-        @Bean
-        LocalStackContainer localStackContainer(DynamicPropertyRegistry registry) {
-            var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:2.3.2"));
-            registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
-            registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
-            registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
-            registry.add("spring.cloud.aws.region.static", localstack::getRegion);
-            return localstack;
-        }
+		@Bean
+		LocalStackContainer localStackContainer(DynamicPropertyRegistry registry) {
 
-        @Bean
-        TestPublisher testPublisher(ApplicationEventPublisher publisher) {
-            return new TestPublisher(publisher);
-        }
+			var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:2.3.2"));
 
-        @Bean
-        TestListener testListener() {
-            return new TestListener();
-        }
-    }
+			registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
+			registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
+			registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
+			registry.add("spring.cloud.aws.region.static", localstack::getRegion);
 
-    @Test
-    void publishesEventToSns() {
+			return localstack;
+		}
 
-        var topicArn = snsClient.createTopic(request -> request.name("target")).topicArn();
+		@Bean
+		TestPublisher testPublisher(ApplicationEventPublisher publisher) {
+			return new TestPublisher(publisher);
+		}
 
-        var queueUrl = sqsAsyncClient.createQueue(request -> request.queueName("queue"))
-                .join()
-                .queueUrl();
+		@Bean
+		TestListener testListener() {
+			return new TestListener();
+		}
+	}
 
-        var queueArn = sqsAsyncClient
-                .getQueueAttributes(r -> r.queueUrl(queueUrl).attributeNames(QueueAttributeName.QUEUE_ARN))
-                .join().attributes().get(QueueAttributeName.QUEUE_ARN);
-        snsClient.subscribe(r -> r.topicArn(topicArn).protocol("sqs").endpoint(queueArn));
+	@Test // GH-344
+	void publishesEventToSns() {
 
-        publisher.publishEvent();
+		var topicArn = snsClient.createTopic(request -> request.name("target")).topicArn();
 
-        await().untilAsserted(() -> {
-            var response = sqsAsyncClient.receiveMessage(r -> r.queueUrl(queueUrl)).join();
+		var queueUrl = sqsAsyncClient.createQueue(request -> request.queueName("queue"))
+				.join()
+				.queueUrl();
 
-            assertThat(response.hasMessages()).isTrue();
-        });
-    }
+		var queueArn = sqsAsyncClient
+				.getQueueAttributes(r -> r.queueUrl(queueUrl).attributeNames(QueueAttributeName.QUEUE_ARN))
+				.join().attributes().get(QueueAttributeName.QUEUE_ARN);
 
-    @Test
-    void publishesEventWithGroupIdToSns() {
+		snsClient.subscribe(r -> r.topicArn(topicArn).protocol("sqs").endpoint(queueArn));
 
-        var topicArn = snsClient.createTopic(request -> request.name("target.fifo")
-                        .attributes(Map.of(
-                                "FifoTopic", "true",
-                                "ContentBasedDeduplication", "true"
-                        )))
-                .topicArn();
+		publisher.publishEvent();
 
-        var queueUrl = sqsAsyncClient.createQueue(request -> request.queueName("queue.fifo")
-                        .attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")))
-                .join()
-                .queueUrl();
+		await().untilAsserted(() -> {
 
-        var queueArn = sqsAsyncClient
-                .getQueueAttributes(r -> r.queueUrl(queueUrl).attributeNames(QueueAttributeName.QUEUE_ARN))
-                .join().attributes().get(QueueAttributeName.QUEUE_ARN);
-        snsClient.subscribe(r -> r.topicArn(topicArn).protocol("sqs").endpoint(queueArn));
+			var response = sqsAsyncClient.receiveMessage(r -> r.queueUrl(queueUrl)).join();
 
-        publisher.publishEventWithKey();
+			assertThat(response.hasMessages()).isTrue();
+		});
+	}
 
-        await().untilAsserted(() -> {
-            var response = sqsAsyncClient.receiveMessage(r -> r.queueUrl(queueUrl)).join();
-            assertThat(response.hasMessages()).isTrue();
-        });
-    }
+	@Test // GH-344
+	void publishesEventWithGroupIdToSns() {
 
-    @Externalized("target")
-    static class TestEvent { }
+		var topicArn = snsClient.createTopic(request -> request.name("target.fifo")
+				.attributes(Map.of(
+						"FifoTopic", "true",
+						"ContentBasedDeduplication", "true")))
+				.topicArn();
 
-    @Externalized("target.fifo::#{getKey()}")
-    static class TestEventWithKey {
-        private final String key;
+		var queueUrl = sqsAsyncClient.createQueue(request -> request.queueName("queue.fifo")
+				.attributes(Map.of(QueueAttributeName.FIFO_QUEUE, "true")))
+				.join()
+				.queueUrl();
 
-        TestEventWithKey(String key) {
-            this.key = key;
-        }
+		var queueArn = sqsAsyncClient
+				.getQueueAttributes(r -> r.queueUrl(queueUrl).attributeNames(QueueAttributeName.QUEUE_ARN))
+				.join().attributes().get(QueueAttributeName.QUEUE_ARN);
+		snsClient.subscribe(r -> r.topicArn(topicArn).protocol("sqs").endpoint(queueArn));
 
-        public String getKey() {
-            return key;
-        }
-    }
+		publisher.publishEventWithKey();
 
-    @RequiredArgsConstructor
-    static class TestPublisher {
+		await().untilAsserted(() -> {
+			var response = sqsAsyncClient.receiveMessage(r -> r.queueUrl(queueUrl)).join();
+			assertThat(response.hasMessages()).isTrue();
+		});
+	}
 
-        private final ApplicationEventPublisher events;
+	@Externalized("target")
+	static class TestEvent {}
 
-        @Transactional
-        void publishEvent() {
-            events.publishEvent(new TestEvent());
-        }
+	@Value
+	@Externalized("target.fifo::#{getKey()}")
+	static class TestEventWithKey {
+		String key;
+	}
 
-        @Transactional
-        void publishEventWithKey() {
-            events.publishEvent(new TestEventWithKey("aKey"));
-        }
-    }
+	@RequiredArgsConstructor
+	static class TestPublisher {
 
-    static class TestListener {
+		private final ApplicationEventPublisher events;
 
-        @ApplicationModuleListener
-        void on(TestEvent event) {
-        }
+		@Transactional
+		void publishEvent() {
+			events.publishEvent(new TestEvent());
+		}
 
-        @ApplicationModuleListener
-        void on(TestEventWithKey event) {
-        }
-    }
+		@Transactional
+		void publishEventWithKey() {
+			events.publishEvent(new TestEventWithKey("aKey"));
+		}
+	}
+
+	static class TestListener {
+
+		@ApplicationModuleListener
+		void on(TestEvent event) {}
+
+		@ApplicationModuleListener
+		void on(TestEventWithKey event) {}
+	}
 }

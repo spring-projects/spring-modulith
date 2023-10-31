@@ -18,10 +18,11 @@ package org.springframework.modulith.events.aws.sns;
 import io.awspring.cloud.sns.core.SnsNotification;
 import io.awspring.cloud.sns.core.SnsOperations;
 import io.awspring.cloud.sns.core.SnsTemplate;
+
+import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import software.amazon.awssdk.services.sns.model.InvalidParameterException;
-
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -30,7 +31,6 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.messaging.MessageDeliveryException;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.support.BrokerRouting;
@@ -40,6 +40,7 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to SNS.
  *
  * @author Maciej Walkowiak
+ * @author Oliver Drotbohm
  * @since 1.1
  */
 @AutoConfiguration
@@ -64,22 +65,17 @@ class SnsEventExternalizerConfiguration {
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
 
 			var routing = BrokerRouting.of(target, context);
-
 			var builder = SnsNotification.builder(payload);
 			var key = routing.getKey(payload);
+
 			// when routing key is set, SNS topic must be a FIFO topic
 			if (key != null) {
 				builder.groupId(key);
 			}
-			try {
-				operations.sendNotification(routing.getTarget(), builder.build());
-			} catch (MessageDeliveryException e) {
-				// message delivery may fail if groupId is set and topic is not a FIFO topic, or content based deduplication has not been set on topic attributes.
-				if (e.getCause() instanceof InvalidParameterException) {
-					logger.error("Failed to send notification to SNS topic {}:{}", routing.getTarget(), e.getCause().getMessage());
-				}
-				throw e;
-			}
+
+			operations.sendNotification(routing.getTarget(), builder.build());
+
+			return CompletableFuture.completedFuture(null);
 		});
 	}
 }
