@@ -59,6 +59,7 @@ class SnsEventPublicationIntegrationTests {
             registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
             registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
             registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
+            registry.add("spring.cloud.aws.region.static", localstack::getRegion);
             return localstack;
         }
 
