@@ -21,6 +21,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.annotation.Propagation;
@@ -54,4 +55,15 @@ public @interface ApplicationModuleListener {
 	 */
 	@AliasFor(annotation = Transactional.class, attribute = "readOnly")
 	boolean readOnlyTransaction() default false;
+
+	/**
+	 * An optional identifier for the listener, defaulting to the fully-qualified signature of the declaring method (e.g.
+	 * "mypackage.MyClass.myMethod()").
+	 *
+	 * @since 1.1
+	 * @see EventListener#id
+	 * @see org.springframework.transaction.event.TransactionalApplicationListener#getListenerId()
+	 */
+	@AliasFor(annotation = EventListener.class, attribute = "id")
+	String id() default "";
 }
