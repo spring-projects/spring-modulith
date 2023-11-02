@@ -423,11 +423,11 @@ class ExternalizationConfiguration {
   @Bean
   EventExternalizationConfiguration eventExternalizationConfiguration() {
 
-   return EventExternalizationConfiguration.externalizing()                 // <1>
-        .select(EventExternalizationConfiguration.annotatedAsExternalized()) // <2>
-        .mapping(SomeEvent.class, it -> …)                                   // <3>
-        .routeKey(WithKeyProperty.class, WithKeyProperty::getKey)            // <4>
-        .build();
+    return EventExternalizationConfiguration.externalizing()                 // <1>
+      .select(EventExternalizationConfiguration.annotatedAsExternalized())   // <2>
+      .mapping(SomeEvent.class, it -> …)                                     // <3>
+      .routeKey(WithKeyProperty.class, WithKeyProperty::getKey)              // <4>
+      .build();
   }
 }
 ----
@@ -441,11 +441,11 @@ class ExternalizationConfiguration {
   @Bean
   fun eventExternalizationConfiguration(): EventExternalizationConfiguration {
 
-        EventExternalizationConfiguration.externalizing()                 // <1>
-        .select(EventExternalizationConfiguration.annotatedAsExternalized()) // <2>
-        .mapping(SomeEvent::class, it -> …)                                   // <3>
-        .routeKey(WithKeyProperty::class, WithKeyProperty::getKey)            // <4>
-        .build()
+    EventExternalizationConfiguration.externalizing()                         // <1>
+      .select(EventExternalizationConfiguration.annotatedAsExternalized())    // <2>
+      .mapping(SomeEvent::class, it -> …)                                     // <3>
+      .routeKey(WithKeyProperty::class, WithKeyProperty::getKey)              // <4>
+      .build()
   }
 }
 ----
@@ -503,6 +503,7 @@ class OrderIntegrationTests {
     // …
     var matchingMapped = events.ofType(OrderCompleted::class)
       .matching(OrderCompleted::getOrderId, reference.getId())
+
     assertThat(matchingMapped).hasSize(1)
   }
 }
