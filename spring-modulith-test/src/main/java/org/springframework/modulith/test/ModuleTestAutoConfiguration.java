@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -72,14 +73,15 @@ class ModuleTestAutoConfiguration {
 				return;
 			}
 
+			var packagesToSet = new ArrayList<>(packages);
 			var definition = registry.getBeanDefinition(beanName);
 			var holder = definition.getConstructorArgumentValues().getArgumentValue(0, String[].class);
 
 			Arrays.stream((String[]) holder.getValue())
 					.filter(it -> it.startsWith("org.springframework.modulith"))
-					.forEach(packages::add);
+					.forEach(packagesToSet::add);
 
-			definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packages.toArray(String[]::new));
+			definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packagesToSet.toArray(String[]::new));
 		}
 	}
 }
