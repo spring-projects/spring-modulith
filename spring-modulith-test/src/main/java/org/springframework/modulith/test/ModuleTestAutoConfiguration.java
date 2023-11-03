@@ -15,15 +15,13 @@
  */
 package org.springframework.modulith.test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.config.ConstructorArgumentValues.ValueHolder;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
 import org.springframework.context.annotation.Configuration;
@@ -31,7 +29,6 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.Ordered;
 import org.springframework.core.type.AnnotationMetadata;
-import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -66,49 +63,25 @@ class ModuleTestAutoConfiguration {
 			LOGGER.info("Re-configuring auto-configuration and entity scan packages to: {}.",
 					StringUtils.collectionToDelimitedString(basePackages, ", "));
 
-			setBasePackagesOn(registry, AUTOCONFIG_PACKAGES, "BasePackagesBeanDefinition", "basePackages", basePackages);
-			setBasePackagesOn(registry, ENTITY_SCAN_PACKAGE, "EntityScanPackagesBeanDefinition", "packageNames",
-					basePackages);
+			setBasePackagesOn(registry, AUTOCONFIG_PACKAGES, basePackages);
+			setBasePackagesOn(registry, ENTITY_SCAN_PACKAGE, basePackages);
 		}
 
-		@SuppressWarnings("unchecked")
-		private void setBasePackagesOn(BeanDefinitionRegistry registry, String beanName, String definitionType,
-				String fieldName, List<String> packages) {
+		private void setBasePackagesOn(BeanDefinitionRegistry registry, String beanName, List<String> packages) {
 
 			if (!registry.containsBeanDefinition(beanName)) {
 				return;
 			}
 
+			var packagesToSet = new ArrayList<>(packages);
 			var definition = registry.getBeanDefinition(beanName);
+			var holder = definition.getConstructorArgumentValues().getArgumentValue(0, String[].class);
 
-			// For Boot 2.4, we deal with a BasePackagesBeanDefinition
-			var field = Arrays.stream(definition.getClass().getDeclaredFields())
-					.filter(__ -> definition.getClass().getSimpleName().equals(definitionType))
-					.filter(it -> it.getName().equals(fieldName))
-					.findFirst()
-					.orElse(null);
+			Arrays.stream((String[]) holder.getValue())
+					.filter(it -> it.startsWith("org.springframework.modulith"))
+					.forEach(packagesToSet::add);
 
-			if (field != null) {
-
-				// Keep all auto-configuration packages from Moduliths
-
-				ReflectionUtils.makeAccessible(field);
-				((Set<String>) ReflectionUtils.getField(field, definition)).stream()
-						.filter(it -> it.startsWith("org.springframework.modulith"))
-						.forEach(packages::add);
-
-				ReflectionUtils.setField(field, definition, new HashSet<>(packages));
-
-			} else {
-
-				ValueHolder holder = definition.getConstructorArgumentValues().getArgumentValue(0, String[].class);
-				Arrays.stream((String[]) holder.getValue())
-						.filter(it -> it.startsWith("org.springframework.modulith"))
-						.forEach(packages::add);
-
-				// Fall back to customize the bean definition in a Boot 2.3 arrangement
-				definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packages.toArray(String[]::new));
-			}
+			definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packagesToSet.toArray(String[]::new));
 		}
 	}
 }
