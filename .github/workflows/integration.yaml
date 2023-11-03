@@ -33,4 +33,7 @@ jobs:
         GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
         GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
         GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-      run: ./mvnw -B -Pwith-preview-repos -Dspring-boot.version=${{ matrix.version }}
+      run: |
+        cd spring-modulith-examples
+        ../mvnw -B versions:update-parent -DskipResolution=true -DparentVersion=${{ matrix.version }}
+        ../mvnw -B -Pwith-preview-repos -Dspring-boot.version=${{ matrix.version }}
