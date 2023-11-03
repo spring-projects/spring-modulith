@@ -129,10 +129,7 @@ public class Moments implements Now {
 	 */
 	@Override
 	public LocalDateTime now() {
-
-		Instant instant = clock.instant().plus(shift);
-
-		return LocalDateTime.ofInstant(instant, properties.getZoneId());
+		return LocalDateTime.ofInstant(instant(), properties.getZoneId());
 	}
 
 	/*
@@ -142,6 +139,15 @@ public class Moments implements Now {
 	@Override
 	public LocalDate today() {
 		return now().toLocalDate();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.moments.support.Now#instant()
+	 */
+	@Override
+	public Instant instant() {
+		return clock.instant().plus(shift);
 	}
 
 	private void emitEventsFor(LocalDateTime time) {

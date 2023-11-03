@@ -24,6 +24,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
@@ -171,6 +172,15 @@ class MomentsUnitTests {
 		LocalDateTime after = hourly.shiftBy(duration).now();
 
 		assertThat(before.plus(duration)).isCloseTo(after, within(200, ChronoUnit.MILLIS));
+	}
+
+	@Test // GH-359
+	void returnsInstant() {
+
+		var instant = hourly.instant();
+		var now = hourly.now();
+
+		assertThat(LocalDateTime.ofInstant(instant, ZoneOffset.UTC)).isCloseTo(now, within(50, ChronoUnit.MILLIS));
 	}
 
 	private Duration getNumberOfDaysForThreeMonth(LocalDate date) {

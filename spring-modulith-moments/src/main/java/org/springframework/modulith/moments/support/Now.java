@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.moments.support;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -41,4 +42,11 @@ public interface Now {
 	 * @return will never be {@literal null}.
 	 */
 	LocalDate today();
+
+	/**
+	 * Returns the current Instant.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	Instant instant();
 }
