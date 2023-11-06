@@ -138,10 +138,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Classes classes = Classes.of(allClasses);
 		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
-		this.modules = packages.stream() //
+		var basePackages = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it))
-				.flatMap(strategy::getModuleBasePackages) //
-				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
+				.flatMap(strategy::getModuleBasePackages)
+				.flatMap(it -> it.andSubPackagesAnnotatedWith(org.springframework.modulith.ApplicationModule.class))
+				.distinct()
+				.collect(Collectors.toUnmodifiableSet());
+
+		this.modules = basePackages.stream() //
+				.map(it -> new ApplicationModule(it, JavaPackages.onlySubPackagesOf(it, basePackages),
+						useFullyQualifiedModuleNames)) //
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
 		this.rootPackages = packages.stream() //
@@ -154,9 +160,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.sharedModules = Collections.emptySet();
 
-		this.orderedNames = JGRAPHT_PRESENT //
-				? TopologicalSorter.topologicallySortModules(this) //
-				: modules.values().stream().map(ApplicationModule::getName).toList();
+		Supplier<List<String>> fallback = () -> modules.values().stream()
+				.map(ApplicationModule::getName)
+				.sorted()
+				.toList();
+
+		this.orderedNames = Optional.ofNullable(JGRAPHT_PRESENT ? TopologicalSorter.topologicallySortModules(this) : null)
+				.orElseGet(fallback);
 	}
 
 	/**
@@ -511,6 +521,14 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		};
 	}
 
+	public Optional<ApplicationModule> getParentOf(ApplicationModule module) {
+		return module.getParentModule(this);
+	}
+
+	public boolean hasParent(ApplicationModule module) {
+		return getParentOf(module).isPresent();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -528,6 +546,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	public String toString() {
 
 		return this.stream()
+				.sorted()
 				.map(it -> it.toString(this))
 				.collect(Collectors.joining("\n"));
 	}
@@ -542,7 +561,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		var result = SlicesRuleDefinition.slices() //
 				.assignedFrom(new ApplicationModulesSliceAssignment())
 				.should().beFreeOfCycles() //
-				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
+				.evaluate(allClasses.that(resideInAPackage(rootPackage.asFilter())));
 
 		return result.getFailureReport();
 	}
@@ -625,7 +644,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	private static ApplicationModule rootModuleFor(JavaPackage javaPackage) {
 
-		return new ApplicationModule(javaPackage, true) {
+		return new ApplicationModule(javaPackage, JavaPackages.NONE, true) {
 
 			@Override
 			public String getName() {
@@ -726,21 +745,25 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	private static class TopologicalSorter {
 
+		@Nullable
 		private static List<String> topologicallySortModules(ApplicationModules modules) {
 
 			Graph<ApplicationModule, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-			modules.modules.forEach((__, project) -> {
+			modules.modules.values()
+					.stream()
+					.sorted()
+					.forEach(project -> {
 
-				graph.addVertex(project);
+						graph.addVertex(project);
 
-				project.getDependencies(modules).stream() //
-						.map(ApplicationModuleDependency::getTargetModule) //
-						.forEach(dependency -> {
-							graph.addVertex(dependency);
-							graph.addEdge(project, dependency);
-						});
-			});
+						project.getDependencies(modules).stream() //
+								.map(ApplicationModuleDependency::getTargetModule) //
+								.forEach(dependency -> {
+									graph.addVertex(dependency);
+									graph.addEdge(project, dependency);
+								});
+					});
 
 			var names = new ArrayList<String>();
 			var iterator = new TopologicalOrderIterator<>(graph);
@@ -751,7 +774,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				return names;
 
 			} catch (IllegalArgumentException o_O) {
-				return modules.modules.values().stream().map(ApplicationModule::getName).toList();
+				return null;
 			}
 		}
 	}

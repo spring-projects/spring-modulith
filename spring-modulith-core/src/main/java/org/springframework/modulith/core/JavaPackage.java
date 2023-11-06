@@ -18,17 +18,21 @@ package org.springframework.modulith.core;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.HasModifiers.Predicates.*;
+import static java.util.stream.Collectors.*;
 import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.PackageInfo;
@@ -45,36 +49,35 @@ import com.tngtech.archunit.core.domain.JavaModifier;
  *
  * @author Oliver Drotbohm
  */
-public class JavaPackage implements DescribedIterable<JavaClass> {
+public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<JavaPackage> {
 
 	private static final String PACKAGE_INFO_NAME = "package-info";
 	private static final String MULTIPLE_TYPES_ANNOTATED_WITH = "Expected maximum of one type in package %s to be annotated with %s, but got %s!";
 	private static final DescribedPredicate<JavaClass> ARE_PACKAGE_INFOS = //
 			has(simpleName(PACKAGE_INFO_NAME)).or(is(metaAnnotatedWith(PackageInfo.class)));
 
-	private final String name;
-	private final Classes classes;
-	private final Classes packageClasses;
+	private final PackageName name;
+	private final Classes classes, packageClasses;
 	private final Supplier<Set<JavaPackage>> directSubPackages;
 
 	/**
 	 * Creates a new {@link JavaPackage} for the given {@link Classes}, name and whether to include all sub-packages.
 	 *
 	 * @param classes must not be {@literal null}.
-	 * @param name must not be {@literal null} or empty.
+	 * @param name must not be {@literal null}.
 	 * @param includeSubPackages
 	 */
-	private JavaPackage(Classes classes, String name, boolean includeSubPackages) {
+	private JavaPackage(Classes classes, PackageName name, boolean includeSubPackages) {
 
 		Assert.notNull(classes, "Classes must not be null!");
-		Assert.hasText(name, "Name must not be null or empty!");
 
 		this.classes = classes;
-		this.packageClasses = classes.that(resideInAPackage(includeSubPackages ? name.concat("..") : name));
+		this.packageClasses = classes
+				.that(resideInAPackage(name.asFilter(includeSubPackages)));
 		this.name = name;
 		this.directSubPackages = SingletonSupplier.of(() -> packageClasses.stream() //
 				.map(it -> it.getPackageName()) //
-				.filter(it -> !it.equals(name)) //
+				.filter(Predicate.not(name::hasName)) //
 				.map(it -> extractDirectSubPackage(it)) //
 				.distinct() //
 				.map(it -> of(classes, it)) //
@@ -89,7 +92,11 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 * @return
 	 */
 	public static JavaPackage of(Classes classes, String name) {
-		return new JavaPackage(classes, name, true);
+		return new JavaPackage(classes, new PackageName(name), true);
+	}
+
+	public static Comparator<JavaPackage> reverse() {
+		return (left, right) -> -left.compareTo(right);
 	}
 
 	/**
@@ -110,7 +117,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 * @return will never be {@literal null}.
 	 */
 	public String getName() {
-		return name;
+		return name.getName();
 	}
 
 	/**
@@ -128,7 +135,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 * @return will never be {@literal null}.
 	 */
 	public String getLocalName() {
-		return name.substring(name.lastIndexOf('.') + 1);
+		return name.getLocalName();
 	}
 
 	/**
@@ -174,6 +181,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 
 		return packageClasses.that(ARE_PACKAGE_INFOS.and(are(metaAnnotatedWith(annotation)))).stream() //
 				.map(JavaClass::getPackageName) //
+				.filter(Predicate.not(name::hasName))
 				.distinct() //
 				.map(it -> of(classes, it));
 	}
@@ -182,7 +190,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 * Returns all {@link Classes} that match the given {@link DescribedPredicate}.
 	 *
 	 * @param predicate must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public Classes that(DescribedPredicate<? super JavaClass> predicate) {
 
@@ -241,6 +249,90 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	}
 
 	/**
+	 * Returns the name of the package.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	PackageName getPackageName() {
+		return name;
+	}
+
+	/**
+	 * Returns a filter expression including all types within that package and any nested package.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	String asFilter() {
+		return name.asFilter(true);
+	}
+
+	/**
+	 * Returns a new {@link Stream} of the current package and all its sub-packages annotated with the given annotation
+	 * type.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	Stream<JavaPackage> andSubPackagesAnnotatedWith(Class<? extends Annotation> type) {
+
+		Assert.notNull(type, "Annotation type must not be null!");
+
+		return Stream.concat(Stream.of(this), getSubPackagesAnnotatedWith(type));
+	}
+
+	/**
+	 * Returns whether the given reference package is a sub-package of the current one.
+	 *
+	 * @param reference must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	boolean isSubPackageOf(JavaPackage reference) {
+
+		Assert.notNull(reference, "Reference package must not be null!");
+
+		return name.isSubPackageOf(reference.name);
+	}
+
+	/**
+	 * Returns all Classes residing in the current package but not in any of the given sub-packages.
+	 *
+	 * @param exclusions must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	Classes getClasses(Iterable<JavaPackage> exclusions) {
+
+		Assert.notNull(exclusions, "Object must not be null!");
+
+		var excludedPackages = StreamSupport.stream(exclusions.spliterator(), false)
+				.map(JavaPackage::asFilter)
+				.toArray(String[]::new);
+
+		return packageClasses.that(resideOutsideOfPackages(excludedPackages));
+	}
+
+	/**
+	 * Returns a {@link JavaPackages} instance representing all sub-packages.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	JavaPackages getSubPackages() {
+
+		return packageClasses.stream() //
+				.map(JavaClass::getPackageName)
+				.filter(Predicate.not(name::hasName))
+				.distinct()
+				.map(it -> new JavaPackage(classes, new PackageName(it), true))
+				.collect(collectingAndThen(toUnmodifiableList(), JavaPackages::new));
+	}
+
+	Optional<JavaPackage> getSubPackage(String localName) {
+
+		return getSubPackages().stream()
+				.filter(it -> it.getLocalName().equals(localName))
+				.findFirst();
+	}
+
+	/**
 	 * Finds the annotation of the given type declared on the package itself or any type located the direct package's
 	 * types .
 	 *
@@ -292,14 +384,23 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 
 	/*
 	 * (non-Javadoc)
+	 * @see java.lang.Comparable#compareTo(java.lang.Object)
+	 */
+	@Override
+	public int compareTo(JavaPackage o) {
+		return name.compareTo(o.name);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 
-		return new StringBuilder(name) //
+		return new StringBuilder(name.toString()) //
 				.append("\n") //
-				.append(getClasses().format(name)) //
+				.append(getClasses().format(name.toString())) //
 				.append('\n') //
 				.toString();
 	}
@@ -331,7 +432,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(classes, directSubPackages, name, packageClasses);
+		return Objects.hash(classes, directSubPackages.get(), name, packageClasses);
 	}
 
 	/**
