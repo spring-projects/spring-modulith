@@ -1,2 +1,2 @@
 @org.jmolecules.ddd.annotation.Module
-package jmolecules;
+package example.jmolecules;

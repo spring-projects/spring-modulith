@@ -575,7 +575,8 @@ public class Documenter {
 		ComponentView componentView = createComponentView(options);
 		componentView.setTitle(getDefaultedSystemName());
 
-		addComponentsToView(() -> modules.stream(), componentView, options, it -> {});
+		addComponentsToView(() -> modules.stream().filter(Predicate.not(modules::hasParent)), componentView,
+				options, it -> {});
 
 		return render(componentView, options);
 	}

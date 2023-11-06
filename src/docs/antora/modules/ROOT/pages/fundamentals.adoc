@@ -158,7 +158,7 @@ icon:cubes[] Example
    ├─ **icon:cube[] example.order**
    |  └─ icon:plus-circle[role=green] OrderManagement.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
+      └─ icon:plus-circle[role=red] SomethingOrderInternal.java
 ----
 
 In such an arrangement, the `order` package is considered an API package.
@@ -169,8 +169,47 @@ Note how `SomethingOrderInternal` is a public type, likely because `OrderManagem
 This unfortunately means that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
-[[modules.advanced.open]]
-==== Open Application Modules
+[[modules.nested]]
+=== Nested Application Modules
+
+As of version 1.3, Spring Modulith application modules can contain nested modules.
+This allows governing the internal structure in case a module contains parts to be logically separated in turn.
+To define nested application modules, explicitly annotate packages that are supposed to constitute with `@ApplicationModule`.
+
+[source, subs="macros, quotes"]
+----
+icon:cubes[] Example
+└─ icon:folder[] src/main/java
+   ├─ icon:cube[] example
+   |  └─ icon:plus-circle[role=green] Application.java
+   ├─ icon:cube[] example.inventory
+   |  ├─ icon:plus-circle[role=green] InventoryManagement.java
+   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+   ├─ icon:cube[] example.inventory.internal
+   |  └─ icon:plus-circle[role=red] SomethingInventoryInternal.java
+   ├─ icon:cube[] example.inventory.nested
+   |  ├─ icon:coffee[] package-info.java // @ApplicationModule
+   |  └─ icon:plus-circle[role=yellow] NestedApi.java
+   ├─ icon:cube[] example.inventory.nested.internal
+   |  └─ icon:minus-circle[role=red] NestedInternal.java
+   └─ icon:cube[] example.order
+      ├─ icon:plus-circle[role=green] OrderManagement.java
+      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
+
+----
+
+In this example `inventory` is an application module as described xref:fundamentals.adoc#modules.simple[above].
+The `@ApplicationModule` annotation on the `nested` package caused that to become a nested application module in turn.
+In that arrangement, the following access rules apply:
+
+* The code in _Nested_ is only available from _Inventory_, i.e. only any of the `SomethingInventoryInternal` types can access `NestedApi`. `NestedInternal` is only accessible from `NestedApi`.
+* Any code in the _Nested_ module can access code in parent modules, even internal.
+I.e., both `NestedApi` and `NestedInternal` can access `inventory.internal.SomethingInventoryInternal`.
+* Code from nested modules can also access exposed types by top-level application modules.
+Any code in `nested` (or any sub-packages) can access `OrderManagement`.
+
+[[modules.open, modules.advanced.open]]
+=== Open Application Modules
 
 The arrangement described xref:fundamentals.adoc#modules.advanced[above] are considered closed as they only expose types to other modules that are actively selected for exposure.
 When applying Spring Modulith to legacy applications, hiding all types located in nested packages from other modules might be inadequate or require marking all those packages for exposure, too.
