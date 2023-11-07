@@ -1,2 +1,4 @@
 org.springframework.beans.factory.aot.BeanRegistrationAotProcessor=\
     org.springframework.modulith.events.aot.TransactionalEventListenerAotProcessor
+org.springframework.aot.hint.RuntimeHintsRegistrar=\
+    org.springframework.modulith.events.aot.ApplicationListenerMethodAdapterRuntimeHints
