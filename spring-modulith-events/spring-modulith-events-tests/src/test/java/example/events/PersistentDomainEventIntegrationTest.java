@@ -47,74 +47,70 @@ class PersistentDomainEventIntegrationTest {
 	@Test
 	void exposesEventPublicationForFailedListener() throws Exception {
 
-		AnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext();
-		context.getEnvironment().getPropertySources().addFirst(
-				new MapPropertySource("test", Map.of("spring.modulith.republish-outstanding-events-on-restart", "true")));
-		context.register(ApplicationConfiguration.class, InfrastructureConfiguration.class);
-		context.refresh();
+		try (var context = new AnnotationConfigApplicationContext()) {
 
-		EventPublicationRegistry registry = context.getBean(EventPublicationRegistry.class);
+			context.getEnvironment().getPropertySources().addFirst(
+					new MapPropertySource("test", Map.of("spring.modulith.republish-outstanding-events-on-restart", "true")));
+			context.register(ApplicationConfiguration.class, InfrastructureConfiguration.class);
+			context.refresh();
 
-		try {
+			var registry = context.getBean(EventPublicationRegistry.class);
 
-			context.getBean(Client.class).method();
+			try {
+
+				context.getBean(Client.class).method();
+
+				Thread.sleep(200);
+
+				assertThat(context.getBean(NonTxEventListener.class).getInvoked()).isEqualTo(1);
+				assertThat(context.getBean(FirstTxEventListener.class).getInvoked()).isEqualTo(1);
+				assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(1);
+				assertThat(context.getBean(ThirdTxEventListener.class).getInvoked()).isEqualTo(1);
+				assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(1);
+
+			} finally {
+
+				assertThat(registry.findIncompletePublications()) //
+						.extracting(TargetEventPublication::getTargetIdentifier) //
+						.extracting(PublicationTargetIdentifier::getValue) //
+						.hasSize(2) //
+						.allSatisfy(id -> {
+							assertThat(id)
+									.matches(it -> //
+							it.contains(SecondTxEventListener.class.getName()) //
+									|| it.contains(FourthTxEventListener.class.getName()));
+						});
+
+			}
+
+			// Resubmit failed publications
+			var incompletePublications = context.getBean(IncompleteEventPublications.class);
+
+			incompletePublications.resubmitIncompletePublications(__ -> true);
 
 			Thread.sleep(200);
 
 			assertThat(context.getBean(NonTxEventListener.class).getInvoked()).isEqualTo(1);
 			assertThat(context.getBean(FirstTxEventListener.class).getInvoked()).isEqualTo(1);
-			assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(1);
+			assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(2);
 			assertThat(context.getBean(ThirdTxEventListener.class).getInvoked()).isEqualTo(1);
-			assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(1);
+			assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(2);
 
-		} catch (Throwable e) {
+			// Still 2 uncompleted publications
+			assertThat(registry.findIncompletePublications()).hasSize(2);
 
-			System.out.println(e);
+			incompletePublications.resubmitIncompletePublications(it -> {
+				return TargetEventPublication.class.cast(it)
+						.getTargetIdentifier()
+						.getValue().contains(SecondTxEventListener.class.getName());
+			});
 
-		} finally {
-
-			assertThat(registry.findIncompletePublications()) //
-					.extracting(TargetEventPublication::getTargetIdentifier) //
-					.extracting(PublicationTargetIdentifier::getValue) //
-					.hasSize(2) //
-					.allSatisfy(id -> {
-						assertThat(id)
-								.matches(it -> //
-						it.contains(SecondTxEventListener.class.getName()) //
-								|| it.contains(FourthTxEventListener.class.getName()));
-					});
-
+			assertThat(context.getBean(NonTxEventListener.class).getInvoked()).isEqualTo(1);
+			assertThat(context.getBean(FirstTxEventListener.class).getInvoked()).isEqualTo(1);
+			assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(3);
+			assertThat(context.getBean(ThirdTxEventListener.class).getInvoked()).isEqualTo(1);
+			assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(2);
 		}
-
-		// Resubmit failed publications
-		var incompletePublications = context.getBean(IncompleteEventPublications.class);
-
-		incompletePublications.resubmitIncompletePublications(__ -> true);
-
-		Thread.sleep(200);
-
-		assertThat(context.getBean(NonTxEventListener.class).getInvoked()).isEqualTo(1);
-		assertThat(context.getBean(FirstTxEventListener.class).getInvoked()).isEqualTo(1);
-		assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(2);
-		assertThat(context.getBean(ThirdTxEventListener.class).getInvoked()).isEqualTo(1);
-		assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(2);
-
-		// Still 2 uncompleted publications
-		assertThat(registry.findIncompletePublications()).hasSize(2);
-
-		incompletePublications.resubmitIncompletePublications(it -> {
-			return TargetEventPublication.class.cast(it)
-					.getTargetIdentifier()
-					.getValue().contains(SecondTxEventListener.class.getName());
-		});
-
-		assertThat(context.getBean(NonTxEventListener.class).getInvoked()).isEqualTo(1);
-		assertThat(context.getBean(FirstTxEventListener.class).getInvoked()).isEqualTo(1);
-		assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(3);
-		assertThat(context.getBean(ThirdTxEventListener.class).getInvoked()).isEqualTo(1);
-		assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(2);
-
-		context.close();
 	}
 
 	@Configuration
