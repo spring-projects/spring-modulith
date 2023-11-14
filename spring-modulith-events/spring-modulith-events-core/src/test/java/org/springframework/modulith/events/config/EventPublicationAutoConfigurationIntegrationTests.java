@@ -35,6 +35,7 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncPropertiesDefaulter;
@@ -55,17 +56,16 @@ class EventPublicationAutoConfigurationIntegrationTests {
 
 	@Mock EventPublicationRepository repository;
 
-	@Test // GH-149
-	void registersAsyncTerminationDefaulterByDefault() {
+	@Test // GH-149, GH-371
+	void doesNotRegisterAsyncTerminationDefaulterByDefault() {
 
-		basicSetup()
-				.run(context -> {
-					assertThat(context).hasSingleBean(AsyncPropertiesDefaulter.class);
+		basicSetup().run(context -> {
 
-					expect(Shutdown::isAwaitTermination, true).andThen(
-							expect(Shutdown::getAwaitTerminationPeriod, Duration.ofSeconds(2)))
-							.accept(context);
-				});
+			assertThat(context).hasSingleBean(AsyncPropertiesDefaulter.class);
+
+			expect(Shutdown::isAwaitTermination, false);
+			expect(Shutdown::getAwaitTerminationPeriod, null);
+		});
 	}
 
 	@Test // GH-149
@@ -137,8 +137,8 @@ class EventPublicationAutoConfigurationIntegrationTests {
 		});
 	}
 
-	private <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,
-			T expected) {
+	private static <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,
+			@Nullable T expected) {
 
 		return context -> assertThat(context.getBean(TaskExecutionProperties.class).getShutdown())
 				.extracting(extractor)

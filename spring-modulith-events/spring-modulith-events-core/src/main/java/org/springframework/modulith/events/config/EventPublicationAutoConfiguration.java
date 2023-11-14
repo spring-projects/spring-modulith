@@ -32,6 +32,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutdown;
+import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
@@ -44,6 +45,7 @@ import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 import org.springframework.scheduling.annotation.AbstractAsyncConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * Fundamental configuration for the {@link EventPublicationRegistry} support.
@@ -100,6 +102,9 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 		private static final Logger LOGGER = LoggerFactory.getLogger(AsyncPropertiesDefaulter.class);
 		private static final String PROPERTY = "spring.task.execution.shutdown.await-termination";
 
+		private static final boolean IS_SPRING_6_1_OR_BETTER = Lifecycle.class
+				.isAssignableFrom(ThreadPoolTaskExecutor.class);
+
 		private final Environment environment;
 
 		AsyncPropertiesDefaulter(Environment environment) {
@@ -113,6 +118,10 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 		@NonNull
 		@Override
 		public Object postProcessAfterInitialization(Object bean, String beanName) throws BeansException {
+
+			if (IS_SPRING_6_1_OR_BETTER) {
+				return bean;
+			}
 
 			if (!(bean instanceof TaskExecutionProperties p)) {
 				return bean;
