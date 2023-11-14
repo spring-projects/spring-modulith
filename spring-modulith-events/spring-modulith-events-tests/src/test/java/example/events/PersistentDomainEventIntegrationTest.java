@@ -87,7 +87,9 @@ class PersistentDomainEventIntegrationTest {
 		}
 
 		// Resubmit failed publications
-		context.getBean(IncompleteEventPublications.class).resubmitIncompletePublications(__ -> true);
+		var incompletePublications = context.getBean(IncompleteEventPublications.class);
+
+		incompletePublications.resubmitIncompletePublications(__ -> true);
 
 		Thread.sleep(200);
 
@@ -99,6 +101,18 @@ class PersistentDomainEventIntegrationTest {
 
 		// Still 2 uncompleted publications
 		assertThat(registry.findIncompletePublications()).hasSize(2);
+
+		incompletePublications.resubmitIncompletePublications(it -> {
+			return TargetEventPublication.class.cast(it)
+					.getTargetIdentifier()
+					.getValue().contains(SecondTxEventListener.class.getName());
+		});
+
+		assertThat(context.getBean(NonTxEventListener.class).getInvoked()).isEqualTo(1);
+		assertThat(context.getBean(FirstTxEventListener.class).getInvoked()).isEqualTo(1);
+		assertThat(context.getBean(SecondTxEventListener.class).getInvoked()).isEqualTo(3);
+		assertThat(context.getBean(ThirdTxEventListener.class).getInvoked()).isEqualTo(1);
+		assertThat(context.getBean(FourthTxEventListener.class).getInvoked()).isEqualTo(2);
 
 		context.close();
 	}
