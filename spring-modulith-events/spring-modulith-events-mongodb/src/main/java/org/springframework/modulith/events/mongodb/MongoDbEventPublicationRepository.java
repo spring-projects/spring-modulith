@@ -89,7 +89,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		var update = Update.update(COMPLETION_DATE, completionDate);
 
-		mongoTemplate.updateFirst(byEventAndListenerId(event, identifier), update, MongoDbEventPublication.class);
+		mongoTemplate.findAndModify(byEventAndListenerId(event, identifier), update, MongoDbEventPublication.class);
 	}
 
 	/*
