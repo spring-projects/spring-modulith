@@ -27,6 +27,8 @@ import java.util.UUID;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.core.query.CriteriaDefinition;
+import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.TypeInformation;
 import org.springframework.modulith.events.core.EventPublication;
@@ -79,14 +81,13 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		var criteria = byEventAndListenerId(event, identifier);
 		var update = Update.update("completionDate", completionDate);
 
-		mongoTemplate.updateFirst(query(criteria), update, MongoDbEventPublication.class);
+		mongoTemplate.findAndModify(defaultQuery(criteria), update, MongoDbEventPublication.class);
 	}
 
 	@Override
 	public List<EventPublication> findIncompletePublications() {
 
-		var query = query(where("completionDate").isNull())
-				.with(Sort.by("publicationDate").ascending());
+		var query = defaultQuery(where("completionDate").isNull());
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class).stream() //
 				.map(this::documentToDomain) //
@@ -132,7 +133,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		var criteria = byEventAndListenerId(event, targetIdentifier);
-		var query = query(criteria).with(Sort.by("publicationDate").ascending());
+		var query = defaultQuery(criteria);
 
 		return mongoTemplate.find(query, MongoDbEventPublication.class);
 	}
@@ -157,6 +158,10 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	private EventPublication documentToDomain(MongoDbEventPublication document) {
 		return new MongoDbEventPublicationAdapter(document);
+	}
+
+	private static Query defaultQuery(CriteriaDefinition criteria) {
+		return query(criteria).with(Sort.by("publicationDate").ascending());
 	}
 
 	private static class MongoDbEventPublicationAdapter implements EventPublication {
