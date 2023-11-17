@@ -92,7 +92,7 @@ public class Groupings {
 				.isPresent("org.jmolecules.architecture.hexagonal.Port", JMoleculesGroupings.class.getClassLoader());
 
 		private static final boolean JMOLECULES_LAYERS_PRESENT = ClassUtils
-				.isPresent("org.jmolecules.architecture.layered", JMoleculesGroupings.class.getClassLoader());
+				.isPresent("org.jmolecules.architecture.layered.ApplicationLayer", JMoleculesGroupings.class.getClassLoader());
 
 		private static final boolean JMOLECULES_ONION_PRESENT = ClassUtils
 				.isPresent("org.jmolecules.architecture.onion.classical.ApplicationRing",
