@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 
@@ -46,11 +47,8 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 				.withUserConfiguration(SampleApp.class)
 				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
 				.run(context -> {
-
 					assertThat(context.getBean(ApplicationRuntime.class)).isNotNull();
 					assertThat(context.getBean(ApplicationModulesRuntime.class)).isNotNull();
-
-					context.close();
 				});
 	}
 
@@ -62,13 +60,25 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
 				.withClassLoader(new FilteredClassLoader(ClassFileImporter.class))
 				.run(context -> {
-
 					assertThat(context).hasFailed();
 					assertThat(context.getStartupFailure().getCause())
 							.isInstanceOf(BeanInstantiationException.class)
 							.cause().isInstanceOf(MissingRuntimeDependency.class);
-
-					context.close();
 				});
+	}
+
+	@Test // GH-375
+	void registersInitializingListenerIfInitializersPresent() {
+
+		var beanName = "applicationModuleInitializingListener";
+		var runner = new ApplicationContextRunner()
+				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class));
+
+		// No initializer -> no listener
+		runner.run(context -> assertThat(context).doesNotHaveBean(beanName));
+
+		// Initializer -> listener
+		runner.withBean(ApplicationModuleInitializer.class, () -> () -> {})
+				.run(context -> assertThat(context).hasBean(beanName));
 	}
 }

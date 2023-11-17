@@ -15,15 +15,13 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
-import java.util.concurrent.Future;
-import java.util.function.Supplier;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.beans.factory.ListableBeanFactory;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
@@ -40,6 +38,7 @@ import org.springframework.modulith.core.FormatableType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.util.Assert;
+import org.springframework.util.function.ThrowingSupplier;
 
 /**
  * Auto-configuration to register a {@link SpringBootApplicationRuntime}, a {@link ApplicationModulesRuntime} and an
@@ -65,23 +64,25 @@ class SpringModulithRuntimeAutoConfiguration {
 	@ConditionalOnMissingBean
 	static ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
 
-		var mainClass = runtime.getMainApplicationClass();
-		var modules = EXECUTOR
-				.submit(() -> ApplicationModulesBootstrap.initializeApplicationModules(mainClass));
+		ThrowingSupplier<ApplicationModules> modules = () -> EXECUTOR
+				.submit(() -> ApplicationModulesBootstrap.initializeApplicationModules(runtime.getMainApplicationClass()))
+				.get();
 
-		return new ApplicationModulesRuntime(toSupplier(modules), runtime);
+		return new ApplicationModulesRuntime(modules, runtime);
 	}
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnBean(ApplicationModuleInitializer.class)
 	static ApplicationListener<ApplicationStartedEvent> applicationModuleInitializingListener(
-			ListableBeanFactory beanFactory) {
+			ObjectProvider<ApplicationModulesRuntime> runtime,
+			ObjectProvider<ApplicationModuleInitializer> initializers) {
 
 		return event -> {
 
-			var modules = beanFactory.getBean(ApplicationModulesRuntime.class).get();
+			var modules = runtime.getObject().get();
 
-			beanFactory.getBeanProvider(ApplicationModuleInitializer.class).stream() //
+			initializers.stream() //
 					.sorted(modules.getComparator()) //
 					.map(it -> LOGGER.isDebugEnabled() ? new LoggingApplicationModuleInitializerAdapter(it, modules) : it)
 					.forEach(ApplicationModuleInitializer::initialize);
@@ -158,17 +159,6 @@ class SpringModulithRuntimeAutoConfiguration {
 
 			return result;
 		}
-	}
-
-	private static Supplier<ApplicationModules> toSupplier(Future<ApplicationModules> modules) {
-
-		return () -> {
-			try {
-				return modules.get();
-			} catch (Exception o_O) {
-				throw new RuntimeException(o_O);
-			}
-		};
 	}
 
 	/**
