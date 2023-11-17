@@ -35,7 +35,7 @@ class ApplicationModulesEndpointIntegrationTests {
 	void exposesApplicationModulesAsMap() throws Exception {
 
 		var modules = TestApplicationModules.of("example");
-		var endpoint = new ApplicationModulesEndpoint(() -> modules);
+		var endpoint = ApplicationModulesEndpoint.ofApplicationModules(() -> modules);
 		var result = endpoint.getApplicationModules();
 		var context = JsonPath.parse(result);
 

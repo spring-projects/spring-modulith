@@ -15,11 +15,18 @@
  */
 package org.springframework.modulith.actuator.autoconfigure;
 
+import java.nio.charset.StandardCharsets;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.modulith.actuator.ApplicationModulesEndpoint;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
+import org.springframework.util.function.ThrowingSupplier;
 
 /**
  * Auto-configuration for the {@link ApplicationModulesEndpoint}.
@@ -29,9 +36,24 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 @AutoConfiguration
 class ApplicationModulesEndpointConfiguration {
 
+	static final String FILE_LOCATION = "META-INF/spring-modulith/application-modules.json";
+
+	private static final Resource PRECOMPUTED = new ClassPathResource(FILE_LOCATION);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesEndpointConfiguration.class);
+
 	@Bean
 	@ConditionalOnMissingBean
 	ApplicationModulesEndpoint applicationModulesEndpoint(ApplicationModulesRuntime runtime) {
-		return new ApplicationModulesEndpoint(runtime);
+
+		if (PRECOMPUTED.exists()) {
+
+			ThrowingSupplier<String> fileContent = () -> PRECOMPUTED.getContentAsString(StandardCharsets.UTF_8);
+
+			LOGGER.debug("Using application modules description from {}", FILE_LOCATION);
+			return ApplicationModulesEndpoint.precomputed(fileContent);
+
+		} else {
+			return ApplicationModulesEndpoint.ofApplicationModules(runtime);
+		}
 	}
 }
