@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.actuator;
 
-import java.util.Map;
 import java.util.function.Supplier;
 
 import org.slf4j.Logger;
@@ -44,13 +43,39 @@ public class ApplicationModulesEndpoint {
 	 *
 	 * @param runtime must not be {@literal null}.
 	 */
-	public ApplicationModulesEndpoint(Supplier<ApplicationModules> runtime) {
-
-		Assert.notNull(runtime, "ModulesRuntime must not be null!");
+	private ApplicationModulesEndpoint(Supplier<String> precomputed) {
 
 		LOGGER.debug("Activating Spring Modulith actuator.");
 
-		this.structure = SingletonSupplier.of(new ApplicationModulesExporter(runtime.get())::toJson);
+		this.structure = SingletonSupplier.of(precomputed);
+	}
+
+	/**
+	 * Creates a new {@link ApplicationModulesEndpoint} from the pre-computed actuator content
+	 *
+	 * @param precomputed must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.1
+	 */
+	public static ApplicationModulesEndpoint precomputed(Supplier<String> precomputed) {
+
+		Assert.notNull(precomputed, "Precomputed content must not be null!");
+
+		return new ApplicationModulesEndpoint(precomputed);
+	}
+
+	/**
+	 * Creates a new {@link ApplicationModulesEndpoint} for the given lazily initialized {@link ApplicationModules}.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.1
+	 */
+	public static ApplicationModulesEndpoint ofApplicationModules(Supplier<ApplicationModules> modules) {
+
+		Assert.notNull(modules, "ApplicationModules must not be null!");
+
+		return new ApplicationModulesEndpoint(() -> new ApplicationModulesExporter(modules.get()).toJson());
 	}
 
 	/**
