@@ -79,7 +79,7 @@ public class ApplicationModulesEndpoint {
 	}
 
 	/**
-	 * Returns the {@link ApplicationModules} metadata as {@link Map} (to be rendered as JSON).
+	 * Returns the {@link ApplicationModules} metadata as {@link java.util.Map} (to be rendered as JSON).
 	 *
 	 * @return will never be {@literal null}.
 	 */
