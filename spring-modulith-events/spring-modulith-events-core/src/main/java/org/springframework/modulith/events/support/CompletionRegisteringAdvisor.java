@@ -23,7 +23,6 @@ import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.Advisor;
 import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractPointcutAdvisor;
@@ -41,8 +40,8 @@ import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentLruCache;
 
 /**
- * An {@link Advisor} to decorate {@link TransactionalEventListener} annotated methods to mark the previously registered
- * event publications as completed on successful method execution.
+ * An {@link org.springframework.aop.Advisor} to decorate {@link TransactionalEventListener} annotated methods to mark
+ * the previously registered event publications as completed on successful method execution.
  *
  * @author Oliver Drotbohm
  */
@@ -177,7 +176,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 							method, o_O.getMessage());
 				}
 
-				return result;
+				throw o_O;
 			}
 
 			// Mark publication complete if the method is a transactional event listener.

@@ -29,7 +29,6 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.event.AbstractApplicationEventMulticaster;
-import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
@@ -41,14 +40,13 @@ import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
-import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
 /**
- * An {@link ApplicationEventMulticaster} to register {@link EventPublication}s in an {@link EventPublicationRegistry}
- * so that potentially failing transactional event listeners can get re-invoked upon application restart or via a
- * schedule.
+ * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register {@link EventPublication}s in an
+ * {@link EventPublicationRegistry} so that potentially failing transactional event listeners can get re-invoked upon
+ * application restart or via a schedule.
  * <p>
  * Republication is handled in {@link #afterSingletonsInstantiated()} inspecting the {@link EventPublicationRegistry}
  * for incomplete publications and
@@ -174,7 +172,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
 			TransactionalApplicationListener<ApplicationEvent> listener) {
 
-		listener.processEvent(publication.getApplicationEvent());
+		try {
+			listener.processEvent(publication.getApplicationEvent());
+		} catch (Exception o_O) {
+			if (LOGGER.isErrorEnabled()) {
+				LOGGER.error("Error republishing event publication " + publication, o_O);
+			}
+		}
 
 		return listener;
 	}
@@ -212,7 +216,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 * implement {@link TransactionalApplicationListener}.
 	 *
 	 * @author Oliver Drotbohm
-	 * @see TransactionalEventListener
+	 * @see org.springframework.transaction.event.TransactionalEventListener
 	 * @see TransactionalApplicationListener
 	 */
 	static class TransactionalEventListeners {
