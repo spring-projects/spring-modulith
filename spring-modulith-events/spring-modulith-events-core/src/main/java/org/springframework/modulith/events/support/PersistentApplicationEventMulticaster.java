@@ -192,7 +192,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				});
 	}
 
-	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration, Predicate<EventPublication> filter) {
+	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration,
+			Predicate<EventPublication> filter) {
 
 		var message = duration != null ? "" : " older than %s".formatted(duration);
 		var registry = this.registry.get();
@@ -206,8 +207,20 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		LOGGER.debug(getConfirmationMessage(publications) + " found.");
 
 		publications.stream() //
-			.filter(filter) //
-			.forEach(this::invokeTargetListener);
+				.filter(filter) //
+				.forEach(it -> {
+
+					try {
+
+						invokeTargetListener(it);
+
+					} catch (Exception o_O) {
+
+						if (LOGGER.isErrorEnabled()) {
+							LOGGER.error("Error republishing event publication " + it, o_O);
+						}
+					}
+				});
 	}
 
 	private static ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
