@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-examples</artifactId>
-		<version>1.1.0</version>
+		<version>1.2.0-SNAPSHOT</version>
 	</parent>
 
 	<name>Spring Modulith - Examples - Kafka Example</name>
