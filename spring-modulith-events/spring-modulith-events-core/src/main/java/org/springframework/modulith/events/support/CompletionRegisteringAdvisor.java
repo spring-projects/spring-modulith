@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.support;
 
 import java.lang.reflect.Method;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import org.aopalliance.aop.Advice;
@@ -31,6 +32,7 @@ import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.NonNull;
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.transaction.event.TransactionPhase;
@@ -164,25 +166,30 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 
 			Object result = null;
 			var method = invocation.getMethod();
+			var argument = invocation.getArguments()[0];
 
 			try {
-				result = invocation.proceed();
-			} catch (Exception o_O) {
 
-				if (LOG.isDebugEnabled()) {
-					LOG.debug("Invocation of listener {} failed. Leaving event publication uncompleted.", method, o_O);
-				} else {
-					LOG.info("Invocation of listener {} failed with message {}. Leaving event publication uncompleted.",
-							method, o_O.getMessage());
+				result = invocation.proceed();
+
+				if (result instanceof CompletableFuture<?> future) {
+
+					return future
+							.thenAccept(it -> markCompleted(method, argument))
+							.exceptionallyCompose(it -> {
+								handleFailure(method, it);
+								return CompletableFuture.failedFuture(it);
+							});
 				}
+
+			} catch (Throwable o_O) {
+
+				handleFailure(method, o_O);
 
 				throw o_O;
 			}
 
-			// Mark publication complete if the method is a transactional event listener.
-			String adapterId = ADAPTERS.get(method).getListenerId();
-			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
-			registry.get().markCompleted(invocation.getArguments()[0], identifier);
+			markCompleted(method, argument);
 
 			return result;
 		}
@@ -194,6 +201,27 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 		@Override
 		public int getOrder() {
 			return Ordered.HIGHEST_PRECEDENCE + 10;
+		}
+
+		@Nullable
+		private static Void handleFailure(Method method, Throwable o_O) {
+
+			if (LOG.isDebugEnabled()) {
+				LOG.debug("Invocation of listener {} failed. Leaving event publication uncompleted.", method, o_O);
+			} else {
+				LOG.info("Invocation of listener {} failed with message {}. Leaving event publication uncompleted.",
+						method, o_O.getMessage());
+			}
+
+			return null;
+		}
+
+		private void markCompleted(Method method, Object event) {
+
+			// Mark publication complete if the method is a transactional event listener.
+			String adapterId = ADAPTERS.get(method).getListenerId();
+			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
+			registry.get().markCompleted(event, identifier);
 		}
 
 		private static TransactionalApplicationListenerMethodAdapter createAdapter(Method method) {

@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
+import java.util.concurrent.CompletableFuture;
 import java.util.function.BiConsumer;
 
 import org.junit.jupiter.api.Test;
@@ -26,6 +27,7 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.event.EventListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
@@ -59,6 +61,34 @@ class CompletionRegisteringAdvisorUnitTests {
 		assertNonCompletion(SomeEventListener::nonEventListener);
 	}
 
+	@Test // GH-395
+	void doesNotTriggerCompletionOnFailedCompletableFuture() throws Throwable {
+
+		var result = createProxyFor(bean).asyncWithResult(true);
+
+		assertThat(result.isDone()).isFalse();
+		verify(registry, never()).markCompleted(any(), any());
+
+		Thread.sleep(500);
+
+		assertThat(result.isCompletedExceptionally()).isTrue();
+		verify(registry, never()).markCompleted(any(), any());
+	}
+
+	@Test // GH-395
+	void marksLazilyComputedCompletableFutureAsCompleted() throws Throwable {
+
+		var result = createProxyFor(bean).asyncWithResult(false);
+
+		assertThat(result.isDone()).isFalse();
+		verify(registry, never()).markCompleted(any(), any());
+
+		Thread.sleep(500);
+
+		assertThat(result.isCompletedExceptionally()).isFalse();
+		verify(registry).markCompleted(any(), any());
+	}
+
 	private void assertCompletion(BiConsumer<SomeEventListener, Object> consumer) {
 		assertCompletion(consumer, true);
 	}
@@ -78,11 +108,12 @@ class CompletionRegisteringAdvisorUnitTests {
 		verify(registry, times(expected ? 1 : 0)).markCompleted(any(), any());
 	}
 
-	private Object createProxyFor(Object bean) {
+	@SuppressWarnings("unchecked")
+	private <T> T createProxyFor(T bean) {
 
 		ProxyFactory factory = new ProxyFactory(bean);
 		factory.addAdvisor(new CompletionRegisteringAdvisor(() -> registry));
-		return factory.getProxy();
+		return (T) factory.getProxy();
 	}
 
 	static class SomeEventListener {
@@ -97,5 +128,22 @@ class CompletionRegisteringAdvisorUnitTests {
 		void simpleEventListener(Object object) {}
 
 		void nonEventListener(Object object) {}
+
+		@Async
+		@TransactionalEventListener
+		CompletableFuture<?> asyncWithResult(boolean fail) {
+
+			return CompletableFuture.completedFuture(new Object())
+					.thenComposeAsync(it -> {
+
+						try {
+							Thread.sleep(200);
+						} catch (InterruptedException e) {}
+
+						return fail
+								? CompletableFuture.failedFuture(new IllegalArgumentException())
+								: CompletableFuture.completedFuture(it);
+					});
+		}
 	}
 }
