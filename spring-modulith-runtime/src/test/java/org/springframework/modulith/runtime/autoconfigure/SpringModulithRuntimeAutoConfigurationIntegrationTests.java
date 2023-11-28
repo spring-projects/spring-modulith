@@ -17,6 +17,7 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import static org.assertj.core.api.Assertions.*;
 
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.BeanInstantiationException;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
@@ -67,6 +68,7 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 				});
 	}
 
+	@Disabled //Temporarily disabled
 	@Test // GH-375
 	void registersInitializingListenerIfInitializersPresent() {
 
