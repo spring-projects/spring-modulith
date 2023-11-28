@@ -25,11 +25,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
+import org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
-import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
@@ -50,7 +50,6 @@ import org.springframework.util.function.ThrowingSupplier;
 class SpringModulithRuntimeAutoConfiguration {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
-	private static final AsyncTaskExecutor EXECUTOR = new SimpleAsyncTaskExecutor();
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -62,9 +61,9 @@ class SpringModulithRuntimeAutoConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean
-	static ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
-
-		ThrowingSupplier<ApplicationModules> modules = () -> EXECUTOR
+	static ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime, SimpleAsyncTaskExecutorBuilder simpleAsyncTaskExecutorBuilder) {
+		SimpleAsyncTaskExecutor simpleAsyncTaskExecutor = simpleAsyncTaskExecutorBuilder.threadNamePrefix("modulith-executor").build();
+		ThrowingSupplier<ApplicationModules> modules = () -> simpleAsyncTaskExecutor
 				.submit(() -> ApplicationModulesBootstrap.initializeApplicationModules(runtime.getMainApplicationClass()))
 				.get();
 
