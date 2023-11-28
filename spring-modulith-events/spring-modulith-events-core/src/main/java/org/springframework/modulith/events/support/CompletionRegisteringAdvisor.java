@@ -167,6 +167,10 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 
 			try {
 				result = invocation.proceed();
+		                
+				if (result instanceof CompletableFuture<?> future && future.isCompletedExceptionally()) {
+		                        throw future.exceptionNow();
+		                }
 			} catch (Exception o_O) {
 
 				if (LOG.isDebugEnabled()) {
