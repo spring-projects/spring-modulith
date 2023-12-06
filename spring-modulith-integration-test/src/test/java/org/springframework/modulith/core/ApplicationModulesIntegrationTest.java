@@ -30,6 +30,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 
 import com.acme.myproject.Application;
+import com.acme.myproject.aot.Some$$SpringCGLIB$$Proxy;
+import com.acme.myproject.aot.Spring__Aot;
 import com.acme.myproject.complex.internal.FirstTypeBasedPort;
 import com.acme.myproject.complex.internal.SecondTypeBasePort;
 import com.acme.myproject.moduleA.ServiceComponentA;
@@ -183,6 +185,15 @@ class ApplicationModulesIntegrationTest {
 		// Allowed as allowedDependencies not set
 		assertThat(second.getDeclaredDependencies(modules).isAllowedDependency(Third.class)).isTrue();
 		assertThat(third.getDeclaredDependencies(modules).isAllowedDependency(Fourth.class)).isTrue();
+	}
+
+	@Test // GH-406
+	void excludesSpringAOTGeneratedTypes() {
+
+		assertThat(modules.getModuleByName("aot")).hasValueSatisfying(it -> {
+			assertThat(it.contains(Spring__Aot.class)).isFalse();
+			assertThat(it.contains(Some$$SpringCGLIB$$Proxy.class)).isFalse();
+		});
 	}
 
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {
