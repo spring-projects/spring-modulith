@@ -17,6 +17,7 @@ package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.base.DescribedPredicate.*;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
+import static com.tngtech.archunit.core.domain.properties.HasName.Predicates.*;
 import static java.util.stream.Collectors.*;
 
 import java.util.*;
@@ -43,6 +44,7 @@ import org.springframework.util.function.SingletonSupplier;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.properties.HasName;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
 import com.tngtech.archunit.lang.EvaluationResult;
@@ -62,6 +64,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
 	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
 			ApplicationModules.class.getClassLoader());
+	private static final DescribedPredicate<HasName> IS_AOT_TYPE = nameContaining("__")
+			.or(nameContaining("$$SpringCGLIB$$"));
 
 	static {
 
@@ -97,7 +101,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.allClasses = new ClassFileImporter() //
 				.withImportOption(option) //
 				.importPackages(packages) //
-				.that(not(ignored));
+				.that(not(ignored.or(IS_AOT_TYPE)));
 
 		Classes classes = Classes.of(allClasses);
 
