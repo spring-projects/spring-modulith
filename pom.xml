@@ -41,6 +41,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.1.0</spring.version> <!-- For Javadoc links only -->
+		<spring-framework.version>6.1.2-SNAPSHOT</spring-framework.version>
 		<spring-boot.version>3.2.0</spring-boot.version>
 		<spring-cloud-aws-bom.version>3.0.2</spring-cloud-aws-bom.version>
 
@@ -394,6 +395,13 @@ limitations under the License.
 
 	<dependencyManagement>
 		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-framework-bom</artifactId>
+				<version>${spring-framework.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
 			<dependency>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-dependencies</artifactId>
