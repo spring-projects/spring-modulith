@@ -15,10 +15,12 @@
  */
 package com.acme.myproject.aot;
 
+import org.springframework.aot.generate.Generated;
+
 /**
- *
  * @author Oliver Drotbohm
  */
+@Generated
 public class Spring__Aot {
 
 }
