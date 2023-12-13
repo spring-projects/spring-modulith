@@ -62,6 +62,7 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRepository.class)
+	@ConditionalOnMissingBean
 	EventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
 			ObjectProvider<Clock> clock) {
 		return super.eventPublicationRegistry(repository, clock);
@@ -70,6 +71,7 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRegistry.class)
+	@ConditionalOnMissingBean
 	static PersistentApplicationEventMulticaster applicationEventMulticaster(
 			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment) {
 
@@ -79,6 +81,7 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRegistry.class)
+	@ConditionalOnMissingBean
 	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry) {
 		return EventPublicationConfiguration.completionRegisteringAdvisor(registry);
 	}

@@ -137,6 +137,15 @@ class EventPublicationAutoConfigurationIntegrationTests {
 		});
 	}
 
+	@Test // GH-374
+	void compatibleWithEnablePersistentDomainEvents() {
+		basicSetup()
+				.withUserConfiguration(EnablePersistentDomainEventConfiguration.class)
+				.run(context -> {
+					assertThat(context).hasNotFailed();
+				});
+	}
+
 	private static <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,
 			@Nullable T expected) {
 
@@ -155,4 +164,7 @@ class EventPublicationAutoConfigurationIntegrationTests {
 
 	@EnableAsync(mode = AdviceMode.ASPECTJ)
 	static class CustomAsyncConfiguration {}
+
+	@EnablePersistentDomainEvents
+	static class EnablePersistentDomainEventConfiguration {}
 }
