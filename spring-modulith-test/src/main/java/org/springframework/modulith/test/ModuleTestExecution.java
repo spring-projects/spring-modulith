@@ -80,7 +80,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 			var bootstrapDependencies = module.getBootstrapDependencies(modules,
 					bootstrapMode.getDepth());
-			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).toList();
+			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).distinct().toList();
 		});
 
 		if (annotation.verifyAutomatically()) {
