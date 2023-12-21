@@ -25,6 +25,7 @@
 
 	<properties>
 		<java.version>17</java.version>
+		<jmolecules.version>2023.1.1</jmolecules.version>
 		<spring-framework.version>6.1.2</spring-framework.version>
 		<spring-boot.version>3.2.1</spring-boot.version>
 	</properties>
@@ -67,7 +68,7 @@
 			<dependency>
 				<groupId>org.jmolecules</groupId>
 				<artifactId>jmolecules-bom</artifactId>
-				<version>2023.0.0</version>
+				<version>${jmolecules.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
