@@ -43,7 +43,7 @@
 		<spring.version>6.1.0</spring.version> <!-- For Javadoc links only -->
 		<spring-framework.version>6.1.2-SNAPSHOT</spring-framework.version>
 		<spring-boot.version>3.2.0</spring-boot.version>
-		<spring-cloud-aws-bom.version>3.0.2</spring-cloud-aws-bom.version>
+		<spring-cloud-aws-bom.version>3.1.0</spring-cloud-aws-bom.version>
 
 	</properties>
 
