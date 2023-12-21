@@ -119,6 +119,10 @@ class Types {
 			return isAnnotatedWith(AT_CONFIGURATION_PROPERTIES);
 		}
 
+		static DescribedPredicate<? super JavaClass> isJsr303Validator() {
+			return implement("jakarta.validation.ConstraintValidator");
+		}
+
 		static boolean isAtBeanMethod(JavaMethod method) {
 			return isAnnotatedWith(SpringTypes.AT_BEAN).test(method);
 		}
