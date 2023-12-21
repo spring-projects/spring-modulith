@@ -567,10 +567,12 @@ public class ApplicationModule {
 		Classes repositories = source.that(isSpringDataRepository());
 		Classes coreComponents = source.that(not(INTERFACES).and(isComponent()));
 		Classes configurationProperties = source.that(isConfigurationProperties());
+		Classes jsr303Validator = source.that(isJsr303Validator());
 
 		return coreComponents //
 				.and(repositories) //
 				.and(configurationProperties) //
+				.and(jsr303Validator) //
 				.and(collect.getOrDefault(true, Collections.emptyList())) //
 				.and(collect.getOrDefault(false, Collections.emptyList()));
 	}

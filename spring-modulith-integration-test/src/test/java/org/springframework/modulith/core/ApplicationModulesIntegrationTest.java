@@ -37,6 +37,7 @@ import com.acme.myproject.complex.internal.SecondTypeBasePort;
 import com.acme.myproject.moduleA.ServiceComponentA;
 import com.acme.myproject.moduleA.SomeConfigurationA.SomeAtBeanComponentA;
 import com.acme.myproject.moduleB.ServiceComponentB;
+import com.acme.myproject.validator.SampleValidator;
 
 /**
  * @author Oliver Drotbohm
@@ -193,6 +194,20 @@ class ApplicationModulesIntegrationTest {
 		assertThat(modules.getModuleByName("aot")).hasValueSatisfying(it -> {
 			assertThat(it.contains(Spring__Aot.class)).isFalse();
 			assertThat(it.contains(Some$$SpringCGLIB$$Proxy.class)).isFalse();
+		});
+	}
+
+	@Test // GH-418
+	void detectsDependencyInducedByValidatorImplementation() {
+
+		assertThat(modules.getModuleByName("validator")).hasValueSatisfying(it -> {
+
+			assertThat(it.getSpringBeans())
+					.extracting(SpringBean::getFullyQualifiedTypeName)
+					.containsExactly(SampleValidator.class.getName());
+
+			assertThat(it.getBootstrapDependencies(modules).map(ApplicationModule::getName))
+					.containsExactly("moduleA");
 		});
 	}
 
