@@ -10,9 +10,9 @@ jobs:
     strategy:
       matrix:
         version:
-        - '3.1.5'
-        - '3.1.6-SNAPSHOT'
-        - '3.2.0-SNAPSHOT'
+        - '3.1.7'
+        - '3.1.8-SNAPSHOT'
+        - '3.2.2-SNAPSHOT'
     name: Build against Boot ${{ matrix.version }}
     runs-on: ubuntu-latest
 
