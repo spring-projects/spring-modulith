@@ -195,7 +195,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration,
 			Predicate<EventPublication> filter) {
 
-		var message = duration != null ? "" : " older than %s".formatted(duration);
+		var message = duration != null ? " older than %s".formatted(duration): "";;
 		var registry = this.registry.get();
 
 		LOGGER.debug("Looking up incomplete event publications {}… ", message);
