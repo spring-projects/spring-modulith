@@ -32,6 +32,8 @@ import org.springframework.modulith.events.config.EventExternalizationAutoConfig
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
+import java.util.concurrent.CompletableFuture;
+
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to RabbitMQ.
  *
@@ -63,7 +65,7 @@ class RabbitEventExternalizerConfiguration {
 
 			operations.convertAndSend(routing.getTarget(), routing.getKey(payload), payload);
 
-			return null;
+			return CompletableFuture.completedFuture(null);
 		});
 	}
 }
