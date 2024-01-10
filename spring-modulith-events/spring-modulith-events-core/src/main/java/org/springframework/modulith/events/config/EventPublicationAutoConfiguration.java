@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
+import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
@@ -62,7 +63,7 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRepository.class)
-	EventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
+	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
 			ObjectProvider<Clock> clock) {
 		return super.eventPublicationRegistry(repository, clock);
 	}
