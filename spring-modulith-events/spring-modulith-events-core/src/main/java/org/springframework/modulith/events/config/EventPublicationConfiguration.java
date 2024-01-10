@@ -42,7 +42,7 @@ class EventPublicationConfiguration {
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	EventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
+	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
 			ObjectProvider<Clock> clock) {
 		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()));
 	}
