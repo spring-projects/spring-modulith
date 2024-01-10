@@ -292,7 +292,7 @@ To use that support you need to take the following steps:
 2. Select event types to be externalized by annotating them with either Spring Modulith's or jMolecules' `@Externalized` annotation.
 3. Specify the broker-specific routing target in the annotation's value.
 
-To find out how to use other ways of selecting events for externalization, or customize their routing within the broker, check out <<events.externalization.fundamentals>>.
+To find out how to use other ways of selecting events for externalization, or customize their routing within the broker, check out <<externalization.fundamentals>>.
 
 [[externalization.infrastructure]]
 === Supported Infrastructure
