@@ -43,8 +43,8 @@ import org.springframework.util.StringUtils;
 @AutoConfigureOrder(Ordered.HIGHEST_PRECEDENCE)
 class ModuleTestAutoConfiguration {
 
-	private static final String AUTOCONFIG_PACKAGES = "org.springframework.boot.autoconfigure.AutoConfigurationPackages";
-	private static final String ENTITY_SCAN_PACKAGE = "org.springframework.boot.autoconfigure.domain.EntityScanPackages";
+	static final String AUTOCONFIG_PACKAGES = "org.springframework.boot.autoconfigure.AutoConfigurationPackages";
+	static final String ENTITY_SCAN_PACKAGE = "org.springframework.boot.autoconfigure.domain.EntityScanPackages";
 
 	static class AutoConfigurationAndEntityScanPackageCustomizer implements ImportBeanDefinitionRegistrar {
 
@@ -67,7 +67,7 @@ class ModuleTestAutoConfiguration {
 			setBasePackagesOn(registry, ENTITY_SCAN_PACKAGE, basePackages);
 		}
 
-		private void setBasePackagesOn(BeanDefinitionRegistry registry, String beanName, List<String> packages) {
+		void setBasePackagesOn(BeanDefinitionRegistry registry, String beanName, List<String> packages) {
 
 			if (!registry.containsBeanDefinition(beanName)) {
 				return;
@@ -77,9 +77,11 @@ class ModuleTestAutoConfiguration {
 			var definition = registry.getBeanDefinition(beanName);
 			var holder = definition.getConstructorArgumentValues().getArgumentValue(0, String[].class);
 
-			Arrays.stream((String[]) holder.getValue())
-					.filter(it -> it.startsWith("org.springframework.modulith"))
-					.forEach(packagesToSet::add);
+			if (holder != null) {
+				Arrays.stream((String[]) holder.getValue())
+						.filter(it -> it.startsWith("org.springframework.modulith"))
+						.forEach(packagesToSet::add);
+			}
 
 			definition.getConstructorArgumentValues().addIndexedArgumentValue(0, packagesToSet.toArray(String[]::new));
 		}
