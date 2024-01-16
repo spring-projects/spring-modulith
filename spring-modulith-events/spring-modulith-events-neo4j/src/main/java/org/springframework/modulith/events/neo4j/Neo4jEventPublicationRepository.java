@@ -17,6 +17,7 @@ package org.springframework.modulith.events.neo4j;
 
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -45,6 +46,7 @@ import org.springframework.util.DigestUtils;
  * A {@link Neo4jClient} based implementation of {@link EventPublicationRepository}.
  *
  * @author Gerrit Meier
+ * @author Oliver Drotbohm
  * @since 1.1
  */
 @Transactional
@@ -110,6 +112,12 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private static final ResultStatement INCOMPLETE_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
 			.where(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
+			.returning(EVENT_PUBLICATION_NODE)
+			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+			.build();
+
+	private static final ResultStatement ALL_COMPLETED_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNotNull())
 			.returning(EVENT_PUBLICATION_NODE)
 			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
 			.build();
@@ -223,6 +231,19 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 				.fetchAs(TargetEventPublication.class)
 				.mappedBy(this::mapRecordToPublication)
 				.one();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findCompletedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findCompletedPublications() {
+
+		return new ArrayList<>(neo4jClient.query(renderer.render(ALL_COMPLETED_STATEMENT))
+				.fetchAs(TargetEventPublication.class)
+				.mappedBy(this::mapRecordToPublication)
+				.all());
 	}
 
 	/*

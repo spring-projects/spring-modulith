@@ -50,6 +50,15 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				and p.completionDate is null
 			""";
 
+	private static String COMPLETE = """
+			select p
+			from JpaEventPublication p
+			where
+				p.completionDate is not null
+			order by
+				p.publicationDate asc
+			""";
+
 	private static String INCOMPLETE = """
 			select p
 			from JpaEventPublication p
@@ -184,6 +193,20 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		return findEntityBySerializedEventAndListenerIdAndCompletionDateNull(event, targetIdentifier)
 				.map(this::entityToDomain);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findCompletedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findCompletedPublications() {
+
+		return entityManager.createQuery(COMPLETE, JpaEventPublication.class)
+				.getResultList()
+				.stream()
+				.map(this::entityToDomain)
+				.toList();
 	}
 
 	/*

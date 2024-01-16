@@ -93,6 +93,17 @@ public interface EventPublicationRepository {
 			Object event, PublicationTargetIdentifier targetIdentifier);
 
 	/**
+	 * Returns all completed event publications currently found in the system.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.1.2
+	 */
+	default List<TargetEventPublication> findCompletedPublications() {
+		throw new UnsupportedOperationException(
+				"Your store implementation does not support looking up completed publications!");
+	}
+
+	/**
 	 * Deletes all publications with the given identifiers.
 	 *
 	 * @param identifiers must not be {@literal null}.

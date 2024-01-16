@@ -129,6 +129,21 @@ class MongoDbEventPublicationRepositoryTest {
 				.element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
 	}
 
+	@Test // GH-451
+	void findsCompletedPublications() {
+
+		var event = new TestEvent("first");
+		var publication = createPublication(event);
+
+		repository.markCompleted(publication, Instant.now());
+
+		assertThat(repository.findCompletedPublications())
+				.hasSize(1)
+				.element(0)
+				.extracting(TargetEventPublication::getEvent)
+				.isEqualTo(event);
+	}
+
 	private TargetEventPublication createPublication(Object event) {
 		return createPublication(event, TARGET_IDENTIFIER);
 	}
