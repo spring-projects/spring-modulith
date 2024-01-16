@@ -129,6 +129,15 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findCompletedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findCompletedPublications() {
+		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)));
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deletePublications(java.util.List)
 	 */
 	@Override

@@ -220,6 +220,31 @@ class Neo4jEventPublicationRepositoryTest {
 		}
 	}
 
+	@Test // GH-452
+	void findsCompletedPublications() {
+
+		var event = new TestEvent("first");
+		var publication = createPublication(event);
+
+		repository.markCompleted(publication, Instant.now());
+
+		assertThat(repository.findCompletedPublications())
+				.hasSize(1)
+				.element(0)
+				.extracting(TargetEventPublication::getEvent)
+				.isEqualTo(event);
+	}
+
+	private TargetEventPublication createPublication(Object event) {
+
+		var token = event.toString();
+
+		doReturn(token).when(eventSerializer).serialize(event);
+		doReturn(event).when(eventSerializer).deserialize(token, event.getClass());
+
+		return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+	}
+
 	@Value
 	static class TestEvent {
 		String eventId;

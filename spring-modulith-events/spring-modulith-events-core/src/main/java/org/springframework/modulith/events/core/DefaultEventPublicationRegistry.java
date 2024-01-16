@@ -24,7 +24,6 @@ import java.util.stream.Stream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
-import org.springframework.context.ApplicationListener;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.transaction.annotation.Propagation;
@@ -132,7 +131,7 @@ public class DefaultEventPublicationRegistry
 	 */
 	@Override
 	public Collection<? extends TargetEventPublication> findAll() {
-		return findIncompletePublications();
+		return events.findCompletedPublications();
 	}
 
 	/*

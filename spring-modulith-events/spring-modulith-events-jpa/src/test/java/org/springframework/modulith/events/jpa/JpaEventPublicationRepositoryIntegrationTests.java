@@ -270,6 +270,21 @@ class JpaEventPublicationRepositoryIntegrationTests {
 				.element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
 	}
 
+	@Test // GH-452
+	void findsCompletedPublications() {
+
+		var event = new TestEvent("first");
+		var publication = createPublication(event);
+
+		repository.markCompleted(publication, Instant.now());
+
+		assertThat(repository.findCompletedPublications())
+				.hasSize(1)
+				.element(0)
+				.extracting(TargetEventPublication::getEvent)
+				.isEqualTo(event);
+	}
+
 	private TargetEventPublication createPublication(Object event) {
 
 		var token = event.toString();

@@ -30,8 +30,6 @@ import java.util.stream.IntStream;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.jdbc.core.ResultSetExtractor;
-import org.springframework.jdbc.core.RowMapper;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -54,6 +52,13 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private static final String SQL_STATEMENT_INSERT = """
 			INSERT INTO EVENT_PUBLICATION (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
 			VALUES (?, ?, ?, ?, ?)
+			""";
+
+	private static final String SQL_STATEMENT_FIND_COMPLETED = """
+			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			FROM EVENT_PUBLICATION
+			WHERE COMPLETION_DATE IS NOT NULL
+			ORDER BY PUBLICATION_DATE ASC
 			""";
 
 	private static final String SQL_STATEMENT_FIND_UNCOMPLETED = """
@@ -187,6 +192,18 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 				targetIdentifier.getValue());
 
 		return result == null ? Optional.empty() : result.stream().findFirst();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findCompletedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findCompletedPublications() {
+
+		var result = operations.query(SQL_STATEMENT_FIND_COMPLETED, this::resultSetToPublications);
+
+		return result == null ? Collections.emptyList() : result;
 	}
 
 	@Override
