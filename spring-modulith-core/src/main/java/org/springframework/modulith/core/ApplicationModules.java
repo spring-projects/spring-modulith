@@ -67,7 +67,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
 	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
 			ApplicationModules.class.getClassLoader());
-	private static final DescribedPredicate<CanBeAnnotated> IS_AOT_TYPE = annotatedWith(Generated.class);
+	private static final DescribedPredicate<CanBeAnnotated> IS_AOT_TYPE;
 	private static final DescribedPredicate<HasName> IS_SPRING_CGLIB_PROXY = nameContaining("$$SpringCGLIB$$");
 
 	static {
@@ -85,6 +85,14 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		DETECTION_STRATEGY = loadFactories.isEmpty() ? ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES
 				: loadFactories.get(0);
+
+		IS_AOT_TYPE = ClassUtils.isPresent("org.springframework.aot.generate.Generated",
+				ApplicationModules.class.getClassLoader()) ? getAtGenerated() : DescribedPredicate.alwaysFalse();
+	}
+
+	@Nullable
+	private static DescribedPredicate<CanBeAnnotated> getAtGenerated() {
+		return annotatedWith(Generated.class);
 	}
 
 	private final ModulithMetadata metadata;
