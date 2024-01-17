@@ -15,10 +15,9 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import java.util.Map;
+import java.util.Arrays;
 import java.util.UUID;
 
-import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.util.Assert;
 
 /**
@@ -28,11 +27,11 @@ import org.springframework.util.Assert;
  */
 enum DatabaseType {
 
-	HSQLDB("hsqldb"),
+	HSQLDB("hsqldb", "HSQL Database Engine"),
 
-	H2("h2"),
+	H2("h2", "H2"),
 
-	MYSQL("mysql") {
+	MYSQL("mysql", "MySQL") {
 
 		@Override
 		Object uuidToDatabase(UUID id) {
@@ -45,30 +44,21 @@ enum DatabaseType {
 		}
 	},
 
-	POSTGRES("postgresql");
+	POSTGRES("postgresql", "PostgreSQL");
 
-	private static final Map<DatabaseDriver, DatabaseType> DATABASE_DRIVER_TO_DATABASE_TYPE_MAP = //
-			Map.of( //
-					DatabaseDriver.H2, H2, //
-					DatabaseDriver.HSQLDB, HSQLDB, //
-					DatabaseDriver.POSTGRESQL, POSTGRES, //
-					DatabaseDriver.MYSQL, MYSQL);
+	static DatabaseType from(String productName) {
 
-	static DatabaseType from(DatabaseDriver databaseDriver) {
-
-		var databaseType = DATABASE_DRIVER_TO_DATABASE_TYPE_MAP.get(databaseDriver);
-
-		if (databaseType == null) {
-			throw new IllegalArgumentException("Unsupported database type: " + databaseDriver);
-		}
-
-		return databaseType;
+		return Arrays.stream(DatabaseType.values())
+				.filter(it -> it.fullName.equalsIgnoreCase(productName))
+				.findFirst()
+				.orElseThrow(() -> new IllegalArgumentException("Unsupported database type: " + productName));
 	}
 
-	private final String value;
+	private final String value, fullName;
 
-	DatabaseType(String value) {
+	DatabaseType(String value, String fullName) {
 		this.value = value;
+		this.fullName = fullName;
 	}
 
 	Object uuidToDatabase(UUID id) {
