@@ -36,4 +36,4 @@ jobs:
       run: |
         cd spring-modulith-examples
         ../mvnw -B versions:update-parent -DskipResolution=true -DparentVersion=${{ matrix.version }}
-        ../mvnw -B -Pwith-preview-repos -Dspring-boot.version=${{ matrix.version }}
+        ../mvnw -B clean verify -Pwith-preview-repos -Dspring-boot.version=${{ matrix.version }}
