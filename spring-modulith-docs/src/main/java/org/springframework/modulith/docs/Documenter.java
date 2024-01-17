@@ -62,10 +62,10 @@ import com.structurizr.model.Relationship;
 import com.structurizr.model.SoftwareSystem;
 import com.structurizr.model.Tags;
 import com.structurizr.view.ComponentView;
+import com.structurizr.view.ModelView;
 import com.structurizr.view.RelationshipView;
 import com.structurizr.view.Shape;
 import com.structurizr.view.Styles;
-import com.structurizr.view.View;
 import com.tngtech.archunit.core.domain.JavaClass;
 
 /**
@@ -456,7 +456,7 @@ public class Documenter {
 				.forEach(it -> potentiallyRemoveDefaultRelationship(view, it));
 	}
 
-	private void potentiallyRemoveDefaultRelationship(View view, Collection<Relationship> relationships) {
+	private void potentiallyRemoveDefaultRelationship(ModelView view, Collection<Relationship> relationships) {
 
 		if (relationships.size() <= 1) {
 			return;
