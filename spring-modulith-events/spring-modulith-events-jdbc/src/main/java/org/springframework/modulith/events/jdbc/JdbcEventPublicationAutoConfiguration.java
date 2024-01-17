@@ -15,15 +15,17 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import java.sql.DatabaseMetaData;
+
 import javax.sql.DataSource;
 
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.jdbc.DatabaseDriver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -39,7 +41,7 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 
 	@Bean
 	DatabaseType databaseType(DataSource dataSource) {
-		return DatabaseType.from(DatabaseDriver.fromDataSource(dataSource));
+		return DatabaseType.from(fromDataSource(dataSource));
 	}
 
 	@Bean
@@ -55,5 +57,19 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 			DatabaseType databaseType) {
 
 		return new DatabaseSchemaInitializer(jdbcTemplate, resourceLoader, databaseType);
+	}
+
+	private static String fromDataSource(DataSource dataSource) {
+
+		String name = null;
+
+		try {
+
+			var metadata = JdbcUtils.extractDatabaseMetaData(dataSource, DatabaseMetaData::getDatabaseProductName);
+			name = JdbcUtils.commonDatabaseName(metadata);
+
+		} catch (Exception o_O) {}
+
+		return name == null ? "UNKNOWN" : name;
 	}
 }
