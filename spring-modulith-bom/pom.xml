@@ -86,6 +86,16 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
+				<artifactId>spring-modulith-events-aws-sns</artifactId>
+				<version>1.2.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.modulith</groupId>
+				<artifactId>spring-modulith-events-aws-sqs</artifactId>
+				<version>1.2.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-tests</artifactId>
 				<version>1.2.0-SNAPSHOT</version>
 			</dependency>
