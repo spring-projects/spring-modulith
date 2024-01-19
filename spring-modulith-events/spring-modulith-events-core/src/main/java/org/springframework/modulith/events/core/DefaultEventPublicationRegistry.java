@@ -31,8 +31,8 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 /**
- * A registry to capture event publications to {@link ApplicationListener}s. Allows to register those publications, mark
- * them as completed and lookup incomplete publications.
+ * A registry to capture event publications to {@link org.springframework.context.ApplicationListener}s. Allows to
+ * register those publications, mark them as completed and lookup incomplete publications.
  *
  * @author Oliver Drotbohm
  * @author Björn Kieling
