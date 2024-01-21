@@ -175,7 +175,10 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 				if (result instanceof CompletableFuture<?> future) {
 
 					return future
-							.thenAccept(it -> markCompleted(method, argument))
+							.thenApply(it -> {
+								markCompleted(method, argument);
+								return it;
+							})
 							.exceptionallyCompose(it -> {
 								handleFailure(method, it);
 								return CompletableFuture.failedFuture(it);
