@@ -20,7 +20,6 @@ import static org.springframework.modulith.docs.Asciidoctor.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
@@ -50,10 +49,9 @@ import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
 import com.structurizr.Workspace;
-import com.structurizr.export.Diagram;
+import com.structurizr.export.IndentingWriter;
 import com.structurizr.export.plantuml.C4PlantUMLExporter;
-import com.structurizr.io.plantuml.BasicPlantUMLWriter;
-import com.structurizr.io.plantuml.PlantUMLWriter;
+import com.structurizr.export.plantuml.StructurizrPlantUMLExporter;
 import com.structurizr.model.Component;
 import com.structurizr.model.Container;
 import com.structurizr.model.Element;
@@ -487,26 +485,18 @@ public class Documenter {
 
 			case C4:
 
-				C4PlantUMLExporter exporter = new C4PlantUMLExporter();
-				Diagram diagram = exporter.export(view);
+				var c4PlantUmlExporter = new C4PlantUMLExporter();
+				var diagram = c4PlantUmlExporter.export(view);
+
 				return diagram.getDefinition();
 
 			case UML:
 			default:
 
-				Writer writer = new StringWriter();
-				PlantUMLWriter umlWriter = new BasicPlantUMLWriter() {
+				var plantUmlExporter = new CustomizedPlantUmlExporter();
+				plantUmlExporter.addSkinParam("componentStyle", "uml1");
 
-					@Override
-					protected void writeContainerForContainer(ComponentView view, Writer writer,
-							BiConsumer<ComponentView, Writer> packageContentWriter) throws IOException {
-						packageContentWriter.accept(view, writer);
-					}
-				};
-				umlWriter.addSkinParam("componentStyle", "uml1");
-				umlWriter.write(view, writer);
-
-				return writer.toString();
+				return plantUmlExporter.export(view).getDefinition();
 		}
 	}
 
@@ -1173,4 +1163,18 @@ public class Documenter {
 			}
 		}
 	}
+
+	private static class CustomizedPlantUmlExporter extends StructurizrPlantUMLExporter {
+
+		@Override
+		protected boolean includeTitle(ModelView view) {
+			return false;
+		};
+
+		@Override
+		protected void startContainerBoundary(ModelView view, Container container, IndentingWriter writer) {}
+
+		@Override
+		protected void endContainerBoundary(ModelView view, IndentingWriter writer) {};
+	};
 }
