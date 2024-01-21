@@ -89,6 +89,14 @@ class CompletionRegisteringAdvisorUnitTests {
 		verify(registry).markCompleted(any(), any());
 	}
 
+	@Test // GH-483
+	void exposesResultForCompletableFuture() throws Exception {
+
+		CompletableFuture<?> future = createProxyFor(bean).asyncWithResult(false);
+
+		assertThat(future.get()).isNotNull();
+	}
+
 	private void assertCompletion(BiConsumer<SomeEventListener, Object> consumer) {
 		assertCompletion(consumer, true);
 	}
