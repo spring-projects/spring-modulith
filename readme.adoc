@@ -1,4 +1,4 @@
-= Spring Modulith image:https://img.shields.io/badge/Revved%20up%20by-Gradle%20Enterprise-06A0CE?logo=Gradle&labelColor=02303A["Revved up by Gradle Enterprise", link="https://ge.spring.io/scans?search.rootProjectNames=Spring Modulith"]
+= Spring Modulith image:https://img.shields.io/badge/Revved%20up%20by-Develocity-06A0CE?logo=Gradle&labelColor=02303A["Revved up by Develocity", link="https://ge.spring.io/scans?search.rootProjectNames=Spring Modulith"]
 
 :docs: https://docs.spring.io/spring-modulith/docs/current-SNAPSHOT/reference/html/
 
