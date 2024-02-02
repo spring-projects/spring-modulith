@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Import;
-import org.springframework.modulith.ApplicationModuleListener;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.modulith.test.Scenario;
@@ -51,7 +51,7 @@ class EventPublicationRegistryTests {
 		var order = new Order();
 
 		scenario.stimulate(() -> orders.complete(order))
-				.andWaitForStateChange(() -> listener.getEx())
+				.andWaitForStateChange(listener::getEx)
 				.andVerify(__ -> {
 					assertThat(registry.findIncompletePublications()).hasSize(1);
 				});
