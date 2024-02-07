@@ -121,7 +121,7 @@ public enum DependencyType {
 	}
 
 	static DependencyType forParameter(JavaClass type) {
-		return type.isAnnotatedWith("javax.persistence.Entity") ? ENTITY : DEFAULT;
+		return type.isAnnotatedWith(Types.JavaXTypes.AT_ENTITY) ? ENTITY : DEFAULT;
 	}
 
 	static DependencyType forCodeUnit(JavaCodeUnit codeUnit) {
