@@ -86,15 +86,6 @@ public class DefaultEventPublicationRegistry
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.EventPublicationRegistry#findCompletePublications()
-	 */
-	@Override
-	public Collection<TargetEventPublication> findCompletePublications() {
-		return events.findCompletedPublications();
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#findIncompletePublicationsOlderThan(java.time.Duration)
 	 */
 	@Override
@@ -150,7 +141,7 @@ public class DefaultEventPublicationRegistry
 	@Override
 	public void deletePublications(Predicate<EventPublication> filter) {
 
-		var identifiers = findCompletePublications().stream()
+		var identifiers = findAll().stream()
 				.filter(filter)
 				.map(TargetEventPublication::getIdentifier)
 				.toList();

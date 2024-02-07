@@ -47,13 +47,6 @@ public interface EventPublicationRegistry {
 	Collection<TargetEventPublication> findIncompletePublications();
 
 	/**
-	 * Returns all {@link TargetEventPublication}s that have been completed.
-	 *
-	 * @return will never be {@literal null}.
-	 */
-	Collection<TargetEventPublication> findCompletePublications();
-
-	/**
 	 * Returns all {@link TargetEventPublication}s that have not been completed yet and have been published before the
 	 * given duration in relation to "now".
 	 *
