@@ -141,7 +141,7 @@ public class DefaultEventPublicationRegistry
 	@Override
 	public void deletePublications(Predicate<EventPublication> filter) {
 
-		var identifiers = findIncompletePublications().stream()
+		var identifiers = findAll().stream()
 				.filter(filter)
 				.map(TargetEventPublication::getIdentifier)
 				.toList();
