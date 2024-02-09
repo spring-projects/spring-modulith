@@ -123,7 +123,7 @@ public class DefaultEventPublicationRegistry
 		Assert.notNull(duration, "Duration must not be null!");
 
 		events.deleteCompletedPublicationsBefore(clock.instant().minus(duration));
-	};
+	}
 
 	/*
 	 * (non-Javadoc)
