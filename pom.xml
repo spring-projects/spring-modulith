@@ -527,7 +527,7 @@ limitations under the License.
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
-				<version>1.4.1</version>
+				<version>1.6.0</version>
 				<executions>
 					<execution>
 						<id>flatten</id>
