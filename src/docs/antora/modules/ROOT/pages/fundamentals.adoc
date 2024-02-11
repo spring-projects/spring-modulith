@@ -2,7 +2,7 @@
 = Fundamentals
 
 Spring Modulith supports developers implementing logical modules in Spring Boot applications.
-It allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules interaction at runtime and generally implement module interaction in a loosely-coupled way.
+It allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules' interaction at runtime, and generally implement module interaction in a loosely coupled way.
 This section will discuss the fundamental concepts that developers need to understand before diving into the technical support.
 
 [[modules]]
@@ -25,10 +25,10 @@ That is the class, that is annotated with `@SpringBootApplication` and usually c
 By default, each direct sub-package of the main package is considered an _application module package_.
 
 If this package does not contain any sub-packages, it is considered a simple one.
-It allows to hide code inside it by using Java's package scope to hide types from being referred to by code residing in other packages and thus not subject for dependency injection into those.
+It allows to hide code inside it by using Java's package scope to hide types from being referred to by code residing in other packages and thus not subject to dependency injection into those.
 Thus, naturally, the module's API consists of all public types in the package.
 
-Let us have a look at an example arrangement (icon:plus-circle[role=green] denotes a public type, icon:minus-circle[role=red] a package protected one).
+Let us have a look at an example arrangement (icon:plus-circle[role=green] denotes a public type, icon:minus-circle[role=red] a package-private one).
 
 .A single inventory application module
 [source, subs="+specialchars, macros"]
@@ -67,10 +67,10 @@ icon:cubes[] Example
 
 In such an arrangement, the `order` package is considered an API package.
 Code from other application modules is allowed to refer to types within that.
-`order.internal`, just as any other sub-package of the application module base package are considered _internal_ ones.
+`order.internal`, just as any other sub-package of the application module base package, is considered an _internal_ one.
 Code within those must not be referred to from other modules.
 Note, how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
-This unfortunately means, that it can also be referred to from other packages such as the `inventory` one.
+This unfortunately means that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
 [[modules.explicit-dependencies]]
@@ -125,9 +125,9 @@ Kotlin::
 var modules = ApplicationModules.of(Application::class)
 ----
 ======
-To get an impression about what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
+To get an impression of what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
 
-.Writing the application module arranagement to the console
+.Writing the application module arrangement to the console
 [tabs]
 ======
 Java::
@@ -161,14 +161,14 @@ modules.forEach(println(it))
   + ….internal.SomeInternalComponent
 ----
 
-Note, how each module is listed and the contained Spring components are identified and the respective visibility is rendered, too.
+Note how each module is listed, the contained Spring components are identified, and the respective visibility is rendered, too.
 
 [[modules.named-interfaces]]
 === Named Interfaces
 
 By default and as described in xref:fundamentals.adoc#modules.advanced[Advanced Application Modules], an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
 In case you would like to expose additional packages to other modules, you need to use __named interfaces__.
-You achieve that by annotating the `package-info.java` file of those package with `@NamedInterface`.
+You achieve that by annotating the `package-info.java` file of those packages with `@NamedInterface`.
 
 .A package arrangement to encapsulate an SPI named interface
 [source, text, subs="macros, quotes"]
@@ -205,7 +205,7 @@ Kotlin::
 package example.order.spi
 ----
 ======
-The effect of that declaration is two fold: first, code in other application modules is allowed to refer to `SomeSpiInterface`.
+The effect of that declaration is twofold: first, code in other application modules is allowed to refer to `SomeSpiInterface`.
 Application modules are able to refer to the named interface in explicit dependency declarations.
 Assume the __inventory__ module was making use of that, it could refer to the above declared named interface like this:
 
