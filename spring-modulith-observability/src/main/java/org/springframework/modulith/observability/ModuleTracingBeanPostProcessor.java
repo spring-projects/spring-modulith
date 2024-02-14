@@ -30,6 +30,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -97,8 +98,19 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 	private boolean isInfrastructureBean(String beanName) {
 
-		return factory.containsBean(beanName) &&
-				factory.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_INFRASTRUCTURE;
+		if (!factory.containsBean(beanName)) {
+			return false;
+		}
+
+		if (factory.getBeanDefinition(beanName).getRole() == BeanDefinition.ROLE_INFRASTRUCTURE) {
+			return true;
+		}
+
+		if (factory.findAnnotationOnBean(beanName, ConfigurationProperties.class, false) != null) {
+			return true;
+		}
+
+		return false;
 	}
 
 	private Advisor getOrBuildAdvisor(ObservedModule module, ObservedModuleType type) {
