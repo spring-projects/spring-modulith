@@ -26,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.jdbc.core.JdbcOperations;
 
 /**
  * Unit tests for {@link DatabaseSchemaInitializer}.
@@ -34,9 +33,8 @@ import org.springframework.jdbc.core.JdbcOperations;
  * @author Oliver Drotbohm
  */
 @ExtendWith(MockitoExtension.class)
-class DatabaseSchemaInitializerUnitTests {
+public class DatabaseSchemaLocatorUnitTests {
 
-	@Mock JdbcOperations jdbcOperations;
 	@Mock ResourceLoader resourceLoader;
 
 	@Test // GH-159
@@ -46,10 +44,10 @@ class DatabaseSchemaInitializerUnitTests {
 			return new ClassPathResource(it.<String> getArgument(0).substring(ResourceLoader.CLASSPATH_URL_PREFIX.length()));
 		});
 
-		var initializer = new DatabaseSchemaInitializer(jdbcOperations, resourceLoader, DatabaseType.H2);
+		var locator = new DatabaseSchemaLocator(resourceLoader);
 		var captor = ArgumentCaptor.forClass(String.class);
 
-		assertThatNoException().isThrownBy(initializer::afterPropertiesSet);
+		assertThatNoException().isThrownBy(() -> locator.getSchemaResource(DatabaseType.H2));
 		verify(resourceLoader).getResource(captor.capture());
 		assertThat(captor.getValue()).startsWith(ResourceLoader.CLASSPATH_URL_PREFIX);
 	}

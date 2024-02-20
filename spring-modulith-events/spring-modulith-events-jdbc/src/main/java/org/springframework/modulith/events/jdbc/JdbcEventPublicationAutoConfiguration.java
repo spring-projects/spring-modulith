@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
@@ -53,10 +54,15 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
-	DatabaseSchemaInitializer databaseSchemaInitializer(JdbcTemplate jdbcTemplate, ResourceLoader resourceLoader,
+	DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
 			DatabaseType databaseType) {
 
-		return new DatabaseSchemaInitializer(jdbcTemplate, resourceLoader, databaseType);
+		return () -> {
+
+			var locator = new DatabaseSchemaLocator(resourceLoader);
+
+			new ResourceDatabasePopulator(locator.getSchemaResource(databaseType)).execute(dataSource);
+		};
 	}
 
 	private static String fromDataSource(DataSource dataSource) {
