@@ -151,13 +151,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param orderedNames must not be {@literal null}.
 	 * @param verified
 	 */
-	private ApplicationModules(ModulithMetadata metadata, Map<String, ApplicationModule> modules, JavaClasses classes,
+	private ApplicationModules(ModulithMetadata metadata, Map<String, ApplicationModule> modules, JavaClasses allClasses,
 			List<JavaPackage> rootPackages, Supplier<List<ApplicationModule>> rootModules,
 			Set<ApplicationModule> sharedModules, List<String> orderedNames, boolean verified) {
 
 		Assert.notNull(metadata, "ModulithMetadata must not be null!");
 		Assert.notNull(modules, "Application modules must not be null!");
-		Assert.notNull(classes, "JavaClasses must not be null!");
+		Assert.notNull(allClasses, "JavaClasses must not be null!");
 		Assert.notNull(rootPackages, "Root JavaPackages must not be null!");
 		Assert.notNull(rootModules, "Root modules must not be null!");
 		Assert.notNull(sharedModules, "Shared ApplicationModules must not be null!");
@@ -165,7 +165,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.metadata = metadata;
 		this.modules = modules;
-		this.allClasses = classes;
+		this.allClasses = allClasses;
 		this.rootPackages = rootPackages;
 		this.rootModules = rootModules;
 		this.sharedModules = sharedModules;
