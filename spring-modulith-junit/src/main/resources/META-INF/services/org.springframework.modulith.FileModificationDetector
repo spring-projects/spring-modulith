@@ -1,0 +1,3 @@
+org.springframework.modulith.git.UncommittedChangesDetector
+org.springframework.modulith.git.UnpushedGitChangesDetector
+org.springframework.modulith.git.DiffDetector
