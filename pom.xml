@@ -34,7 +34,7 @@
 	<properties>
 
 		<archunit.version>1.2.1</archunit.version>
-		<artifactory-maven-plugin.version>3.6.1</artifactory-maven-plugin.version>
+		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>4.6.1</flapdoodle-mongodb.version>
 		<jmolecules-bom.version>2023.1.1</jmolecules-bom.version>
 		<lombok.version>1.18.30</lombok.version>
@@ -144,7 +144,7 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.4.1</version>
+						<version>3.6.3</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -207,7 +207,7 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.0.1</version>
+						<version>3.1.0</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -258,7 +258,7 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.4.1</version>
+						<version>3.6.3</version>
 						<inherited>false</inherited>
 						<executions>
 							<execution>
@@ -321,7 +321,7 @@ limitations under the License.
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-assembly-plugin</artifactId>
-							<version>3.4.2</version>
+							<version>3.6.0</version>
 							<executions>
 								<execution>
 									<id>docs</id>
@@ -444,7 +444,7 @@ limitations under the License.
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.4.1</version>
+					<version>3.6.3</version>
 					<configuration>
 						<doclint>accessibility,html,reference,syntax</doclint>
 						<show>package</show>
@@ -464,7 +464,7 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.11.0</version>
+				<version>3.12.1</version>
 				<configuration>
 					<source>17</source>
 					<target>17</target>
@@ -487,7 +487,7 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.1.2</version>
+				<version>3.2.5</version>
 				<configuration>
 					<excludes>
 						<exclude />
@@ -559,7 +559,7 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
-				<version>3.0.0</version>
+				<version>3.0.1</version>
 				<configuration>
 					<releaseProfiles>sonatype</releaseProfiles>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
