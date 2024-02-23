@@ -12,7 +12,7 @@ jobs:
         version:
         - '3.1.9'
         - '3.1.10-SNAPSHOT'
-        - '3.2.3-SNAPSHOT'
+        - '3.2.4-SNAPSHOT'
     name: Build against Boot ${{ matrix.version }}
     runs-on: ubuntu-latest
 
