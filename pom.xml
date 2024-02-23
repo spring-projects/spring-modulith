@@ -41,7 +41,7 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.0.16</spring.version> <!-- For Javadoc links only -->
 		<spring-asciidoctor-backends.version>0.0.7</spring-asciidoctor-backends.version>
-		<spring-boot.version>3.1.8</spring-boot.version>
+		<spring-boot.version>3.1.9</spring-boot.version>
 
 	</properties>
 
