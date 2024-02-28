@@ -491,7 +491,7 @@ Alternatively, a full `RoutingKey` can be produced for individual events by usin
 == Testing published events
 
 NOTE: The following section describes a testing approach solely focused on tracking Spring application events.
-For a more holistic approach on testing modules that use <<events.aml, `@ApplicationModuleListener`>>, please check out the <<testing.scenarios, `Scenario` API>>.
+For a more holistic approach on testing modules that use xref:testing.adoc[@ApplicationModuleListener], please check out the xref:testing.adoc#scenarios[Scenario API].
 
 Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `PublishedEvents` instance injected into the test method to verify a particular set of events has been published during the course of the business operation under test.
 

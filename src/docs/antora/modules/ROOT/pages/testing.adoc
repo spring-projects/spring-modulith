@@ -107,7 +107,7 @@ class InventoryIntegrationTests {
 Spring Boot will create bean definitions and instances for the types defined as `@MockBean` and add them to the `ApplicationContext` bootstrapped for the test run.
 
 If you find your application module depending on too many beans of other ones, that is usually a sign of high coupling between them.
-The dependencies should be reviewed for whether they are candidates for replacement by publishing a domain event (see xref:events.adoc#events[null]).
+The dependencies should be reviewed for whether they are candidates for replacement by publishing xref:events.adoc#events[domain events].
 
 [[scenarios]]
 == Defining Integration Test Scenarios
