@@ -209,6 +209,32 @@ By default, all incomplete event publications are resubmitted at application sta
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
 
+[[publication-registry.starters]]
+=== Spring Boot Event Registry Starters
+
+Using the transactional event publication log requires a combination of artifacts added to your application. To ease that task, Spring Modulith provides starter POMs that are centered around the <<publication-registry.publication-repositories, persistence technology>> to be used and default to the Jackson-based <<publication-registry.serialization, EventSerializer>> implementation. The following starters are available:
+
+[%header,cols="1,3,6"]
+|===
+|Persistence Technology|Artifact|Description
+
+|JPA
+|`spring-modulith-starter-jpa`
+|Using JPA as persistence technology.
+
+|JDBC
+|`spring-modulith-starter-jdbc`
+|Using JDBC as persistence technology. Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
+
+|MongoDB
+|`spring-modulith-starter-mongodb`
+|Using JDBC as persistence technology. Also enables MongoDB transactions and requires a replica set setup of the server to interact with. The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
+
+|Neo4j
+|`spring-modulith-starter-neo4j`
+|Using Neo4j behind Spring Data Neo4j.
+|===
+
 [[publication-registry.managing-publications]]
 === Managing Event Publications
 
@@ -288,7 +314,7 @@ Some of the events exchanged between application modules might be interesting to
 Spring Modulith allows publishing selected events to a variety of message brokers.
 To use that support you need to take the following steps:
 
-1. Add the <<events.externalization.infrastructure, broker-specific Spring Modulith artifact>> to your project.
+1. Add the <<externalization.infrastructure, broker-specific Spring Modulith artifact>> to your project.
 2. Select event types to be externalized by annotating them with either Spring Modulith's or jMolecules' `@Externalized` annotation.
 3. Specify the broker-specific routing target in the annotation's value.
 
@@ -465,7 +491,7 @@ Alternatively, a full `RoutingKey` can be produced for individual events by usin
 == Testing published events
 
 NOTE: The following section describes a testing approach solely focused on tracking Spring application events.
-For a more holistic approach on testing modules that use <<events.aml, `@ApplicationModuleListener`>>, please check out the <<testing.scenarios, `Scenario` API>>.
+For a more holistic approach on testing modules that use xref:testing.adoc[`@ApplicationModuleListener`], please check out the xref:testing.adoc#scenarios[`Scenario` API].
 
 Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `PublishedEvents` instance injected into the test method to verify a particular set of events has been published during the course of the business operation under test.
 
@@ -554,18 +580,3 @@ class OrderIntegrationTests {
 ======
 
 Note, how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
-
-[[starters]]
-== Spring Boot Event Registry Starters
-
-Using the transactional event publication log requires a combination of artifacts added to your application.
-To ease that task, Spring Modulith provides starter POMs that are centered around the xref:events.adoc#publication-registry.publication-repositories[persistence technology] to be used and default to the Jackson-based `EventSerializer` implementation.
-The following starters are available:
-
-* `spring-modulith-starter-jpa` -- Using JPA as persistence technology.
-* `spring-modulith-starter-jdbc` -- Using JDBC as persistence technology.
-Also works in JPA-based applications but bypasses your JPA provider for actual event persistence.
-* `spring-modulith-starter-mongodb` -- Using MongoDB behind Spring Data MongoDB.
-Also enables MongoDB transactions and requires a replica set setup of the server to interact with.
-The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
-* `spring-modulith-starter-neo4j` -- Using Neo4j behind Spring Data Neo4j.
