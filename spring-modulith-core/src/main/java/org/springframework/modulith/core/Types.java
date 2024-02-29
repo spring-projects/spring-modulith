@@ -20,6 +20,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import java.lang.annotation.Annotation;
 
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -145,12 +146,32 @@ class Types {
 		}
 	}
 
-	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(Class<?> type) {
+	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(Class<? extends Annotation> type) {
 		return isAnnotatedWith(type.getName());
 	}
 
 	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(String type) {
 		return Predicates.annotatedWith(type) //
 				.or(Predicates.metaAnnotatedWith(type));
+	}
+
+	/**
+	 * Creates a new {@link DescribedPredicate} to match classes
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	static DescribedPredicate<JavaClass> residesInPackageAnnotatedWith(Class<? extends Annotation> type) {
+
+		Assert.notNull(type, "Annotation type must not be null!");
+
+		return new DescribedPredicate<JavaClass>("resides in a package annotated with", type) {
+
+			@Override
+			public boolean test(JavaClass t) {
+				return t.getPackage().isMetaAnnotatedWith(type);
+			}
+		};
 	}
 }

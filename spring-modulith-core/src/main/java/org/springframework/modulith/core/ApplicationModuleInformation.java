@@ -21,8 +21,8 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.jmolecules.ddd.annotation.Module;
 import org.springframework.modulith.ApplicationModule;
+import org.springframework.modulith.ApplicationModule.Type;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -69,6 +69,14 @@ interface ApplicationModuleInformation {
 	List<String> getDeclaredDependencies();
 
 	/**
+	 * Returns whether the module is considered open.
+	 *
+	 * @see org.springframework.modulith.ApplicationModule.Type
+	 * @since 1.2
+	 */
+	boolean isOpen();
+
+	/**
 	 * An {@link ApplicationModuleInformation} for the jMolecules {@link Module} annotation.
 	 *
 	 * @author Oliver Drotbohm
@@ -110,6 +118,15 @@ interface ApplicationModuleInformation {
 		@Override
 		public List<String> getDeclaredDependencies() {
 			return List.of(ApplicationModule.OPEN_TOKEN);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.ApplicationModuleInformation#isOpenModule()
+		 */
+		@Override
+		public boolean isOpen() {
+			return false;
 		}
 	}
 
@@ -166,6 +183,15 @@ interface ApplicationModuleInformation {
 					.map(it -> Arrays.stream(it.allowedDependencies())) //
 					.orElse(Stream.of(ApplicationModule.OPEN_TOKEN)) //
 					.toList();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.ApplicationModuleInformation#isOpenModule()
+		 */
+		@Override
+		public boolean isOpen() {
+			return annotation.map(it -> it.type().equals(Type.OPEN)).orElse(false);
 		}
 	}
 }

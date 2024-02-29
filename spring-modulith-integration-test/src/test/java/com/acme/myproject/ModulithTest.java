@@ -61,7 +61,7 @@ class ModulithTest {
 		assertThatExceptionOfType(Violations.class).isThrownBy(() -> {
 
 			ApplicationModules
-					.of(Application.class, DEFAULT_EXCLUSIONS.or(Filters.withoutModule("invalid")))
+					.of(Application.class, DEFAULT_EXCLUSIONS.or(Filters.withoutModules("invalid", "opendisallowedclient")))
 					.verify();
 
 		}).satisfies(it -> {

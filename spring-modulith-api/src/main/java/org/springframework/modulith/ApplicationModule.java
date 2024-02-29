@@ -52,4 +52,37 @@ public @interface ApplicationModule {
 	 * @see NamedInterface
 	 */
 	String[] allowedDependencies() default { OPEN_TOKEN };
+
+	/**
+	 * Declares the {@link Type} of the {@link ApplicationModule}
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	Type type() default Type.CLOSED;
+
+	/**
+	 * The type of an application module
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 1.2
+	 */
+	enum Type {
+
+		/**
+		 * A closed application module exposes an API to other modules, but also allows to hide internals. Access to those
+		 * internals from other modules is sanctioned. Also, closed application modules must not be part of dependency
+		 * cycles.
+		 *
+		 * @see NamedInterface
+		 */
+		CLOSED,
+
+		/**
+		 * An open application module does not hide its internals, which means that access to those from other modules is
+		 * not sanctioned. They are also excluded from the cycle detection algorithm. All types contained in an open module
+		 * are part of the unnamed named interface.
+		 */
+		OPEN;
+	}
 }

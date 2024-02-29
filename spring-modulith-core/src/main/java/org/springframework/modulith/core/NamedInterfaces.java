@@ -63,7 +63,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	 */
 	static NamedInterfaces discoverNamedInterfaces(JavaPackage basePackage) {
 
-		return NamedInterfaces.of(NamedInterface.unnamed(basePackage))
+		return NamedInterfaces.of(NamedInterface.unnamed(basePackage, true))
 				.and(ofAnnotatedPackages(basePackage))
 				.and(ofAnnotatedTypes(basePackage));
 	}
@@ -92,6 +92,21 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.getSubPackagesAnnotatedWith(org.springframework.modulith.NamedInterface.class) //
 				.flatMap(it -> NamedInterface.of(it).stream()) //
 				.collect(Collectors.collectingAndThen(Collectors.toList(), NamedInterfaces::of));
+	}
+
+	/**
+	 * Creates a new {@link NamedInterface} consisting of the unnamed one containing all classes in the given
+	 * {@link JavaPackage}.
+	 *
+	 * @param basePackage must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	static NamedInterfaces forOpen(JavaPackage basePackage) {
+
+		return NamedInterfaces.of(NamedInterface.unnamed(basePackage, false))
+				.and(ofAnnotatedPackages(basePackage))
+				.and(ofAnnotatedTypes(basePackage));
 	}
 
 	/**

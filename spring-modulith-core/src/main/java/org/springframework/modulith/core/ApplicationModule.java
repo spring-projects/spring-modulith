@@ -86,7 +86,9 @@ public class ApplicationModule {
 
 		this.basePackage = basePackage;
 		this.information = ApplicationModuleInformation.of(basePackage);
-		this.namedInterfaces = NamedInterfaces.discoverNamedInterfaces(basePackage);
+		this.namedInterfaces = isOpen()
+				? NamedInterfaces.forOpen(basePackage)
+				: NamedInterfaces.discoverNamedInterfaces(basePackage);
 		this.useFullyQualifiedModuleNames = useFullyQualifiedModuleNames;
 
 		this.springBeans = SingletonSupplier.of(() -> filterSpringBeans(basePackage));
@@ -320,7 +322,7 @@ public class ApplicationModule {
 	/**
 	 * Returns whether the module is considered a root one, i.e., it is an artificial one created for each base package
 	 * configured.
-	 * 
+	 *
 	 * @return whether the module is considered a root one.
 	 * @since 1.1
 	 */
@@ -350,7 +352,13 @@ public class ApplicationModule {
 
 	public String toString(@Nullable ApplicationModules modules) {
 
-		var builder = new StringBuilder("# ").append(getDisplayName()).append("\n");
+		var builder = new StringBuilder("# ").append(getDisplayName());
+
+		if (isOpen()) {
+			builder.append(" (open)");
+		}
+
+		builder.append("\n");
 
 		builder.append("> Logical name: ").append(getName()).append('\n');
 		builder.append("> Base package: ").append(basePackage.getName()).append('\n');
@@ -452,6 +460,16 @@ public class ApplicationModule {
 
 		return packageName.equals(basePackageName)
 				|| packageName.startsWith(basePackageName + ".");
+	}
+
+	/**
+	 * Returns whether the module is considered open.
+	 *
+	 * @see org.springframework.modulith.ApplicationModule.Type
+	 * @since 1.2
+	 */
+	boolean isOpen() {
+		return information.isOpen();
 	}
 
 	/*
@@ -964,8 +982,8 @@ public class ApplicationModule {
 			var originModule = getExistingModuleOf(source, modules);
 			var targetModule = getExistingModuleOf(target, modules);
 
-			DeclaredDependencies declaredDependencies = originModule.getDeclaredDependencies(modules);
-			Violations violations = Violations.NONE;
+			var declaredDependencies = originModule.getDeclaredDependencies(modules);
+			var violations = Violations.NONE;
 
 			// Check explicitly defined allowed targets
 			if (!declaredDependencies.isAllowedDependency(target)) {
@@ -978,6 +996,10 @@ public class ApplicationModule {
 			}
 
 			// No explicitly allowed dependencies - check for general access
+
+			if (targetModule.isOpen()) {
+				return violations;
+			}
 
 			if (!targetModule.isExposed(target)) {
 

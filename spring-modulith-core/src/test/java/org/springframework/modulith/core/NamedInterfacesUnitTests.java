@@ -22,6 +22,7 @@ import example.ni.RootType;
 import example.ni.api.ApiType;
 import example.ni.internal.AdditionalSpiType;
 import example.ni.internal.DefaultedNamedInterfaceType;
+import example.ni.internal.Internal;
 import example.ni.spi.SpiType;
 import example.ninvalid.InvalidDefaultNamedInterface;
 
@@ -62,6 +63,18 @@ class NamedInterfacesUnitTests {
 		assertThatIllegalStateException().isThrownBy(() -> NamedInterfaces.discoverNamedInterfaces(javaPackage))
 				.withMessageContaining("named interface defaulting")
 				.withMessageContaining(InvalidDefaultNamedInterface.class.getSimpleName());
+	}
+
+	@Test // GH-284
+	void detectsOpenNamedInterface() {
+
+		var javaPackage = TestUtils.getPackage(RootType.class);
+		var interfaces = NamedInterfaces.forOpen(javaPackage);
+
+		assertThat(interfaces).map(NamedInterface::getName)
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal");
+
+		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class, Internal.class);
 	}
 
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {

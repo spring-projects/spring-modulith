@@ -211,6 +211,29 @@ class ApplicationModulesIntegrationTest {
 		});
 	}
 
+	@Test // GH-284
+	void detectsOpenModule() {
+
+		assertThat(modules.getModuleByName("open")).hasValueSatisfying(it -> {
+			assertThat(it.isOpen()).isTrue();
+		});
+
+		var detectViolations = modules.detectViolations().getMessages();
+
+		assertThat(detectViolations)
+				.isNotEmpty()
+
+				// No invalid references to internals from unrestricted module
+				.noneMatch(it -> it.matches("Module 'openclient' depends on non-exposed type .* within module 'open'"))
+
+				// Invalid reference to internals from restricted module
+				.anyMatch(it -> it.contains("Module 'opendisallowedclient' depends on module 'open'"))
+
+				// No cycle detection
+				.anyMatch(it -> it.contains("Cycle detected: Slice cycleA"))
+				.noneMatch(it -> it.contains("Cycle detected: Slice open"));
+	}
+
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {
 
 		Stream.of(types).forEach(type -> {

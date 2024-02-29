@@ -73,6 +73,45 @@ Note, how `SomethingOrderInternal` is a public type, likely because `OrderManage
 This unfortunately means that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
+[[modules.advanced.open]]
+==== Open Application Modules
+
+The arrangement described xref:fundamentals.adoc#modules.advanced[above] are considered closed as they only expose types to other modules that are actively selected for exposure.
+When applying Spring Modulith to legacy applications, hiding all types located in nested packages from other modules might be inadequate or require marking all those packages for exposure, too.
+
+To turn an application module into an open one, use the `@ApplicationModule` annotation on the `package-info.java` type.
+
+.Declaring an Application Modules as Open
+[tabs]
+======
+Java::
++
+[source, java, role="primary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  type = Type.OPEN
+)
+package example.inventory;
+----
+Kotlin::
++
+[source, kotlin, role="secondary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  type = Type.OPEN
+)
+package example.inventory
+----
+======
+
+Declaring an application module as open will cause the following changes to the verification:
+
+* Access to application module internal types from other modules is generally allowed.
+* All types, also ones residing in sub-packages of the application module base package are added to the xref:fundamentals.adoc#modules.named-interfaces[unnamed named interface], unless explicitly assigned to a named interface.
+
+NOTE: This feature is intended to be primarily used with code bases of existing projects gradually moving to the Spring Modulith recommended packaging structure.
+In a fully-modularized application, using open application modules usually hints at sub-optimal modularization and packaging structures.
+
 [[modules.explicit-dependencies]]
 === Explicit Application Module Dependencies
 A module can opt into declaring its allowed dependencies by using the `@ApplicationModule` annotation on the `package-info.java` type.

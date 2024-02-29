@@ -24,6 +24,7 @@ import static java.util.stream.Collectors.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -810,6 +811,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		public SliceIdentifier getIdentifierOf(JavaClass javaClass) {
 
 			return getModuleByType(javaClass)
+					.filter(Predicate.not(ApplicationModule::isOpen))
 					.map(ApplicationModule::getName)
 					.map(SliceIdentifier::of)
 					.orElse(SliceIdentifier.ignore());

@@ -9,7 +9,7 @@
 
 	<logger name="org.springframework.modulith" level="error" />
 
-	<root level="error">
+	<root level="off">
 		<appender-ref ref="console" />
 	</root>
 
