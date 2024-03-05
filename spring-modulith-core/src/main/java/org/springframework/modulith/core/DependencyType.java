@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.core;
 
+import static org.springframework.modulith.core.SyntacticSugar.*;
+
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.function.Predicate;
@@ -125,8 +127,8 @@ public enum DependencyType {
 	}
 
 	static DependencyType forCodeUnit(JavaCodeUnit codeUnit) {
-		return Types.isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).test(codeUnit) //
-				|| Types.isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER).test(codeUnit) //
+		return isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).test(codeUnit) //
+				|| isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER).test(codeUnit) //
 						? EVENT_LISTENER
 						: DEFAULT;
 	}

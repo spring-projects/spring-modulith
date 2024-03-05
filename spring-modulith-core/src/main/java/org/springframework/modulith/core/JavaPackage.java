@@ -16,6 +16,9 @@
 package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
+import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
+import static com.tngtech.archunit.core.domain.properties.HasModifiers.Predicates.*;
+import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
@@ -28,6 +31,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.modulith.PackageInfo;
 import org.springframework.util.Assert;
 import org.springframework.util.function.SingletonSupplier;
 
@@ -35,8 +39,6 @@ import com.tngtech.archunit.base.DescribedIterable;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaModifier;
-import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
-import com.tngtech.archunit.core.domain.properties.HasModifiers;
 
 /**
  * An abstraction of a Java package.
@@ -46,6 +48,9 @@ import com.tngtech.archunit.core.domain.properties.HasModifiers;
 public class JavaPackage implements DescribedIterable<JavaClass> {
 
 	private static final String PACKAGE_INFO_NAME = "package-info";
+	private static final String MULTIPLE_TYPES_ANNOTATED_WITH = "Expected maximum of one type in package %s to be annotated with %s, but got %s!";
+	private static final DescribedPredicate<JavaClass> ARE_PACKAGE_INFOS = //
+			has(simpleName(PACKAGE_INFO_NAME)).or(is(metaAnnotatedWith(PackageInfo.class)));
 
 	private final String name;
 	private final Classes classes;
@@ -96,7 +101,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 
 		Assert.notNull(type, "Type must not be null!");
 
-		return type.getSimpleName().equals(PACKAGE_INFO_NAME);
+		return ARE_PACKAGE_INFOS.test(type);
 	}
 
 	/**
@@ -152,8 +157,9 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 */
 	public Classes getExposedClasses() {
 
-		return packageClasses.that(HasModifiers.Predicates.modifier(JavaModifier.PUBLIC)) //
-				.that(DescribedPredicate.not(JavaClass.Predicates.simpleName(PACKAGE_INFO_NAME)));
+		return packageClasses //
+				.that(doNotHave(simpleName(PACKAGE_INFO_NAME))) //
+				.that(have(modifier(JavaModifier.PUBLIC)));
 	}
 
 	/**
@@ -166,8 +172,7 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 
 		Assert.notNull(annotation, "Annotation must not be null!");
 
-		return packageClasses.that(JavaClass.Predicates.simpleName(PACKAGE_INFO_NAME) //
-				.and(CanBeAnnotated.Predicates.annotatedWith(annotation))).stream() //
+		return packageClasses.that(ARE_PACKAGE_INFOS.and(are(metaAnnotatedWith(annotation)))).stream() //
 				.map(JavaClass::getPackageName) //
 				.distinct() //
 				.map(it -> of(classes, it));
@@ -228,11 +233,44 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 */
 	public <A extends Annotation> Optional<A> getAnnotation(Class<A> annotationType) {
 
-		return packageClasses.that(JavaClass.Predicates.simpleName(PACKAGE_INFO_NAME) //
-				.and(CanBeAnnotated.Predicates.annotatedWith(annotationType))) //
+		return packageClasses.that(have(simpleName(PACKAGE_INFO_NAME)) //
+				.and(are(metaAnnotatedWith(annotationType)))) //
 				.toOptional() //
 				.map(it -> it.reflect())
 				.map(it -> AnnotatedElementUtils.getMergedAnnotation(it, annotationType));
+	}
+
+	/**
+	 * Finds the annotation of the given type declared on the package itself or any type located the direct package's
+	 * types .
+	 *
+	 * @param <A> the type of the annotation.
+	 * @param annotationType must not be {@literal null}.
+	 * @param typeFilter must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 * @throws IllegalStateException in case multiple types in the current package are annotated with the given
+	 *           annotation.
+	 */
+	public <A extends Annotation> Optional<A> findAnnotation(Class<A> annotationType) {
+
+		return getAnnotation(annotationType)
+				.or(() -> {
+
+					var annotatedTypes = toSingle().packageClasses
+							.that(are(metaAnnotatedWith(PackageInfo.class).and(are(metaAnnotatedWith(annotationType)))))
+							.stream()
+							.map(it -> it.getAnnotationOfType(annotationType))
+							.toList();
+
+					if (annotatedTypes.size() > 1) {
+
+						throw new IllegalStateException(MULTIPLE_TYPES_ANNOTATED_WITH.formatted(name,
+								FormatableType.of(annotationType).getAbbreviatedFullName(), annotatedTypes));
+					}
+
+					return annotatedTypes.isEmpty() ? Optional.empty() : Optional.of(annotatedTypes.get(0));
+				});
 	}
 
 	/*

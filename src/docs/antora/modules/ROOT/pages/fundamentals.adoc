@@ -114,7 +114,8 @@ In a fully-modularized application, using open application modules usually hints
 
 [[modules.explicit-dependencies]]
 === Explicit Application Module Dependencies
-A module can opt into declaring its allowed dependencies by using the `@ApplicationModule` annotation on the `package-info.java` type.
+A module can opt into declaring its allowed dependencies by using the `@ApplicationModule` annotation on the package, represented through the `package-info.java` file.
+As, for example, Kotlin lacks support for that file, you can also use the annotation on a single type located in the application module's root package.
 
 .Inventory explicitly configuring module dependencies
 [tabs]
@@ -132,10 +133,12 @@ Kotlin::
 +
 [source, kotlin, role="secondary", chomp="none"]
 ----
-@org.springframework.modulith.ApplicationModule(
-  allowedDependencies = "order"
-)
 package example.inventory
+
+import org.springframework.modulith.ApplicationModule
+
+@ApplicationModule(allowedDependencies = "order")
+class ModuleMetadata {}
 ----
 ======
 
@@ -207,7 +210,7 @@ Note how each module is listed, the contained Spring components are identified, 
 
 By default and as described in xref:fundamentals.adoc#modules.advanced[Advanced Application Modules], an application module's base package is considered the API package and thus is the only package to allow incoming dependencies from other modules.
 In case you would like to expose additional packages to other modules, you need to use __named interfaces__.
-You achieve that by annotating the `package-info.java` file of those packages with `@NamedInterface`.
+You achieve that by annotating the `package-info.java` file of those packages with `@NamedInterface` or a type explicitly annotated with `@org.springframework.modulith.PackageInfo`.
 
 .A package arrangement to encapsulate an SPI named interface
 [source, text, subs="macros, quotes"]
@@ -240,8 +243,14 @@ Kotlin::
 +
 [source, kotlin, role="secondary", chomp="none"]
 ----
-@org.springframework.modulith.NamedInterface("spi")
 package example.order.spi
+
+import org.springframework.modulith.PackageInfo
+import org.springframework.modulith.NamedInterface
+
+@PackageInfo
+@NamedInterface("spi")
+class ModuleMetadata {}
 ----
 ======
 The effect of that declaration is twofold: first, code in other application modules is allowed to refer to `SomeSpiInterface`.

@@ -16,6 +16,7 @@
 package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.base.DescribedPredicate.*;
+import static org.springframework.modulith.core.SyntacticSugar.*;
 import static org.springframework.modulith.core.Types.*;
 
 import java.util.Iterator;
@@ -71,7 +72,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 */
 	static List<NamedInterface> of(JavaPackage javaPackage) {
 
-		var names = javaPackage.getAnnotation(org.springframework.modulith.NamedInterface.class) //
+		var names = javaPackage.findAnnotation(org.springframework.modulith.NamedInterface.class) //
 				.map(it -> getDefaultedNames(it, javaPackage.getName())) //
 				.orElseThrow(() -> new IllegalArgumentException(
 						String.format("Couldn't find NamedInterface annotation on package %s!", javaPackage)));

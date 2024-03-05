@@ -23,6 +23,7 @@ import example.ni.api.ApiType;
 import example.ni.internal.AdditionalSpiType;
 import example.ni.internal.DefaultedNamedInterfaceType;
 import example.ni.internal.Internal;
+import example.ni.ontype.Exposed;
 import example.ni.spi.SpiType;
 import example.ninvalid.InvalidDefaultNamedInterface;
 
@@ -46,13 +47,14 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.discoverNamedInterfaces(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class);
 		assertInterfaceContains(interfaces, "api", ApiType.class, AnnotatedNamedInterfaceType.class);
 		assertInterfaceContains(interfaces, "spi", SpiType.class, AdditionalSpiType.class);
 		assertInterfaceContains(interfaces, "kpi", AdditionalSpiType.class);
 		assertInterfaceContains(interfaces, "internal", DefaultedNamedInterfaceType.class);
+		assertInterfaceContains(interfaces, "ontype", Exposed.class);
 	}
 
 	@Test // GH-183
@@ -72,7 +74,7 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.forOpen(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class, Internal.class);
 	}

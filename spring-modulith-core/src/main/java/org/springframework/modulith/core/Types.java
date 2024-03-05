@@ -16,18 +16,18 @@
 package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
+import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
 
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.PackageInfo;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
-import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
-import com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates;
 
 /**
  * @author Oliver Drotbohm
@@ -141,18 +141,9 @@ class Types {
 		}
 
 		static DescribedPredicate<JavaClass> isSpringDataRepository() {
-			return assignableTo(SpringDataTypes.REPOSITORY) //
+			return is(assignableTo(SpringDataTypes.REPOSITORY)) //
 					.or(isAnnotatedWith(SpringDataTypes.AT_REPOSITORY_DEFINITION));
 		}
-	}
-
-	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(Class<? extends Annotation> type) {
-		return isAnnotatedWith(type.getName());
-	}
-
-	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(String type) {
-		return Predicates.annotatedWith(type) //
-				.or(Predicates.metaAnnotatedWith(type));
 	}
 
 	/**
@@ -170,7 +161,12 @@ class Types {
 
 			@Override
 			public boolean test(JavaClass t) {
-				return t.getPackage().isMetaAnnotatedWith(type);
+
+				var pkg = t.getPackage();
+
+				return pkg.isMetaAnnotatedWith(type)
+						|| pkg.getClasses().stream()
+								.anyMatch(it -> it.isMetaAnnotatedWith(PackageInfo.class) && it.isMetaAnnotatedWith(type));
 			}
 		};
 	}

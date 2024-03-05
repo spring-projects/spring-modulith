@@ -18,6 +18,7 @@ package org.springframework.modulith.core;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.ApplicationModule;
 
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -29,11 +30,15 @@ import com.tngtech.archunit.core.importer.ImportOption;
 class JavaPackageUnitTests {
 
 	static final JavaClasses ALL_CLASSES = new ClassFileImporter() //
-			.withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS)
+			.withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) //
 			.importPackages("com.acme.myproject");
 
+	static final JavaClasses PKG_CLASSES = new ClassFileImporter() //
+			.withImportOption(ImportOption.Predefined.DO_NOT_INCLUDE_TESTS) //
+			.importPackages("pkg");
+
 	@Test
-	void testName() throws Exception {
+	void detectsDirectSubPackages() throws Exception {
 
 		Classes classes = Classes.of(ALL_CLASSES);
 		JavaPackage pkg = JavaPackage.of(classes, "com.acme.myproject.complex");
@@ -42,5 +47,36 @@ class JavaPackageUnitTests {
 		assertThat(pkg.getDirectSubPackages()) //
 				.extracting(JavaPackage::getLocalName) //
 				.contains("api", "internal", "spi");
+	}
+
+	@Test // GH-522
+	void findsAnnotationOnPackageInfo() {
+
+		var annotation = JavaPackage.of(Classes.of(PKG_CLASSES), "pkg.onpackage") //
+				.getAnnotation(ApplicationModule.class);
+
+		assertThat(annotation).hasValueSatisfying(it -> {
+			assertThat(it.displayName()).isEqualTo("onPackage");
+		});
+	}
+
+	@Test // GH-522
+	void findsAnnotationOnPackageType() {
+
+		var annotation = JavaPackage.of(Classes.of(PKG_CLASSES), "pkg.ontype") //
+				.findAnnotation(ApplicationModule.class);
+
+		assertThat(annotation).hasValueSatisfying(it -> {
+			assertThat(it.displayName()).isEqualTo("onType");
+		});
+	}
+
+	@Test // GH-522
+	void rejectsMultipleAnnotationsOnType() {
+
+		assertThatIllegalStateException().isThrownBy(() -> {
+			JavaPackage.of(Classes.of(PKG_CLASSES), "pkg.multipleontype") //
+					.findAnnotation(ApplicationModule.class);
+		});
 	}
 }

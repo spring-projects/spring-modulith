@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.core;
 
+import static org.springframework.modulith.core.SyntacticSugar.*;
 import static org.springframework.modulith.core.Types.JavaXTypes.*;
 
 import java.util.ArrayList;
@@ -194,8 +195,8 @@ public abstract class ArchitecturallyEvidentType {
 		 * Methods (meta-)annotated with @EventListener.
 		 */
 		private static final Predicate<JavaMethod> IS_ANNOTATED_EVENT_LISTENER = it -> //
-		Types.isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).test(it) //
-				|| Types.isAnnotatedWith(SpringTypes.AT_TX_EVENT_LISTENER).test(it);
+		isAnnotatedWith(SpringTypes.AT_EVENT_LISTENER).test(it) //
+				|| isAnnotatedWith(SpringTypes.AT_TX_EVENT_LISTENER).test(it);
 
 		/**
 		 * {@code ApplicationListener.onApplicationEvent(…)}
@@ -232,7 +233,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isRepository() {
-			return Types.isAnnotatedWith(SpringTypes.AT_REPOSITORY).test(getType());
+			return isAnnotatedWith(SpringTypes.AT_REPOSITORY).test(getType());
 		}
 
 		/*
@@ -241,7 +242,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isService() {
-			return Types.isAnnotatedWith(SpringTypes.AT_SERVICE).test(getType());
+			return isAnnotatedWith(SpringTypes.AT_SERVICE).test(getType());
 		}
 
 		/*
@@ -250,7 +251,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isController() {
-			return Types.isAnnotatedWith(SpringTypes.AT_CONTROLLER).test(getType());
+			return isAnnotatedWith(SpringTypes.AT_CONTROLLER).test(getType());
 		}
 
 		/*
@@ -268,7 +269,7 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isConfigurationProperties() {
-			return Types.isAnnotatedWith(SpringTypes.AT_CONFIGURATION_PROPERTIES).test(getType());
+			return isAnnotatedWith(SpringTypes.AT_CONFIGURATION_PROPERTIES).test(getType());
 		}
 
 		/*
@@ -365,15 +366,15 @@ public abstract class ArchitecturallyEvidentType {
 		 */
 		@Override
 		public boolean isController() {
-			return Types.isAnnotatedWith("org.springframework.data.rest.webmvc.BasePathAwareController")
+			return isAnnotatedWith("org.springframework.data.rest.webmvc.BasePathAwareController")
 					.test(getType());
 		}
 	}
 
 	static class JMoleculesArchitecturallyEvidentType extends ArchitecturallyEvidentType {
 
-		private static final Predicate<JavaMethod> IS_ANNOTATED_EVENT_LISTENER = Types
-				.isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER)::test;
+		private static final Predicate<JavaMethod> IS_ANNOTATED_EVENT_LISTENER = isAnnotatedWith(
+				JMoleculesTypes.AT_DOMAIN_EVENT_HANDLER)::test;
 
 		JMoleculesArchitecturallyEvidentType(JavaClass type) {
 			super(type);
@@ -388,7 +389,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Entity.class).test(type) || //
+			return isAnnotatedWith(org.jmolecules.ddd.annotation.Entity.class).test(type) || //
 					type.isAssignableTo(org.jmolecules.ddd.types.Entity.class);
 		}
 
@@ -401,7 +402,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class).test(type) //
+			return isAnnotatedWith(org.jmolecules.ddd.annotation.AggregateRoot.class).test(type) //
 					|| type.isAssignableTo(org.jmolecules.ddd.types.AggregateRoot.class);
 		}
 
@@ -414,7 +415,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Repository.class).test(type)
+			return isAnnotatedWith(org.jmolecules.ddd.annotation.Repository.class).test(type)
 					|| type.isAssignableTo(org.jmolecules.ddd.types.Repository.class);
 		}
 
@@ -427,7 +428,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.Service.class).test(type);
+			return isAnnotatedWith(org.jmolecules.ddd.annotation.Service.class).test(type);
 		}
 
 		/*
@@ -448,7 +449,7 @@ public abstract class ArchitecturallyEvidentType {
 
 			JavaClass type = getType();
 
-			return Types.isAnnotatedWith(org.jmolecules.ddd.annotation.ValueObject.class).test(type)
+			return isAnnotatedWith(org.jmolecules.ddd.annotation.ValueObject.class).test(type)
 					|| type.isAssignableTo(org.jmolecules.ddd.types.ValueObject.class);
 		}
 	}

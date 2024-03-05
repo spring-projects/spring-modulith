@@ -25,7 +25,8 @@ import java.lang.annotation.Target;
  *
  * @author Oliver Drotbohm
  */
-@Target({ ElementType.PACKAGE, ElementType.ANNOTATION_TYPE })
+@PackageInfo
+@Target({ ElementType.PACKAGE, ElementType.TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApplicationModule {
 

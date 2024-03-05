@@ -18,7 +18,7 @@ package org.springframework.modulith.core;
 import static com.tngtech.archunit.base.DescribedPredicate.*;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static java.lang.System.*;
-import static org.springframework.modulith.core.Types.*;
+import static org.springframework.modulith.core.SyntacticSugar.*;
 import static org.springframework.modulith.core.Types.JavaXTypes.*;
 import static org.springframework.modulith.core.Types.SpringDataTypes.*;
 import static org.springframework.modulith.core.Types.SpringTypes.*;
@@ -83,6 +83,8 @@ public class ApplicationModule {
 	 * @param useFullyQualifiedModuleNames
 	 */
 	ApplicationModule(JavaPackage basePackage, boolean useFullyQualifiedModuleNames) {
+
+		Assert.notNull(basePackage, "Base package must not be null!");
 
 		this.basePackage = basePackage;
 		this.information = ApplicationModuleInformation.of(basePackage);
