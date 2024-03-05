@@ -29,11 +29,13 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.FormatableType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
@@ -138,12 +140,21 @@ class SpringModulithRuntimeAutoConfiguration {
 	private static class ApplicationModulesBootstrap {
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesBootstrap.class);
+		private static final ApplicationModulesFactory BOOTSTRAP;
+
+		static {
+
+			var factories = SpringFactoriesLoader.loadFactories(ApplicationModulesFactory.class,
+					ApplicationModulesBootstrap.class.getClassLoader());
+
+			BOOTSTRAP = !factories.isEmpty() ? factories.get(0) : ApplicationModulesFactory.defaultFactory();
+		}
 
 		static ApplicationModules initializeApplicationModules(Class<?> applicationMainClass) {
 
 			LOGGER.debug("Obtaining Spring Modulith application modules…");
 
-			var result = ApplicationModules.of(applicationMainClass);
+			var result = BOOTSTRAP.of(applicationMainClass);
 			var numberOfModules = result.stream().count();
 
 			if (numberOfModules == 0) {
@@ -153,7 +164,7 @@ class SpringModulithRuntimeAutoConfiguration {
 			} else {
 
 				LOGGER.debug("Detected {} application modules: {}", //
-						result.stream().count(), //
+						numberOfModules, //
 						result.stream().map(ApplicationModule::getName).toList());
 			}
 

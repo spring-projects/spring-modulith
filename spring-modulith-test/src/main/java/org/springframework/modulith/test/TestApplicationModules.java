@@ -18,6 +18,7 @@ package org.springframework.modulith.test;
 import java.util.List;
 
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.ModulithMetadata;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -34,10 +35,44 @@ public class TestApplicationModules {
 	 * Creates an {@link ApplicationModules} instance from the given package but only inspecting the test code.
 	 *
 	 * @param basePackage must not be {@literal null} or empty.
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public static ApplicationModules of(String basePackage) {
-		return new ApplicationModules(ModulithMetadata.of(basePackage), List.of(basePackage),
-				DescribedPredicate.alwaysFalse(), false, new ImportOption.OnlyIncludeTests()) {};
+		return of(ModulithMetadata.of(basePackage), basePackage);
+	}
+
+	/**
+	 * Creates an {@link ApplicationModules} instance from the given application class but only inspecting the test code.
+	 *
+	 * @param applicationClass must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	public static ApplicationModules of(Class<?> applicationClass) {
+		return of(ModulithMetadata.of(applicationClass), applicationClass.getPackageName());
+	}
+
+	private static ApplicationModules of(ModulithMetadata metadata, String basePackage) {
+		return new ApplicationModules(metadata, List.of(basePackage), DescribedPredicate.alwaysFalse(), false,
+				new ImportOption.OnlyIncludeTests()) {};
+	}
+
+	/**
+	 * Custom {@link ApplicationModulesFactory} to bootstrap an {@link ApplicationModules} instance only considering test
+	 * code.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 1.2
+	 */
+	static class Factory implements ApplicationModulesFactory {
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.util.ApplicationModulesFactory#of(java.lang.Class)
+		 */
+		@Override
+		public ApplicationModules of(Class<?> applicationClass) {
+			return TestApplicationModules.of(applicationClass);
+		}
 	}
 }

@@ -115,6 +115,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.importPackages(packages) //
 				.that(not(ignored.or(IS_AOT_TYPE).or(IS_SPRING_CGLIB_PROXY)));
 
+		Assert.notEmpty(allClasses, () -> "No classes found in packages %s!".formatted(packages));
+
 		Classes classes = Classes.of(allClasses);
 
 		this.modules = packages.stream() //
