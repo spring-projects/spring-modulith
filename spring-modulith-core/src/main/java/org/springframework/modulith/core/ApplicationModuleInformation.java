@@ -147,9 +147,9 @@ interface ApplicationModuleInformation {
 		private final Optional<ApplicationModule> annotation;
 
 		/**
-		 * Whether the given {@link JavaPackage} supports this {@link ApplicationModuleInformation}.
+		 * Whether the given {@link AnnotationLookup} supports this {@link ApplicationModuleInformation}.
 		 *
-		 * @param javaPackage must not be {@literal null}.
+		 * @param lookup must not be {@literal null}.
 		 */
 		public static boolean supports(AnnotationLookup lookup) {
 
@@ -159,9 +159,9 @@ interface ApplicationModuleInformation {
 		}
 
 		/**
-		 * Creates a new {@link SpringModulithModule} for the given {@link JavaPackage}.
+		 * Creates a new {@link SpringModulithModule} for the given {@link AnnotationLookup}.
 		 *
-		 * @param javaPackage must not be {@literal null}.
+		 * @param lookup must not be {@literal null}.
 		 */
 		public SpringModulithModule(AnnotationLookup lookup) {
 			this.annotation = lookup.lookup(ApplicationModule.class);

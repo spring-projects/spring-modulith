@@ -246,7 +246,6 @@ public class JavaPackage implements DescribedIterable<JavaClass> {
 	 *
 	 * @param <A> the type of the annotation.
 	 * @param annotationType must not be {@literal null}.
-	 * @param typeFilter must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 * @since 1.2
 	 * @throws IllegalStateException in case multiple types in the current package are annotated with the given
