@@ -66,4 +66,14 @@ public @interface ApplicationModuleListener {
 	 */
 	@AliasFor(annotation = EventListener.class, attribute = "id")
 	String id() default "";
+
+	/**
+	 * Spring Expression Language (SpEL) attribute used for making the event handling conditional. The default is
+	 * {@code ""}, meaning the event is always handled.
+	 *
+	 * @since 1.2
+	 * @see EventListener#condition
+	 */
+	@AliasFor(annotation = EventListener.class, attribute = "condition")
+	String condition() default "";
 }
