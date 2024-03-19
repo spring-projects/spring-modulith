@@ -330,3 +330,67 @@ This class needs to be registered in `META-INF/spring.factories` as follows:
 org.springframework.modulith.core.ApplicationModuleDetectionStrategy=\
   example.CustomApplicationModuleDetectionStrategy
 ----
+
+[[customizing-modules-arrangement]]
+== Customizing the Application Modules Arrangement
+
+Spring Moduliths allows to configure some core aspects around the application module arrangement you create via the `@Modulithic` annotation to be used on the main Spring Boot application class.
+
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+package example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.modulith.Modulithic;
+
+@Modulithic
+@SpringBootApplication
+class MyApplication {
+
+  public static void main(String... args) {
+    SpringApplication.run(DemoApplication.class, args);
+  }
+}
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+package example
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+import org.springframework.modulith.Modulithic
+
+@Modulithic
+@SpringBootApplication
+class DemoApplication
+
+fun main(args: Array<String>) {
+  runApplication<DemoApplication>(*args)
+}
+----
+======
+
+The annotation exposes the following attributes to customize:
+
+[cols="1,3", options="header, unbreakable"]
+|===
+|Annotation attribute
+|Description
+
+|`systemName`
+|The human readable name of the application to be used in generated xref:documentation.adoc#documentation[documentation].
+
+|`sharedModules`
+|Declares the application modules with the given names as shared modules, which means that they will be always included in xref:testing.adoc#testing[application module integration tests].
+
+|`additionalPackages`
+|Instructs Spring Modulith to treat the configured packages as additional root application packages. In other words, application module detection will be triggered for those as well.
+
+|===
