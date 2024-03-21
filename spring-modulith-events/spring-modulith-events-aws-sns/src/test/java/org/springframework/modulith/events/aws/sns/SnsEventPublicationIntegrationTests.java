@@ -58,7 +58,7 @@ class SnsEventPublicationIntegrationTests {
 		@Bean
 		LocalStackContainer localStackContainer(DynamicPropertyRegistry registry) {
 
-			var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:2.3.2"));
+			var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"));
 
 			registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
 			registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
