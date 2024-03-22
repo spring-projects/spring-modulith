@@ -102,14 +102,14 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 					ID IN (?)
 			""";
 
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
+	private static final String SQL_STATEMENT_DELETE_COMPLETED = """
 			DELETE
 			FROM EVENT_PUBLICATION
 			WHERE
 					COMPLETION_DATE IS NOT NULL
 			""";
 
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE = """
+	private static final String SQL_STATEMENT_DELETE_COMPLETED_BEFORE = """
 			DELETE
 			FROM EVENT_PUBLICATION
 			WHERE
@@ -244,7 +244,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		operations.execute(SQL_STATEMENT_DELETE_UNCOMPLETED);
+		operations.execute(SQL_STATEMENT_DELETE_COMPLETED);
 	}
 
 	/*
@@ -256,7 +256,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		operations.update(SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE, Timestamp.from(instant));
+		operations.update(SQL_STATEMENT_DELETE_COMPLETED_BEFORE, Timestamp.from(instant));
 	}
 
 	private String serializeEvent(Object event) {
