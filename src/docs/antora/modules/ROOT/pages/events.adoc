@@ -164,7 +164,7 @@ class InventoryManagement {
 ----
 ======
 
-To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleListener` to shortcut the declaration
+To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleListener` as a shortcut.
 
 .An application module listener
 [tabs]
