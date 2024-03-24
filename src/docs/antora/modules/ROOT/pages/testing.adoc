@@ -156,7 +156,7 @@ The test definition itself usually follows the following skeleton:
 3. The definition of some expected outcome, such as another application event being fired that matches some criteria or some state change of the module that can be detected by invoking exposed components.
 4. Optional, additional verifications made on the received event or observed, changed state.
 
-`Scenario` exposes API to define these steps and guide you through the definition.
+`Scenario` exposes an API to define these steps and guide you through the definition.
 
 .Defining a stimulus as starting point of the `Scenario`
 [tabs]
