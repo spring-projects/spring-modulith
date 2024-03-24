@@ -287,7 +287,7 @@ For modules without explicitly described dependencies, both the application modu
 === Customizing Module Detection
 
 If the default application module model does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
-That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package, the Spring Boot application class resides in.
+That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package the Spring Boot application class resides in.
 You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
 
 Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:
