@@ -536,7 +536,7 @@ class OrderIntegrationTests {
 ----
 ======
 
-Note how `PublishedEvents` exposes API to select events matching a certain criteria.
+Note how `PublishedEvents` exposes an API to select events matching a certain criteria.
 The verification is concluded by an AssertJ assertion that verifies the number of elements expected.
 If you are using AssertJ for those assertions anyway, you can also use `AssertablePublishedEvents` as test method parameter type and use the fluent assertion APIs provided through that.
 
