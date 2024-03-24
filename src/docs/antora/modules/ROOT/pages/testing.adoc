@@ -2,7 +2,7 @@
 = Integration Testing Application Modules
 
 Spring Modulith allows to run integration tests bootstrapping individual application modules in isolation or combination with others.
-To achieve this, place JUnit test class in an application module package or any sub-package of that and annotate it with `@ApplicationModuleTest`:
+To achieve this, place a JUnit test class in an application module package or any sub-package of that and annotate it with `@ApplicationModuleTest`:
 
 .A application module integration test class
 [tabs]
