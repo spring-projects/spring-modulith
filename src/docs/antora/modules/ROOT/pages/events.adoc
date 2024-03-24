@@ -408,7 +408,7 @@ class CustomerCreated {
 ----
 ======
 
-The `CustomerCreated` event exposes the lastname of the customer via an accessor method.
+The `CustomerCreated` event exposes the last name of the customer via an accessor method.
 That method is then used via the ``&#35;this.getLastname()`` expression in key expression following the `::` delimiter of the target declaration.
 
 If the key calculation becomes more involved, it is advisable to rather delegate that into a Spring bean that takes the event as argument:
