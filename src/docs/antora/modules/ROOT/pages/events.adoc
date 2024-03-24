@@ -579,4 +579,4 @@ class OrderIntegrationTests {
 ----
 ======
 
-Note, how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
+Note how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
