@@ -69,7 +69,7 @@ In such an arrangement, the `order` package is considered an API package.
 Code from other application modules is allowed to refer to types within that.
 `order.internal`, just as any other sub-package of the application module base package, is considered an _internal_ one.
 Code within those must not be referred to from other modules.
-Note, how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
+Note how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
 This unfortunately means that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
