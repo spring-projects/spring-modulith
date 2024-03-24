@@ -365,7 +365,7 @@ The event externalization performs three steps on each application event publish
 By default, only event types located within a Spring Boot auto-configuration package and annotated with one of the supported `@Externalized` annotations are selected for externalization.
 2. _Mapping the event (optional)_ -- By default, the event is serialized to JSON using the Jackson `ObjectMapper` present in the application and published as is.
 The mapping step allows developers to either customize the representation or even completely replace the original event with a representation suitable for external parties.
-Note, that the mapping step precedes the actual serialization of the to be published object.
+Note that the mapping step precedes the actual serialization of the to be published object.
 3. _Determining a routing target_ -- Message broker clients need a logical target to publish the message to.
 The target usually identifies physical infrastructure (a topic, exchange, or queue depending on the broker) and is often statically derived from the event type.
 Unless defined in the `@Externalized` annotation specifically, Spring Modulith uses the application-local type name as target.
