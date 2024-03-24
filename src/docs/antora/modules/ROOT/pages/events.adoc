@@ -241,7 +241,7 @@ Using the transactional event publication log requires a combination of artifact
 Event publications may need to be managed in a variety of ways during the runtime of an application.
 Incomplete publications might have to be re-submitted to the corresponding listeners after a given amount of time.
 Completed publications on the other hand, will likely have to be purged from the database or moved into an archive store.
-As the needs for that kind of housekeeping strongly vary from application to application, Spring Modulith offers API to deal with both kinds of publications.
+As the needs for that kind of housekeeping strongly vary from application to application, Spring Modulith offers an API to deal with both kinds of publications.
 That API is available through the `spring-modulith-events-api` artifact, that you can add to your application:
 
 .Using Spring Modulith Events API artifact
