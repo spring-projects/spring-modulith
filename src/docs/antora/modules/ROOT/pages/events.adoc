@@ -89,7 +89,7 @@ class OrderManagement(val events: ApplicationEventPublisher, val dependency: Ord
 ----
 ======
 
-Note, how, instead of depending on the other application module's Spring bean, we use Spring's `ApplicationEventPublisher` to publish a domain event, once we have completed the state transitions on the primary aggregate.
+Note how, instead of depending on the other application module's Spring bean, we use Spring's `ApplicationEventPublisher` to publish a domain event once we have completed the state transitions on the primary aggregate.
 For a more aggregate-driven approach to event publication, see https://docs.spring.io/spring-data/data-commons/docs/current/reference/html/#core.domain-events[Spring Data's application event publication mechanism] for details.
 As event publication happens synchronously by default, the transactional semantics of the overall arrangement stay the same as in the example above.
 Both for the good, as we get to a very simple consistency model (either both the status change of the order _and_ the inventory update succeed or none of them does), but also for the bad as more triggered related functionality will widen the transaction boundary and potentially cause the entire transaction to fail, even if the functionality that is causing the error is not crucial.
@@ -164,7 +164,7 @@ class InventoryManagement {
 ----
 ======
 
-To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleListener` to shortcut the declaration
+To ease the declaration of what is supposed to describe the default way of integrating modules via events, Spring Modulith provides `@ApplicationModuleListener` as a shortcut.
 
 .An application module listener
 [tabs]
@@ -241,8 +241,8 @@ Using the transactional event publication log requires a combination of artifact
 Event publications may need to be managed in a variety of ways during the runtime of an application.
 Incomplete publications might have to be re-submitted to the corresponding listeners after a given amount of time.
 Completed publications on the other hand, will likely have to be purged from the database or moved into an archive store.
-As the needs for that kind of housekeeping strongly vary from application to application, Spring Modulith offers API to deal with both kinds of publications.
-That API is available through the `spring-modulith-events-api` artifact, that you can add to your application:
+As the needs for that kind of housekeeping strongly vary from application to application, Spring Modulith offers an API to deal with both kinds of publications.
+That API is available through the `spring-modulith-events-api` artifact that you can add to your application:
 
 .Using Spring Modulith Events API artifact
 [tabs]
@@ -268,10 +268,10 @@ dependencies {
 ----
 ======
 
-This artifact contains two primary abstractions, that are available to application code as Spring Beans:
+This artifact contains two primary abstractions that are available to application code as Spring Beans:
 
-* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides API to immediately purge all of them from the database or the completed publications older that a given duration (for example, 1 minute).
-* `IncompleteEventPublications`-- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
+* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older that a given duration (for example, 1 minute).
+* `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
 
 [[publication-registry.publication-repositories]]
 === Event Publication Repositories
@@ -330,7 +330,7 @@ To find out how to use other ways of selecting events for externalization, or cu
 |Kafka
 |`spring-modulith-events-kafka`
 |Uses Spring Kafka for the interaction with the broker.
-The logical routing key will be used as
+The logical routing key will be used as Kafka's topic and message key.
 
 |AMQP
 |`spring-modulith-events-amqp`
@@ -365,7 +365,7 @@ The event externalization performs three steps on each application event publish
 By default, only event types located within a Spring Boot auto-configuration package and annotated with one of the supported `@Externalized` annotations are selected for externalization.
 2. _Mapping the event (optional)_ -- By default, the event is serialized to JSON using the Jackson `ObjectMapper` present in the application and published as is.
 The mapping step allows developers to either customize the representation or even completely replace the original event with a representation suitable for external parties.
-Note, that the mapping step precedes the actual serialization of the to be published object.
+Note that the mapping step precedes the actual serialization of the to be published object.
 3. _Determining a routing target_ -- Message broker clients need a logical target to publish the message to.
 The target usually identifies physical infrastructure (a topic, exchange, or queue depending on the broker) and is often statically derived from the event type.
 Unless defined in the `@Externalized` annotation specifically, Spring Modulith uses the application-local type name as target.
@@ -408,7 +408,7 @@ class CustomerCreated {
 ----
 ======
 
-The `CustomerCreated` event exposes the lastname of the customer via an accessor method.
+The `CustomerCreated` event exposes the last name of the customer via an accessor method.
 That method is then used via the ``&#35;this.getLastname()`` expression in key expression following the `::` delimiter of the target declaration.
 
 If the key calculation becomes more involved, it is advisable to rather delegate that into a Spring bean that takes the event as argument:
@@ -483,7 +483,7 @@ This step fundamentally disables the application base package filter as we only 
 Convenience methods to easily select events by type, by packages, packages and annotation exist.
 Also, a shortcut to define selection and routing in one step.
 <3> We define a mapping step for `SomeEvent` instances.
-Note, that the routing will still be determined by the original event instance, unless you additionally call `….routeMapped()` on the router.
+Note that the routing will still be determined by the original event instance, unless you additionally call `….routeMapped()` on the router.
 <4> We finally determine a routing key by defining a method handle to extract a value of the event instance.
 Alternatively, a full `RoutingKey` can be produced for individual events by using the general `route(…)` method on the `Router` instance returned from the previous call.
 
@@ -536,7 +536,7 @@ class OrderIntegrationTests {
 ----
 ======
 
-Note, how `PublishedEvents` exposes API to select events matching a certain criteria.
+Note how `PublishedEvents` exposes an API to select events matching a certain criteria.
 The verification is concluded by an AssertJ assertion that verifies the number of elements expected.
 If you are using AssertJ for those assertions anyway, you can also use `AssertablePublishedEvents` as test method parameter type and use the fluent assertion APIs provided through that.
 
@@ -579,4 +579,4 @@ class OrderIntegrationTests {
 ----
 ======
 
-Note, how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.
+Note how the type returned by the `assertThat(…)` expression allows to define constraints on the published events directly.

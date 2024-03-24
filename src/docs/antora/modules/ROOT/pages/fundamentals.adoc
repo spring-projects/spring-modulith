@@ -69,7 +69,7 @@ In such an arrangement, the `order` package is considered an API package.
 Code from other application modules is allowed to refer to types within that.
 `order.internal`, just as any other sub-package of the application module base package, is considered an _internal_ one.
 Code within those must not be referred to from other modules.
-Note, how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
+Note how `SomethingOrderInternal` is a public type, likely because `OrderManagement` depends on it.
 This unfortunately means that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
@@ -287,7 +287,7 @@ For modules without explicitly described dependencies, both the application modu
 === Customizing Module Detection
 
 If the default application module model does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
-That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package, the Spring Boot application class resides in.
+That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package the Spring Boot application class resides in.
 You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
 
 Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:

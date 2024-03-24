@@ -21,10 +21,10 @@ ApplicationModules.of(Application::class).verify()
 ======
 The verification includes the following rules:
 
-* _No cycles on the application module level_ -- the dependencies between modules have to form directed, acyclic graph.
-* _Efferent module access via API packages only_ -- All references to types that reside in application module internal packages are rejected.
+* _No cycles on the application module level_ -- the dependencies between modules have to form a directed acyclic graph.
+* _Efferent module access via API packages only_ -- all references to types that reside in application module internal packages are rejected.
 See xref:fundamentals.adoc#modules.advanced[Advanced Application Modules] for details.
-* _Explicitly allowed application module dependencies only_ (optional) -- An application module can optionally define allowed dependencies via  `@ApplicationModule(allowedDependencies = …)`.
+* _Explicitly allowed application module dependencies only_ (optional) -- an application module can optionally define allowed dependencies via  `@ApplicationModule(allowedDependencies = …)`.
 If those are configured, dependencies to other application modules are rejected.
 See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Module Dependencies] and xref:fundamentals.adoc#modules.named-interfaces[Named Interfaces] for details.
 
