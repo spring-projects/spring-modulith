@@ -330,7 +330,7 @@ To find out how to use other ways of selecting events for externalization, or cu
 |Kafka
 |`spring-modulith-events-kafka`
 |Uses Spring Kafka for the interaction with the broker.
-The logical routing key will be used as
+The logical routing key will be used as Kafka's topic and message key.
 
 |AMQP
 |`spring-modulith-events-amqp`
