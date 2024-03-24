@@ -483,7 +483,7 @@ This step fundamentally disables the application base package filter as we only 
 Convenience methods to easily select events by type, by packages, packages and annotation exist.
 Also, a shortcut to define selection and routing in one step.
 <3> We define a mapping step for `SomeEvent` instances.
-Note, that the routing will still be determined by the original event instance, unless you additionally call `….routeMapped()` on the router.
+Note that the routing will still be determined by the original event instance, unless you additionally call `….routeMapped()` on the router.
 <4> We finally determine a routing key by defining a method handle to extract a value of the event instance.
 Alternatively, a full `RoutingKey` can be produced for individual events by using the general `route(…)` method on the `Router` instance returned from the previous call.
 
