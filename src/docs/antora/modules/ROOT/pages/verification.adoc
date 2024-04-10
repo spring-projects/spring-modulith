@@ -30,11 +30,10 @@ See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Mo
 
 Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].
 
-
 [[excluding-packages]]
 == Excluding Packages
 
-In case you like to exclude certain Java classes or full packages, you can do so with:
+In case you would like to exclude certain Java classes or full packages from the application module inspection, you can do so with:
 
 [tabs]
 ======
@@ -52,10 +51,11 @@ ApplicationModules.of(Application::class, JavaClass.Predicates.resideInAPackage(
 ----
 ======
 
-Different examples of exclusions:
+Additional examples of exclusions:
 
 * `com.example.db` -- Matches all files in the given package `com.example.db`.
 * `com.example.db..` -- Matches all files in the given package (`com.example.db`) and all sub-packages (`com.example.db.a` or `com.example.db.b.c`).
-* `..example..` -- Matches 'a.example', 'a.example.b' or 'a.b.example.c.d', but not 'a.exam.b'
+* `..example..` -- Matches `a.example`, `a.example.b` or `a.b.example.c.d`, but not `a.exam.b`
 
-Full details about possible matchers can be found in the JavaDoc of PackageMatcher: https://github.com/TNG/ArchUnit/blob/main/archunit/src/main/java/com/tngtech/archunit/core/domain/PackageMatcher.java
+Full details about possible matchers can be found in the JavaDoc of ArchUnit https://github.com/TNG/ArchUnit/blob/main/archunit/src/main/java/com/tngtech/archunit/core/domain/PackageMatcher.java[`PackageMatcher`].
+
