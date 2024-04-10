@@ -164,7 +164,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				.map(it -> executeListenerWithCompletion(publication, it)) //
 				.orElseGet(() -> {
 
-					LOGGER.debug("Listener {} not found!", publication.getTargetIdentifier());
+					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} incomplete.", publication.getTargetIdentifier(), publication.getIdentifier());
 					return null;
 				});
 	}
