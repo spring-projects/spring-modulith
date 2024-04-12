@@ -33,7 +33,7 @@
 
 	<properties>
 
-		<archunit.version>1.2.1</archunit.version>
+		<archunit.version>1.3.0</archunit.version>
 		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>4.12.2</flapdoodle-mongodb.version>
 		<jmolecules-bom.version>2023.1.2</jmolecules-bom.version>
