@@ -26,7 +26,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<jmolecules.version>2023.1.2</jmolecules.version>
-		<spring-boot.version>3.3.0-M3</spring-boot.version>
+		<spring-boot.version>3.3.0-RC1</spring-boot.version>
 	</properties>
 
 	<build>
