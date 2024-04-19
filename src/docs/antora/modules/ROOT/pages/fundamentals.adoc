@@ -1,12 +1,14 @@
 [[fundamentals]]
 = Fundamentals
+:toc:
+:toclevels: 3
 
 Spring Modulith supports developers implementing logical modules in Spring Boot applications.
 It allows them to apply structural validation, document the module arrangement, run integration tests for individual modules, observe the modules' interaction at runtime, and generally implement module interaction in a loosely coupled way.
 This section will discuss the fundamental concepts that developers need to understand before diving into the technical support.
 
 [[modules]]
-== Application modules
+== Application Modules
 
 In a Spring Boot application, an application module is a unit of functionality that consists of the following parts:
 
@@ -16,6 +18,100 @@ In a Spring Boot application, an application module is a unit of functionality t
 
 Spring Moduliths provides different ways of expressing modules within Spring Boot applications, primarily differing in the level of complexity involved in the overall arrangement.
 This allows developers to start simple and naturally move to more sophisticated means as and if needed.
+
+[[modules.application-modules]]
+=== The `ApplicationModules` Type
+
+Spring Moduliths allows to inspect a codebase to derive an application module model based on the given arrangement and optional configuration.
+The `spring-modulith-core` artifact contains `ApplicationModules` that can be pointed to a Spring Boot application class:
+
+.Creating an application module model
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+var modules = ApplicationModules.of(Application.class);
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+var modules = ApplicationModules.of(Application::class)
+----
+======
+The `modules` will contain an in-memory representation of the application module arrangement derived from the codebase.
+Which parts of that will be detected as a module depends on the Java package structure underneath the package the class pointed to resides in.
+Find out more about the arrangement expected by default in xref:fundamentals.adoc#modules.simple[].
+Advanced arrangements and customization options are described in xref:fundamentals.adoc#modules.advanced[] and
+
+To get an impression of what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
+
+.Writing the application module arrangement to the console
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+modules.forEach(System.out::println);
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+modules.forEach(println(it))
+----
+======
+.The console output of our application module arrangement
+[source]
+----
+## example.inventory ##
+> Logical name: inventory
+> Base package: example.inventory
+> Spring beans:
+  + ….InventoryManagement
+  o ….SomeInternalComponent
+
+## example.order ##
+> Logical name: order
+> Base package: example.order
+> Spring beans:
+  + ….OrderManagement
+  + ….internal.SomeInternalComponent
+----
+
+Note how each module is listed, the contained Spring components are identified, and the respective visibility is rendered, too.
+
+[[modules.excluding-packages]]
+==== Excluding Packages
+
+In case you would like to exclude certain Java classes or full packages from the application module inspection, you can do so with:
+
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+ApplicationModules.of(Application.class, JavaClass.Predicates.resideInAPackage("com.example.db")).verify();
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+ApplicationModules.of(Application::class, JavaClass.Predicates.resideInAPackage("com.example.db")).verify()
+----
+======
+
+Additional examples of exclusions:
+
+* `com.example.db` -- Matches all files in the given package `com.example.db`.
+* `com.example.db..` -- Matches all files in the given package (`com.example.db`) and all sub-packages (`com.example.db.a` or `com.example.db.b.c`).
+* `..example..` -- Matches `a.example`, `a.example.b` or `a.b.example.c.d`, but not `a.exam.b`
+
+Full details about possible matchers can be found in the JavaDoc of ArchUnit https://github.com/TNG/ArchUnit/blob/main/archunit/src/main/java/com/tngtech/archunit/core/domain/PackageMatcher.java[`PackageMatcher`].
 
 [[modules.simple]]
 === Simple Application Modules
@@ -144,66 +240,6 @@ class ModuleMetadata {}
 
 In this case code within the __inventory__ module was only allowed to refer to code in the __order__ module (and code not assigned to any module in the first place).
 Find out about how to monitor that in xref:verification.adoc[Verifying Application Module Structure].
-
-[[modules.application-modules]]
-=== The `ApplicationModules` Type
-
-Spring Moduliths allows to inspect a codebase to derive an application module model based on the given arrangement and optional configuration.
-The `spring-modulith-core` artifact contains `ApplicationModules` that can be pointed to a Spring Boot application class:
-
-.Creating an application module model
-[tabs]
-======
-Java::
-+
-[source, java, role="primary"]
-----
-var modules = ApplicationModules.of(Application.class);
-----
-Kotlin::
-+
-[source, kotlin, role="secondary"]
-----
-var modules = ApplicationModules.of(Application::class)
-----
-======
-To get an impression of what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
-
-.Writing the application module arrangement to the console
-[tabs]
-======
-Java::
-+
-[source, java, role="primary"]
-----
-modules.forEach(System.out::println);
-----
-Kotlin::
-+
-[source, kotlin, role="secondary"]
-----
-modules.forEach(println(it))
-----
-======
-.The console output of our application module arrangement
-[source]
-----
-## example.inventory ##
-> Logical name: inventory
-> Base package: example.inventory
-> Spring beans:
-  + ….InventoryManagement
-  o ….SomeInternalComponent
-
-## example.order ##
-> Logical name: order
-> Base package: example.order
-> Spring beans:
-  + ….OrderManagement
-  + ….internal.SomeInternalComponent
-----
-
-Note how each module is listed, the contained Spring components are identified, and the respective visibility is rendered, too.
 
 [[modules.named-interfaces]]
 === Named Interfaces

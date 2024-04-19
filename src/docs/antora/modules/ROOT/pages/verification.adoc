@@ -24,38 +24,9 @@ The verification includes the following rules:
 * _No cycles on the application module level_ -- the dependencies between modules have to form a directed acyclic graph.
 * _Efferent module access via API packages only_ -- all references to types that reside in application module internal packages are rejected.
 See xref:fundamentals.adoc#modules.advanced[Advanced Application Modules] for details.
+Dependencies into internals of xref:fundamentals.adoc#modules.advanced.open[Open Application Modules] are allowed.
 * _Explicitly allowed application module dependencies only_ (optional) -- an application module can optionally define allowed dependencies via  `@ApplicationModule(allowedDependencies = …)`.
 If those are configured, dependencies to other application modules are rejected.
 See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Module Dependencies] and xref:fundamentals.adoc#modules.named-interfaces[Named Interfaces] for details.
 
 Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].
-
-[[excluding-packages]]
-== Excluding Packages
-
-In case you would like to exclude certain Java classes or full packages from the application module inspection, you can do so with:
-
-[tabs]
-======
-Java::
-+
-[source, java, role="primary"]
-----
-ApplicationModules.of(Application.class, JavaClass.Predicates.resideInAPackage("com.example.db")).verify();
-----
-Kotlin::
-+
-[source, kotlin, role="secondary"]
-----
-ApplicationModules.of(Application::class, JavaClass.Predicates.resideInAPackage("com.example.db")).verify()
-----
-======
-
-Additional examples of exclusions:
-
-* `com.example.db` -- Matches all files in the given package `com.example.db`.
-* `com.example.db..` -- Matches all files in the given package (`com.example.db`) and all sub-packages (`com.example.db.a` or `com.example.db.b.c`).
-* `..example..` -- Matches `a.example`, `a.example.b` or `a.b.example.c.d`, but not `a.exam.b`
-
-Full details about possible matchers can be found in the JavaDoc of ArchUnit https://github.com/TNG/ArchUnit/blob/main/archunit/src/main/java/com/tngtech/archunit/core/domain/PackageMatcher.java[`PackageMatcher`].
-
