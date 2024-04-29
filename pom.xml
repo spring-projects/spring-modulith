@@ -3,7 +3,7 @@
 
 	<groupId>org.springframework.modulith</groupId>
 	<artifactId>spring-modulith</artifactId>
-	<version>1.0.7</version>
+	<version>1.0.8-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 
@@ -577,7 +577,7 @@ limitations under the License.
 		<url>https://github.com/spring-projects/spring-modulith</url>
 		<connection>scm:git:https://github.com/spring-projects/spring-modulith</connection>
 		<developerConnection>scm:git:ssh://git@github.com/spring-projects-experimental/spring-modulith</developerConnection>
-		<tag>1.0.7</tag>
+		<tag>1.0.x</tag>
 	</scm>
 
 	<repositories>
