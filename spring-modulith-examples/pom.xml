@@ -100,7 +100,7 @@
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
-				<version>1.3.0-SNAPSHOT</version>
+				<version>1.3.0-GH-578-SNAPSHOT</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
