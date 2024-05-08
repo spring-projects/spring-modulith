@@ -2,19 +2,19 @@
 	"properties": [
 		{
 			"name": "spring.modulith.default-async-termination",
-			"type": "java.lang.boolean",
+			"type": "java.lang.Boolean",
 			"description": "Whether to configure defaults for the async processing termination, namely to wait for task completion for 2 seconds. See TaskExecutionProperties for details.",
 			"defaultValue": "true"
 		},
 		{
 			"name": "spring.modulith.republish-outstanding-events-on-restart",
-			"type": "java.lang.boolean",
+			"type": "java.lang.Boolean",
 			"description": "Whether to republish outstanding event publications on restarts of the application.",
 			"defaultValue": "false"
 		},
 		{
 			"name": "spring.modulith.events.externalization.enabled",
-			"type": "java.lang.boolean",
+			"type": "java.lang.Boolean",
 			"description": "Whether to enable event externalization.",
 			"defaultValue": "true"
 		}
