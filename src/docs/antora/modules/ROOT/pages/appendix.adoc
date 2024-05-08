@@ -21,7 +21,7 @@
 |`false`
 |Whether to initialize the JDBC event publication schema.
 
-|`spring.modulith.events.kafka.json-enabled`
+|`spring.modulith.events.kafka.enable-json`
 |`true`
 |Whether to enable JSON support for `KafkaTemplate`.
 
@@ -33,7 +33,7 @@
 |`false`
 |Whether to create indexes on the .
 
-|`spring.modulith.events.rabbitmq.json-enabled`
+|`spring.modulith.events.rabbitmq.enable-json`
 |`true`
 |Whether to enable JSON support for `RabbitTemplate`.
 
