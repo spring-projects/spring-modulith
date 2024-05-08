@@ -2,7 +2,7 @@
 	"properties": [
 		{
 			"name": "spring.modulith.events.mongodb.transaction-management.enabled",
-			"type": "java.lang.boolean",
+			"type": "java.lang.Boolean",
 			"description": "Whether to automatically enable transactions for MongoDB. Requires the database to be run with a replica set.",
 			"defaultValue": "true"
 		}

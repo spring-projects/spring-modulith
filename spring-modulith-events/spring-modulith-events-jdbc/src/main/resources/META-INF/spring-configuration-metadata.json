@@ -2,7 +2,7 @@
 	"properties": [
 		{
 			"name": "spring.modulith.events.jdbc.schema-initialization.enabled",
-			"type": "java.lang.boolean",
+			"type": "java.lang.Boolean",
 			"description": "Whether to initialize the JDBC event publication schema.",
 			"defaultValue": "false"
 		}
