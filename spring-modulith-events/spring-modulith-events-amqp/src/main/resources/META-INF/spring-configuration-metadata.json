@@ -1,7 +1,7 @@
 {
 	"properties": [
 		{
-			"name": "spring.modulith.events.rabbitmq.json-enabled",
+			"name": "spring.modulith.events.rabbitmq.enable-json",
 			"type": "java.lang.Boolean",
 			"description": "Whether to auto-configure RabbitTemplate to use JSON for message serialization.",
 			"defaultValue": "true"
