@@ -17,6 +17,7 @@
 
 	<modules>
 		<module>spring-modulith-example-epr-jdbc</module>
+		<module>spring-modulith-example-epr-jpa</module>
 		<module>spring-modulith-example-epr-mongodb</module>
 		<module>spring-modulith-example-epr-neo4j</module>
 		<module>spring-modulith-example-full</module>

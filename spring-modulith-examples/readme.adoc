@@ -10,4 +10,5 @@ To run the examples, execute the Maven build via `./mvnw`.
 It also shows the Event Publication Registry working and how it keeps track of the incomplete event publication caused by the `FailingAsyncTransactionalEventListener`.
 Finally, it shows how to write integration tests using the `Scenario` APIs in `OrderIntegrationTests`.
 * `spring-modulith-example-epr-jdbc` -- shows the Event Publication Registry working on top of Spring Data JDBC (in `ApplicationIntegrationTests`).
+* `spring-modulith-example-epr-jpa` -- shows the Event Publication Registry working on top of Spring Data JPA (in `ApplicationIntegrationTests`).
 * `spring-modulith-example-epr-mongodb` -- shows the Event Publication Registry working on top of MongoDB (in `ApplicationIntegrationTests`).
