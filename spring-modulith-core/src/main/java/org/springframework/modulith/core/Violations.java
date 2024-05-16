@@ -49,7 +49,8 @@ public class Violations extends RuntimeException {
 	}
 
 	/**
-	 * A {@link Collector} to turn a {@link Stream} of {@link RuntimeException}s into a {@link Violations} instance.
+	 * A {@link Collector} to turn a {@link java.util.stream.Stream} of {@link RuntimeException}s into a
+	 * {@link Violations} instance.
 	 *
 	 * @return will never be {@literal null}.
 	 */
@@ -91,7 +92,7 @@ public class Violations extends RuntimeException {
 	/**
 	 * Creates a new {@link Violations} with the given {@link RuntimeException} added to the current ones?
 	 *
-	 * @param exception must not be {@literal null}.
+	 * @param violation must not be {@literal null}.
 	 * @return
 	 */
 	Violations and(Violation violation) {
