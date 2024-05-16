@@ -37,6 +37,7 @@ import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
+import org.springframework.modulith.core.Violations.Violation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -387,7 +388,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Violations violations = rootPackages.stream() //
 				.map(this::assertNoCyclesFor) //
 				.flatMap(it -> it.getDetails().stream()) //
-				.map(IllegalStateException::new) //
+				.map(Violation::new) //
 				.collect(Violations.toViolations());
 
 		if (JMoleculesTypes.areRulesPresent()) {
