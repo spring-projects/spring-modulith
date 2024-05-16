@@ -153,6 +153,20 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.orElseThrow(() -> new IllegalStateException("No unnamed interface found!"));
 	}
 
+	/**
+	 * Returns all named interfaces that contain the given type.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public Stream<NamedInterface> getNamedInterfacesContaining(JavaClass type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return namedInterfaces.stream()
+				.filter(it -> it.contains(type));
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -196,6 +210,12 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		namedInterfaces.addAll(unmergedInterfaces);
 
 		return new NamedInterfaces(namedInterfaces);
+	}
+
+	Stream<NamedInterface> getNamedInterfacesContaining(Class<?> type) {
+
+		return namedInterfaces.stream()
+				.filter(it -> it.contains(type));
 	}
 
 	private static NamedInterfaces of(NamedInterface interfaces) {
