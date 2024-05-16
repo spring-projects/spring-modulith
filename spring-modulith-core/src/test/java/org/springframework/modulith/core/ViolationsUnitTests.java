@@ -30,10 +30,25 @@ class ViolationsUnitTests {
 	void combinesExceptionMessages() {
 
 		Violations violations = Violations.NONE //
-				.and(new IllegalArgumentException("First")) //
-				.and(new IllegalArgumentException("Second"));
+				.and("First") //
+				.and("Second");
 
 		assertThat(violations.getMessage()) //
 				.isEqualTo("- First\n- Second");
+	}
+
+	@Test
+	void deduplicatesViolationsWithTheSameMessage() {
+
+		var violations = Violations.NONE
+				.and("First")
+				.and("First")
+				.and("Second")
+				.and(Violations.NONE.and("First")
+						.and("Second")
+						.and("Third"));
+
+		assertThat(violations.getMessages())
+				.containsExactlyInAnyOrder("First", "Second", "Third");
 	}
 }

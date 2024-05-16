@@ -37,6 +37,7 @@ import java.util.stream.Stream;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.modulith.core.Types.SpringTypes;
+import org.springframework.modulith.core.Violations.Violation;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -994,7 +995,7 @@ public class ApplicationModule {
 						.formatted(originModule.getName(), targetModule.getName(), source.getName(), target.getName(),
 								declaredDependencies.toString());
 
-				return violations.and(new IllegalStateException(message));
+				return violations.and(new Violation(message));
 			}
 
 			// No explicitly allowed dependencies - check for general access
@@ -1008,7 +1009,7 @@ public class ApplicationModule {
 				var violationText = "Module '%s' depends on non-exposed type %s within module '%s'!"
 						.formatted(originModule.getName(), target.getName(), targetModule.getName());
 
-				return violations.and(new IllegalStateException(violationText + lineSeparator() + description));
+				return violations.and(new Violation(violationText + lineSeparator() + description));
 			}
 
 			return violations;
@@ -1184,7 +1185,7 @@ public class ApplicationModule {
 
 				ApplicationModule module = getExistingModuleOf(source.getOwner(), modules);
 
-				violations = violations.and(new IllegalStateException(
+				violations = violations.and(new Violation(
 						String.format("Module %s uses field injection in %s. Prefer constructor injection instead!",
 								module.getDisplayName(), source.getFullName())));
 			}
