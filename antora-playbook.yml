@@ -29,9 +29,9 @@ asciidoc:
     tabs-sync-option: '@'
     kroki-fetch-diagram: true
   extensions:
-  - asciidoctor-kroki
-  - '@asciidoctor/tabs'
   - '@springio/asciidoctor-extensions'
+  - '@asciidoctor/tabs'
+  - asciidoctor-kroki
 urls:
   latest_version_segment_strategy: redirect:to
   latest_version_segment: ''
