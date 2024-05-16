@@ -643,20 +643,20 @@ public class ApplicationModule {
 
 		private static final String INVALID_EXPLICIT_MODULE_DEPENDENCY = "Invalid explicit module dependency in %s! No module found with name '%s'.";
 		private static final String INVALID_NAMED_INTERFACE_DECLARATION = "No named interface named '%s' found! Original dependency declaration: %s -> %s.";
+		private static final String WILDCARD = "*";
 
 		private final ApplicationModule target;
-		private final NamedInterface namedInterface;
+		private final @Nullable NamedInterface namedInterface;
 
 		/**
 		 * Creates a new {@link DeclaredDependency} for the given {@link ApplicationModule} and {@link NamedInterface}.
 		 *
 		 * @param target must not be {@literal null}.
-		 * @param namedInterface must not be {@literal null}.
+		 * @param namedInterface can be {@literal null}.
 		 */
-		private DeclaredDependency(ApplicationModule target, NamedInterface namedInterface) {
+		private DeclaredDependency(ApplicationModule target, @Nullable NamedInterface namedInterface) {
 
 			Assert.notNull(target, "Target ApplicationModule must not be null!");
-			Assert.notNull(namedInterface, "NamedInterface must not be null!");
 
 			this.target = target;
 			this.namedInterface = namedInterface;
@@ -681,17 +681,22 @@ public class ApplicationModule {
 
 			var segments = identifier.split("::");
 			var targetModuleName = segments[0].trim();
-			var namedInterfacename = segments.length > 1 ? segments[1].trim() : null;
+			var namedInterfaceName = segments.length > 1 ? segments[1].trim() : null;
 
 			var target = modules.getModuleByName(targetModuleName)
 					.orElseThrow(() -> new IllegalArgumentException(
 							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(source.getName(), targetModuleName)));
 
-			var namedInterface = namedInterfacename == null
-					? target.getNamedInterfaces().getUnnamedInterface()
-					: target.getNamedInterfaces().getByName(segments[1])
+			if (WILDCARD.equals(namedInterfaceName)) {
+				return new DeclaredDependency(target, null);
+			}
+
+			var namedInterfaces = target.getNamedInterfaces();
+			var namedInterface = namedInterfaceName == null
+					? namedInterfaces.getUnnamedInterface()
+					: namedInterfaces.getByName(namedInterfaceName)
 							.orElseThrow(() -> new IllegalArgumentException(
-									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfacename, source.getName(), identifier)));
+									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfaceName, source.getName(), identifier)));
 
 			return new DeclaredDependency(target, namedInterface);
 		}
@@ -719,7 +724,9 @@ public class ApplicationModule {
 
 			Assert.notNull(type, "Type must not be null!");
 
-			return namedInterface.contains(type);
+			return namedInterface == null
+					? target.getNamedInterfaces().containsInExplicitInterface(type)
+					: namedInterface.contains(type);
 		}
 
 		/**
@@ -728,11 +735,13 @@ public class ApplicationModule {
 		 * @param type must not be {@literal null}.
 		 * @return
 		 */
-		public boolean contains(Class<?> type) {
+		boolean contains(Class<?> type) {
 
 			Assert.notNull(type, "Type must not be null!");
 
-			return namedInterface.contains(type);
+			return namedInterface == null
+					? target.getNamedInterfaces().containsInExplicitInterface(type)
+					: namedInterface.contains(type);
 		}
 
 		/*
@@ -741,7 +750,18 @@ public class ApplicationModule {
 		 */
 		@Override
 		public String toString() {
-			return namedInterface.isUnnamed() ? target.getName() : target.getName() + "::" + namedInterface.getName();
+
+			var result = target.getName();
+
+			if (namedInterface == null) {
+				return result + " :: " + WILDCARD;
+			}
+
+			if (namedInterface.isUnnamed()) {
+				return result;
+			}
+
+			return result + " :: " + namedInterface.getName();
 		}
 
 		/*
@@ -761,7 +781,6 @@ public class ApplicationModule {
 
 			return Objects.equals(this.target, that.target) //
 					&& Objects.equals(this.namedInterface, that.namedInterface);
-
 		}
 
 		/*
@@ -821,7 +840,7 @@ public class ApplicationModule {
 			return isAllowedDependency(it -> it.contains(type));
 		}
 
-		public boolean isAllowedDependency(Class<?> type) {
+		boolean isAllowedDependency(Class<?> type) {
 			return isAllowedDependency(it -> it.contains(type));
 		}
 

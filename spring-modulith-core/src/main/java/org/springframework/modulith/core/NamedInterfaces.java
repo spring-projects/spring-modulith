@@ -167,6 +167,20 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.filter(it -> it.contains(type));
 	}
 
+	/**
+	 * Returns whether the given type is contained in one of the explicitly named {@link NamedInterface}s.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @since 1.2
+	 */
+	public boolean containsInExplicitInterface(JavaClass type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return getNamedInterfacesContaining(type)
+				.anyMatch(NamedInterface::isNamed);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -216,6 +230,12 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		return namedInterfaces.stream()
 				.filter(it -> it.contains(type));
+	}
+
+	boolean containsInExplicitInterface(Class<?> type) {
+
+		return getNamedInterfacesContaining(type)
+				.anyMatch(NamedInterface::isNamed);
 	}
 
 	private static NamedInterfaces of(NamedInterface interfaces) {

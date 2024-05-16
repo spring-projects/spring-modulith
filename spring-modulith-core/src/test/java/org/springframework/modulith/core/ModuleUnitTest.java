@@ -16,16 +16,18 @@
 package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.*;
+
+import example.ni.api.ApiType;
+import example.ni.spi.SpiType;
 
 import java.util.List;
 
 import javax.sql.DataSource;
 
-import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
+import org.springframework.modulith.core.ApplicationModule.DeclaredDependency;
 
 import com.acme.withatbean.SampleAggregate;
 import com.acme.withatbean.TestEvents.JMoleculesAnnotated;
@@ -85,13 +87,25 @@ class ModuleUnitTest {
 				.<Class<?>> extracting(JavaClass::reflect)
 				.containsExactly(SampleAggregate.class);
 	}
-	
+
 	@Test // GH-319
-	void containsPackage() {	
-		
+	void containsPackage() {
+
 		assertThat(module.containsPackage(packageName)).isTrue();
 		assertThat(module.containsPackage(packageName + ".foo")).isTrue();
-		
+
 		assertThat(module.containsPackage(packageName + "foo")).isFalse();
+	}
+
+	@Test // GH-601
+	void wildcardedDeclaredDependencyAllowsDependenciesToAllNamedInterfaces() {
+
+		var modules = TestUtils.of("example", "example.ninvalid");
+
+		var module = modules.getModuleByName("ni").orElseThrow();
+		var dependency = DeclaredDependency.of("ni :: *", module, modules);
+
+		assertThat(dependency.contains(SpiType.class)).isTrue();
+		assertThat(dependency.contains(ApiType.class)).isTrue();
 	}
 }

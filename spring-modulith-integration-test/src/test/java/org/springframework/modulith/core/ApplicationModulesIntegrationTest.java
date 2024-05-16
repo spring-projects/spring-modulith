@@ -106,7 +106,7 @@ class ApplicationModulesIntegrationTest {
 		assertThat(modules.getModuleByName("invalid3")).hasValueSatisfying(it -> {
 			assertThatExceptionOfType(Violations.class).isThrownBy(() -> it.verifyDependencies(modules))
 					.withMessageContaining("Allowed targets")
-					.withMessageContaining("complex::API");
+					.withMessageContaining("complex :: API");
 		});
 	}
 

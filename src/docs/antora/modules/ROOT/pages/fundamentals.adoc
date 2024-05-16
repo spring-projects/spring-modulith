@@ -293,6 +293,7 @@ The effect of that declaration is twofold: first, code in other application modu
 Application modules are able to refer to the named interface in explicit dependency declarations.
 Assume the __inventory__ module was making use of that, it could refer to the above declared named interface like this:
 
+.Defining allowed dependencies to dedicated named interfaces
 [tabs]
 ======
 Java::
@@ -300,7 +301,7 @@ Java::
 [source, java, role="primary", chomp="none"]
 ----
 @org.springframework.modulith.ApplicationModule(
-  allowedDependencies = "order::spi"
+  allowedDependencies = "order :: spi"
 )
 package example.inventory;
 ----
@@ -309,7 +310,7 @@ Kotlin::
 [source, kotlin, role="secondary", chomp="none"]
 ----
 @org.springframework.modulith.ApplicationModule(
-  allowedDependencies = "order::spi"
+  allowedDependencies = "order :: spi"
 )
 package example.inventory
 ----
@@ -318,6 +319,31 @@ package example.inventory
 Note how we concatenate the named interface's name `spi` via the double colon `::`.
 In this setup, code in __inventory__ would be allowed to depend on `SomeSpiInterface` and other code residing in the `order.spi` interface, but not on `OrderManagement` for example.
 For modules without explicitly described dependencies, both the application module root package *and* the SPI one are accessible.
+
+If you wanted to express that an application module is allowed to refer to all explicitly declared named interfaces, you can use the asterisk (``*``) as follows:
+
+.Using the asterisk to declare allowed dependencies to all declared named interfaces
+[tabs]
+======
+Java::
++
+[source, java, role="primary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order :: *"
+)
+package example.inventory;
+----
+Kotlin::
++
+[source, kotlin, role="secondary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order :: *"
+)
+package example.inventory
+----
+======
 
 [[customizing-modules]]
 === Customizing Module Detection
