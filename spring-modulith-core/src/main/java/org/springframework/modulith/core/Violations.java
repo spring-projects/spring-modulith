@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
 
@@ -35,18 +34,18 @@ public class Violations extends RuntimeException {
 
 	public static Violations NONE = new Violations(Collections.emptyList());
 
-	private final List<RuntimeException> exceptions;
+	private final List<Violation> violations;
 
 	/**
-	 * Creates a new {@link Violations} from the given {@link RuntimeException}s.
+	 * Creates a new {@link Violations} from the given {@link ArchitecturalViolation}s.
 	 *
-	 * @param exceptions must not be {@literal null}.
+	 * @param violations must not be {@literal null}.
 	 */
-	private Violations(List<RuntimeException> exceptions) {
+	private Violations(List<Violation> violations) {
 
-		Assert.notNull(exceptions, "Exceptions must not be null!");
+		Assert.notNull(violations, "Exceptions must not be null!");
 
-		this.exceptions = exceptions;
+		this.violations = violations;
 	}
 
 	/**
@@ -54,7 +53,7 @@ public class Violations extends RuntimeException {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static Collector<RuntimeException, ?, Violations> toViolations() {
+	static Collector<Violation, ?, Violations> toViolations() {
 		return Collectors.collectingAndThen(Collectors.toList(), Violations::new);
 	}
 
@@ -65,8 +64,8 @@ public class Violations extends RuntimeException {
 	@Override
 	public String getMessage() {
 
-		return exceptions.stream() //
-				.map(RuntimeException::getMessage) //
+		return violations.stream() //
+				.map(Violation::message) //
 				.collect(Collectors.joining("\n- ", "- ", ""));
 	}
 
@@ -76,7 +75,7 @@ public class Violations extends RuntimeException {
 	 * @return
 	 */
 	public boolean hasViolations() {
-		return !exceptions.isEmpty();
+		return !violations.isEmpty();
 	}
 
 	/**
@@ -95,36 +94,52 @@ public class Violations extends RuntimeException {
 	 * @param exception must not be {@literal null}.
 	 * @return
 	 */
-	Violations and(RuntimeException exception) {
+	Violations and(Violation violation) {
 
-		Assert.notNull(exception, "Exception must not be null!");
+		Assert.notNull(violation, "Exception must not be null!");
 
-		List<RuntimeException> newExceptions = new ArrayList<>(exceptions.size() + 1);
-		newExceptions.addAll(exceptions);
-		newExceptions.add(exception);
+		if (violations.isEmpty()) {
+			return new Violations(List.of(violation));
+		}
+
+		if (violations.contains(violation)) {
+			return this;
+		}
+
+		List<Violation> newExceptions = new ArrayList<>(violations.size() + 1);
+		newExceptions.addAll(violations);
+		newExceptions.add(violation);
 
 		return new Violations(newExceptions);
 	}
 
 	Violations and(Violations other) {
 
-		List<RuntimeException> newExceptions = new ArrayList<>(exceptions.size() + other.exceptions.size());
-		newExceptions.addAll(exceptions);
-		newExceptions.addAll(other.exceptions);
+		if (violations.isEmpty()) {
+			return new Violations(other.violations);
+		}
+
+		var newExceptions = new ArrayList<>(violations);
+
+		for (Violation candidate : other.violations) {
+			if (!violations.contains(candidate)) {
+				newExceptions.add(candidate);
+			}
+		}
 
 		return new Violations(newExceptions);
 	}
 
 	Violations and(String violation) {
-		return and(new ArchitecturalViolation(violation));
+		return and(new Violation(violation));
 	}
 
-	private static class ArchitecturalViolation extends RuntimeException {
+	List<String> getMessages() {
 
-		private static final long serialVersionUID = 3587887036508024142L;
-
-		public ArchitecturalViolation(String message) {
-			super(message);
-		}
+		return violations.stream()
+				.map(Violation::message)
+				.toList();
 	}
+
+	static record Violation(String message) {}
 }
