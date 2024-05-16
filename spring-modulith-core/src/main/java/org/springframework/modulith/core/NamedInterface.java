@@ -125,11 +125,22 @@ public class NamedInterface implements Iterable<JavaClass> {
 		return name;
 	}
 
+	String getQualifiedName(String qualifier) {
+		return qualifier + " :: " + name;
+	}
+
 	/**
 	 * Returns whether this is the unnamed (implicit) {@link NamedInterface}.
 	 */
 	public boolean isUnnamed() {
 		return name.equals(UNNAMED_NAME);
+	}
+
+	/**
+	 * Return whether this {@link NamedInterface} has an explicit name.
+	 */
+	public boolean isNamed() {
+		return !isUnnamed();
 	}
 
 	/**

@@ -64,6 +64,17 @@ class NamedInterfacesUnitTests {
 				.withMessageContaining(InvalidDefaultNamedInterface.class.getSimpleName());
 	}
 
+	@Test // GH-595
+	void detectsNamedInterfacesATypeIsContainedIn() {
+
+		var javaPackage = TestUtils.getPackage(RootType.class);
+		var interfaces = NamedInterfaces.discoverNamedInterfaces(javaPackage);
+
+		assertThat(interfaces.getNamedInterfacesContaining(AdditionalSpiType.class))
+				.extracting(NamedInterface::getName)
+				.containsExactlyInAnyOrder("spi", "kpi");
+	}
+
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {
 
 		var classNames = Arrays.stream(types).map(Class::getName).toArray(String[]::new);
