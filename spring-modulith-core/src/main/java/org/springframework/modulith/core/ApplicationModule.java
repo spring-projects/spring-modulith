@@ -557,6 +557,10 @@ public class ApplicationModule {
 				.collect(Classes.toClasses());
 	}
 
+	private String getQualifiedName(NamedInterface namedInterface) {
+		return namedInterface.getQualifiedName(getName());
+	}
+
 	private static Classes filterSpringBeans(JavaPackage source) {
 
 		Map<Boolean, List<JavaClass>> collect = source.that(isConfiguration()).stream() //
@@ -949,8 +953,20 @@ public class ApplicationModule {
 			// Check explicitly defined allowed targets
 			if (!declaredDependencies.isAllowedDependency(target)) {
 
-				var message = "Module '%s' depends on module '%s' via %s -> %s. Allowed targets: %s." //
-						.formatted(originModule.getName(), targetModule.getName(), source.getName(), target.getName(),
+				var targetNamedInterfaces = targetModule.getNamedInterfaces()
+						.getNamedInterfacesContaining(target)
+						.filter(NamedInterface::isNamed)
+						.toList();
+
+				var targetString = targetNamedInterfaces.isEmpty()
+						? "module '%s'".formatted(targetModule.getName())
+						: "named interface(s) '%s'".formatted(
+								targetNamedInterfaces.stream()
+										.map(targetModule::getQualifiedName)
+										.collect(Collectors.joining(", ")));
+
+				var message = "Module '%s' depends on %s via %s -> %s. Allowed targets: %s." //
+						.formatted(originModule.getName(), targetString, source.getName(), target.getName(),
 								declaredDependencies.toString());
 
 				return violations.and(new Violation(message));
