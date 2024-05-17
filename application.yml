@@ -1,5 +1,5 @@
 changelog:
-  repository: spring-projects-experimental/spring-modulith
+  repository: spring-projects/spring-modulith
   sections:
   - title: ":star: New Features"
     labels: ["type: enhancement"]
