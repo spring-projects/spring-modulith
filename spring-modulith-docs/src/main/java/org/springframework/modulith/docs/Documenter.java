@@ -347,7 +347,7 @@ public class Documenter {
 
 				// Properties
 				.append(addTableRow("Properties",
-						asciidoctor.renderConfigurationProperties(module, properties.getModuleProperties(module)), options)) //
+						asciidoctor.renderConfigurationProperties(properties.getModuleProperties(module)), options)) //
 				.append(startOrEndTable())
 				.toString();
 	}

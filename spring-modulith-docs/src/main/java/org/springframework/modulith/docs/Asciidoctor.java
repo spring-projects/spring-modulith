@@ -192,7 +192,7 @@ class Asciidoctor {
 		return builder.toString();
 	}
 
-	public String renderConfigurationProperties(ApplicationModule module, List<ModuleProperty> properties) {
+	public String renderConfigurationProperties(List<ModuleProperty> properties) {
 
 		if (properties.isEmpty()) {
 			return "none";
@@ -211,8 +211,7 @@ class Asciidoctor {
 					if (defaultValue != null && StringUtils.hasText(defaultValue)) {
 
 						builder = builder.append(", default ")
-								.append(toInlineCode(defaultValue))
-								.append("");
+								.append(toInlineCode(defaultValue));
 					}
 
 					var description = it.description();
