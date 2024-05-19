@@ -192,7 +192,7 @@ class Asciidoctor {
 		return builder.toString();
 	}
 
-	public String renderConfigurationProperties(ApplicationModule module, List<ModuleProperty> properties) {
+	public String renderConfigurationProperties(List<ModuleProperty> properties) {
 
 		if (properties.isEmpty()) {
 			return "none";
