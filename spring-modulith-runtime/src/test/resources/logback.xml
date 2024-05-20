@@ -9,6 +9,6 @@
 	</root>
 	
 	<logger name="org.springframework.modulith" level="DEBUG"/>
-	<logger name="example" level="INFO" />
+	<logger name="example" level="WARN" />
 	
 </configuration>
