@@ -19,6 +19,7 @@ import java.util.function.Supplier;
 
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.util.Assert;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * Bootstrap type to make sure we only bootstrap the initialization of a {@link ApplicationModules} instance once per
@@ -43,7 +44,7 @@ public class ApplicationModulesRuntime implements Supplier<ApplicationModules> {
 		Assert.notNull(modules, "ApplicationModules must not be null!");
 		Assert.notNull(runtime, "ApplicationRuntime must not be null!");
 
-		this.modules = modules;
+		this.modules = SingletonSupplier.of(modules);
 		this.runtime = runtime;
 	}
 
