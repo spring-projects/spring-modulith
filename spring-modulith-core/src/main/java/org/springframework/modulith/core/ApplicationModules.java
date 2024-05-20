@@ -107,8 +107,39 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private boolean verified;
 
+	/**
+	 * Creates a new {@link ApplicationModules} instance.
+	 *
+	 * @param metadata must not be {@literal null}.
+	 * @param ignored must not be {@literal null}.
+	 * @param useFullyQualifiedModuleNames can be {@literal null}.
+	 * @param option must not be {@literal null}.
+	 */
+	protected ApplicationModules(ModulithMetadata metadata,
+			DescribedPredicate<JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
+		this(metadata, metadata.getBasePackages(), ignored, useFullyQualifiedModuleNames, option);
+	}
+
+	/**
+	 * Creates a new {@link ApplicationModules} instance.
+	 *
+	 * @param metadata must not be {@literal null}.
+	 * @param packages must not be {@literal null}.
+	 * @param ignored must not be {@literal null}.
+	 * @param useFullyQualifiedModuleNames can be {@literal null}.
+	 * @param option must not be {@literal null}.
+	 * @deprecated since 1.2, for removal in 1.3. Use {@link ApplicationModules(ModulithMetadata, DescribedPredicate,
+	 *             boolean, ImportOption)} instead and set up {@link ModulithMetadata} to contain the packages you want to
+	 *             use.
+	 */
+	@Deprecated(forRemoval = true)
 	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
 			DescribedPredicate<JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
+
+		Assert.notNull(metadata, "ModulithMetadata must not be null!");
+		Assert.notNull(packages, "Base packages must not be null!");
+		Assert.notNull(ignored, "Ignores must not be null!");
+		Assert.notNull(option, "ImportOptions must not be null!");
 
 		this.metadata = metadata;
 		this.allClasses = new ClassFileImporter() //
@@ -190,10 +221,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Creates a new {@link ApplicationModules} relative to the given modulith type, a
-	 * {@link ApplicationModuleDetectionStrategy} and a {@link DescribedPredicate} which types and packages to ignore.
-	 * Will inspect the {@link org.springframework.modulith.Modulith} and {@link org.springframework.modulith.Modulithic}
-	 * annotations on the class given for advanced customizations of the module setup.
+	 * Creates a new {@link ApplicationModules} relative to the given modulith type, and a {@link DescribedPredicate}
+	 * which types and packages to ignore. Will inspect the {@link org.springframework.modulith.Modulith} and
+	 * {@link org.springframework.modulith.Modulithic} annotations on the class given for advanced customizations of the
+	 * module setup.
 	 *
 	 * @param modulithType must not be {@literal null}.
 	 * @param ignored must not be {@literal null}.
@@ -201,15 +232,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
 
-		CacheKey key = new TypeKey(modulithType, ignored);
+		Assert.notNull(modulithType, "Modulith root type must not be null!");
+		Assert.notNull(ignored, "Predicate to describe ignored types must not be null!");
 
-		return CACHE.computeIfAbsent(key, it -> {
+		return of(CacheKey.of(modulithType, ignored, IMPORT_OPTION));
+	}
 
-			Assert.notNull(modulithType, "Modulith root type must not be null!");
-			Assert.notNull(ignored, "Predicate to describe ignored types must not be null!");
-
-			return of(key);
-		});
+	/**
+	 * Creates a new {@link ApplicationModules} instance for the given type and {@link ImportOption}.
+	 *
+	 * @param modulithType must not be {@literal null}.
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	public static ApplicationModules of(Class<?> modulithType, ImportOption options) {
+		return of(CacheKey.of(modulithType, alwaysFalse(), options));
 	}
 
 	/**
@@ -231,15 +269,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public static ApplicationModules of(String javaPackage, DescribedPredicate<JavaClass> ignored) {
 
-		CacheKey key = new PackageKey(javaPackage, ignored);
+		Assert.hasText(javaPackage, "Base package must not be null or empty!");
+		Assert.notNull(ignored, "Predicate to describe ignored types must not be null!");
 
-		return CACHE.computeIfAbsent(key, it -> {
+		return of(CacheKey.of(javaPackage, ignored, IMPORT_OPTION));
+	}
 
-			Assert.hasText(javaPackage, "Base package must not be null or empty!");
-			Assert.notNull(ignored, "Predicate to describe ignored types must not be null!");
-
-			return of(key);
-		});
+	/**
+	 * Creates a new {@link ApplicationModules} instance for the given package and {@link ImportOption}.
+	 *
+	 * @param javaPackage must not be {@literal null}.
+	 * @param options must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	public static ApplicationModules of(String javaPackage, ImportOption options) {
+		return of(CacheKey.of(javaPackage, alwaysFalse(), options));
 	}
 
 	/**
@@ -571,13 +616,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Assert.notNull(key, "Cache key must not be null!");
 
 		var metadata = key.getMetadata();
-
-		var basePackages = new HashSet<String>();
-		basePackages.add(key.getBasePackage());
-		basePackages.addAll(metadata.getAdditionalPackages());
-
-		var modules = new ApplicationModules(metadata, basePackages, key.getIgnored(),
-				metadata.useFullyQualifiedModuleNames(), IMPORT_OPTION);
+		var modules = new ApplicationModules(metadata, key.getIgnored(),
+				metadata.useFullyQualifiedModuleNames(), key.getOptions());
 
 		var sharedModules = metadata.getSharedModuleNames() //
 				.map(modules::getRequiredModule) //
@@ -623,57 +663,37 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		}
 	}
 
-	private static interface CacheKey {
+	private static class CacheKey {
 
-		String getBasePackage();
-
-		DescribedPredicate<JavaClass> getIgnored();
-
-		ModulithMetadata getMetadata();
-	}
-
-	private static final class TypeKey implements CacheKey {
-
-		private final Class<?> type;
 		private final DescribedPredicate<JavaClass> ignored;
+		private final ImportOption options;
+		private final Supplier<ModulithMetadata> metadata;
 
-		/**
-		 * Creates a new {@link TypeKey} for the given type and {@link DescribedPredicate} of ignored {@link JavaClass}es.
-		 *
-		 * @param type must not be {@literal null}.
-		 * @param ignored must not be {@literal null}.
-		 */
-		TypeKey(Class<?> type, DescribedPredicate<JavaClass> ignored) {
+		public CacheKey(DescribedPredicate<JavaClass> ignored, ImportOption options, Supplier<ModulithMetadata> metadata) {
 
-			this.type = type;
 			this.ignored = ignored;
+			this.options = options;
+			this.metadata = SingletonSupplier.of(metadata);
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Modules.CacheKey#getBasePackage()
-		 */
-		@Override
-		public String getBasePackage() {
-			return type.getPackage().getName();
+		static CacheKey of(String pkg, DescribedPredicate<JavaClass> ignored, ImportOption options) {
+			return new CacheKey(ignored, options, () -> ModulithMetadata.of(pkg));
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Modules.CacheKey#getMetadata()
-		 */
-		@Override
-		public ModulithMetadata getMetadata() {
-			return ModulithMetadata.of(type);
+		static CacheKey of(Class<?> type, DescribedPredicate<JavaClass> ignored, ImportOption options) {
+			return new CacheKey(ignored, options, () -> ModulithMetadata.of(type));
 		}
 
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getIgnored()
-		 */
-		@Override
-		public DescribedPredicate<JavaClass> getIgnored() {
+		DescribedPredicate<JavaClass> getIgnored() {
 			return ignored;
+		}
+
+		ModulithMetadata getMetadata() {
+			return metadata.get();
+		}
+
+		ImportOption getOptions() {
+			return options;
 		}
 
 		/*
@@ -683,98 +703,17 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		@Override
 		public boolean equals(Object obj) {
 
-			if (this == obj) {
+			if (obj == this) {
 				return true;
 			}
 
-			if (!(obj instanceof TypeKey other)) {
+			if (!(obj instanceof CacheKey that)) {
 				return false;
 			}
 
-			return Objects.equals(this.type, other.type) //
-					&& Objects.equals(this.ignored, other.ignored);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			return Objects.hash(type, ignored);
-		}
-	}
-
-	private static final class PackageKey implements CacheKey {
-
-		private final String basePackage;
-		private final DescribedPredicate<JavaClass> ignored;
-
-		/**
-		 * Creates a new {@link PackageKey} for the given base package and {@link DescribedPredicate} of ignored
-		 * {@link JavaClass}es.
-		 *
-		 * @param basePackage must not be {@literal null}.
-		 * @param ignored must not be {@literal null}.
-		 */
-		PackageKey(String basePackage, DescribedPredicate<JavaClass> ignored) {
-
-			this.basePackage = basePackage;
-			this.ignored = ignored;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getBasePackage()
-		 */
-		@Override
-		public String getBasePackage() {
-			return basePackage;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getIgnored()
-		 */
-		public DescribedPredicate<JavaClass> getIgnored() {
-			return ignored;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Modules.CacheKey#getMetadata()
-		 */
-		@Override
-		public ModulithMetadata getMetadata() {
-			return ModulithMetadata.of(basePackage);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(Object obj) {
-
-			if (this == obj) {
-				return true;
-			}
-
-			if (!(obj instanceof PackageKey that)) {
-				return false;
-			}
-
-			return Objects.equals(this.basePackage, that.basePackage) //
-					&& Objects.equals(this.ignored, that.ignored);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			return Objects.hash(basePackage, ignored);
+			return Objects.equals(this.ignored, that.ignored)
+					&& Objects.equals(this.options, that.options)
+					&& Objects.equals(this.metadata.get(), that.metadata.get());
 		}
 	}
 

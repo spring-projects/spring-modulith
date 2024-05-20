@@ -17,7 +17,6 @@ package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 
-import java.util.List;
 import java.util.function.Supplier;
 
 import org.jmolecules.ddd.annotation.AggregateRoot;
@@ -80,7 +79,7 @@ class TestUtils {
 	}
 
 	public static ApplicationModules of(String basePackage, String... ignoredPackages) {
-		return of(ModulithMetadata.of(basePackage), basePackage, JavaClass.Predicates.resideInAnyPackage(ignoredPackages));
+		return of(ModulithMetadata.of(basePackage), JavaClass.Predicates.resideInAnyPackage(ignoredPackages));
 	}
 
 	public static ApplicationModule getApplicationModule(String packageName) {
@@ -99,9 +98,7 @@ class TestUtils {
 				.importPackages(packageName));
 	}
 
-	private static ApplicationModules of(ModulithMetadata metadata, String basePackage,
-			DescribedPredicate<JavaClass> ignores) {
-		return new ApplicationModules(metadata, List.of(basePackage), ignores, false,
-				new ImportOption.OnlyIncludeTests()) {};
+	private static ApplicationModules of(ModulithMetadata metadata, DescribedPredicate<JavaClass> ignores) {
+		return new ApplicationModules(metadata, ignores, false, new ImportOption.OnlyIncludeTests()) {};
 	}
 }

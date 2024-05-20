@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.core;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,7 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 
 	private final Class<?> modulithType;
 	private final Modulithic annotation;
+	private final String basePackage;
 
 	/**
 	 * Creates a new {@link AnnotationModulithMetadata} for the given type and annotation.
@@ -48,6 +50,7 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 
 		this.modulithType = modulithType;
 		this.annotation = annotation;
+		this.basePackage = modulithType.getPackageName();
 	}
 
 	/**
@@ -122,5 +125,18 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 		return Optional.of(annotation.systemName()) //
 				.filter(StringUtils::hasText) //
 				.or(() -> Optional.of(modulithType.getSimpleName()));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.core.ModulithMetadata#getBasePackages()
+	 */
+	@Override
+	public List<String> getBasePackages() {
+
+		var result = new ArrayList<>(List.of(basePackage));
+		result.addAll(List.of(annotation.additionalPackages()));
+
+		return result;
 	}
 }

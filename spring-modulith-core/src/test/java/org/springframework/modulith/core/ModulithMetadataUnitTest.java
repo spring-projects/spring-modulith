@@ -38,7 +38,7 @@ class ModulithMetadataUnitTest {
 				.map(ModulithMetadata::of) //
 				.forEach(it -> {
 
-					assertThat(it.getAdditionalPackages()).containsExactly("com.acme.foo");
+					assertThat(it.getBasePackages()).containsExactly("org.springframework.modulith.core", "com.acme.foo");
 					assertThat(it.getSharedModuleNames()).containsExactly("shared.module");
 					assertThat(it.getSystemName()).hasValue("systemName");
 					assertThat(it.useFullyQualifiedModuleNames()).isTrue();
@@ -50,7 +50,7 @@ class ModulithMetadataUnitTest {
 
 		ModulithMetadata metadata = ModulithMetadata.of(SpringBootApplicationAnnotated.class);
 
-		assertThat(metadata.getAdditionalPackages()).isEmpty();
+		assertThat(metadata.getBasePackages()).contains("org.springframework.modulith.core");
 		assertThat(metadata.getSharedModuleNames()).isEmpty();
 		assertThat(metadata.getSystemName()).hasValue(SpringBootApplicationAnnotated.class.getSimpleName());
 		assertThat(metadata.useFullyQualifiedModuleNames()).isFalse();

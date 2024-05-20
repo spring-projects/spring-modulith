@@ -25,6 +25,11 @@ import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.core.Types.SpringTypes;
 import org.springframework.util.Assert;
 
+/**
+ * Core metadata about the modulithic application.
+ *
+ * @author Oliver Drotbohm
+ */
 public interface ModulithMetadata {
 
 	static final String ANNOTATION_MISSING = "Modules can only be retrieved from a root type, but %s is not annotated with either @%s, @%s or @%s!";
@@ -81,7 +86,9 @@ public interface ModulithMetadata {
 	 * consider all direct sub-packages modules by default.
 	 *
 	 * @return will never be {@literal null}.
+	 * @deprecated since 1.2, rather use {@link #getBasePackages()} that includes all packages already.
 	 */
+	@Deprecated
 	List<String> getAdditionalPackages();
 
 	/**
@@ -105,4 +112,12 @@ public interface ModulithMetadata {
 	 * @return will never be {@literal null}.
 	 */
 	Optional<String> getSystemName();
+
+	/**
+	 * Returns all base packages of the modulith.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.2
+	 */
+	List<String> getBasePackages();
 }
