@@ -21,6 +21,7 @@ import different.moduleB.ModuleBType;
 import example.SampleApplication;
 import example.moduleA.ModuleAType;
 
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -48,5 +49,38 @@ public class ApplicationModulesRuntimeIntegrationTests {
 
 		Stream.of(ModuleAType.class, ModuleBType.class)
 				.forEach(it -> assertThat(runtime.isApplicationClass(it)).isTrue());
+	}
+
+	@Test // GH-610
+	void onlyLooksUpApplicationModulesOnce() {
+
+		var context = SpringApplication.run(SampleApplication.class);
+		var applicationRuntime = new TestSpringBootApplicationRuntime(context);
+		var supplier = new CountingSupplier<>(() -> modules);
+
+		var runtime = new ApplicationModulesRuntime(supplier, applicationRuntime);
+
+		runtime.get();
+		runtime.get();
+
+		assertThat(supplier.counter).isEqualTo(1);
+	}
+
+	static class CountingSupplier<T> implements Supplier<T> {
+
+		private final Supplier<T> delegate;
+		private int counter = 0;
+
+		CountingSupplier(Supplier<T> delegate) {
+			this.delegate = delegate;
+		}
+
+		@Override
+		public T get() {
+
+			counter++;
+
+			return delegate.get();
+		}
 	}
 }
