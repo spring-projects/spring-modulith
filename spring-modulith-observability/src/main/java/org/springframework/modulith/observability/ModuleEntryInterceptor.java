@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.tracing.BaggageInScope;
 import io.micrometer.tracing.Tracer;
 import io.micrometer.tracing.Tracer.SpanInScope;
 
@@ -31,6 +32,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 	private static Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
 	private static Map<String, ModuleEntryInterceptor> CACHE = new HashMap<>();
+	private static final String MODULE_KEY = ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY;
 
 	private final ObservedModule module;
 	private final Tracer tracer;
@@ -66,14 +68,11 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		var moduleName = module.getName();
 		var currentSpan = tracer.currentSpan();
+		var currentBaggage = tracer.getBaggage(MODULE_KEY);
+		var currentModule = currentBaggage != null ? currentBaggage.get() : null;
 
-		if (currentSpan != null) {
-
-			var currentBaggage = tracer.getBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
-
-			if (currentBaggage != null && moduleName.equals(currentBaggage.get())) {
-				return invocation.proceed();
-			}
+		if (currentSpan != null && moduleName.equals(currentModule)) {
+			return invocation.proceed();
 		}
 
 		var invokedMethod = module.getInvokedMethod(invocation);
@@ -83,19 +82,17 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 		var span = tracer.spanBuilder()
 				.name(moduleName)
 				.tag("module.method", invokedMethod)
-				.tag(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY, moduleName)
+				.tag(MODULE_KEY, moduleName)
 				.start();
 
-		tracer.createBaggage(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY, moduleName);
-
-		try (SpanInScope ws = tracer.withSpan(span)) {
+		try (SpanInScope ws = tracer.withSpan(span);
+				BaggageInScope baggage = tracer.createBaggageInScope(MODULE_KEY, moduleName)) {
 
 			return invocation.proceed();
 
 		} finally {
 
 			LOGGER.trace("Leaving {}", module.getDisplayName());
-
 			span.end();
 		}
 	}
