@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.test;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.modulith.core.ApplicationModules;
@@ -37,7 +38,19 @@ public class TestApplicationModules {
 	 * @return
 	 */
 	public static ApplicationModules of(String basePackage) {
-		return new ApplicationModules(ModulithMetadata.of(basePackage), List.of(basePackage),
-				DescribedPredicate.alwaysFalse(), false, new ImportOption.OnlyIncludeTests()) {};
+		return of(ModulithMetadata.of(basePackage), basePackage);
+	}
+
+	public static ApplicationModules of(Class<?> type) {
+		return of(ModulithMetadata.of(type), type.getPackageName());
+	}
+
+	private static ApplicationModules of(ModulithMetadata metadata, String basePackage) {
+
+		var packages = new ArrayList<>(List.of(basePackage));
+		packages.addAll(metadata.getAdditionalPackages());
+
+		return new ApplicationModules(metadata, packages, DescribedPredicate.alwaysFalse(), false,
+				new ImportOption.OnlyIncludeTests()) {};
 	}
 }
