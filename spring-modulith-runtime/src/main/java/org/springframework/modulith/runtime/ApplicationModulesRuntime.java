@@ -63,7 +63,9 @@ public class ApplicationModulesRuntime implements Supplier<ApplicationModules> {
 	 * @return
 	 */
 	public boolean isApplicationClass(Class<?> type) {
-		return runtime.isApplicationClass(type);
+
+		return runtime.isApplicationClass(type)
+				|| modules.get().contains(type);
 	}
 
 	/**

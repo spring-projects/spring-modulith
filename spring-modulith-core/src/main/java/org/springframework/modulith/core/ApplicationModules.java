@@ -261,7 +261,6 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * Returns whether the given {@link JavaClass} is contained within the {@link ApplicationModules}.
 	 *
 	 * @param type must not be {@literal null}.
-	 * @return
 	 */
 	public boolean contains(JavaClass type) {
 
@@ -269,6 +268,18 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		return modules.values().stream() //
 				.anyMatch(module -> module.contains(type));
+	}
+
+	/**
+	 * Returns whether the given {@link Class} is contained within the {@link ApplicationModules}.
+	 *
+	 * @param type must not be {@literal null}.
+	 */
+	public boolean contains(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return allClasses.contain(type) && contains(allClasses.get(type));
 	}
 
 	/**
