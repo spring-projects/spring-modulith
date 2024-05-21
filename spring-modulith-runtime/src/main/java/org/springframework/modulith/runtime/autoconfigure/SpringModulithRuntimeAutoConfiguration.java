@@ -57,8 +57,8 @@ class SpringModulithRuntimeAutoConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean(ApplicationRuntime.class)
-	static SpringBootApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
-		return new SpringBootApplicationRuntime(context);
+	static ApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
+		return ApplicationRuntime.of(context);
 	}
 
 	@Bean

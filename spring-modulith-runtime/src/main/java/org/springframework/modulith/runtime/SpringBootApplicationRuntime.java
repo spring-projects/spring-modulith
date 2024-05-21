@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.runtime.autoconfigure;
+package org.springframework.modulith.runtime;
 
 import java.util.Arrays;
 import java.util.List;
@@ -23,7 +23,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 

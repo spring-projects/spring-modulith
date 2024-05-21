@@ -15,6 +15,9 @@
  */
 package org.springframework.modulith.runtime;
 
+import org.springframework.context.ApplicationContext;
+import org.springframework.util.Assert;
+
 /**
  * Abstraction of the application runtime environment. Primarily to keep references to Spring Boot out of the core
  * observability implementation.
@@ -22,6 +25,19 @@ package org.springframework.modulith.runtime;
  * @author Oliver Drotbohm
  */
 public interface ApplicationRuntime {
+
+	/**
+	 * Creates a new {@link ApplicationRuntime} for the given {@link ApplicationContext}.
+	 *
+	 * @param context must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static ApplicationRuntime of(ApplicationContext context) {
+
+		Assert.notNull(context, "ApplicationContext must not be null!");
+
+		return new SpringBootApplicationRuntime(context);
+	}
 
 	/**
 	 * Returns the identifier of the application.
