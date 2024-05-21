@@ -208,14 +208,14 @@ class Asciidoctor {
 
 					var defaultValue = it.defaultValue();
 
-					if (StringUtils.hasText(defaultValue)) {
+					if (defaultValue != null && StringUtils.hasText(defaultValue)) {
 						builder = builder.append(", default ")
 								.append(toInlineCode(defaultValue));
 					}
 
 					var description = it.description();
 
-					if (StringUtils.hasText(description)) {
+					if (description != null && StringUtils.hasText(description)) {
 						builder = builder.append(". ")
 								.append(toAsciidoctor(description));
 					}
