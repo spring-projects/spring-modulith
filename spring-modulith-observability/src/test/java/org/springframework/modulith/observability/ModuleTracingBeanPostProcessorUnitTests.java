@@ -31,7 +31,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
  *
  * @author Oliver Drotbohm
  */
-public class ModuleTracingBeanPostProcessorUnitTests {
+class ModuleTracingBeanPostProcessorUnitTests {
 
 	@Test // GH-503
 	void doesNotProxyConfiguationProperties() {

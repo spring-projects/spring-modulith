@@ -21,6 +21,7 @@ import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 
 /**
  * @author Oliver Drotbohm
@@ -44,9 +45,10 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 
 	protected final Object addAdvisor(Object bean, Advisor advisor, Consumer<ProxyFactory> customizer) {
 
-		if (Advised.class.isInstance(bean)) {
+		if (bean instanceof Advised advised) {
 
-			((Advised) bean).addAdvisor(0, advisor);
+			advised.addAdvisor(asyncAdvisorIndex(advised) + 1, advisor);
+
 			return bean;
 
 		} else {
@@ -57,5 +59,19 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 
 			return factory.getProxy(classLoader);
 		}
+	}
+
+	private static int asyncAdvisorIndex(Advised advised) {
+
+		Advisor[] advisors = advised.getAdvisors();
+
+		for (int i = 0; i < advised.getAdvisorCount(); i++) {
+
+			if (advisors[i] instanceof AsyncAnnotationAdvisor) {
+				return i;
+			}
+		}
+
+		return -1;
 	}
 }
