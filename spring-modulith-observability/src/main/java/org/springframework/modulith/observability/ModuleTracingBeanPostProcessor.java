@@ -18,11 +18,13 @@ package org.springframework.modulith.observability;
 import io.micrometer.tracing.Tracer;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
 import org.springframework.aop.Advisor;
+import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcher;
@@ -80,19 +82,21 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 			return bean;
 		}
 
+		if (alreadyAdvised(bean)) {
+			return bean;
+		}
+
 		var modules = runtime.get();
 
-		return modules.getModuleByType(type.getName())
-				.map(DefaultObservedModule::new)
-				.map(it -> {
+		return modules.getModuleByType(type.getName()).map(DefaultObservedModule::new).map(it -> {
 
-					var moduleType = it.getObservedModuleType(type, modules);
+			var moduleType = it.getObservedModuleType(type, modules);
 
-					return moduleType != null //
-							? addAdvisor(bean, getOrBuildAdvisor(it, moduleType)) //
-							: bean;
+			return moduleType != null //
+					? addAdvisor(bean, getOrBuildAdvisor(it, moduleType)) //
+					: bean;
 
-				}).orElse(bean);
+		}).orElse(bean);
 	}
 
 	private boolean isInfrastructureBean(String beanName) {
@@ -104,13 +108,15 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 	private Advisor getOrBuildAdvisor(ObservedModule module, ObservedModuleType type) {
 
 		return advisors.computeIfAbsent(module.getName(), __ -> {
-
-			var interceptor = ModuleEntryInterceptor.of(module, tracer.get());
-			var matcher = new ObservableTypeMethodMatcher(type);
-			var pointcut = new ComposablePointcut(matcher);
-
-			return new DefaultPointcutAdvisor(pointcut, interceptor);
+			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, tracer.get()));
 		});
+	}
+
+	private static boolean alreadyAdvised(Object bean) {
+
+		return bean instanceof Advised advised
+				&& Arrays.stream(advised.getAdvisors())
+						.anyMatch(ApplicationModuleObservingAdvisor.class::isInstance);
 	}
 
 	private static class ObservableTypeMethodMatcher extends StaticMethodMatcher {
@@ -136,6 +142,15 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 		@Override
 		public boolean matches(Method method, Class<?> targetClass) {
 			return type.getMethodsToIntercept().test(method);
+		}
+	}
+
+	static class ApplicationModuleObservingAdvisor extends DefaultPointcutAdvisor {
+
+		private static final long serialVersionUID = -391548409986032658L;
+
+		public ApplicationModuleObservingAdvisor(ObservedModuleType type, ModuleEntryInterceptor interceptor) {
+			super(new ComposablePointcut(new ObservableTypeMethodMatcher(type)), interceptor);
 		}
 	}
 }

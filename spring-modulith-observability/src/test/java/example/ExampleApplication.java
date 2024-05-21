@@ -17,10 +17,12 @@ package example;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.scheduling.annotation.EnableAsync;
 
 /**
  * @author Oliver Drotbohm
  */
+@EnableAsync
 @SpringBootApplication
 public class ExampleApplication {
 
