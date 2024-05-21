@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.runtime.autoconfigure;
+package org.springframework.modulith.runtime;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.modulith.runtime.SpringBootApplicationRuntime;
 
 /**
  * Unit tests for {@link SpringBootApplicationRuntime}.
