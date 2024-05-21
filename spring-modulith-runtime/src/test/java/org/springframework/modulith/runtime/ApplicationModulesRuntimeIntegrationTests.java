@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringApplication;
 import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.runtime.autoconfigure.TestSpringBootApplicationRuntime;
 import org.springframework.modulith.test.TestApplicationModules;
 
 /**
@@ -43,7 +42,7 @@ public class ApplicationModulesRuntimeIntegrationTests {
 	void detectsTypeInAdditionalPackageAsApplicationType() {
 
 		var context = SpringApplication.run(SampleApplication.class);
-		var applicationRuntime = new TestSpringBootApplicationRuntime(context);
+		var applicationRuntime = ApplicationRuntime.of(context);
 
 		var runtime = new ApplicationModulesRuntime(() -> modules, applicationRuntime);
 
@@ -55,7 +54,7 @@ public class ApplicationModulesRuntimeIntegrationTests {
 	void onlyLooksUpApplicationModulesOnce() {
 
 		var context = SpringApplication.run(SampleApplication.class);
-		var applicationRuntime = new TestSpringBootApplicationRuntime(context);
+		var applicationRuntime = ApplicationRuntime.of(context);
 		var supplier = new CountingSupplier<>(() -> modules);
 
 		var runtime = new ApplicationModulesRuntime(supplier, applicationRuntime);
