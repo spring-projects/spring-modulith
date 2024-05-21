@@ -15,6 +15,7 @@
  */
 package example.sample;
 
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 /**
@@ -23,5 +24,6 @@ import org.springframework.stereotype.Component;
 @Component
 public class SampleComponent {
 
-	void someMethod() {}
+	@Async
+	public void someMethod() {}
 }

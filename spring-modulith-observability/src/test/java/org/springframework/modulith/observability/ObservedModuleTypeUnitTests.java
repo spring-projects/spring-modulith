@@ -33,7 +33,7 @@ import org.springframework.util.ReflectionUtils;
  *
  * @author Oliver Drotbohm
  */
-public class ObservedModuleTypeUnitTests {
+class ObservedModuleTypeUnitTests {
 
 	static final ApplicationModules modules = TestApplicationModules.of("example");
 
