@@ -77,6 +77,14 @@ public @interface ApplicationModuleTest {
 	String[] extraIncludes() default {};
 
 	/**
+	 * Logical name of the module in case {@link ApplicationModuleTest} will be used outside a module package
+	 */
+	String module() default "";
+
+	@AliasFor(annotation = SpringBootTest.class)
+	Class<?>[] classes() default {};
+
+	/**
 	 * The type of web environment to create when applicable. Defaults to {@link WebEnvironment#MOCK}.
 	 *
 	 * @return the type of web environment
