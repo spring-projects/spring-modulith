@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.slf4j.Logger;
@@ -99,7 +100,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 			DELETE
 			FROM EVENT_PUBLICATION
 			WHERE
-					ID IN (?)
+					ID IN
 			""";
 
 	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
@@ -233,9 +234,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void deletePublications(List<UUID> identifiers) {
 
-		var databaseIds = identifiers.stream().map(this::uuidToDatabase).toList();
+		var dbIdentifiers = identifiers.stream().map(databaseType::uuidToDatabase).toList();
 
-		operations.batchUpdate(SQL_STATEMENT_DELETE, batch(databaseIds, DELETE_BATCH_SIZE));
+		batch(dbIdentifiers, DELETE_BATCH_SIZE)
+				.forEach(it -> operations.update(SQL_STATEMENT_DELETE.concat(toParameterPlaceholders(it.length)), it));
 	}
 
 	/*
@@ -339,6 +341,13 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 				.mapToObj(i -> input.subList(i * batchSize, Math.min((i + 1) * batchSize, inputSize)))
 				.map(List::toArray)
 				.toList();
+	}
+
+	private static String toParameterPlaceholders(int length) {
+
+		return IntStream.range(0, length)
+				.mapToObj(__ -> "?")
+				.collect(Collectors.joining(", ", "(", ")"));
 	}
 
 	private static class JdbcEventPublication implements TargetEventPublication {
