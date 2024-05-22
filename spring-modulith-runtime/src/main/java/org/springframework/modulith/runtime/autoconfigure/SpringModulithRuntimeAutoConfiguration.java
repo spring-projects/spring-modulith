@@ -43,7 +43,7 @@ import org.springframework.util.Assert;
 import org.springframework.util.function.ThrowingSupplier;
 
 /**
- * Auto-configuration to register a {@link SpringBootApplicationRuntime}, a {@link ApplicationModulesRuntime} and an
+ * Auto-configuration to register an {@link ApplicationRuntime}, a {@link ApplicationModulesRuntime} and an
  * {@link ApplicationListener} to invoke all {@link ApplicationModuleInitializer}s as Spring Bean.
  *
  * @author Oliver Drotbohm
