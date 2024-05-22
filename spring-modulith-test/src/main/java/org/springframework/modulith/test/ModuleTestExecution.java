@@ -34,6 +34,7 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
+import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;
 
 /**
@@ -94,12 +95,21 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
 			var packageName = type.getPackage().getName();
+			var optionalModulithType = findSpringBootApplicationByClasses(annotation);
 
-			var modulithType = MODULITH_TYPES.computeIfAbsent(type,
-					it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromPackage(packageName));
+			var modulithType = optionalModulithType.orElseGet(() -> MODULITH_TYPES.computeIfAbsent(type,
+					it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromPackage(packageName)));
 			var modules = ApplicationModules.of(modulithType);
-			var module = modules.getModuleForPackage(packageName).orElseThrow( //
+
+			var moduleName = annotation.module();
+			ApplicationModule module;
+			if (StringUtils.hasText(moduleName)) {
+				module = modules.getModuleByName(moduleName).orElseThrow( //
+					() -> new IllegalStateException(String.format("Unable to find module %s!", moduleName)));
+			} else {
+				module = modules.getModuleForPackage(packageName).orElseThrow( //
 					() -> new IllegalStateException(String.format("Package %s is not part of any module!", packageName)));
+			}
 
 			return EXECUTIONS.computeIfAbsent(new Key(module.getBasePackage().getName(), annotation),
 					it -> new ModuleTestExecution(annotation, modules, module));
@@ -228,6 +238,17 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		return Arrays.stream(annotation.extraIncludes()) //
 				.map(modules::getModuleByName) //
 				.flatMap(Optional::stream);
+	}
+
+	private static Optional<Class<?>> findSpringBootApplicationByClasses(ApplicationModuleTest annotation) {
+		for (Class<?> clazz : annotation.classes()) {
+			Class<?> modulithType = MODULITH_TYPES.computeIfAbsent(clazz,
+					it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromPackage(clazz.getPackageName()));
+			if (modulithType != null) {
+				return Optional.of(modulithType);
+			}
+		}
+		return Optional.empty();
 	}
 
 	private static record Key(String moduleBasePackage, ApplicationModuleTest annotation) {}
