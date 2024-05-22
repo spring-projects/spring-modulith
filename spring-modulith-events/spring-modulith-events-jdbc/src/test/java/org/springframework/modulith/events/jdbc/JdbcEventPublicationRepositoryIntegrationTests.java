@@ -265,14 +265,15 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			var first = createPublication(new TestEvent("first"));
 			var second = createPublication(new TestEvent("second"));
+			var third = createPublication(new TestEvent("third"));
 
-			repository.deletePublications(List.of(first.getIdentifier()));
+			repository.deletePublications(List.of(first.getIdentifier(), second.getIdentifier()));
 
 			assertThat(repository.findIncompletePublications())
 					.hasSize(1)
 					.element(0)
-					.matches(it -> it.getIdentifier().equals(second.getIdentifier()))
-					.matches(it -> it.getEvent().equals(second.getEvent()));
+					.matches(it -> it.getIdentifier().equals(third.getIdentifier()))
+					.matches(it -> it.getEvent().equals(third.getEvent()));
 		}
 
 		@Test // GH-294
