@@ -611,19 +611,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param key must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	private static ApplicationModules of(CacheKey key) {
+	private static ApplicationModules of(CacheKey cacheKey) {
 
-		Assert.notNull(key, "Cache key must not be null!");
+		Assert.notNull(cacheKey, "Cache key must not be null!");
 
-		var metadata = key.getMetadata();
-		var modules = new ApplicationModules(metadata, key.getIgnored(),
-				metadata.useFullyQualifiedModuleNames(), key.getOptions());
+		return CACHE.computeIfAbsent(cacheKey, key -> {
 
-		var sharedModules = metadata.getSharedModuleNames() //
-				.map(modules::getRequiredModule) //
-				.collect(Collectors.toSet());
+			var metadata = key.getMetadata();
+			var modules = new ApplicationModules(metadata, key.getIgnored(),
+					metadata.useFullyQualifiedModuleNames(), key.getOptions());
 
-		return modules.withSharedModules(sharedModules);
+			var sharedModules = metadata.getSharedModuleNames() //
+					.map(modules::getRequiredModule) //
+					.collect(Collectors.toSet());
+
+			return modules.withSharedModules(sharedModules);
+		});
 	}
 
 	/**
@@ -667,21 +670,24 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		private final DescribedPredicate<JavaClass> ignored;
 		private final ImportOption options;
+		private final Object metadataSource;
 		private final Supplier<ModulithMetadata> metadata;
 
-		public CacheKey(DescribedPredicate<JavaClass> ignored, ImportOption options, Supplier<ModulithMetadata> metadata) {
+		public CacheKey(DescribedPredicate<JavaClass> ignored, ImportOption options, Object metadataSource,
+				Supplier<ModulithMetadata> metadata) {
 
 			this.ignored = ignored;
 			this.options = options;
+			this.metadataSource = metadataSource;
 			this.metadata = SingletonSupplier.of(metadata);
 		}
 
 		static CacheKey of(String pkg, DescribedPredicate<JavaClass> ignored, ImportOption options) {
-			return new CacheKey(ignored, options, () -> ModulithMetadata.of(pkg));
+			return new CacheKey(ignored, options, pkg, () -> ModulithMetadata.of(pkg));
 		}
 
 		static CacheKey of(Class<?> type, DescribedPredicate<JavaClass> ignored, ImportOption options) {
-			return new CacheKey(ignored, options, () -> ModulithMetadata.of(type));
+			return new CacheKey(ignored, options, type, () -> ModulithMetadata.of(type));
 		}
 
 		DescribedPredicate<JavaClass> getIgnored() {
@@ -713,7 +719,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 			return Objects.equals(this.ignored, that.ignored)
 					&& Objects.equals(this.options, that.options)
-					&& Objects.equals(this.metadata.get(), that.metadata.get());
+					&& Objects.equals(this.metadataSource, that.metadataSource);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hash(ignored, options, metadataSource);
 		}
 	}
 
