@@ -158,9 +158,7 @@ public class DefaultEventPublicationRegistry
 
 		var now = clock.instant();
 
-		deletePublications(event -> event.getCompletionDate()
-				.filter(date -> date.isBefore(now.minus(duration)))
-				.isPresent());
+		events.deleteCompletedPublicationsBefore(now.minus(duration));
 	}
 
 	/*
