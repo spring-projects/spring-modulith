@@ -28,8 +28,13 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
+import org.springframework.boot.autoconfigure.thread.Threading;
+import org.springframework.boot.task.SimpleAsyncTaskExecutorCustomizer;
+import org.springframework.boot.task.ThreadPoolTaskExecutorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
 import org.springframework.modulith.observability.ModuleEventListener;
 import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
@@ -51,6 +56,18 @@ class ModuleObservabilityAutoConfiguration {
 	static ModuleEventListener tracingModuleEventListener(ApplicationModulesRuntime runtime,
 			ObjectProvider<Tracer> tracer) {
 		return new ModuleEventListener(runtime, () -> tracer.getObject());
+	}
+
+	@Bean
+	@ConditionalOnThreading(Threading.VIRTUAL)
+	SimpleAsyncTaskExecutorCustomizer simpleAsyncTaskExecutorCustomizer() {
+		return executor -> executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
+	}
+
+	@Bean
+	@ConditionalOnThreading(Threading.PLATFORM)
+	ThreadPoolTaskExecutorCustomizer threadPoolTaskExecutorCustomizer() {
+		return executor -> executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
 	}
 
 	/**
