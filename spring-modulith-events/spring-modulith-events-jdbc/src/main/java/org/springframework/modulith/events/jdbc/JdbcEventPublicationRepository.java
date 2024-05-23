@@ -27,6 +27,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.ResultSetExtractor;
 import org.springframework.jdbc.core.RowMapper;
@@ -37,6 +38,7 @@ import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * JDBC-based repository to store {@link EventPublication}s.
@@ -45,7 +47,7 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  */
-class JdbcEventPublicationRepository implements EventPublicationRepository {
+class JdbcEventPublicationRepository implements EventPublicationRepository, BeanClassLoaderAware {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JdbcEventPublicationRepository.class);
 
@@ -102,6 +104,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private final JdbcOperations operations;
 	private final EventSerializer serializer;
 	private final DatabaseType databaseType;
+	private ClassLoader classLoader;
 
 	/**
 	 * Creates a new {@link JdbcEventPublicationRepository} for the given {@link JdbcOperations}, {@link EventSerializer}
@@ -121,6 +124,15 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 		this.operations = operations;
 		this.serializer = serializer;
 		this.databaseType = databaseType;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.BeanClassLoaderAware#setBeanClassLoader(java.lang.ClassLoader)
+	 */
+	@Override
+	public void setBeanClassLoader(ClassLoader classLoader) {
+		this.classLoader = classLoader;
 	}
 
 	/*
@@ -270,7 +282,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository {
 	private Class<?> loadClass(UUID id, String className) {
 
 		try {
-			return Class.forName(className);
+			return ClassUtils.forName(className, classLoader);
 		} catch (ClassNotFoundException e) {
 			LOGGER.warn("Event '{}' of unknown type '{}' found", id, className);
 			return null;
