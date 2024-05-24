@@ -75,7 +75,6 @@ public class Documenter {
 
 	private static final Map<DependencyType, String> DEPENDENCY_DESCRIPTIONS = new LinkedHashMap<>();
 	private static final String INVALID_FILE_NAME_PATTERN = "Configured file name pattern does not include a '%s' placeholder for the module name!";
-	private static final String DEFAULT_LOCATION = "spring-modulith-docs";
 
 	private static final String DEFAULT_COMPONENTS_FILE = "components.puml";
 	private static final String DEFAULT_MODULE_COMPONENTS_FILE = "module-%s.puml";
@@ -89,7 +88,7 @@ public class Documenter {
 	private final Workspace workspace;
 	private final Container container;
 	private final ConfigurationProperties properties;
-	private final String outputFolder;
+	private final Options options;
 
 	private Map<ApplicationModule, Component> components;
 
@@ -110,22 +109,28 @@ public class Documenter {
 	 * @param modules must not be {@literal null}.
 	 */
 	public Documenter(ApplicationModules modules) {
-		this(modules, getDefaultOutputDirectory());
+		this(modules, Options.defaults());
+	}
+
+	public Documenter(ApplicationModules modules, String outputFolder) {
+
+		this(modules, new Options(outputFolder, true));
+
+		Assert.hasText(outputFolder, "Output folder must not be null or empty!");
 	}
 
 	/**
 	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} and output folder.
 	 *
 	 * @param modules must not be {@literal null}.
-	 * @param outputFolder must not be {@literal null} or empty.
+	 * @param options must not be {@literal null}.
 	 */
-	public Documenter(ApplicationModules modules, String outputFolder) {
+	public Documenter(ApplicationModules modules, Options options) {
 
 		Assert.notNull(modules, "Modules must not be null!");
-		Assert.hasText(outputFolder, "Output folder must not be null or empty!");
 
 		this.modules = modules;
-		this.outputFolder = outputFolder;
+		this.options = options;
 		this.workspace = new Workspace("Modulith", "");
 
 		workspace.getViews().getConfiguration()
@@ -182,6 +187,10 @@ public class Documenter {
 	 * @return the current instance, will never be {@literal null}.
 	 */
 	public Documenter writeDocumentation(DiagramOptions options, CanvasOptions canvasOptions) {
+
+		if (this.options.clean) {
+			clear();
+		}
 
 		return writeModulesAsPlantUml(options)
 				.writeIndividualModulesAsPlantUml(options) //
@@ -522,9 +531,20 @@ public class Documenter {
 				.createComponentView(container, prefix + options.toString(), "");
 	}
 
+	private void clear() {
+
+		try {
+			Files.deleteIfExists(Paths.get(options.outputFolder));
+		} catch (IOException o_O) {
+			throw new RuntimeException(o_O);
+		}
+	}
+
 	private Path recreateFile(String name) {
 
 		try {
+
+			var outputFolder = options.outputFolder;
 
 			Files.createDirectories(Paths.get(outputFolder));
 			Path filePath = Paths.get(outputFolder, name);
@@ -572,15 +592,6 @@ public class Documenter {
 	private static <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper,
 			CanvasOptions options) {
 		return options.hideEmptyLines && types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
-	}
-
-	/**
-	 * Returns the default output directory based on the detected build system.
-	 *
-	 * @return will never be {@literal null}.
-	 */
-	private static String getDefaultOutputDirectory() {
-		return (new File("pom.xml").exists() ? "target" : "build").concat("/").concat(DEFAULT_LOCATION);
 	}
 
 	private static record Connection(Element source, Element target) {
@@ -1161,6 +1172,38 @@ public class Documenter {
 			boolean hasOnlyFallbackGroup() {
 				return groupings.size() == 1 && groupings.get(FALLBACK_GROUP) != null;
 			}
+		}
+	}
+
+	public static class Options {
+
+		private static final String DEFAULT_LOCATION = (new File("pom.xml").exists() ? "target" : "build")
+				.concat("/spring-modulith-docs");
+
+		private final String outputFolder;
+
+		private final boolean clean;
+
+		/**
+		 * @param outputFolder the folder to write the files to, can be {@literal null}.
+		 * @param clean whether to clean the target directory on rendering.
+		 */
+		private Options(@Nullable String outputFolder, boolean clean) {
+
+			this.outputFolder = outputFolder == null ? DEFAULT_LOCATION : outputFolder;
+			this.clean = clean;
+		}
+
+		public static Options defaults() {
+			return new Options(DEFAULT_LOCATION, true);
+		}
+
+		public Options withoutClean() {
+			return new Options(outputFolder, false);
+		}
+
+		public Options withOutputFolder(String folder) {
+			return new Options(folder, clean);
 		}
 	}
 
