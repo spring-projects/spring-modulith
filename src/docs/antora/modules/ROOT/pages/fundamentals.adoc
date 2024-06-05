@@ -348,12 +348,23 @@ package example.inventory
 [[customizing-modules]]
 === Customizing Module Detection
 
-If the default application module model does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
+By default, application modules will be expected to be located in direct sub-packages of the package the Spring Boot application class resides in.
+An alternative detection strategy can be activated to only consider package explicitly annotated, either via Spring Modulith's `@ApplicationModule` or jMolecules `@Module` annotation.
+That strategy can be activated by configuring the `spring.modulith.detection-strategy` to `explicitly-annotated`.
+
+.Switching the application module detection strategy to only consider annotated packages
+[source, text]
+----
+spring.modulith.detection-strategy=explicitly-annotated
+----
+
+If the neither default application module detection strategy nor the manually annotated one does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
 That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package the Spring Boot application class resides in.
 You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
 
 Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:
 
+.Implementing a custom `ApplicationModuleDetectionStrategy`
 [tabs]
 ======
 Java::
@@ -385,12 +396,11 @@ class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrat
 ----
 ======
 
-This class needs to be registered in `META-INF/spring.factories` as follows:
+This class can now be registered as `spring.modulith.detection-strategy` as follows:
 
 [source, text]
 ----
-org.springframework.modulith.core.ApplicationModuleDetectionStrategy=\
-  example.CustomApplicationModuleDetectionStrategy
+spring.modulith.detection-strategy=example.CustomApplicationModuleDetectionStrategy
 ----
 
 [[customizing-modules-arrangement]]

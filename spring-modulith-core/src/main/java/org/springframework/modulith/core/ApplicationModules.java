@@ -37,7 +37,6 @@ import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.jmolecules.archunit.JMoleculesDddRules;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
-import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.modulith.core.Violations.Violation;
@@ -65,7 +64,7 @@ import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private static final Map<CacheKey, ApplicationModules> CACHE = new ConcurrentHashMap<>();
-	private static final ApplicationModuleDetectionStrategy DETECTION_STRATEGY;
+
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
 	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
 			ApplicationModules.class.getClassLoader());
@@ -73,21 +72,6 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final DescribedPredicate<HasName> IS_SPRING_CGLIB_PROXY = nameContaining("$$SpringCGLIB$$");
 
 	static {
-
-		List<ApplicationModuleDetectionStrategy> loadFactories = SpringFactoriesLoader.loadFactories(
-				ApplicationModuleDetectionStrategy.class,
-				ApplicationModules.class.getClassLoader());
-
-		if (loadFactories.size() > 1) {
-
-			throw new IllegalStateException(
-					String.format("Multiple module detection strategies configured. Only one supported! %s",
-							loadFactories));
-		}
-
-		DETECTION_STRATEGY = loadFactories.isEmpty() ? ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES
-				: loadFactories.get(0);
-
 		IS_AOT_TYPE = ClassUtils.isPresent("org.springframework.aot.generate.Generated",
 				ApplicationModules.class.getClassLoader()) ? getAtGenerated() : DescribedPredicate.alwaysFalse();
 	}
@@ -150,10 +134,11 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Assert.notEmpty(allClasses, () -> "No classes found in packages %s!".formatted(packages));
 
 		Classes classes = Classes.of(allClasses);
+		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
 		this.modules = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it))
-				.flatMap(DETECTION_STRATEGY::getModuleBasePackages) //
+				.flatMap(strategy::getModuleBasePackages) //
 				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 

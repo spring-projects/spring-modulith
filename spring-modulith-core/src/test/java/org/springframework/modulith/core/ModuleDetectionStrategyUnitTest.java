@@ -30,20 +30,6 @@ import com.tngtech.archunit.core.importer.ImportOption;
 class ModuleDetectionStrategyUnitTest {
 
 	@Test
-	void usesExplicitlyAnnotatedConstant() {
-
-		assertThat(ApplicationModuleDetectionStrategy.explictlyAnnotated())
-				.isEqualTo(ApplicationModuleDetectionStrategies.EXPLICITLY_ANNOTATED);
-	}
-
-	@Test
-	void usesDirectSubPackages() {
-
-		assertThat(ApplicationModuleDetectionStrategy.directSubPackage())
-				.isEqualTo(ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES);
-	}
-
-	@Test
 	void detectsJMoleculesAnnotatedModule() {
 
 		var classes = new ClassFileImporter() //
