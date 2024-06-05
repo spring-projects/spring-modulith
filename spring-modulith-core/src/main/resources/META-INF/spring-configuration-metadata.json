@@ -1,0 +1,32 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.detection-strategy",
+			"type": "java.lang.String",
+			"description": "The strategy how to detect application modules."
+		}
+	],
+	"hints": [
+		{
+			"name": "spring.modulith.detection-strategy",
+			"values": [
+				{
+					"value": "direct-sub-packages",
+					"description" : "Selects the direct sub-packages underneath the main application class as application module base interfaces."
+				},
+				{
+					"value": "explicitly-annotated",
+					"description" : "Only selects explicitly annotated packages as application module base packages (via @ApplicationModules or jMolecules' DDD @Module)."
+				}
+			],
+			"providers": [ 
+				{
+					"name": "class-reference",
+					"parameters": {
+						"target": "org.springframework.modulith.core.ApplicationModuleDetectionStrategy"
+					}
+				}
+			]
+		}
+	]
+}

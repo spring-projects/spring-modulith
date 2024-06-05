@@ -15,7 +15,11 @@
  */
 package org.springframework.modulith.core;
 
+import java.util.Objects;
 import java.util.stream.Stream;
+
+import org.springframework.modulith.ApplicationModule;
+import org.springframework.modulith.core.Types.JMoleculesTypes;
 
 /**
  * Strategy interface to customize which packages are considered module base packages.
@@ -34,22 +38,24 @@ public interface ApplicationModuleDetectionStrategy {
 	Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage);
 
 	/**
-	 * A {@link ApplicationModuleDetectionStrategy} that considers all direct sub-packages of the Moduliths base package to be module
-	 * base packages.
+	 * A {@link ApplicationModuleDetectionStrategy} that considers all direct sub-packages of the Moduliths base package
+	 * to be module base packages.
 	 *
 	 * @return will never be {@literal null}.
 	 */
 	static ApplicationModuleDetectionStrategy directSubPackage() {
-		return ApplicationModuleDetectionStrategies.DIRECT_SUB_PACKAGES;
+		return pkg -> pkg.getDirectSubPackages().stream();
 	}
 
 	/**
-	 * A {@link ApplicationModuleDetectionStrategy} that considers packages explicitly annotated with {@link ApplicationModule} module base
-	 * packages.
+	 * A {@link ApplicationModuleDetectionStrategy} that considers packages explicitly annotated with
+	 * {@link ApplicationModule} module base packages.
 	 *
 	 * @return will never be {@literal null}.
 	 */
 	static ApplicationModuleDetectionStrategy explictlyAnnotated() {
-		return ApplicationModuleDetectionStrategies.EXPLICITLY_ANNOTATED;
+		return pkg -> Stream.of(ApplicationModule.class, JMoleculesTypes.getModuleAnnotationTypeIfPresent())
+				.filter(Objects::nonNull)
+				.flatMap(pkg::getSubPackagesAnnotatedWith);
 	}
 }
