@@ -471,6 +471,7 @@ limitations under the License.
 						<show>package</show>
 						<quiet>true</quiet>
 						<links>
+							<link>https://docs.spring.io/spring-boot/${spring-boot.version}/api/java/</link>
 							<link>https://docs.spring.io/spring/docs/${spring-framework.version}/javadoc-api/</link>
 							<link>https://docs.oracle.com/en/java/javase/17/docs/api/</link>
 						</links>
