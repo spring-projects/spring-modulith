@@ -29,6 +29,49 @@
 		<spring-boot.version>3.3.0</spring-boot.version>
 	</properties>
 
+	<profiles>
+		<profile>
+			<id>with-preview-repos</id>
+			<repositories>
+				<repository>
+					<id>spring-milestone</id>
+					<url>https://repo.spring.io/milestone</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-snapshot</id>
+					<url>https://repo.spring.io/snapshot</url>
+					<releases>
+						<enabled>false</enabled>
+					</releases>
+				</repository>
+			</repositories>
+		</profile>
+
+		<profile>
+			<id>with-commercial-repos</id>
+			<repositories>
+				<repository>
+					<id>spring-commercial-releases</id>
+					<url>https://repo.spring.vmware.com/artifactory/spring-commercial-release-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-commercial-snapshots</id>
+					<url>https://repo.spring.vmware.com/artifactory/spring-commercial-snapshot-local</url>
+					<releases>
+						<enabled>false</enabled>
+					</releases>
+				</repository>
+			</repositories>
+		</profile>
+
+	</profiles>
+
 	<build>
 		<defaultGoal>verify</defaultGoal>
 
@@ -143,4 +186,5 @@
 			</releases>
 		</pluginRepository>
 	</pluginRepositories>
+
 </project>

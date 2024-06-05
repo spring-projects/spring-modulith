@@ -124,6 +124,26 @@ limitations under the License.
 		</profile>
 
 		<profile>
+			<id>with-commercial-repos</id>
+			<repositories>
+				<repository>
+					<id>spring-commercial-releases</id>
+					<url>https://repo.spring.vmware.com/artifactory/spring-commercial-release-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-commercial-snapshots</id>
+					<url>https://repo.spring.vmware.com/artifactory/spring-commercial-snapshot-local</url>
+					<releases>
+						<enabled>false</enabled>
+					</releases>
+				</repository>
+			</repositories>
+		</profile>
+
+		<profile>
 
 			<id>prepare-release</id>
 
