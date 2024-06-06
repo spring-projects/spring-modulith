@@ -70,9 +70,15 @@ class ApplicationModuleDetectionStrategyLookup {
 	 * Returns the {@link ApplicationModuleDetectionStrategy} to be used to detect {@link ApplicationModule}s. Will use
 	 * the following algorithm:
 	 * <ol>
-	 * <li>Use the prepared strategies if
+	 * <li>Use the prepared strategies if either {@code direct-sub-packages} or {@code explicitly-annotated} is configured
+	 * for the {@code spring.modulith.detection-strategy} configuration property.</li>
+	 * <li>Interpret the configured value as class if it doesn't match the predefined values just described.</li>
+	 * <li>Use the {@link ApplicationModuleDetectionStrategy} declared in {@code META-INF/spring.properties}
+	 * (deprecated)</li>
+	 * <li>A final fallback on the {@code direct-sub-packages}.</li>
+	 * </ol>
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	static ApplicationModuleDetectionStrategy getStrategy() {
 
