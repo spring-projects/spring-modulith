@@ -968,9 +968,13 @@ public class ApplicationModule {
 
 			var originModule = getExistingModuleOf(source, modules);
 			var targetModule = getExistingModuleOf(target, modules);
+			var violations = Violations.NONE;
 
-			DeclaredDependencies declaredDependencies = originModule.getDeclaredDependencies(modules);
-			Violations violations = Violations.NONE;
+			if (originModule.equals(targetModule)) {
+				return violations;
+			}
+
+			var declaredDependencies = originModule.getDeclaredDependencies(modules);
 
 			// Check explicitly defined allowed targets
 			if (!declaredDependencies.isAllowedDependency(target)) {

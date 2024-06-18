@@ -17,6 +17,7 @@ package org.springframework.modulith.core;
 
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 
+import java.util.List;
 import java.util.function.Supplier;
 
 import org.jmolecules.ddd.annotation.AggregateRoot;
@@ -28,13 +29,14 @@ import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
+import com.tngtech.archunit.core.importer.ImportOption;
 
 /**
  * Utilities for testing.
  *
  * @author Oliver Drotbohm
  */
-class TestUtils {
+public class TestUtils {
 
 	private static Supplier<JavaClasses> imported = SingletonSupplier.of(() -> new ClassFileImporter() //
 			.importPackagesOf(ApplicationModules.class, Repository.class, AggregateRoot.class));
@@ -91,5 +93,10 @@ class TestUtils {
 
 		return Classes.of(new ClassFileImporter()
 				.importPackages(packageName));
+	}
+
+	public static ApplicationModules of(String basePackage, String... ignoredPackages) {
+		return new ApplicationModules(ModulithMetadata.of(basePackage), List.of(basePackage),
+				JavaClass.Predicates.resideInAnyPackage(ignoredPackages), false, new ImportOption.OnlyIncludeTests());
 	}
 }
