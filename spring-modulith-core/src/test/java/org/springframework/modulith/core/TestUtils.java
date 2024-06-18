@@ -35,7 +35,7 @@ import com.tngtech.archunit.core.importer.ImportOption;
  *
  * @author Oliver Drotbohm
  */
-class TestUtils {
+public class TestUtils {
 
 	private static Supplier<JavaClasses> imported = SingletonSupplier.of(() -> new ClassFileImporter() //
 			.importPackagesOf(ApplicationModules.class, Repository.class, AggregateRoot.class));
