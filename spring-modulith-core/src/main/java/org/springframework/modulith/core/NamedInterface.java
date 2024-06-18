@@ -69,12 +69,13 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 */
 	static List<NamedInterface> of(JavaPackage javaPackage) {
 
-		var names = javaPackage.getAnnotation(org.springframework.modulith.NamedInterface.class) //
+		var basePackage = javaPackage.toSingle();
+		var names = basePackage.getAnnotation(org.springframework.modulith.NamedInterface.class) //
 				.map(it -> getDefaultedNames(it, javaPackage.getName())) //
 				.orElseThrow(() -> new IllegalArgumentException(
 						String.format("Couldn't find NamedInterface annotation on package %s!", javaPackage)));
 
-		var classes = javaPackage.toSingle().getExposedClasses();
+		var classes = basePackage.getExposedClasses();
 
 		return names.stream()
 				.<NamedInterface> map(it -> new NamedInterface(it, classes)) //
