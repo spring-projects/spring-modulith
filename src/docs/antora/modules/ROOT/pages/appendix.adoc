@@ -109,6 +109,14 @@ a|* `spring-modulith-starter-core`
 * `spring-modulith-events-mongodb` (runtime)
 * `spring-modulith-events-jackson` (runtime)
 
+|`spring-modulith-starter-neo4j`
+|`compile`
+a|* `spring-modulith-starter-core`
+* `spring-modulith-events-api`
+* `spring-modulith-events-core` (runtime)
+* `spring-modulith-events-neo4j` (runtime)
+* `spring-modulith-events-jackson` (runtime)
+
 |`spring-modulith-starter-test`
 |`test`
 a|* `spring-modulith-docs`
@@ -132,6 +140,7 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-kafka`|`runtime`|Event externalization support for Kafka.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-events-neo4j`|`runtime`|A Neo4j-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-moments`|`compile`|The Passage of Time events implementation described xref:moments.adoc[here].
 |`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
 |`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
