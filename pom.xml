@@ -40,8 +40,8 @@
 		<lombok.version>1.18.32</lombok.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring.version>6.1.8</spring.version> <!-- For Javadoc links only -->
-		<spring-boot.version>3.2.6</spring-boot.version>
+		<spring.version>6.1.10</spring.version> <!-- For Javadoc links only -->
+		<spring-boot.version>3.2.7</spring-boot.version>
 		<spring-cloud-aws-bom.version>3.0.4</spring-cloud-aws-bom.version>
 
 	</properties>
