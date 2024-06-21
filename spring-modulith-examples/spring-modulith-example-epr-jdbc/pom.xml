@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-examples</artifactId>
-		<version>1.2.1-SNAPSHOT</version>
+		<version>1.2.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
