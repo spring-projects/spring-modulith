@@ -27,10 +27,12 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
+import org.springframework.modulith.docs.Documenter.Options;
 import org.springframework.util.function.ThrowingConsumer;
 
 import com.acme.myproject.Application;
@@ -137,6 +139,46 @@ class DocumenterTest {
 
 			assertThat(aggregatingDoc).doesNotExist();
 		});
+	}
+
+	@Test
+	void shouldCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
+
+		var filePath = createTestFile(outputDirectory);
+		var nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
+
+		new Documenter(ApplicationModules.of(Application.class), outputDirectory.toString()).writeDocumentation();
+
+		assertThat(filePath).doesNotExist();
+		assertThat(nestedFiledPath).doesNotExist();
+		assertThat(Files.list(outputDirectory)).isNotEmpty();
+	}
+
+	@Test
+	void shouldNotCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
+		
+		var filePath = createTestFile(outputDirectory);
+		var nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
+
+		new Documenter(ApplicationModules.of(Application.class),
+				Options.defaults().withOutputFolder(outputDirectory.toString()).withoutClean())
+						.writeDocumentation();
+
+		assertThat(filePath).exists();
+		assertThat(nestedFiledPath).exists();
+		assertThat(Files.list(outputDirectory)).isNotEmpty();
+	}
+
+	private static Path createTestFile(Path tempDir) throws IOException {
+		return createFile(tempDir.resolve("some-old-module.adoc"));
+	}
+
+	private static Path createTestFileInSubdirectory(Path tempDir) throws IOException {
+		return createFile(tempDir.resolve("some-subdirectory").resolve("old-module.adoc"));
+	}
+
+	private static Path createFile(Path filePath) throws IOException {
+		return Files.createDirectories(filePath);
 	}
 
 	private static void deleteDirectoryContents(Path path) throws IOException {

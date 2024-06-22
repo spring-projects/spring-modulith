@@ -183,14 +183,14 @@ public class Documenter {
 	 * <li>The Module Canvas for each module.</li>
 	 * </ul>
 	 *
-	 * @param options must not be {@literal null}.
+	 * @param diagramOptions must not be {@literal null}.
 	 * @param canvasOptions must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeDocumentation(DiagramOptions options, CanvasOptions canvasOptions) {
+	public Documenter writeDocumentation(DiagramOptions diagramOptions, CanvasOptions canvasOptions) {
 
 		if (this.options.clean) {
-			clear();
+			clearOutputFolder();
 		}
 
 		return writeModulesAsPlantUml(options)
@@ -610,10 +610,15 @@ public class Documenter {
 				.createComponentView(container, prefix + options.toString(), "");
 	}
 
-	private void clear() {
+	private void clearOutputFolder() {
 
-		try {
-			Files.deleteIfExists(Paths.get(options.outputFolder));
+		Path outputPath = Paths.get(options.outputFolder);
+		if (!outputPath.toFile().exists()) {
+			return;
+		}
+
+		try (Stream<Path> paths = Files.walk(outputPath)) {
+			paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 		} catch (IOException o_O) {
 			throw new RuntimeException(o_O);
 		}
@@ -1289,14 +1294,37 @@ public class Documenter {
 			this.clean = clean;
 		}
 
+		/**
+		 * Creates a default {@link Options} instance configuring a default output folder based on the detected build tool (see {@link Options#DEFAULT_LOCATION}).
+		 * Use {@link #withOutputFolder(String)} if you want to customize the output folder.
+		 * Per default the output folder is wiped before any files are written to it.
+		 * Use {@link #withoutClean()} to disable cleaning of the output folder.
+		 *
+		 * @return will never be {@literal null}.
+		 * @see #withoutClean()
+		 * @see #withOutputFolder(String)
+		 */
 		public static Options defaults() {
 			return new Options(DEFAULT_LOCATION, true);
 		}
 
+		/**
+		 * Disables the cleaning of the output folder before any file is written.
+		 *
+		 * @return will never be {@literal null}.
+		 */
 		public Options withoutClean() {
 			return new Options(outputFolder, false);
 		}
 
+		/**
+		 * Configures the output folder for the created files.
+		 * The given directory is wiped before any files are written to it.
+		 *
+		 * @param folder if null the default location based on the detected build tool will be used (see {@link Options#DEFAULT_LOCATION}).
+		 * The given folder will be created if it does not exist already. Existing folders are supported as well.
+		 * @return will never be {@literal null}.
+		 */
 		public Options withOutputFolder(String folder) {
 			return new Options(folder, clean);
 		}
