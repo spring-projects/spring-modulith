@@ -533,8 +533,13 @@ public class Documenter {
 
 	private void clearOutputFolder() {
 
-		try(Stream<Path> paths = Files.walk(Paths.get(options.outputFolder)).sorted(Comparator.reverseOrder())) {
-			paths.map(Path::toFile).forEach(File::delete);
+		Path outputPath = Paths.get(options.outputFolder);
+		if (!outputPath.toFile().exists()) {
+			return;
+		}
+
+		try (Stream<Path> paths = Files.walk(outputPath)) {
+			paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
 		} catch (IOException o_O) {
 			throw new RuntimeException(o_O);
 		}
