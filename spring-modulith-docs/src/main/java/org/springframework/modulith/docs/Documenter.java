@@ -182,18 +182,18 @@ public class Documenter {
 	 * <li>The Module Canvas for each module.</li>
 	 * </ul>
 	 *
-	 * @param options must not be {@literal null}.
+	 * @param diagramOptions must not be {@literal null}.
 	 * @param canvasOptions must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeDocumentation(DiagramOptions options, CanvasOptions canvasOptions) {
+	public Documenter writeDocumentation(DiagramOptions diagramOptions, CanvasOptions canvasOptions) {
 
 		if (this.options.clean) {
 			clearOutputFolder();
 		}
 
-		return writeModulesAsPlantUml(options)
-				.writeIndividualModulesAsPlantUml(options) //
+		return writeModulesAsPlantUml(diagramOptions)
+				.writeIndividualModulesAsPlantUml(diagramOptions) //
 				.writeModuleCanvases(canvasOptions);
 	}
 
