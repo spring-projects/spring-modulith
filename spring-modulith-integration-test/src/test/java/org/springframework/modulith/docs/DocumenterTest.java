@@ -26,10 +26,12 @@ import java.util.Comparator;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
+import org.springframework.modulith.docs.Documenter.Options;
 
 import com.acme.myproject.Application;
 
@@ -72,24 +74,47 @@ class DocumenterTest {
 	}
 
 	@Test
-	void customizesOutputLocation() throws IOException {
+	void customizesOutputLocation(@TempDir Path outputDirectory) throws IOException {
+		new Documenter(ApplicationModules.of(Application.class), outputDirectory.toString()).writeModuleCanvases();
 
-		String customOutputFolder = "build/spring-modulith";
-		Path path = Paths.get(customOutputFolder);
+		assertThat(Files.list(outputDirectory)).isNotEmpty();
+		assertThat(outputDirectory).exists();
+	}
 
-		try {
+	@Test
+	void shouldCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
+		Path filePath = createTestFile(outputDirectory);
+		Path nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
 
-			new Documenter(ApplicationModules.of(Application.class), customOutputFolder).writeModuleCanvases();
+		new Documenter(ApplicationModules.of(Application.class), outputDirectory.toString()).writeDocumentation();
 
-			assertThat(Files.list(path)).isNotEmpty();
-			assertThat(path).exists();
+		assertThat(filePath).doesNotExist();
+		assertThat(nestedFiledPath).doesNotExist();
+		assertThat(Files.list(outputDirectory)).isNotEmpty();
+	}
 
-		} finally {
+	@Test
+	void shouldNotCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
+		Path filePath = createTestFile(outputDirectory);
+		Path nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
 
-			Files.walk(path)
-					.sorted(Comparator.reverseOrder())
-					.map(Path::toFile)
-					.forEach(File::delete);
-		}
+		new Documenter(ApplicationModules.of(Application.class), Options.defaults().withOutputFolder(outputDirectory.toString()).withoutClean())
+				.writeDocumentation();
+
+		assertThat(filePath).exists();
+		assertThat(nestedFiledPath).exists();
+		assertThat(Files.list(outputDirectory)).isNotEmpty();
+	}
+
+	private static Path createTestFile(Path tempDir) throws IOException {
+		return createFile(tempDir.resolve("some-old-module.adoc"));
+	}
+
+	private static Path createTestFileInSubdirectory(Path tempDir) throws IOException {
+		return createFile(tempDir.resolve("some-subdirectory").resolve("old-module.adoc"));
+	}
+
+	private static Path createFile(Path filePath) throws IOException {
+		return Files.createDirectories(filePath);
 	}
 }

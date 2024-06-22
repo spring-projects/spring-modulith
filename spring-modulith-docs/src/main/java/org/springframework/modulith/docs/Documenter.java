@@ -189,7 +189,7 @@ public class Documenter {
 	public Documenter writeDocumentation(DiagramOptions options, CanvasOptions canvasOptions) {
 
 		if (this.options.clean) {
-			clear();
+			clearOutputFolder();
 		}
 
 		return writeModulesAsPlantUml(options)
@@ -531,10 +531,10 @@ public class Documenter {
 				.createComponentView(container, prefix + options.toString(), "");
 	}
 
-	private void clear() {
+	private void clearOutputFolder() {
 
-		try {
-			Files.deleteIfExists(Paths.get(options.outputFolder));
+		try(Stream<Path> paths = Files.walk(Paths.get(options.outputFolder)).sorted(Comparator.reverseOrder())) {
+			paths.map(Path::toFile).forEach(File::delete);
 		} catch (IOException o_O) {
 			throw new RuntimeException(o_O);
 		}
