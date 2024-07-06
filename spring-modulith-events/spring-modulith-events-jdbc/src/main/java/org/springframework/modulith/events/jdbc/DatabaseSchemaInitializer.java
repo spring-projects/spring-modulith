@@ -15,7 +15,15 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import java.sql.Connection;
+
+import javax.sql.DataSource;
+
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Initializes the DB schema used to store events
@@ -23,5 +31,62 @@ import org.springframework.beans.factory.InitializingBean;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  * @author Oliver Drotbohm
+ * @author Raed Ben Hamouda
  */
-interface DatabaseSchemaInitializer extends InitializingBean {}
+class DatabaseSchemaInitializer implements InitializingBean {
+
+	private final DataSource dataSource;
+	private final ResourceLoader resourceLoader;
+	private final DatabaseType databaseType;
+	private final JdbcTemplate jdbcTemplate;
+	private final JdbcConfigurationProperties properties;
+
+	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, DatabaseType databaseType,
+			JdbcTemplate jdbcTemplate, JdbcConfigurationProperties properties) {
+
+		this.dataSource = dataSource;
+		this.resourceLoader = resourceLoader;
+		this.databaseType = databaseType;
+		this.jdbcTemplate = jdbcTemplate;
+		this.properties = properties;
+	}
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+
+		String initialSchema;
+		try (Connection connection = dataSource.getConnection()) {
+
+			initialSchema = connection.getSchema();
+
+			String schemaName = properties.getSchema();
+			if (!ObjectUtils.isEmpty(schemaName)) { // A schema name has been specified.
+
+				if (eventPublicationTableExists(jdbcTemplate, schemaName)) {
+					return;
+				}
+
+				jdbcTemplate.execute("CREATE SCHEMA IF NOT EXISTS " + schemaName);
+				jdbcTemplate.execute(databaseType.sqlStatementSetSchema(schemaName));
+			}
+
+			var locator = new DatabaseSchemaLocator(resourceLoader);
+			new ResourceDatabasePopulator(locator.getSchemaResource(databaseType)).execute(dataSource);
+
+			// Return to the initial schema.
+			if (initialSchema != null) {
+				jdbcTemplate.execute(databaseType.sqlStatementSetSchema(initialSchema));
+			}
+		}
+	}
+
+	private boolean eventPublicationTableExists(JdbcTemplate jdbcTemplate, String schema) {
+		String query = """
+				SELECT COUNT(*)
+				FROM information_schema.tables
+				WHERE table_schema = ? AND table_name = 'EVENT_PUBLICATION'
+				""";
+		Integer count = jdbcTemplate.queryForObject(query, Integer.class, schema);
+		return count != null && count > 0;
+	}
+}

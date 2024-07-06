@@ -21,11 +21,11 @@ import javax.sql.DataSource;
 
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
@@ -35,9 +35,11 @@ import org.springframework.modulith.events.core.EventSerializer;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  * @author Oliver Drotbohm
+ * @author Raed Ben Hamouda
  */
 @Configuration(proxyBeanMethods = false)
 @AutoConfigureBefore(EventPublicationAutoConfiguration.class)
+@EnableConfigurationProperties(JdbcConfigurationProperties.class)
 class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean
@@ -47,22 +49,17 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 
 	@Bean
 	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
-			EventSerializer serializer, DatabaseType databaseType) {
+			EventSerializer serializer, DatabaseType databaseType, JdbcConfigurationProperties properties) {
 
-		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, databaseType);
+		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, databaseType, properties);
 	}
 
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
 	DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
-			DatabaseType databaseType) {
+			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcConfigurationProperties properties) {
 
-		return () -> {
-
-			var locator = new DatabaseSchemaLocator(resourceLoader);
-
-			new ResourceDatabasePopulator(locator.getSchemaResource(databaseType)).execute(dataSource);
-		};
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, databaseType, jdbcTemplate, properties);
 	}
 
 	private static String fromDataSource(DataSource dataSource) {

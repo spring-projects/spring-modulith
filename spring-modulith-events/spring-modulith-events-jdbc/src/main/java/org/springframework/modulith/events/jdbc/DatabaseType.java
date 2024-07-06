@@ -24,6 +24,7 @@ import org.springframework.util.Assert;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  * @author Oliver Drotbohm
+ * @author Raed Ben Hamouda
  */
 enum DatabaseType {
 
@@ -74,5 +75,12 @@ enum DatabaseType {
 
 	String getSchemaResourceFilename() {
 		return "/schema-" + value + ".sql";
+	}
+
+	String sqlStatementSetSchema(String schema) {
+		return switch (this) {
+			case MYSQL, H2, HSQLDB -> "SET SCHEMA " + schema;
+			case POSTGRES -> "SET search_path TO " + schema;
+		};
 	}
 }
