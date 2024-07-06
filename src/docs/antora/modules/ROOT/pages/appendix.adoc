@@ -26,6 +26,10 @@ Can either be the class name of a custom implementation of `ApplicationModuleDet
 |`false`
 |Whether to initialize the JDBC event publication schema.
 
+|`spring.modulith.events.jdbc.schema`
+|
+|The schema name for the event publication table. If not specified, the table will not be schema-qualified.
+
 |`spring.modulith.events.kafka.enable-json`
 |`true`
 |Whether to enable JSON support for `KafkaTemplate`.

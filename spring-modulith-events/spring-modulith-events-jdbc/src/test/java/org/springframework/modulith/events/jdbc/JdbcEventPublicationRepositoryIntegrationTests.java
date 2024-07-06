@@ -50,16 +50,16 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  * @author Oliver Drotbohm
+ * @author Raed Ben Hamouda
  */
 class JdbcEventPublicationRepositoryIntegrationTests {
 
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
-	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
 	@Import(TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
 	@ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
-	abstract class TestBase {
+	static abstract class TestBase {
 
 		@Autowired JdbcOperations operations;
 		@Autowired JdbcEventPublicationRepository repository;
@@ -68,7 +68,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 		@BeforeEach
 		void cleanUp() {
-			operations.execute("TRUNCATE TABLE EVENT_PUBLICATION");
+			operations.execute("TRUNCATE TABLE " + table());
 		}
 
 		@Test // GH-3
@@ -205,7 +205,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			// Store publication
 			repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			operations.update("UPDATE EVENT_PUBLICATION SET EVENT_TYPE='abc'");
+			operations.update("UPDATE " + table() + " SET EVENT_TYPE='abc'");
 
 			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
 					.isEmpty();
@@ -230,7 +230,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			repository.markCompleted(publication, Instant.now());
 			repository.deleteCompletedPublications();
 
-			assertThat(operations.query("SELECT * FROM EVENT_PUBLICATION", (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
 		}
 
@@ -256,7 +256,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			repository.markCompleted(testEvent2, TARGET_IDENTIFIER, now);
 			repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
 
-			assertThat(operations.query("SELECT * FROM EVENT_PUBLICATION", (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
 		}
 
@@ -310,6 +310,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 					.isEqualTo(event);
 		}
 
+		abstract String table();
+
 		private TargetEventPublication createPublication(Object event) {
 
 			var token = event.toString();
@@ -322,22 +324,94 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	}
 
 	@Nested
+	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
+	static class WithNoDefinedSchemaName extends TestBase {
+
+		@Override
+		String table() {
+			return "EVENT_PUBLICATION";
+		}
+	}
+
+	@Nested
+	@JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			"spring.modulith.events.jdbc.schema=test"})
+	static class WithDefinedSchemaName extends TestBase {
+
+		@Override
+		String table() {
+			return "test.EVENT_PUBLICATION";
+		}
+	}
+
+	@Nested
+	@JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			"spring.modulith.events.jdbc.schema="})
+	static class WithEmptySchemaName extends TestBase {
+
+		@Override
+		String table() {
+			return "EVENT_PUBLICATION";
+		}
+	}
+
+	// HSQL
+	@Nested
 	@ActiveProfiles("hsqldb")
 	@Testcontainers(disabledWithoutDocker = false)
-	class HSQL extends TestBase {}
+	class HsqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@Nested
+	@ActiveProfiles("hsqldb")
+	@Testcontainers(disabledWithoutDocker = false)
+	class HsqlWithDefinedSchemaName extends WithDefinedSchemaName {}
+
+	@Nested
+	@ActiveProfiles("hsqldb")
+	@Testcontainers(disabledWithoutDocker = false)
+	class HsqlWithEmptySchemaName extends WithEmptySchemaName {}
+
+	// H2
+	@Nested
+	@ActiveProfiles("h2")
+	@Testcontainers(disabledWithoutDocker = false)
+	class H2WithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
 	@Nested
 	@ActiveProfiles("h2")
 	@Testcontainers(disabledWithoutDocker = false)
-	class H2 extends TestBase {}
+	class H2WithDefinedSchemaName extends WithDefinedSchemaName {}
+
+	@Nested
+	@ActiveProfiles("h2")
+	@Testcontainers(disabledWithoutDocker = false)
+	class H2WithEmptySchemaName extends WithEmptySchemaName {}
+
+	// Postgres
+	@Nested
+	@ActiveProfiles("postgres")
+	class PostgresWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
 	@Nested
 	@ActiveProfiles("postgres")
-	class Postgres extends TestBase {}
+	class PostgresWithDefinedSchemaName extends WithDefinedSchemaName {}
+
+	@Nested
+	@ActiveProfiles("postgres")
+	class PostgresWithEmptySchemaName extends WithEmptySchemaName {}
+
+	// MySQL
+	@Nested
+	@ActiveProfiles("mysql")
+	class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
 	@Nested
 	@ActiveProfiles("mysql")
-	class MySQL extends TestBase {}
+	class MysqlWithDefinedSchemaName extends WithDefinedSchemaName {}
+
+	@Nested
+	@ActiveProfiles("mysql")
+	class MysqlWithEmptySchemaName extends WithEmptySchemaName {}
 
 	@Value
 	private static final class TestEvent {
