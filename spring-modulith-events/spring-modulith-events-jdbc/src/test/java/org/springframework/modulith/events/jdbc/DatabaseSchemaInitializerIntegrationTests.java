@@ -71,7 +71,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@Nested
 	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=false")
-	static class WithInitDisabled extends TestBase {
+	class InitializationDisabledExplicitly extends TestBase {
 
 		@SpyBean JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
