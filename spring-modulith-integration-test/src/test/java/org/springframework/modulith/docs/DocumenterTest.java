@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModule;
@@ -86,10 +87,78 @@ class DocumenterTest {
 
 		} finally {
 
-			Files.walk(path)
-					.sorted(Comparator.reverseOrder())
-					.map(Path::toFile)
-					.forEach(File::delete);
+			deleteDirectory(path);
 		}
+	}
+
+	@Test // GH-638
+	void writesAggregatingDocumentOnlyIfOtherDocsExist() throws IOException {
+
+		String customOutputFolder = "build/spring-modulith";
+		Path path = Paths.get(customOutputFolder);
+
+		Documenter documenter = new Documenter(ApplicationModules.of(Application.class), customOutputFolder);
+
+		try {
+
+			// all-docs.adoc should be created
+			documenter.writeDocumentation();
+
+			// Count files
+			long actualFiles;
+			try (Stream<Path> stream = Files.walk(path)) {
+				actualFiles = stream.filter(Files::isRegularFile).count();
+			}
+			// Expect 2 files per module plus components diagram and all-docs.adoc
+			long expectedFiles = (documenter.getModules().stream().count() * 2) + 2;
+			assertThat(actualFiles).isEqualTo(expectedFiles);
+
+			Optional<Path> optionalPath = Files.walk(path)
+					.filter(p -> p.getFileName().toString().equals("all-docs.adoc"))
+					.findFirst();
+			assertThat(optionalPath.isPresent());
+
+			// Count non-blank lines in all-docs.adoc
+			long actualLines;
+			try (Stream<String> lines = Files.lines(optionalPath.get())) {
+				actualLines = lines.filter(line -> !line.trim().isEmpty())
+						.count();
+			}
+			// Expect 3 lines per module and 2 lines for components
+			long expectedLines = (documenter.getModules().stream().count() * 3) + 2;
+			assertThat(actualLines).isEqualTo(expectedLines);
+
+			// all-docs.adoc should not be created
+			deleteDirectoryContents(path);
+
+			documenter.writeAggregatingDocument();
+
+			optionalPath = Files.walk(path)
+					.filter(p -> p.getFileName().toString().equals("all-docs.adoc"))
+					.findFirst();
+			assertThat(optionalPath.isEmpty());
+
+		} finally {
+
+			deleteDirectory(path);
+		}
+	}
+
+	private static void deleteDirectoryContents(Path path) throws IOException {
+
+		if (Files.exists(path) && Files.isDirectory(path)) {
+			try (Stream<Path> walk = Files.walk(path)) {
+				walk.sorted(Comparator.reverseOrder())
+						.filter(p -> !p.equals(path)) // Ensure we don't delete the directory itself
+						.map(Path::toFile)
+						.forEach(File::delete);
+			}
+		}
+	}
+
+	private static void deleteDirectory(Path path) throws IOException {
+
+		deleteDirectoryContents(path);
+		Files.deleteIfExists(path);
 	}
 }

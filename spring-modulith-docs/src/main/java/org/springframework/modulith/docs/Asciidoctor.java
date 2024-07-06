@@ -367,4 +367,19 @@ class Asciidoctor {
 
 		return bullets.isBlank() ? "None" : bullets;
 	}
+
+	public String renderHeadline(int i, String modules) {
+
+		return "=".repeat(i) + " " + modules + System.lineSeparator();
+	}
+
+	public String renderPlantUmlInclude(String componentsFilename) {
+
+		return "plantuml::" + componentsFilename + "[]" + System.lineSeparator();
+	}
+
+	public String renderGeneralInclude(String componentsFilename) {
+
+		return "include::" + componentsFilename + "[]" + System.lineSeparator();
+	}
 }
