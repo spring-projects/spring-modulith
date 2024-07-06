@@ -41,7 +41,7 @@ public class DatabaseSchemaLocator {
 	}
 
 	/**
-	 * Loads the {@link Resource} copntaining the schema for the given {@link DatabaseType} from the classpath.
+	 * Loads the {@link Resource} containing the schema for the given {@link DatabaseType} from the classpath.
 	 * 
 	 * @param databaseType must not be {@literal null}.
 	 * @return will never be {@literal null}.
