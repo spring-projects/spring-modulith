@@ -184,8 +184,89 @@ public class Documenter {
 	public Documenter writeDocumentation(DiagramOptions options, CanvasOptions canvasOptions) {
 
 		return writeModulesAsPlantUml(options)
-				.writeIndividualModulesAsPlantUml(options) //
-				.writeModuleCanvases(canvasOptions);
+				.writeIndividualModulesAsPlantUml(options)
+				.writeModuleCanvases(canvasOptions)
+				.writeAggregatingDocument(options, canvasOptions);
+	}
+
+	/**
+	 * Writes aggregating document called 'all-docs.adoc' that includes any existing component diagrams and canvases.
+	 * using {@link DiagramOptions#defaults()} and {@link CanvasOptions#defaults()}.
+	 *
+	 * @return the current instance, will never be {@literal null}.
+	 */
+	public Documenter writeAggregatingDocument(){
+
+		return writeAggregatingDocument(DiagramOptions.defaults(), CanvasOptions.defaults());
+	}
+
+	/**
+	 * Writes aggregating document called 'all-docs.adoc' that includes any existing component diagrams and canvases.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @param canvasOptions must not be {@literal null}.
+	 * @return the current instance, will never be {@literal null}.
+	 */
+	public Documenter writeAggregatingDocument(DiagramOptions options, CanvasOptions canvasOptions){
+
+		Assert.notNull(options, "DiagramOptions must not be null!");
+		Assert.notNull(canvasOptions, "CanvasOptions must not be null!");
+
+		var asciidoctor = Asciidoctor.withJavadocBase(modules, canvasOptions.getApiBase());
+		var outputFolder = new OutputFolder(this.outputFolder);
+
+		// Get file name for module overview diagram
+		var componentsFilename = options.getTargetFileName().orElse(DEFAULT_COMPONENTS_FILE);
+		var componentsDoc = new StringBuilder();
+
+		if (outputFolder.contains(componentsFilename)) {
+			componentsDoc.append(asciidoctor.renderHeadline(2, modules.getSystemName().orElse("Modules")))
+					.append(asciidoctor.renderPlantUmlInclude(componentsFilename))
+					.append(System.lineSeparator());
+		}
+
+		// Get file names for individual module diagrams and canvases
+		var moduleDocs = modules.stream().map(it -> {
+
+			// Get diagram file name, e.g. module-inventory.puml
+			var fileNamePattern = options.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
+			Assert.isTrue(fileNamePattern.contains("%s"), () -> String.format(INVALID_FILE_NAME_PATTERN, fileNamePattern));
+			var filename = String.format(fileNamePattern, it.getName());
+
+			// Get canvas file name, e.g. module-inventory.adoc
+			var canvasFilename = canvasOptions.getTargetFileName(it.getName());
+
+			// Generate output, e.g.:
+			/*
+			== Inventory
+			plantuml::module-inventory.puml[]
+			include::module-inventory.adoc[]
+			 */
+			var content = new StringBuilder();
+			content.append((outputFolder.contains(filename) ? asciidoctor.renderPlantUmlInclude(filename) : ""))
+					.append((outputFolder.contains(canvasFilename) ? asciidoctor.renderGeneralInclude(canvasFilename) : ""));
+			if (!content.isEmpty()) {
+				content.insert(0, asciidoctor.renderHeadline(2, it.getDisplayName()))
+						.append(System.lineSeparator());
+			}
+			return content.toString();
+
+		}).collect(Collectors.joining());
+
+		var allDocs = componentsDoc.append(moduleDocs).toString();
+
+		// Write file to all-docs.adoc
+		if (!allDocs.isBlank()) {
+			Path file = recreateFile("all-docs.adoc");
+
+			try (Writer writer = new FileWriter(file.toFile())) {
+				writer.write(allDocs);
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
+		}
+
+		return this;
 	}
 
 	/**
@@ -1177,4 +1258,17 @@ public class Documenter {
 		@Override
 		protected void endContainerBoundary(ModelView view, IndentingWriter writer) {};
 	};
+
+	private static class OutputFolder {
+
+		private final String path;
+
+        OutputFolder(String path) {
+            this.path = path;
+        }
+
+		boolean contains(String filename) {
+			return Files.exists(Paths.get(path, filename));
+		}
+    }
 }
