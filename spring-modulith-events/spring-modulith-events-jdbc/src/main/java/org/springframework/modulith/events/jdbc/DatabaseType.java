@@ -47,6 +47,8 @@ enum DatabaseType {
 
 	POSTGRES("postgresql", "PostgreSQL");
 
+	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name not supported on MySQL!";
+
 	static DatabaseType from(String productName) {
 
 		return Arrays.stream(DatabaseType.values())
@@ -77,9 +79,12 @@ enum DatabaseType {
 		return "/schema-" + value + ".sql";
 	}
 
-	String sqlStatementSetSchema(String schema) {
+	String getSetSchemaSql(String schema) {
+
 		return switch (this) {
-			case MYSQL, H2, HSQLDB -> "SET SCHEMA " + schema;
+
+			case MYSQL -> throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
+			case H2, HSQLDB -> "SET SCHEMA " + schema;
 			case POSTGRES -> "SET search_path TO " + schema;
 		};
 	}

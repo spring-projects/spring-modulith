@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 the original author or authors.
+ * Copyright 2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,31 +24,32 @@ import org.springframework.lang.Nullable;
  * Configuration properties for JDBC.
  *
  * @author Raed Ben Hamouda
+ * @author Oliver Drotbohm
  */
 @ConfigurationProperties(prefix = "spring.modulith.events.jdbc")
 class JdbcConfigurationProperties {
 
-	private final boolean schemaInitializationEnabled;
+	private final SchemaInitialization schemaInitialization;
 	private final String schema;
 
 	/**
 	 * Creates a new {@link JdbcConfigurationProperties} instance.
 	 *
-	 * @param schemaInitializationEnabled whether to initialize the JDBC event publication schema. Defaults to {@literal false}.
+	 * @param schemaInitialization whether to initialize the JDBC event publication schema. Defaults to {@literal false}.
 	 * @param schema the schema name of event publication table, can be {@literal null}.
 	 */
 	@ConstructorBinding
-	JdbcConfigurationProperties(@DefaultValue("false") boolean schemaInitializationEnabled, @Nullable String schema) {
+	JdbcConfigurationProperties(SchemaInitialization schemaInitialization, @Nullable String schema) {
 
-		this.schemaInitializationEnabled = schemaInitializationEnabled;
+		this.schemaInitialization = schemaInitialization;
 		this.schema = schema;
 	}
 
 	/**
 	 * Whether to initialize the JDBC event publication schema.
 	 */
-	public boolean isSchemaInitializationEnabled() {
-		return schemaInitializationEnabled;
+	public SchemaInitialization getSchemaInitialization() {
+		return schemaInitialization;
 	}
 
 	/**
@@ -56,7 +57,32 @@ class JdbcConfigurationProperties {
 	 *
 	 * @return can be {@literal null}.
 	 */
+	@Nullable
 	public String getSchema() {
 		return schema;
+	}
+
+	void verify(DatabaseType databaseType) {
+
+		if (schema != null && databaseType.equals(DatabaseType.MYSQL)) {
+			throw new IllegalStateException(DatabaseType.SCHEMA_NOT_SUPPORTED);
+		}
+	}
+
+	static class SchemaInitialization {
+
+		private final boolean enabled;
+
+		/**
+		 * @param enabled
+		 */
+		@ConstructorBinding
+		SchemaInitialization(@DefaultValue("false") boolean enabled) {
+			this.enabled = enabled;
+		}
+
+		boolean isEnabled() {
+			return enabled;
+		}
 	}
 }

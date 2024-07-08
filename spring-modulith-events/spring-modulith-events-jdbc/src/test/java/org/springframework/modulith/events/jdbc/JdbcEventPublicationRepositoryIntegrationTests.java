@@ -334,8 +334,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	}
 
 	@Nested
-	@JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
-			"spring.modulith.events.jdbc.schema=test"})
+	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			"spring.modulith.events.jdbc.schema=test" })
 	static class WithDefinedSchemaName extends TestBase {
 
 		@Override
@@ -345,8 +345,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	}
 
 	@Nested
-	@JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
-			"spring.modulith.events.jdbc.schema="})
+	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			"spring.modulith.events.jdbc.schema=" })
 	static class WithEmptySchemaName extends TestBase {
 
 		@Override
@@ -404,14 +404,6 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@Nested
 	@ActiveProfiles("mysql")
 	class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
-
-	@Nested
-	@ActiveProfiles("mysql")
-	class MysqlWithDefinedSchemaName extends WithDefinedSchemaName {}
-
-	@Nested
-	@ActiveProfiles("mysql")
-	class MysqlWithEmptySchemaName extends WithEmptySchemaName {}
 
 	@Value
 	private static final class TestEvent {

@@ -54,6 +54,73 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JdbcEventPublicationRepository.class);
 
+	private static final String SQL_STATEMENT_INSERT = """
+			INSERT INTO %s (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
+			VALUES (?, ?, ?, ?, ?)
+			""";
+
+	private static final String SQL_STATEMENT_FIND_COMPLETED = """
+			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			FROM %s
+			WHERE COMPLETION_DATE IS NOT NULL
+			ORDER BY PUBLICATION_DATE ASC
+			""";
+
+	private static final String SQL_STATEMENT_FIND_UNCOMPLETED = """
+			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			FROM %s
+			WHERE COMPLETION_DATE IS NULL
+			ORDER BY PUBLICATION_DATE ASC
+			""";
+
+	private static final String SQL_STATEMENT_FIND_UNCOMPLETED_BEFORE = """
+			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			FROM %s
+			WHERE
+					COMPLETION_DATE IS NULL
+					AND PUBLICATION_DATE < ?
+			ORDER BY PUBLICATION_DATE ASC
+			""";
+
+	private static final String SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID = """
+			UPDATE %s
+			SET COMPLETION_DATE = ?
+			WHERE
+					LISTENER_ID = ?
+					AND SERIALIZED_EVENT = ?
+			""";
+
+	private static final String SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID = """
+			SELECT *
+			FROM %s
+			WHERE
+					SERIALIZED_EVENT = ?
+					AND LISTENER_ID = ?
+					AND COMPLETION_DATE IS NULL
+			ORDER BY PUBLICATION_DATE
+			""";
+
+	private static final String SQL_STATEMENT_DELETE = """
+			DELETE
+			FROM %s
+			WHERE
+					ID IN
+			""";
+
+	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
+			DELETE
+			FROM %s
+			WHERE
+					COMPLETION_DATE IS NOT NULL
+			""";
+
+	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE = """
+			DELETE
+			FROM %s
+			WHERE
+					COMPLETION_DATE < ?
+			""";
+
 	private static final int DELETE_BATCH_SIZE = 100;
 
 	private final JdbcOperations operations;
@@ -61,15 +128,15 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	private final DatabaseType databaseType;
 	private ClassLoader classLoader;
 
-	private String sqlStatementInsert;
-	private String sqlStatementFindCompleted;
-	private String sqlStatementFindUncompleted;
-	private String sqlStatementFindUncompletedBefore;
-	private String sqlStatementUpdateByEventAndListenerId;
-	private String sqlStatementFindByEventAndListenerId;
-	private String sqlStatementDelete;
-	private String sqlStatementDeleteUncompleted;
-	private String sqlStatementDeleteUncompletedBefore;
+	private final String sqlStatementInsert,
+			sqlStatementFindCompleted,
+			sqlStatementFindUncompleted,
+			sqlStatementFindUncompletedBefore,
+			sqlStatementUpdateByEventAndListenerId,
+			sqlStatementFindByEventAndListenerId,
+			sqlStatementDelete,
+			sqlStatementDeleteUncompleted,
+			sqlStatementDeleteUncompletedBefore;
 
 	/**
 	 * Creates a new {@link JdbcEventPublicationRepository} for the given {@link JdbcOperations}, {@link EventSerializer},
@@ -92,7 +159,18 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		this.serializer = serializer;
 		this.databaseType = databaseType;
 
-		prepareSqlStatements(properties.getSchema());
+		var schema = properties.getSchema();
+		var table = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
+
+		this.sqlStatementInsert = SQL_STATEMENT_INSERT.formatted(table);
+		this.sqlStatementFindCompleted = SQL_STATEMENT_FIND_COMPLETED.formatted(table);
+		this.sqlStatementFindUncompleted = SQL_STATEMENT_FIND_UNCOMPLETED.formatted(table);
+		this.sqlStatementFindUncompletedBefore = SQL_STATEMENT_FIND_UNCOMPLETED_BEFORE.formatted(table);
+		this.sqlStatementUpdateByEventAndListenerId = SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table);
+		this.sqlStatementFindByEventAndListenerId = SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table);
+		this.sqlStatementDelete = SQL_STATEMENT_DELETE.formatted(table);
+		this.sqlStatementDeleteUncompleted = SQL_STATEMENT_DELETE_UNCOMPLETED.formatted(table);
+		this.sqlStatementDeleteUncompletedBefore = SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE.formatted(table);
 	}
 
 	/*
@@ -220,84 +298,6 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		Assert.notNull(instant, "Instant must not be null!");
 
 		operations.update(sqlStatementDeleteUncompletedBefore, Timestamp.from(instant));
-	}
-
-	/**
-	 * Prepares SQL statements based on the provided schema name.
-	 *
-	 * @param schema can be {@literal null}.
-	 */
-	private void prepareSqlStatements(String schema) {
-
-		String tableName = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
-
-
-		sqlStatementInsert = """
-				INSERT INTO %s (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
-				VALUES (?, ?, ?, ?, ?)
-				""".formatted(tableName);
-
-		sqlStatementFindCompleted = """
-				SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
-				FROM %s
-				WHERE COMPLETION_DATE IS NOT NULL
-				ORDER BY PUBLICATION_DATE ASC
-				""".formatted(tableName);
-
-		sqlStatementFindUncompleted = """
-				SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
-				FROM %s
-				WHERE COMPLETION_DATE IS NULL
-				ORDER BY PUBLICATION_DATE ASC
-				""".formatted(tableName);
-
-		sqlStatementFindUncompletedBefore = """
-				SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
-				FROM %s
-				WHERE
-				        COMPLETION_DATE IS NULL
-				        AND PUBLICATION_DATE < ?
-				ORDER BY PUBLICATION_DATE ASC
-				""".formatted(tableName);
-
-		sqlStatementUpdateByEventAndListenerId = """
-				UPDATE %s
-				SET COMPLETION_DATE = ?
-				WHERE
-				        LISTENER_ID = ?
-				        AND SERIALIZED_EVENT = ?
-				""".formatted(tableName);
-
-		sqlStatementFindByEventAndListenerId = """
-				SELECT *
-				FROM %s
-				WHERE
-				        SERIALIZED_EVENT = ?
-				        AND LISTENER_ID = ?
-				        AND COMPLETION_DATE IS NULL
-				ORDER BY PUBLICATION_DATE
-				""".formatted(tableName);
-
-		sqlStatementDelete = """
-				DELETE
-				FROM %s
-				WHERE
-				        ID IN
-				""".formatted(tableName);
-
-		sqlStatementDeleteUncompleted = """
-				DELETE
-				FROM %s
-				WHERE
-				        COMPLETION_DATE IS NOT NULL
-				""".formatted(tableName);
-
-		sqlStatementDeleteUncompletedBefore = """
-				DELETE
-				FROM %s
-				WHERE
-				        COMPLETION_DATE < ?
-				""".formatted(tableName);
 	}
 
 	private String serializeEvent(Object event) {
