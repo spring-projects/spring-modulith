@@ -32,9 +32,9 @@ jobs:
 
     - name: Build with Maven
       env:
-        GRADLE_ENTERPRISE_CACHE_USERNAME: ${{ secrets.GRADLE_ENTERPRISE_CACHE_USER }}
-        GRADLE_ENTERPRISE_CACHE_PASSWORD: ${{ secrets.GRADLE_ENTERPRISE_CACHE_PASSWORD }}
-        GRADLE_ENTERPRISE_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+        COMMERCIAL_USERNAME: ${{ secrets.COMMERCIAL_ARTIFACTORY_RO_USERNAME }}
+        COMMERCIAL_PASSWORD: ${{ secrets.COMMERCIAL_ARTIFACTORY_RO_PASSWORD }}
+        DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
       run: |
         cd spring-modulith-examples
         ../mvnw -B versions:update-parent -DskipResolution=true -DparentVersion=${{ matrix.version }}
