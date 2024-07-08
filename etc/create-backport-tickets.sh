@@ -13,7 +13,9 @@ number=$1
 # For each of the target versions
 for version in ${@:2}
 do
+	echo "gh issue create --title \"$title\" --body \"Back-port of $sourceGh.\" --label \"$labels\" --assignee \"@me\" --milestone \"$version\""
 	number=$(gh issue create --title "$title" --body "Back-port of $sourceGh." --label "$labels" --assignee "@me" --milestone "$version" | awk -F '/' '{print $NF}')
+	echo "New ticket number: $number"
 
 	# Turn 1.5.6 into 1.5.x
 	targetBranch="$(echo "$version" | grep -oE '^[0-9]+\.[0-9]+').x"
