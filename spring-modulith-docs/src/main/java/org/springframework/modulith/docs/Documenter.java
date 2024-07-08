@@ -70,6 +70,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
  * API to create documentation for {@link ApplicationModules}.
  *
  * @author Oliver Drotbohm
+ * @author Cora Iberkleid
  */
 public class Documenter {
 
@@ -134,7 +135,7 @@ public class Documenter {
 				.shape(Shape.Component);
 
 		Model model = workspace.getModel();
-		String systemName = modules.getSystemName().orElse("Modulith");
+		String systemName = getDefaultedSystemName();
 
 		SoftwareSystem system = model.addSoftwareSystem(systemName, "");
 
@@ -190,13 +191,13 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes aggregating document called 'all-docs.adoc' that includes any existing component diagrams and canvases.
-	 * using {@link DiagramOptions#defaults()} and {@link CanvasOptions#defaults()}.
+	 * Writes aggregating document called {@code all-docs.adoc} that includes any existing component diagrams and
+	 * canvases. using {@link DiagramOptions#defaults()} and {@link CanvasOptions#defaults()}.
 	 *
 	 * @return the current instance, will never be {@literal null}.
+	 * @since 1.2.2
 	 */
-	public Documenter writeAggregatingDocument(){
-
+	public Documenter writeAggregatingDocument() {
 		return writeAggregatingDocument(DiagramOptions.defaults(), CanvasOptions.defaults());
 	}
 
@@ -206,8 +207,9 @@ public class Documenter {
 	 * @param options must not be {@literal null}.
 	 * @param canvasOptions must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
+	 * @since 1.2.2
 	 */
-	public Documenter writeAggregatingDocument(DiagramOptions options, CanvasOptions canvasOptions){
+	public Documenter writeAggregatingDocument(DiagramOptions options, CanvasOptions canvasOptions) {
 
 		Assert.notNull(options, "DiagramOptions must not be null!");
 		Assert.notNull(canvasOptions, "CanvasOptions must not be null!");
@@ -220,7 +222,9 @@ public class Documenter {
 		var componentsDoc = new StringBuilder();
 
 		if (outputFolder.contains(componentsFilename)) {
-			componentsDoc.append(asciidoctor.renderHeadline(2, modules.getSystemName().orElse("Modules")))
+
+			componentsDoc
+					.append(asciidoctor.renderHeadline(2, getDefaultedSystemName()))
 					.append(asciidoctor.renderPlantUmlInclude(componentsFilename))
 					.append(System.lineSeparator());
 		}
@@ -230,25 +234,20 @@ public class Documenter {
 
 			// Get diagram file name, e.g. module-inventory.puml
 			var fileNamePattern = options.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
-			Assert.isTrue(fileNamePattern.contains("%s"), () -> String.format(INVALID_FILE_NAME_PATTERN, fileNamePattern));
-			var filename = String.format(fileNamePattern, it.getName());
-
-			// Get canvas file name, e.g. module-inventory.adoc
+			var filename = fileNamePattern.formatted(it.getName());
 			var canvasFilename = canvasOptions.getTargetFileName(it.getName());
-
-			// Generate output, e.g.:
-			/*
-			== Inventory
-			plantuml::module-inventory.puml[]
-			include::module-inventory.adoc[]
-			 */
 			var content = new StringBuilder();
-			content.append((outputFolder.contains(filename) ? asciidoctor.renderPlantUmlInclude(filename) : ""))
-					.append((outputFolder.contains(canvasFilename) ? asciidoctor.renderGeneralInclude(canvasFilename) : ""));
+
+			content.append(outputFolder.contains(filename) ? asciidoctor.renderPlantUmlInclude(filename) : "")
+					.append(outputFolder.contains(canvasFilename) ? asciidoctor.renderGeneralInclude(canvasFilename) : "");
+
 			if (!content.isEmpty()) {
-				content.insert(0, asciidoctor.renderHeadline(2, it.getDisplayName()))
+
+				content
+						.insert(0, asciidoctor.renderHeadline(2, it.getDisplayName()))
 						.append(System.lineSeparator());
 			}
+
 			return content.toString();
 
 		}).collect(Collectors.joining());
@@ -257,7 +256,8 @@ public class Documenter {
 
 		// Write file to all-docs.adoc
 		if (!allDocs.isBlank()) {
-			Path file = recreateFile("all-docs.adoc");
+
+			var file = recreateFile("all-docs.adoc");
 
 			try (Writer writer = new FileWriter(file.toFile())) {
 				writer.write(allDocs);
@@ -351,9 +351,7 @@ public class Documenter {
 
 		var fileNamePattern = options.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
 
-		Assert.isTrue(fileNamePattern.contains("%s"), () -> String.format(INVALID_FILE_NAME_PATTERN, fileNamePattern));
-
-		return writeViewAsPlantUml(view, String.format(fileNamePattern, module.getName()), options);
+		return writeViewAsPlantUml(view, fileNamePattern.formatted(module.getName()), options);
 	}
 
 	/**
@@ -584,7 +582,7 @@ public class Documenter {
 	private String createPlantUml(DiagramOptions options) {
 
 		ComponentView componentView = createComponentView(options);
-		componentView.setTitle(modules.getSystemName().orElse("Modules"));
+		componentView.setTitle(getDefaultedSystemName());
 
 		addComponentsToView(() -> modules.stream(), componentView, options, it -> {});
 
@@ -662,6 +660,10 @@ public class Documenter {
 	 */
 	private static String getDefaultOutputDirectory() {
 		return (new File("pom.xml").exists() ? "target" : "build").concat("/").concat(DEFAULT_LOCATION);
+	}
+
+	private String getDefaultedSystemName() {
+		return modules.getSystemName().orElse("Modules");
 	}
 
 	private static record Connection(Element source, Element target) {
@@ -771,6 +773,9 @@ public class Documenter {
 		 * include a {@code %s} placeholder for the module names.
 		 */
 		public DiagramOptions withTargetFileName(String targetFileName) {
+
+			Assert.isTrue(targetFileName.contains("%s"), () -> INVALID_FILE_NAME_PATTERN.formatted(targetFileName));
+
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
 					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
 		}
@@ -1263,12 +1268,12 @@ public class Documenter {
 
 		private final String path;
 
-        OutputFolder(String path) {
-            this.path = path;
-        }
+		OutputFolder(String path) {
+			this.path = path;
+		}
 
 		boolean contains(String filename) {
 			return Files.exists(Paths.get(path, filename));
 		}
-    }
+	}
 }

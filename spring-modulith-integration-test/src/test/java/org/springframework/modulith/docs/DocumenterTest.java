@@ -31,6 +31,7 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
+import org.springframework.util.function.ThrowingConsumer;
 
 import com.acme.myproject.Application;
 
@@ -38,6 +39,7 @@ import com.acme.myproject.Application;
  * Unit tests for {@link Documenter}.
  *
  * @author Oliver Drotbohm
+ * @author Cora Iberkleid
  */
 class DocumenterTest {
 
@@ -73,75 +75,68 @@ class DocumenterTest {
 	}
 
 	@Test
-	void customizesOutputLocation() throws IOException {
+	void customizesOutputLocation() throws Exception {
 
 		String customOutputFolder = "build/spring-modulith";
 		Path path = Paths.get(customOutputFolder);
 
-		try {
+		doWith(path, it -> {
 
 			new Documenter(ApplicationModules.of(Application.class), customOutputFolder).writeModuleCanvases();
 
 			assertThat(Files.list(path)).isNotEmpty();
 			assertThat(path).exists();
-
-		} finally {
-
-			deleteDirectory(path);
-		}
+		});
 	}
 
 	@Test // GH-638
-	void writesAggregatingDocumentOnlyIfOtherDocsExist() throws IOException {
+	void createsAggregatingDocumentOnlyIfPartialsExist() throws Exception {
 
-		String customOutputFolder = "build/spring-modulith";
-		Path path = Paths.get(customOutputFolder);
+		var customOutputFolder = "build/spring-modulith";
+		var path = Paths.get(customOutputFolder);
+		var documenter = new Documenter(ApplicationModules.of(Application.class), customOutputFolder);
 
-		Documenter documenter = new Documenter(ApplicationModules.of(Application.class), customOutputFolder);
-
-		try {
+		doWith(path, it -> {
 
 			// all-docs.adoc should be created
 			documenter.writeDocumentation();
 
-			// Count files
-			long actualFiles;
-			try (Stream<Path> stream = Files.walk(path)) {
-				actualFiles = stream.filter(Files::isRegularFile).count();
-			}
-			// Expect 2 files per module plus components diagram and all-docs.adoc
-			long expectedFiles = (documenter.getModules().stream().count() * 2) + 2;
-			assertThat(actualFiles).isEqualTo(expectedFiles);
+			// 2 per module (PlantUML + Canvas) + component overview + aggregating doc
+			var expectedFiles = documenter.getModules().stream().count() * 2 + 2;
 
-			Optional<Path> optionalPath = Files.walk(path)
-					.filter(p -> p.getFileName().toString().equals("all-docs.adoc"))
-					.findFirst();
-			assertThat(optionalPath.isPresent());
+			// 3 per module (headline + PlantUML + Canvas) + component headline + component PlantUML
+			var expectedLines = documenter.getModules().stream().count() * 3 + 2;
 
-			// Count non-blank lines in all-docs.adoc
-			long actualLines;
-			try (Stream<String> lines = Files.lines(optionalPath.get())) {
-				actualLines = lines.filter(line -> !line.trim().isEmpty())
-						.count();
-			}
-			// Expect 3 lines per module and 2 lines for components
-			long expectedLines = (documenter.getModules().stream().count() * 3) + 2;
-			assertThat(actualLines).isEqualTo(expectedLines);
+			assertThat(Files.walk(it).filter(Files::isRegularFile).count())
+					.isEqualTo(expectedFiles);
 
-			// all-docs.adoc should not be created
-			deleteDirectoryContents(path);
+			assertThat(path.resolve("all-docs.adoc")).exists().satisfies(doc -> {
+				assertThat(Files.lines(doc)
+						.filter(line -> !line.trim().isEmpty())
+						.count()).isEqualTo(expectedLines);
+			});
+		});
+	}
+
+	@Test // GH-638
+	void doesNotCreateAggregatingDocumentIfNoPartialsExist() throws Exception {
+
+		var customOutputFolder = "build/spring-modulith";
+		var path = Paths.get(customOutputFolder);
+
+		doWith(path, it -> {
+
+			var documenter = new Documenter(ApplicationModules.of(Application.class), customOutputFolder)
+					.writeDocumentation();
+
+			deleteDirectoryContents(it);
 
 			documenter.writeAggregatingDocument();
 
-			optionalPath = Files.walk(path)
-					.filter(p -> p.getFileName().toString().equals("all-docs.adoc"))
-					.findFirst();
-			assertThat(optionalPath.isEmpty());
+			var aggregatingDoc = path.resolve("all-docs.adoc");
 
-		} finally {
-
-			deleteDirectory(path);
-		}
+			assertThat(aggregatingDoc).doesNotExist();
+		});
 	}
 
 	private static void deleteDirectoryContents(Path path) throws IOException {
@@ -160,5 +155,14 @@ class DocumenterTest {
 
 		deleteDirectoryContents(path);
 		Files.deleteIfExists(path);
+	}
+
+	private static void doWith(Path path, ThrowingConsumer<Path> consumer) throws Exception {
+
+		try {
+			consumer.accept(path);
+		} finally {
+			deleteDirectory(path);
+		}
 	}
 }
