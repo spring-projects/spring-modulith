@@ -83,8 +83,8 @@ class DocumenterTest {
 
 	@Test
 	void shouldCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
-		Path filePath = createTestFile(outputDirectory);
-		Path nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
+		var filePath = createTestFile(outputDirectory);
+		var nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
 
 		new Documenter(ApplicationModules.of(Application.class), outputDirectory.toString()).writeDocumentation();
 
@@ -95,8 +95,8 @@ class DocumenterTest {
 
 	@Test
 	void shouldNotCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
-		Path filePath = createTestFile(outputDirectory);
-		Path nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
+		var filePath = createTestFile(outputDirectory);
+		var nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
 
 		new Documenter(ApplicationModules.of(Application.class), Options.defaults().withOutputFolder(outputDirectory.toString()).withoutClean())
 				.writeDocumentation();
