@@ -187,7 +187,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				.map(it -> executeListenerWithCompletion(publication, it)) //
 				.orElseGet(() -> {
 
-					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} incomplete.", publication.getTargetIdentifier(), publication.getIdentifier());
+					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} incomplete.",
+							publication.getTargetIdentifier(), publication.getIdentifier());
 					return null;
 				});
 	}
@@ -195,7 +196,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration,
 			Predicate<EventPublication> filter) {
 
-		var message = duration != null ? " older than %s".formatted(duration): "";;
+		var message = duration != null ? " older than %s".formatted(duration) : "";
 		var registry = this.registry.get();
 
 		LOGGER.debug("Looking up incomplete event publications {}… ", message);
@@ -317,30 +318,9 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			this.listeners = (List) listeners.stream()
 					.filter(TransactionalApplicationListener.class::isInstance)
 					.map(TransactionalApplicationListener.class::cast)
+					.filter(it -> it.getTransactionPhase().equals(TransactionPhase.AFTER_COMMIT))
 					.sorted(AnnotationAwareOrderComparator.INSTANCE)
 					.toList();
-		}
-
-		private TransactionalEventListeners(
-				List<TransactionalApplicationListener<ApplicationEvent>> listeners) {
-			this.listeners = listeners;
-		}
-
-		/**
-		 * Returns all {@link TransactionalEventListeners} for the given {@link TransactionPhase}.
-		 *
-		 * @param phase must not be {@literal null}.
-		 * @return will never be {@literal null}.
-		 */
-		public TransactionalEventListeners forPhase(TransactionPhase phase) {
-
-			Assert.notNull(phase, "TransactionPhase must not be null!");
-
-			List<TransactionalApplicationListener<ApplicationEvent>> collect = listeners.stream()
-					.filter(it -> it.getTransactionPhase().equals(phase))
-					.toList();
-
-			return new TransactionalEventListeners(collect);
 		}
 
 		/**

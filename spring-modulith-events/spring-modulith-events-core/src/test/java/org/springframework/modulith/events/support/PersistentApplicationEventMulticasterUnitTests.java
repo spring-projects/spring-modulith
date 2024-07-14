@@ -20,6 +20,7 @@ import static org.mockito.Mockito.*;
 
 import lombok.AllArgsConstructor;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,6 +34,8 @@ import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalEventListener;
 
 /**
@@ -85,6 +88,20 @@ class PersistentApplicationEventMulticasterUnitTests {
 			assertListenerSelected(new SampleEvent(true), true);
 			assertListenerSelected(new SampleEvent(false), false);
 		}
+	}
+
+	@Test // GH-726
+	void onlyConsidersAfterCommitListeners() {
+
+		var afterCommitListener = TransactionalApplicationListener.forPayload(TransactionPhase.AFTER_COMMIT, __ -> {});
+		var beforeCommitListener = TransactionalApplicationListener.forPayload(TransactionPhase.BEFORE_COMMIT, __ -> {});
+
+		var eventListeners = new PersistentApplicationEventMulticaster.TransactionalEventListeners(
+				List.of(afterCommitListener, beforeCommitListener));
+
+		assertThat(eventListeners.stream())
+				.hasSize(1)
+				.element(0).isEqualTo(afterCommitListener);
 	}
 
 	private void assertListenerSelected(SampleEvent event, boolean expected) {
