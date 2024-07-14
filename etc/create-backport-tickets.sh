@@ -16,12 +16,19 @@ do
 	# Turn 1.5.6 into 1.5.x
 	targetBranch="$(echo "$version" | grep -oE '^[0-9]+\.[0-9]+').x"
 
+	# The SHAs of all commits associated with the source ticket
+	shas=$(git log --grep="$sourceGh" --reverse --format="%H")
+
 	# Checkout target branch and cherry-pick commit
 	echo "Checking out branch $targetBranch"
 	git checkout $targetBranch
 
-	echo "Cherry-pick commit from $branch"
-	git cherry-pick $branch
+	# Cherry-pick all previously found SHAs
+	while IFS= read -r sha
+	do
+		echo "Cherry-pick commit $sha from $branch"
+		git cherry-pick $sha
+	done <<< $shas
 
 	echo "gh issue create --title \"$title\" --body \"Back-port of $sourceGh.\" --label \"$labels\" --assignee \"@me\" --milestone \"$version\""
 	number=$(gh issue create --title "$title" --body "Back-port of $sourceGh." --label "$labels" --assignee "@me" --milestone "$version" | awk -F '/' '{print $NF}')
