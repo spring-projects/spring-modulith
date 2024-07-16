@@ -161,19 +161,6 @@ public class Documenter {
 	}
 
 	/**
-	 * Customize the output folder to write the generated files to. Defaults to {@code spring-modulith-docs} in your build
-	 * systems build folder.
-	 *
-	 * @param outputFolder must not be {@literal null} or empty.
-	 * @return will never be {@literal null}.
-	 * @deprecated use {@link Documenter(ApplicationModules, String)} directly.
-	 */
-	@Deprecated(forRemoval = true)
-	public Documenter withOutputFolder(String outputFolder) {
-		return new Documenter(modules, outputFolder);
-	}
-
-	/**
 	 * Writes all available documentation:
 	 * <ul>
 	 * <li>The entire set of modules as overview component diagram.</li>
