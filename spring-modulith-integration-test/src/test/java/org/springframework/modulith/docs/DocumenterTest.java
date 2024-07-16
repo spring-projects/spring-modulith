@@ -21,9 +21,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.Comparator;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -33,7 +33,6 @@ import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.docs.Documenter.DiagramOptions;
 import org.springframework.modulith.docs.Documenter.Options;
-import org.springframework.util.function.ThrowingConsumer;
 
 import com.acme.myproject.Application;
 
@@ -42,6 +41,7 @@ import com.acme.myproject.Application;
  *
  * @author Oliver Drotbohm
  * @author Cora Iberkleid
+ * @author Tobias Haindl
  */
 class DocumenterTest {
 
@@ -79,12 +79,9 @@ class DocumenterTest {
 	@Test
 	void customizesOutputLocation() throws Exception {
 
-		String customOutputFolder = "build/spring-modulith";
-		Path path = Paths.get(customOutputFolder);
+		doWith("target/custom-spring-modulith", (path, documenter) -> {
 
-		doWith(path, it -> {
-
-			new Documenter(ApplicationModules.of(Application.class), customOutputFolder).writeModuleCanvases();
+			documenter.writeModuleCanvases();
 
 			assertThat(Files.list(path)).isNotEmpty();
 			assertThat(path).exists();
@@ -94,22 +91,20 @@ class DocumenterTest {
 	@Test // GH-638
 	void createsAggregatingDocumentOnlyIfPartialsExist() throws Exception {
 
-		var customOutputFolder = "build/spring-modulith";
-		var path = Paths.get(customOutputFolder);
-		var documenter = new Documenter(ApplicationModules.of(Application.class), customOutputFolder);
-
-		doWith(path, it -> {
+		doWith("build/spring-modulith", (path, documenter) -> {
 
 			// all-docs.adoc should be created
 			documenter.writeDocumentation();
 
+			var numberOfModules = documenter.getModules().stream().count();
+
 			// 2 per module (PlantUML + Canvas) + component overview + aggregating doc
-			var expectedFiles = documenter.getModules().stream().count() * 2 + 2;
+			var expectedFiles = numberOfModules * 2 + 2;
 
 			// 3 per module (headline + PlantUML + Canvas) + component headline + component PlantUML
-			var expectedLines = documenter.getModules().stream().count() * 3 + 2;
+			var expectedLines = numberOfModules * 3 + 2;
 
-			assertThat(Files.walk(it).filter(Files::isRegularFile).count())
+			assertThat(Files.walk(path).filter(Files::isRegularFile).count())
 					.isEqualTo(expectedFiles);
 
 			assertThat(path.resolve("all-docs.adoc")).exists().satisfies(doc -> {
@@ -123,15 +118,11 @@ class DocumenterTest {
 	@Test // GH-638
 	void doesNotCreateAggregatingDocumentIfNoPartialsExist() throws Exception {
 
-		var customOutputFolder = "build/spring-modulith";
-		var path = Paths.get(customOutputFolder);
+		doWith("build/spring-modulith", (path, documenter) -> {
 
-		doWith(path, it -> {
+			documenter.writeDocumentation();
 
-			var documenter = new Documenter(ApplicationModules.of(Application.class), customOutputFolder)
-					.writeDocumentation();
-
-			deleteDirectoryContents(it);
+			deleteDirectoryContents(path);
 
 			documenter.writeAggregatingDocument();
 
@@ -141,32 +132,37 @@ class DocumenterTest {
 		});
 	}
 
-	@Test
-	void shouldCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
+	@Test // GH-644
+	void cleansOutputDirectoryByDefault(@TempDir Path outputDirectory) {
 
-		var filePath = createTestFile(outputDirectory);
-		var nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
+		doWith(outputDirectory.toString(), (path, documenter) -> {
 
-		new Documenter(ApplicationModules.of(Application.class), outputDirectory.toString()).writeDocumentation();
+			var filePath = createTestFile(path);
+			var nestedFiledPath = createTestFileInSubdirectory(path);
 
-		assertThat(filePath).doesNotExist();
-		assertThat(nestedFiledPath).doesNotExist();
-		assertThat(Files.list(outputDirectory)).isNotEmpty();
+			documenter.writeDocumentation();
+
+			assertThat(filePath).doesNotExist();
+			assertThat(nestedFiledPath).doesNotExist();
+			assertThat(Files.list(path)).isNotEmpty();
+		});
+
 	}
 
-	@Test
-	void shouldNotCleanOutputLocation(@TempDir Path outputDirectory) throws IOException {
-		
-		var filePath = createTestFile(outputDirectory);
-		var nestedFiledPath = createTestFileInSubdirectory(outputDirectory);
+	@Test // GH-644
+	void doesNotCleanOutputDirectoryIfConfigured(@TempDir Path outputDirectory) throws IOException {
 
-		new Documenter(ApplicationModules.of(Application.class),
-				Options.defaults().withOutputFolder(outputDirectory.toString()).withoutClean())
-						.writeDocumentation();
+		doWith(outputDirectory.toString(), it -> it.withoutClean(), (path, documenter) -> {
 
-		assertThat(filePath).exists();
-		assertThat(nestedFiledPath).exists();
-		assertThat(Files.list(outputDirectory)).isNotEmpty();
+			var filePath = createTestFile(path);
+			var nestedFiledPath = createTestFileInSubdirectory(path);
+
+			documenter.writeDocumentation();
+
+			assertThat(filePath).exists();
+			assertThat(nestedFiledPath).exists();
+			assertThat(Files.list(path)).isNotEmpty();
+		});
 	}
 
 	private static Path createTestFile(Path tempDir) throws IOException {
@@ -193,18 +189,26 @@ class DocumenterTest {
 		}
 	}
 
-	private static void deleteDirectory(Path path) throws IOException {
-
-		deleteDirectoryContents(path);
-		Files.deleteIfExists(path);
+	private static void doWith(String path, ThrowingBiConsumer<Path, Documenter> consumer) {
+		doWith(path, Function.identity(), consumer);
 	}
 
-	private static void doWith(Path path, ThrowingConsumer<Path> consumer) throws Exception {
+	private static void doWith(String path, Function<Options, Options> customizer,
+			ThrowingBiConsumer<Path, Documenter> consumer) {
+
+		var options = customizer.apply(Options.defaults().withOutputFolder(path));
+		var modules = ApplicationModules.of(Application.class);
 
 		try {
-			consumer.accept(path);
+			consumer.accept(Path.of(path), new Documenter(modules, options));
+		} catch (Exception o_O) {
+			throw new RuntimeException(o_O);
 		} finally {
-			deleteDirectory(path);
+			options.getOutputFolder().deleteIfExists();
 		}
+	}
+
+	private interface ThrowingBiConsumer<T, S> {
+		void accept(T t, S s) throws Exception;
 	}
 }

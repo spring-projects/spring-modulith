@@ -20,7 +20,6 @@ import static org.springframework.modulith.docs.Asciidoctor.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.Writer;
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -71,6 +70,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
  *
  * @author Oliver Drotbohm
  * @author Cora Iberkleid
+ * @author Tobias Haindl
  */
 public class Documenter {
 
@@ -90,6 +90,8 @@ public class Documenter {
 	private final Container container;
 	private final ConfigurationProperties properties;
 	private final Options options;
+
+	private boolean cleared;
 
 	private Map<ApplicationModule, Component> components;
 
@@ -113,9 +115,17 @@ public class Documenter {
 		this(modules, Options.defaults());
 	}
 
+	/**
+	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} and output folder.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @param outputFolder must not be {@literal null} or empty.
+	 * @deprecated use {@link Documenter(ApplicationModules, Options)} instead.
+	 */
+	@Deprecated(forRemoval = true)
 	public Documenter(ApplicationModules modules, String outputFolder) {
 
-		this(modules, new Options(outputFolder, true));
+		this(modules, Options.defaults().withOutputFolder(outputFolder));
 
 		Assert.hasText(outputFolder, "Output folder must not be null or empty!");
 	}
@@ -125,6 +135,7 @@ public class Documenter {
 	 *
 	 * @param modules must not be {@literal null}.
 	 * @param options must not be {@literal null}.
+	 * @since 1.2
 	 */
 	public Documenter(ApplicationModules modules, Options options) {
 
@@ -146,10 +157,12 @@ public class Documenter {
 
 		this.container = system.addContainer(systemName, "", "");
 		this.properties = new ConfigurationProperties();
+		this.cleared = false;
 	}
 
 	/**
-	 * Customize the output folder to write the generated files to. Defaults to {@value #DEFAULT_LOCATION}.
+	 * Customize the output folder to write the generated files to. Defaults to {@code spring-modulith-docs} in your build
+	 * systems build folder.
 	 *
 	 * @param outputFolder must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
@@ -189,14 +202,12 @@ public class Documenter {
 	 */
 	public Documenter writeDocumentation(DiagramOptions diagramOptions, CanvasOptions canvasOptions) {
 
-		if (this.options.clean) {
-			clearOutputFolder();
-		}
+		potentiallyWipeOutputFolder();
 
-		return writeModulesAsPlantUml(options)
-				.writeIndividualModulesAsPlantUml(options)
+		return writeModulesAsPlantUml(diagramOptions)
+				.writeIndividualModulesAsPlantUml(diagramOptions)
 				.writeModuleCanvases(canvasOptions)
-				.writeAggregatingDocument(options, canvasOptions);
+				.writeAggregatingDocument(diagramOptions, canvasOptions);
 	}
 
 	/**
@@ -211,26 +222,29 @@ public class Documenter {
 	}
 
 	/**
-	 * Writes aggregating document called 'all-docs.adoc' that includes any existing component diagrams and canvases.
+	 * Writes aggregating document called {@code all-docs.adoc} that includes any existing component diagrams and
+	 * canvases.
 	 *
-	 * @param options must not be {@literal null}.
+	 * @param diagramOptions must not be {@literal null}.
 	 * @param canvasOptions must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 * @since 1.2.2
 	 */
-	public Documenter writeAggregatingDocument(DiagramOptions options, CanvasOptions canvasOptions) {
+	public Documenter writeAggregatingDocument(DiagramOptions diagramOptions, CanvasOptions canvasOptions) {
 
-		Assert.notNull(options, "DiagramOptions must not be null!");
+		Assert.notNull(diagramOptions, "DiagramOptions must not be null!");
 		Assert.notNull(canvasOptions, "CanvasOptions must not be null!");
 
+		potentiallyWipeOutputFolder();
+
 		var asciidoctor = Asciidoctor.withJavadocBase(modules, canvasOptions.getApiBase());
-		var outputFolder = new OutputFolder(this.outputFolder);
 
 		// Get file name for module overview diagram
-		var componentsFilename = options.getTargetFileName().orElse(DEFAULT_COMPONENTS_FILE);
+		var componentsFilename = diagramOptions.getTargetFileName().orElse(DEFAULT_COMPONENTS_FILE);
 		var componentsDoc = new StringBuilder();
+		var folder = options.outputFolder;
 
-		if (outputFolder.contains(componentsFilename)) {
+		if (folder.contains(componentsFilename)) {
 
 			componentsDoc
 					.append(asciidoctor.renderHeadline(2, getDefaultedSystemName()))
@@ -242,13 +256,13 @@ public class Documenter {
 		var moduleDocs = modules.stream().map(it -> {
 
 			// Get diagram file name, e.g. module-inventory.puml
-			var fileNamePattern = options.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
+			var fileNamePattern = diagramOptions.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
 			var filename = fileNamePattern.formatted(it.getName());
 			var canvasFilename = canvasOptions.getTargetFileName(it.getName());
 			var content = new StringBuilder();
 
-			content.append(outputFolder.contains(filename) ? asciidoctor.renderPlantUmlInclude(filename) : "")
-					.append(outputFolder.contains(canvasFilename) ? asciidoctor.renderGeneralInclude(canvasFilename) : "");
+			content.append(folder.contains(filename) ? asciidoctor.renderPlantUmlInclude(filename) : "")
+					.append(folder.contains(canvasFilename) ? asciidoctor.renderGeneralInclude(canvasFilename) : "");
 
 			if (!content.isEmpty()) {
 
@@ -265,14 +279,7 @@ public class Documenter {
 
 		// Write file to all-docs.adoc
 		if (!allDocs.isBlank()) {
-
-			var file = recreateFile("all-docs.adoc");
-
-			try (Writer writer = new FileWriter(file.toFile())) {
-				writer.write(allDocs);
-			} catch (IOException o_O) {
-				throw new RuntimeException(o_O);
-			}
+			options.outputFolder.writeToFile("all-docs.adoc", allDocs);
 		}
 
 		return this;
@@ -290,20 +297,17 @@ public class Documenter {
 	/**
 	 * Writes the PlantUML component diagram for all {@link ApplicationModules} with the given {@link DiagramOptions}.
 	 *
-	 * @param options must not be {@literal null}.
+	 * @param diagramOptions must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeModulesAsPlantUml(DiagramOptions options) {
+	public Documenter writeModulesAsPlantUml(DiagramOptions diagramOptions) {
 
-		Assert.notNull(options, "Options must not be null!");
+		Assert.notNull(diagramOptions, "Options must not be null!");
 
-		Path file = recreateFile(options.getTargetFileName().orElse(DEFAULT_COMPONENTS_FILE));
+		potentiallyWipeOutputFolder();
 
-		try (Writer writer = new FileWriter(file.toFile())) {
-			writer.write(createPlantUml(options));
-		} catch (IOException o_O) {
-			throw new RuntimeException(o_O);
-		}
+		options.outputFolder.writeToFile(diagramOptions.getTargetFileName().orElse(DEFAULT_COMPONENTS_FILE),
+				createPlantUml(diagramOptions));
 
 		return this;
 	}
@@ -321,6 +325,8 @@ public class Documenter {
 	public Documenter writeIndividualModulesAsPlantUml(DiagramOptions options) {
 
 		Assert.notNull(options, "DiagramOptions must not be null!");
+
+		potentiallyWipeOutputFolder();
 
 		modules.forEach(it -> writeModuleAsPlantUml(it, options));
 
@@ -353,6 +359,8 @@ public class Documenter {
 		Assert.notNull(module, "Module must not be null!");
 		Assert.notNull(options, "Options must not be null!");
 
+		potentiallyWipeOutputFolder();
+
 		var view = createComponentView(options, module);
 		view.setTitle(options.defaultDisplayName.apply(module));
 
@@ -375,25 +383,20 @@ public class Documenter {
 	/**
 	 * Writes all module canvases using the given {@link DiagramOptions}.
 	 *
-	 * @param options must not be {@literal null}.
+	 * @param canvasOptions must not be {@literal null}.
 	 * @return the current instance, will never be {@literal null}.
 	 */
-	public Documenter writeModuleCanvases(CanvasOptions options) {
+	public Documenter writeModuleCanvases(CanvasOptions canvasOptions) {
 
-		Assert.notNull(options, "CanvasOptions must not be null!");
+		Assert.notNull(canvasOptions, "CanvasOptions must not be null!");
+
+		potentiallyWipeOutputFolder();
 
 		modules.forEach(module -> {
 
-			var filename = options.getTargetFileName(module.getName());
-			var file = recreateFile(filename);
+			var filename = canvasOptions.getTargetFileName(module.getName());
 
-			try (FileWriter writer = new FileWriter(file.toFile())) {
-
-				writer.write(toModuleCanvas(module, options));
-
-			} catch (IOException o_O) {
-				throw new RuntimeException(o_O);
-			}
+			options.outputFolder.writeToFile(filename, toModuleCanvas(module, canvasOptions));
 		});
 
 		return this;
@@ -552,19 +555,11 @@ public class Documenter {
 				.findFirst().ifPresent(view::remove);
 	}
 
-	private Documenter writeViewAsPlantUml(ComponentView view, String filename, DiagramOptions options) {
+	private Documenter writeViewAsPlantUml(ComponentView view, String filename, DiagramOptions diagramOptions) {
 
-		Path file = recreateFile(filename);
+		options.outputFolder.writeToFile(filename, render(view, diagramOptions));
 
-		try (Writer writer = new FileWriter(file.toFile())) {
-
-			writer.write(render(view, options));
-
-			return this;
-
-		} catch (IOException o_O) {
-			throw new RuntimeException(o_O);
-		}
+		return this;
 	}
 
 	private String render(ComponentView view, DiagramOptions options) {
@@ -610,34 +605,13 @@ public class Documenter {
 				.createComponentView(container, prefix + options.toString(), "");
 	}
 
-	private void clearOutputFolder() {
+	private void potentiallyWipeOutputFolder() {
 
-		Path outputPath = Paths.get(options.outputFolder);
-		if (!outputPath.toFile().exists()) {
-			return;
-		}
+		if (options.clean && !cleared) {
 
-		try (Stream<Path> paths = Files.walk(outputPath)) {
-			paths.sorted(Comparator.reverseOrder()).map(Path::toFile).forEach(File::delete);
-		} catch (IOException o_O) {
-			throw new RuntimeException(o_O);
-		}
-	}
+			options.outputFolder.deleteIfExists();
 
-	private Path recreateFile(String name) {
-
-		try {
-
-			var outputFolder = options.outputFolder;
-
-			Files.createDirectories(Paths.get(outputFolder));
-			Path filePath = Paths.get(outputFolder, name);
-			Files.deleteIfExists(filePath);
-
-			return Files.createFile(filePath);
-
-		} catch (IOException o_O) {
-			throw new RuntimeException(o_O);
+			this.cleared = true;
 		}
 	}
 
@@ -676,15 +650,6 @@ public class Documenter {
 	private static <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper,
 			CanvasOptions options) {
 		return options.hideEmptyLines && types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
-	}
-
-	/**
-	 * Returns the default output directory based on the detected build system.
-	 *
-	 * @return will never be {@literal null}.
-	 */
-	private static String getDefaultOutputDirectory() {
-		return (new File("pom.xml").exists() ? "target" : "build").concat("/").concat(DEFAULT_LOCATION);
 	}
 
 	private String getDefaultedSystemName() {
@@ -1277,39 +1242,35 @@ public class Documenter {
 
 	public static class Options {
 
-		private static final String DEFAULT_LOCATION = (new File("pom.xml").exists() ? "target" : "build")
-				.concat("/spring-modulith-docs");
-
-		private final String outputFolder;
-
+		private final OutputFolder outputFolder;
 		private final boolean clean;
 
 		/**
 		 * @param outputFolder the folder to write the files to, can be {@literal null}.
 		 * @param clean whether to clean the target directory on rendering.
 		 */
-		private Options(@Nullable String outputFolder, boolean clean) {
+		private Options(OutputFolder outputFolder, boolean clean) {
 
-			this.outputFolder = outputFolder == null ? DEFAULT_LOCATION : outputFolder;
+			this.outputFolder = outputFolder;
 			this.clean = clean;
 		}
 
 		/**
-		 * Creates a default {@link Options} instance configuring a default output folder based on the detected build tool (see {@link Options#DEFAULT_LOCATION}).
-		 * Use {@link #withOutputFolder(String)} if you want to customize the output folder.
-		 * Per default the output folder is wiped before any files are written to it.
-		 * Use {@link #withoutClean()} to disable cleaning of the output folder.
+		 * Creates a default {@link Options} instance configuring a default output folder based on the detected build tool
+		 * (see {@link OutputFolder#DEFAULT_LOCATION}). Use {@link #withOutputFolder(String)} if you want to customize the
+		 * output folder. By default, the output folder is wiped before any files are written to it. Use
+		 * {@link #withoutClean()} to disable cleaning of the output folder.
 		 *
 		 * @return will never be {@literal null}.
 		 * @see #withoutClean()
 		 * @see #withOutputFolder(String)
 		 */
 		public static Options defaults() {
-			return new Options(DEFAULT_LOCATION, true);
+			return new Options(OutputFolder.forDefaultLocation(), true);
 		}
 
 		/**
-		 * Disables the cleaning of the output folder before any file is written.
+		 * Disables the cleaning of the output folder before any files are written.
 		 *
 		 * @return will never be {@literal null}.
 		 */
@@ -1318,15 +1279,111 @@ public class Documenter {
 		}
 
 		/**
-		 * Configures the output folder for the created files.
-		 * The given directory is wiped before any files are written to it.
+		 * Configures the output folder for the created files. The given directory is wiped before any files are written to
+		 * it.
 		 *
-		 * @param folder if null the default location based on the detected build tool will be used (see {@link Options#DEFAULT_LOCATION}).
-		 * The given folder will be created if it does not exist already. Existing folders are supported as well.
+		 * @param folder if null the default location based on the detected build tool will be used (see
+		 *          {@link OutputFolder#DEFAULT_LOCATION}). The given folder will be created if it does not exist already.
+		 *          Existing folders are supported as well.
 		 * @return will never be {@literal null}.
 		 */
-		public Options withOutputFolder(String folder) {
-			return new Options(folder, clean);
+		public Options withOutputFolder(@Nullable String folder) {
+			return new Options(OutputFolder.forLocation(folder), clean);
+		}
+
+		OutputFolder getOutputFolder() {
+			return outputFolder;
+		}
+	}
+
+	static class OutputFolder {
+
+		private static final String DEFAULT_LOCATION = (new File("pom.xml").exists() ? "target" : "build")
+				.concat("/spring-modulith-docs");
+
+		private final String path;
+
+		private OutputFolder(String path) {
+
+			this.path = path;
+
+			try {
+				Files.createDirectories(Path.of(path));
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
+		}
+
+		static OutputFolder forLocation(@Nullable String location) {
+			return new OutputFolder(location == null ? DEFAULT_LOCATION : location);
+		}
+
+		static OutputFolder forDefaultLocation() {
+			return new OutputFolder(DEFAULT_LOCATION);
+		}
+
+		boolean contains(String filename) {
+			return Files.exists(Paths.get(path, filename));
+		}
+
+		OutputFolder deleteIfExists() {
+
+			var path = Path.of(this.path);
+
+			if (!Files.exists(path)) {
+				return this;
+			}
+
+			try {
+
+				Files.walk(path)
+						.sorted(Comparator.reverseOrder())
+						.map(Path::toFile)
+						.forEach(File::delete);
+
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
+
+			return this;
+		}
+
+		void writeToFile(String name, String content) {
+
+			var path = deleteIfExists(name).createFile(name);
+
+			try (FileWriter writer = new FileWriter(path.toFile())) {
+
+				writer.write(content);
+
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
+		}
+
+		private OutputFolder deleteIfExists(String name) {
+
+			try {
+				Files.deleteIfExists(Path.of(path, name));
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
+
+			return this;
+		}
+
+		private Path createFile(String name) {
+
+			var path = Path.of(this.path);
+
+			try {
+
+				Files.createDirectories(path);
+				return Files.createFile(path.resolve(name));
+
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
 		}
 	}
 
@@ -1343,17 +1400,4 @@ public class Documenter {
 		@Override
 		protected void endContainerBoundary(ModelView view, IndentingWriter writer) {};
 	};
-
-	private static class OutputFolder {
-
-		private final String path;
-
-		OutputFolder(String path) {
-			this.path = path;
-		}
-
-		boolean contains(String filename) {
-			return Files.exists(Paths.get(path, filename));
-		}
-	}
 }
