@@ -15,23 +15,29 @@
  */
 package otherpackage.integration;
 
-import example.order.Order;
-import example.order.OrderManagement;
-import lombok.RequiredArgsConstructor;
+import static org.assertj.core.api.Assertions.*;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.modulith.test.ApplicationModuleTest;
+
+import com.acme.myproject.moduleA.ServiceComponentA;
 
 /**
  * Test to showcase {@link ApplicationModuleTest} outside of a module package
+ *
+ * @author Lukas Dohmen
  */
-@ApplicationModuleTest(module = "order", classes = {example.Application.class})
-@RequiredArgsConstructor
-class OrderIntegrationTests {
+@ApplicationModuleTest(
+		module = "moduleA",
+		classes = { com.acme.myproject.Application.class },
+		verifyAutomatically = false)
+class TestOutsideModulePackageIntegrationTests {
 
-	private final OrderManagement orders;
+	@Autowired ServiceComponentA componentA;
 
 	@Test
-	void completesOrder() {
-		orders.complete(new Order());
+	void injectsModuleComponent() {
+		assertThat(componentA).isNotNull();
 	}
 }

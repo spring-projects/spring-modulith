@@ -77,10 +77,22 @@ public @interface ApplicationModuleTest {
 	String[] extraIncludes() default {};
 
 	/**
-	 * Logical name of the module in case {@link ApplicationModuleTest} will be used outside a module package
+	 * Logical name of the module to be bootstrapped in case {@link ApplicationModuleTest} will be used outside a module
+	 * package
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.3
 	 */
 	String module() default "";
 
+	/**
+	 * Alias for {@link SpringBootTest#classes()}. Useful to define the main application class in case the test is located
+	 * outside a module package and that class doesn't reside in any of the parent packages.
+	 *
+	 * @return will never be {@literal null}.
+	 * @see #module()
+	 * @since 1.3
+	 */
 	@AliasFor(annotation = SpringBootTest.class)
 	Class<?>[] classes() default {};
 
