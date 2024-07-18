@@ -28,6 +28,7 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
@@ -56,7 +57,7 @@ class SnsEventPublicationIntegrationTests {
 	static class TestConfiguration {
 
 		@Bean
-		LocalStackContainer localStackContainer(DynamicPropertyRegistry registry) {
+		LocalStackContainer localStackContainer(@Qualifier("dynamicPropertyRegistry") DynamicPropertyRegistry registry) {
 
 			var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"));
 
