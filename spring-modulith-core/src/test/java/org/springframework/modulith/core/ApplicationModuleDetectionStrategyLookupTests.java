@@ -34,7 +34,7 @@ class ApplicationModuleDetectionStrategyLookupTests {
 		System.setProperty("spring.config.additional-location", "classpath:detection/explicitly-annotated.properties");
 
 		assertThat(ApplicationModuleDetectionStrategyLookup.getStrategy())
-				.isEqualTo(ApplicationModuleDetectionStrategy.explictlyAnnotated());
+				.isEqualTo(ApplicationModuleDetectionStrategy.explicitlyAnnotated());
 	}
 
 	@Test // GH-652
