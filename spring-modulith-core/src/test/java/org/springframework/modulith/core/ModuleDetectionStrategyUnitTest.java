@@ -38,7 +38,7 @@ class ModuleDetectionStrategyUnitTest {
 
 		var javaPackage = JavaPackage.of(Classes.of(classes), "jmolecules");
 
-		assertThat(ApplicationModuleDetectionStrategy.explictlyAnnotated().getModuleBasePackages(javaPackage))
+		assertThat(ApplicationModuleDetectionStrategy.explicitlyAnnotated().getModuleBasePackages(javaPackage))
 				.containsExactly(javaPackage);
 	}
 }

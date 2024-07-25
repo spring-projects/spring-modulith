@@ -97,7 +97,7 @@ class ApplicationModuleDetectionStrategyLookup {
 			case "direct-sub-packages":
 				return ApplicationModuleDetectionStrategy.directSubPackage();
 			case "explicitly-annotated":
-				return ApplicationModuleDetectionStrategy.explictlyAnnotated();
+				return ApplicationModuleDetectionStrategy.explicitlyAnnotated();
 		}
 
 		try {

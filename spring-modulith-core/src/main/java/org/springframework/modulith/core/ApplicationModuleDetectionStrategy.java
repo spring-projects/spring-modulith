@@ -53,7 +53,7 @@ public interface ApplicationModuleDetectionStrategy {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static ApplicationModuleDetectionStrategy explictlyAnnotated() {
+	static ApplicationModuleDetectionStrategy explicitlyAnnotated() {
 		return pkg -> Stream.of(ApplicationModule.class, JMoleculesTypes.getModuleAnnotationTypeIfPresent())
 				.filter(Objects::nonNull)
 				.flatMap(pkg::getSubPackagesAnnotatedWith);
