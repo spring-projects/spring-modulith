@@ -10,14 +10,14 @@ labels=$(echo $json | jq -r '.labels[].name' | paste -sd ',' -)
 
 number=$1
 
+# The SHAs of all commits associated with the source ticket
+shas=$(git log --grep="$sourceGh" --reverse --format="%H")
+
 # For each of the target versions
 for version in ${@:2}
 do
 	# Turn 1.5.6 into 1.5.x
 	targetBranch="$(echo "$version" | grep -oE '^[0-9]+\.[0-9]+').x"
-
-	# The SHAs of all commits associated with the source ticket
-	shas=$(git log --grep="$sourceGh" --reverse --format="%H")
 
 	# Checkout target branch and cherry-pick commit
 	echo "Checking out branch $targetBranch"
