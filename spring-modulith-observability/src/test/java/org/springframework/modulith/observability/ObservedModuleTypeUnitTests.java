@@ -17,7 +17,7 @@ package org.springframework.modulith.observability;
 
 import static org.assertj.core.api.Assertions.*;
 
-import example.sample.SampleComponent;
+import example.sample.ObservedComponent;
 import example.sample.SampleConfiguration;
 
 import org.junit.jupiter.api.Test;
@@ -38,17 +38,19 @@ class ObservedModuleTypeUnitTests {
 	static final ApplicationModules modules = TestApplicationModules.of("example");
 
 	ApplicationModule module = modules.getModuleByName("sample").orElseThrow();
-	ArchitecturallyEvidentType type = module.getArchitecturallyEvidentType(SampleComponent.class);
+	ArchitecturallyEvidentType type = module.getArchitecturallyEvidentType(ObservedComponent.class);
 
 	ObservedModuleType observedType = new ObservedModuleType(modules, new DefaultObservedModule(module), type);
 
-	@Test // GH-106
+	@Test // GH-106, GH-744
 	void onlyExposesUserMethodsAsToBeIntercepted() {
 
 		assertThat(observedType.getMethodsToIntercept()).satisfies(it -> {
 
-			assertThat(it.test(ReflectionUtils.findMethod(SampleComponent.class, "someMethod"))).isTrue();
+			assertThat(it.test(ReflectionUtils.findMethod(ObservedComponent.class, "someMethod"))).isTrue();
+			assertThat(it.test(ReflectionUtils.findMethod(ObservedComponent.class, "on", Object.class))).isTrue();
 
+			assertThat(it.test(ReflectionUtils.findMethod(ObservedComponent.class, "someInternalMethod"))).isFalse();
 			assertThat(it.test(ReflectionUtils.findMethod(Object.class, "toString"))).isFalse();
 			assertThat(it.test(ReflectionUtils.findMethod(Advised.class, "getTargetClass"))).isFalse();
 		});
