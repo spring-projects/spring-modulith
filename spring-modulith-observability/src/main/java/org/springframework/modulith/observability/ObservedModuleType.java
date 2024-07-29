@@ -16,6 +16,7 @@
 package org.springframework.modulith.observability;
 
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
@@ -38,10 +39,13 @@ import org.springframework.util.ReflectionUtils;
 class ObservedModuleType {
 
 	private static Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
+	private static Predicate<Method> IS_USER_METHOD = it -> !Modifier.isPrivate(it.getModifiers())
+			&& !(ReflectionUtils.isObjectMethod(it) || IGNORED_TYPES.contains(it.getDeclaringClass()));
 
 	private final ApplicationModules modules;
 	private final ObservedModule module;
 	private final ArchitecturallyEvidentType type;
+	private final Predicate<Method> methodsToInterceptFilter;
 
 	/**
 	 * Creates a new {@link ObservedModuleType} for the given {@link ApplicationModules}, {@link ObservedModule} and
@@ -60,6 +64,12 @@ class ObservedModuleType {
 		this.modules = modules;
 		this.module = module;
 		this.type = type;
+
+		Predicate<Method> isReferenceMethod = candidate -> type.isEventListener() && type.getReferenceMethods() //
+				.map(ReferenceMethod::getMethod) //
+				.anyMatch(it -> it.reflect().equals(candidate));
+
+		this.methodsToInterceptFilter = IS_USER_METHOD.or(isReferenceMethod);
 	}
 
 	/**
@@ -80,20 +90,14 @@ class ObservedModuleType {
 	}
 
 	/**
-	 * Returns a predicate to filter the methods to intercept. For event listeners it's the listener methods only. For
-	 * everything else, all (public) methods will be intercepted.
+	 * Returns a predicate to filter the methods to intercept. All user declared methods are intercepted, except from
+	 * well-known interfaces ({@code Advised}, {@code TargetClassAware}). For event listeners, package-protected methods
+	 * are supported as well.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
 	 */
 	public Predicate<Method> getMethodsToIntercept() {
-
-		if (!type.isEventListener()) {
-			return it -> !(ReflectionUtils.isObjectMethod(it) || IGNORED_TYPES.contains(it.getDeclaringClass()));
-		}
-
-		return candidate -> type.getReferenceMethods() //
-				.map(ReferenceMethod::getMethod) //
-				.anyMatch(it -> it.reflect().equals(candidate));
+		return methodsToInterceptFilter;
 	}
 
 	private boolean listensToOtherModulesEvents() {
