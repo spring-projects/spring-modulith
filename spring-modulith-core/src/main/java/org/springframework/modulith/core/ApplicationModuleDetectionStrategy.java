@@ -52,6 +52,18 @@ public interface ApplicationModuleDetectionStrategy {
 	 * {@link ApplicationModule} module base packages.
 	 *
 	 * @return will never be {@literal null}.
+	 * @deprecated since 1.3. Use {@link #explicitlyAnnotated()} instead.
+	 */
+	@Deprecated(forRemoval = true)
+	static ApplicationModuleDetectionStrategy explictlyAnnotated() {
+		return explicitlyAnnotated();
+	}
+
+	/**
+	 * A {@link ApplicationModuleDetectionStrategy} that considers packages explicitly annotated with
+	 * {@link ApplicationModule} module base packages.
+	 *
+	 * @return will never be {@literal null}.
 	 */
 	static ApplicationModuleDetectionStrategy explicitlyAnnotated() {
 		return pkg -> Stream.of(ApplicationModule.class, JMoleculesTypes.getModuleAnnotationTypeIfPresent())
