@@ -87,6 +87,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			SET COMPLETION_DATE = ?
 			WHERE
 					LISTENER_ID = ?
+					AND COMPLETION_DATE IS NULL
 					AND SERIALIZED_EVENT = ?
 			""";
 

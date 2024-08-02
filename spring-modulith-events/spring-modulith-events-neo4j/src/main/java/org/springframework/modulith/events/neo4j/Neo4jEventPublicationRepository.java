@@ -107,6 +107,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	private static final Statement COMPLETE_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
 			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(Cypher.parameter(EVENT_HASH)))
 			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(Cypher.parameter(LISTENER_ID)))
+			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(Cypher.parameter(COMPLETION_DATE)))
 			.build();
 
