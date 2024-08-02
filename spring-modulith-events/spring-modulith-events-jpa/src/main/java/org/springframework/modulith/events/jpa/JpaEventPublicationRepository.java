@@ -83,6 +83,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			   set p.completionDate = ?3
 			 where p.serializedEvent = ?1
 			   and p.listenerId = ?2
+			   and p.completionDate is null
 			""";
 
 	private static final String DELETE = """
