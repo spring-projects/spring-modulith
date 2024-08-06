@@ -17,9 +17,13 @@ package org.springframework.modulith.events.core;
 
 import java.time.Duration;
 import java.util.Collection;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationListener;
+import org.springframework.lang.Nullable;
+import org.springframework.modulith.events.EventPublication;
 
 /**
  * A registry to capture event publications to {@link ApplicationListener}s. Allows to register those publications, mark
@@ -65,9 +69,30 @@ public interface EventPublicationRegistry {
 	void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier);
 
 	/**
+	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as failed.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param targetIdentifier must not be {@literal null}.
+	 * @since 1.3
+	 */
+	void markFailed(Object event, PublicationTargetIdentifier targetIdentifier);
+
+	/**
 	 * Deletes all completed {@link TargetEventPublication}s that have been completed before the given {@link Duration}.
 	 *
 	 * @param duration must not be {@literal null}.
 	 */
 	void deleteCompletedPublicationsOlderThan(Duration duration);
+
+	/**
+	 * Processes all incomplete event publications that have been published before the given duration in relation to "now"
+	 * by applying the given filter passing all remaining instances to the given {@link Consumer}.
+	 *
+	 * @param filter must not be {@literal null}.
+	 * @param consumer must not be {@literal null}.
+	 * @param duration can be {@literal null}.
+	 * @since 1.3
+	 */
+	void processIncompletePublications(Predicate<EventPublication> filter,
+			Consumer<TargetEventPublication> consumer, @Nullable Duration duration);
 }

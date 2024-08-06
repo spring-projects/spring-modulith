@@ -52,7 +52,7 @@ public interface EventPublicationRepository {
 
 		publication.markCompleted(completionDate);
 
-		markCompleted(publication.getEvent(), publication.getTargetIdentifier(), completionDate);
+		markCompleted(publication.getIdentifier(), completionDate);
 	}
 
 	/**
@@ -64,6 +64,15 @@ public interface EventPublicationRepository {
 	 * @param completionDate must not be {@literal null}.
 	 */
 	void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate);
+
+	/**
+	 * Marks the publication with the given identifier completed at the given {@link Instant}.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @param completionDate must not be {@literal null}.
+	 * @since 1.3
+	 */
+	void markCompleted(UUID identifier, Instant completionDate);
 
 	/**
 	 * Returns all {@link TargetEventPublication}s that have not been completed yet.

@@ -15,8 +15,7 @@
  */
 package org.springframework.modulith.events.support;
 
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,8 +25,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
+import org.springframework.modulith.events.core.InMemoryEventPublicationRepository;
 import org.springframework.modulith.events.core.TargetEventPublication;
-import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.stereotype.Component;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
@@ -47,8 +46,8 @@ class PersistentApplicationEventMulticasterIntegrationTests {
 	static class TestConfiguration {
 
 		@Bean
-		EventPublicationRepository repository() {
-			return mock(EventPublicationRepository.class);
+		InMemoryEventPublicationRepository repository() {
+			return new InMemoryEventPublicationRepository();
 		}
 
 		@Bean
@@ -58,16 +57,21 @@ class PersistentApplicationEventMulticasterIntegrationTests {
 	}
 
 	@Autowired ApplicationEventPublisher publisher;
-	@Autowired EventPublicationRepository repository;
+	@Autowired InMemoryEventPublicationRepository repository;
 
 	@Test // GH-186, GH-239
 	void doesNotPublishGenericEventsToListeners() throws Exception {
 
 		publisher.publishEvent(new SomeGenericEvent<>());
-		verify(repository, never()).create(any(TargetEventPublication.class));
 
-		publisher.publishEvent(new SomeOtherEvent());
-		verify(repository).create(any(TargetEventPublication.class));
+		assertThat(repository).isEmpty();
+
+		var event = new SomeOtherEvent();
+		publisher.publishEvent(event);
+
+		assertThat(repository)
+				.extracting(TargetEventPublication::getEvent)
+				.containsExactly(event);
 	}
 
 	@Component

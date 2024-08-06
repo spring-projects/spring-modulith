@@ -94,6 +94,18 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markCompleted(java.util.UUID, java.time.Instant)
+	 */
+	@Override
+	public void markCompleted(UUID identifier, Instant completionDate) {
+
+		var update = Update.update(COMPLETION_DATE, completionDate);
+
+		mongoTemplate.findAndModify(query(where(ID).is(identifier)), update, MongoDbEventPublication.class);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublications()
 	 */
 	@Override

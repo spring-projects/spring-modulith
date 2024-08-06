@@ -235,6 +235,19 @@ class Neo4jEventPublicationRepositoryTest {
 				.isEqualTo(event);
 	}
 
+	@Test // GH-258
+	void marksPublicationAsCompletedById() {
+
+		var event = new TestEvent("first");
+		var publication = createPublication(event);
+
+		repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+		assertThat(repository.findCompletedPublications())
+				.extracting(TargetEventPublication::getIdentifier)
+				.containsExactly(publication.getIdentifier());
+	}
+
 	private TargetEventPublication createPublication(Object event) {
 
 		var token = event.toString();

@@ -32,7 +32,6 @@ import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.transaction.event.TransactionPhase;
@@ -139,9 +138,8 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 	static class CompletionRegisteringMethodInterceptor implements MethodInterceptor, Ordered {
 
 		private static final Logger LOG = LoggerFactory.getLogger(CompletionRegisteringMethodInterceptor.class);
-
-		private static final ConcurrentLruCache<Method, TransactionalApplicationListenerMethodAdapter> ADAPTERS = new ConcurrentLruCache<>(
-				100, CompletionRegisteringMethodInterceptor::createAdapter);
+		private static final ConcurrentLruCache<Method, String> LISTENER_IDS = new ConcurrentLruCache<>(
+				100, CompletionRegisteringMethodInterceptor::lookupListenerId);
 
 		private final @NonNull Supplier<EventPublicationRegistry> registry;
 
@@ -180,14 +178,14 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 								return it;
 							})
 							.exceptionallyCompose(it -> {
-								handleFailure(method, it);
+								handleFailure(method, argument, it);
 								return CompletableFuture.failedFuture(it);
 							});
 				}
 
 			} catch (Throwable o_O) {
 
-				handleFailure(method, o_O);
+				handleFailure(method, argument, o_O);
 
 				throw o_O;
 			}
@@ -206,8 +204,9 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			return Ordered.HIGHEST_PRECEDENCE + 10;
 		}
 
-		@Nullable
-		private static Void handleFailure(Method method, Throwable o_O) {
+		private void handleFailure(Method method, Object event, Throwable o_O) {
+
+			markFailed(method, event);
 
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Invocation of listener {} failed. Leaving event publication uncompleted.", method, o_O);
@@ -215,20 +214,28 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 				LOG.info("Invocation of listener {} failed with message {}. Leaving event publication uncompleted.",
 						method, o_O.getMessage());
 			}
-
-			return null;
 		}
 
 		private void markCompleted(Method method, Object event) {
 
 			// Mark publication complete if the method is a transactional event listener.
-			String adapterId = ADAPTERS.get(method).getListenerId();
+			String adapterId = LISTENER_IDS.get(method);
 			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
 			registry.get().markCompleted(event, identifier);
 		}
 
-		private static TransactionalApplicationListenerMethodAdapter createAdapter(Method method) {
-			return new TransactionalApplicationListenerMethodAdapter(null, method.getDeclaringClass(), method);
+		private void markFailed(Method method, Object event) {
+
+			// Mark publication complete if the method is a transactional event listener.
+			String adapterId = LISTENER_IDS.get(method);
+			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
+			registry.get().markFailed(event, identifier);
+		}
+
+		@SuppressWarnings("null")
+		private static String lookupListenerId(Method method) {
+			return new TransactionalApplicationListenerMethodAdapter(null, method.getDeclaringClass(), method)
+					.getListenerId();
 		}
 	}
 }

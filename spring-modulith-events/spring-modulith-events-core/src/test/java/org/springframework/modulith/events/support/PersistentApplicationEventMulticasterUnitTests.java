@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.support;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import lombok.AllArgsConstructor;
@@ -72,7 +73,7 @@ class PersistentApplicationEventMulticasterUnitTests {
 
 		multicaster.afterSingletonsInstantiated();
 
-		verify(registry).findIncompletePublications();
+		verify(registry).processIncompletePublications(any(), any(), any());
 	}
 
 	@Test // GH-277

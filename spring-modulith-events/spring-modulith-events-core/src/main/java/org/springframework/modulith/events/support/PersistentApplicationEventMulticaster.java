@@ -196,32 +196,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration,
 			Predicate<EventPublication> filter) {
 
-		var message = duration != null ? " older than %s".formatted(duration) : "";
-		var registry = this.registry.get();
-
-		LOGGER.debug("Looking up incomplete event publications {}… ", message);
-
-		var publications = duration == null //
-				? registry.findIncompletePublications() //
-				: registry.findIncompletePublicationsOlderThan(duration);
-
-		LOGGER.debug(getConfirmationMessage(publications) + " found.");
-
-		publications.stream() //
-				.filter(filter) //
-				.forEach(it -> {
-
-					try {
-
-						invokeTargetListener(it);
-
-					} catch (Exception o_O) {
-
-						if (LOGGER.isErrorEnabled()) {
-							LOGGER.error("Error republishing event publication " + it, o_O);
-						}
-					}
-				});
+		registry.get().processIncompletePublications(filter, this::invokeTargetListener, duration);
 	}
 
 	private static ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
@@ -279,17 +254,6 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		return SHOULD_HANDLE != null
 				? listener.shouldHandle(event)
 				: (boolean) ReflectionUtils.invokeMethod(LEGACY_SHOULD_HANDLE, candidate, event, new Object[] { payload });
-	}
-
-	private static String getConfirmationMessage(Collection<?> publications) {
-
-		var size = publications.size();
-
-		return switch (publications.size()) {
-			case 0 -> "No publication";
-			case 1 -> "1 publication";
-			default -> size + " publications";
-		};
 	}
 
 	/**

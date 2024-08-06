@@ -17,13 +17,19 @@ package org.springframework.modulith.events.core;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.transaction.annotation.Propagation;
@@ -46,6 +52,7 @@ public class DefaultEventPublicationRegistry
 
 	private final EventPublicationRepository events;
 	private final Clock clock;
+	private final PublicationsInProgress inProgress;
 
 	/**
 	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository}.
@@ -60,6 +67,7 @@ public class DefaultEventPublicationRegistry
 
 		this.events = events;
 		this.clock = clock;
+		this.inProgress = new PublicationsInProgress();
 	}
 
 	/*
@@ -72,6 +80,7 @@ public class DefaultEventPublicationRegistry
 		return listeners.map(it -> TargetEventPublication.of(event, it, clock.instant()))
 				.peek(it -> LOGGER.debug(REGISTER, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue()))
 				.map(events::create)
+				.map(inProgress::register)
 				.toList();
 	}
 
@@ -110,7 +119,24 @@ public class DefaultEventPublicationRegistry
 		LOGGER.debug("Marking publication of event {} to listener {} completed.", //
 				event.getClass().getName(), targetIdentifier.getValue());
 
-		events.markCompleted(event, targetIdentifier, clock.instant());
+		Instant now = clock.instant();
+		Runnable fallback = () -> events.markCompleted(event, targetIdentifier, now);
+		Consumer<TargetEventPublication> optimized = it -> {
+			events.markCompleted(it.getIdentifier(), now);
+			inProgress.unregister(event, targetIdentifier);
+		};
+
+		inProgress.getPublication(event, targetIdentifier)
+				.ifPresentOrElse(optimized, fallback);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#markFailed(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
+	 */
+	@Override
+	public void markFailed(Object event, PublicationTargetIdentifier targetIdentifier) {
+		inProgress.unregister(event, targetIdentifier);
 	}
 
 	/*
@@ -163,6 +189,42 @@ public class DefaultEventPublicationRegistry
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#processIncompletePublications(java.util.function.Predicate, java.util.function.Consumer, java.time.Duration)
+	 */
+	@Override
+	public void processIncompletePublications(Predicate<EventPublication> filter,
+			Consumer<TargetEventPublication> consumer, @Nullable Duration duration) {
+
+		var message = duration != null ? " older than %s".formatted(duration) : "";
+
+		LOGGER.debug("Looking up incomplete event publications {}… ", message);
+
+		var publications = duration == null //
+				? findIncompletePublications() //
+				: findIncompletePublicationsOlderThan(duration);
+
+		LOGGER.debug(getConfirmationMessage(publications) + " found.");
+
+		publications.stream() //
+				.filter(filter) //
+				.forEach(it -> {
+
+					try {
+
+						inProgress.register(it);
+						consumer.accept(it);
+
+					} catch (Exception o_O) {
+
+						if (LOGGER.isErrorEnabled()) {
+							LOGGER.error("Error republishing event publication " + it, o_O);
+						}
+					}
+				});
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.beans.factory.DisposableBean#destroy()
 	 */
 	@Override
@@ -184,6 +246,77 @@ public class DefaultEventPublicationRegistry
 			var it = publications.get(i);
 
 			LOGGER.info("{} {} - {}", prefix, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue());
+		}
+	}
+
+	private static String getConfirmationMessage(Collection<?> publications) {
+
+		var size = publications.size();
+
+		return switch (publications.size()) {
+			case 0 -> "No publication";
+			case 1 -> "1 publication";
+			default -> size + " publications";
+		};
+	}
+
+	/**
+	 * All {@link TargetEventPublication}s currently processed.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 1.3
+	 */
+	static class PublicationsInProgress {
+
+		private final Set<TargetEventPublication> publications = new HashSet<>();
+
+		/**
+		 * Registers the given {@link TargetEventPublication} as currently processed.
+		 *
+		 * @param publication must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		TargetEventPublication register(TargetEventPublication publication) {
+
+			Assert.notNull(publication, "TargetEventPublication must not be null!");
+
+			publications.add(publication);
+
+			return publication;
+		}
+
+		/**
+		 * Unregisters the {@link TargetEventPublication} associated with the given event and
+		 * {@link PublicationTargetIdentifier}.
+		 *
+		 * @param event must not be {@literal null}.
+		 * @param identifier must not be {@literal null}.
+		 */
+		void unregister(Object event, PublicationTargetIdentifier identifier) {
+
+			Assert.notNull(event, "Event must not be null!");
+			Assert.notNull(identifier, "PublicationTargetIdentifier must not be null!");
+
+			getPublication(event, identifier)
+					.ifPresent(publications::remove);
+		}
+
+		/**
+		 * Returns the {@link TargetEventPublication} associated with the given event and
+		 * {@link PublicationTargetIdentifier}.
+		 *
+		 * @param event must not be {@literal null}.
+		 * @param identifier must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		Optional<TargetEventPublication> getPublication(Object event, PublicationTargetIdentifier identifier) {
+
+			Assert.notNull(event, "Event must not be null!");
+			Assert.notNull(identifier, "PublicationTargetIdentifier must not be null!");
+
+			return publications.stream()
+					.filter(it -> it.isAssociatedWith(event, identifier))
+					.findFirst();
 		}
 	}
 }

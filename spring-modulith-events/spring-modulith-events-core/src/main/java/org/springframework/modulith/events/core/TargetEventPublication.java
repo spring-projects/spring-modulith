@@ -30,9 +30,9 @@ import org.springframework.util.Assert;
 public interface TargetEventPublication extends Completable, org.springframework.modulith.events.EventPublication {
 
 	/**
-	 * Creates a {@link TargetEventPublication} for the given event an listener identifier using a default {@link Instant}.
-	 * Prefer using {@link #of(Object, PublicationTargetIdentifier, Instant)} with a dedicated {@link Instant} obtained
-	 * from a {@link Clock}.
+	 * Creates a {@link TargetEventPublication} for the given event an listener identifier using a default
+	 * {@link Instant}. Prefer using {@link #of(Object, PublicationTargetIdentifier, Instant)} with a dedicated
+	 * {@link Instant} obtained from a {@link Clock}.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param id must not be {@literal null}.
@@ -66,12 +66,27 @@ public interface TargetEventPublication extends Completable, org.springframework
 	 * Returns whether the publication is identified by the given {@link PublicationTargetIdentifier}.
 	 *
 	 * @param identifier must not be {@literal null}.
-	 * @return
 	 */
 	default boolean isIdentifiedBy(PublicationTargetIdentifier identifier) {
 
 		Assert.notNull(identifier, "Identifier must not be null!");
 
 		return this.getTargetIdentifier().equals(identifier);
+	}
+
+	/**
+	 * Returns whether the {@link TargetEventPublication} is associated with the given event and
+	 * {@link PublicationTargetIdentifier}.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @param identifier must not be {@literal null}.
+	 * @since 1.3
+	 */
+	default boolean isAssociatedWith(Object event, PublicationTargetIdentifier identifier) {
+
+		Assert.notNull(event, "Event must not be null!");
+		Assert.notNull(identifier, "PublicationTargetIdentifier must not be null!");
+
+		return isIdentifiedBy(identifier) && getEvent().equals(event);
 	}
 }
