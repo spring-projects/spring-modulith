@@ -48,7 +48,7 @@ class TargetEventPublicationUnitTests {
 		var publication = TargetEventPublication.of(new Object(),
 				PublicationTargetIdentifier.of("foo"));
 
-		assertThat(publication.isPublicationCompleted()).isFalse();
+		assertThat(publication.isCompleted()).isFalse();
 		assertThat(publication.getCompletionDate()).isNotPresent();
 	}
 }

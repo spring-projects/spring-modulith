@@ -86,7 +86,7 @@ class JdbcEventPublicationRepositoryPerformance {
 
 			var candidate = publications.get(new Random().nextInt(number));
 
-			if (!candidate.isPublicationCompleted()) {
+			if (!candidate.isCompleted()) {
 				toComplete = candidate;
 			}
 
