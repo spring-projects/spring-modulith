@@ -323,6 +323,25 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-753
+		void returnsSameEventInstanceFromPublication() {
+
+			// An event not implementing equals(…) / hashCode()
+			var event = new Sample();
+
+			// Serialize to whatever
+			doReturn("").when(serializer).serialize(event);
+
+			// Return fresh instances for every deserialization attempt
+			doAnswer(__ -> new Sample()).when(serializer).deserialize("", Sample.class);
+
+			repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+
+			var publication = repository.findIncompletePublications().get(0);
+
+			assertThat(publication.getEvent()).isSameAs(publication.getEvent());
+		}
+
 		abstract String table();
 
 		private TargetEventPublication createPublication(Object event) {
@@ -422,4 +441,6 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	private static final class TestEvent {
 		String eventId;
 	}
+
+	private static final class Sample {}
 }

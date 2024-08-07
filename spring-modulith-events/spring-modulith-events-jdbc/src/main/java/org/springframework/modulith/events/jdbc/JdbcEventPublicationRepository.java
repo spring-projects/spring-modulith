@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -369,7 +370,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		var listenerId = rs.getString("LISTENER_ID");
 		var serializedEvent = rs.getString("SERIALIZED_EVENT");
 
-		return new JdbcEventPublication(id, publicationDate, listenerId, serializedEvent, eventClass, serializer,
+		return new JdbcEventPublication(id, publicationDate, listenerId,
+				() -> serializer.deserialize(serializedEvent, eventClass),
 				completionDate == null ? null : completionDate.toInstant());
 	}
 
@@ -414,11 +416,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		private final UUID id;
 		private final Instant publicationDate;
 		private final String listenerId;
-		private final String serializedEvent;
-		private final Class<?> eventType;
+		private final Supplier<Object> eventSupplier;
 
-		private final EventSerializer serializer;
 		private @Nullable Instant completionDate;
+		private @Nullable Object event;
 
 		/**
 		 * @param id must not be {@literal null}.
@@ -429,22 +430,17 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 * @param serializer must not be {@literal null}.
 		 * @param completionDate can be {@literal null}.
 		 */
-		public JdbcEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
-				Class<?> eventType, EventSerializer serializer, @Nullable Instant completionDate) {
+		public JdbcEventPublication(UUID id, Instant publicationDate, String listenerId, Supplier<Object> event,
+				@Nullable Instant completionDate) {
 
 			Assert.notNull(id, "Id must not be null!");
 			Assert.notNull(publicationDate, "Publication date must not be null!");
 			Assert.hasText(listenerId, "Listener id must not be null or empty!");
-			Assert.hasText(serializedEvent, "Serialized event must not be null or empty!");
-			Assert.notNull(eventType, "Event type must not be null!");
-			Assert.notNull(serializer, "EventSerializer must not be null!");
 
 			this.id = id;
 			this.publicationDate = publicationDate;
 			this.listenerId = listenerId;
-			this.serializedEvent = serializedEvent;
-			this.eventType = eventType;
-			this.serializer = serializer;
+			this.eventSupplier = event;
 			this.completionDate = completionDate;
 		}
 
@@ -462,8 +458,14 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 * @see org.springframework.modulith.events.EventPublication#getEvent()
 		 */
 		@Override
+		@SuppressWarnings("null")
 		public Object getEvent() {
-			return serializer.deserialize(serializedEvent, eventType);
+
+			if (event == null) {
+				this.event = eventSupplier.get();
+			}
+
+			return event;
 		}
 
 		/*
@@ -527,12 +529,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			}
 
 			return Objects.equals(completionDate, that.completionDate) //
-					&& Objects.equals(eventType, that.eventType) //
 					&& Objects.equals(id, that.id) //
 					&& Objects.equals(listenerId, that.listenerId) //
 					&& Objects.equals(publicationDate, that.publicationDate) //
-					&& Objects.equals(serializedEvent, that.serializedEvent) //
-					&& Objects.equals(serializer, that.serializer);
+					&& Objects.equals(getEvent(), that.getEvent());
 		}
 
 		/*
@@ -541,7 +541,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 */
 		@Override
 		public int hashCode() {
-			return Objects.hash(completionDate, eventType, id, listenerId, publicationDate, serializedEvent, serializer);
+			return Objects.hash(completionDate, id, listenerId, publicationDate, getEvent());
 		}
 	}
 }
