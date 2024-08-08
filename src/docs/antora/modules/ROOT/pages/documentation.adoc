@@ -82,7 +82,7 @@ Rel_D(Modulith.Application.order, Modulith.Application.catalog, "depends on", $t
 SHOW_LEGEND()
 ....
 
-The second call will create additional diagrams that only include the individual module and the ones they directly depend on on the canvas.
+The second call will create additional diagrams that only include the individual module and the ones they directly depend on the canvas.
 
 .A subset of application modules and their relationships starting from the order module rendered as C4 component diagram
 [plantuml, c4-individual-modules, svg]

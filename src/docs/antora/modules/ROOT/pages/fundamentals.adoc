@@ -460,7 +460,7 @@ The annotation exposes the following attributes to customize:
 |The human readable name of the application to be used in generated xref:documentation.adoc#documentation[documentation].
 
 |`sharedModules`
-|Declares the application modules with the given names as shared modules, which means that they will be always included in xref:testing.adoc#testing[application module integration tests].
+|Declares the application modules with the given names as shared modules, which means that they will always be included in xref:testing.adoc#testing[application module integration tests].
 
 |`additionalPackages`
 |Instructs Spring Modulith to treat the configured packages as additional root application packages. In other words, application module detection will be triggered for those as well.

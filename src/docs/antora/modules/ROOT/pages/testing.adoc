@@ -4,7 +4,7 @@
 Spring Modulith allows to run integration tests bootstrapping individual application modules in isolation or combination with others.
 To achieve this, place a JUnit test class in an application module package or any sub-package of that and annotate it with `@ApplicationModuleTest`:
 
-.A application module integration test class
+.An application module integration test class
 [tabs]
 ======
 Java::
@@ -36,7 +36,7 @@ class OrderIntegrationTests {
 This will run your integration test similar to what `@SpringBootTest` would have achieved but with the bootstrap actually limited to the application module the test resides in.
 If you configure the log level for `org.springframework.modulith` to `DEBUG`, you will see detailed information about how the test execution customizes the Spring Boot bootstrap:
 
-.The log output of a application module integration test bootstrap
+.The log output of an application module integration test bootstrap
 [source, text, subs="macros"]
 ----
   .   ____          _            __ _ _
@@ -62,7 +62,7 @@ If you configure the log level for `org.springframework.modulith` to `DEBUG`, yo
 ----
 
 Note, how the output contains the detailed information about the module included in the test run.
-It creates the application module module, finds the module to be run and limits the application of auto-configuration, component and entity scanning to the corresponding packages.
+It creates the application module, finds the module to be run and limits the application of auto-configuration, component and entity scanning to the corresponding packages.
 
 [[bootstrap-modes]]
 == Bootstrap Modes
