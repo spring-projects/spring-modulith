@@ -29,6 +29,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -37,7 +38,6 @@ import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.util.StopWatch;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -54,7 +54,7 @@ class JdbcEventPublicationRepositoryPerformance {
 
 	@Autowired JdbcOperations operations;
 	@Autowired EventPublicationRepository repository;
-	@MockitoBean EventSerializer serializer;
+	@MockBean EventSerializer serializer;
 
 	TargetEventPublication toComplete;
 	Instant now = Instant.now();
