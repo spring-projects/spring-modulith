@@ -62,9 +62,12 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		private static final Logger LOGGER = LoggerFactory.getLogger(ModuleContextCustomizer.class);
 
 		private final Supplier<ModuleTestExecution> execution;
+		private final Class<?> source;
 
-		private ModuleContextCustomizer(Class<?> testClass) {
+		ModuleContextCustomizer(Class<?> testClass) {
+
 			this.execution = ModuleTestExecution.of(testClass);
+			this.source = testClass;
 		}
 
 		/*
@@ -143,6 +146,32 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			LOGGER.info("");
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#equals(java.lang.Object)
+		 */
+		@Override
+		public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+			}
+
+			if (!(obj instanceof ModuleContextCustomizer that)) {
+				return false;
+			}
+
+			return Objects.equals(this.source, that.source);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() {
+			return Objects.hashCode(source);
+		}
+
 		private static void logHeadline(String headline) {
 			logHeadline(headline, () -> {});
 		}
@@ -152,33 +181,6 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			LOGGER.info("");
 			LOGGER.info(headline);
 			additional.run();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#equals(java.lang.Object)
-		 */
-		@Override
-		public boolean equals(Object obj) {
-
-			if (this == obj) {
-				return true;
-			}
-
-			if (!(obj instanceof ModuleContextCustomizer that)) {
-				return false;
-			}
-
-			return Objects.equals(execution, that.execution);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.lang.Object#hashCode()
-		 */
-		@Override
-		public int hashCode() {
-			return Objects.hash(execution);
 		}
 	}
 

@@ -22,6 +22,7 @@ import java.util.function.Supplier;
 import org.springframework.boot.context.TypeExcludeFilter;
 import org.springframework.core.type.classreading.MetadataReader;
 import org.springframework.core.type.classreading.MetadataReaderFactory;
+import org.springframework.util.Assert;
 
 /**
  * @author Oliver Drotbohm
@@ -29,9 +30,14 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 class ModuleTypeExcludeFilter extends TypeExcludeFilter {
 
 	private final Supplier<ModuleTestExecution> execution;
+	private final Class<?> source;
 
 	public ModuleTypeExcludeFilter(Class<?> testClass) {
+
+		Assert.notNull(testClass, "Test class must not be null!");
+
 		this.execution = ModuleTestExecution.of(testClass);
+		this.source = testClass;
 	}
 
 	/*
@@ -58,7 +64,7 @@ class ModuleTypeExcludeFilter extends TypeExcludeFilter {
 			return false;
 		}
 
-		return Objects.equals(execution, that.execution);
+		return Objects.equals(source, that.source);
 	}
 
 	/*
@@ -67,6 +73,6 @@ class ModuleTypeExcludeFilter extends TypeExcludeFilter {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(execution);
+		return Objects.hash(source);
 	}
 }
