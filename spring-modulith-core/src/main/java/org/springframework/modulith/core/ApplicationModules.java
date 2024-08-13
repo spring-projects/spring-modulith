@@ -96,13 +96,15 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private boolean verified;
 
 	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
-			DescribedPredicate<JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
+			DescribedPredicate<? super JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
+
+		DescribedPredicate<? super JavaClass> excluded = DescribedPredicate.or(ignored, IS_AOT_TYPE);
 
 		this.metadata = metadata;
 		this.allClasses = new ClassFileImporter() //
 				.withImportOption(option) //
 				.importPackages(packages) //
-				.that(not(ignored.or(IS_AOT_TYPE)));
+				.that(not(excluded));
 
 		Classes classes = Classes.of(allClasses);
 
@@ -185,7 +187,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param ignored must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
+	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<? super JavaClass> ignored) {
 
 		CacheKey key = new TypeKey(modulithType, ignored);
 
@@ -215,7 +217,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param ignored must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static ApplicationModules of(String javaPackage, DescribedPredicate<JavaClass> ignored) {
+	public static ApplicationModules of(String javaPackage, DescribedPredicate<? super JavaClass> ignored) {
 
 		CacheKey key = new PackageKey(javaPackage, ignored);
 
@@ -613,7 +615,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		String getBasePackage();
 
-		DescribedPredicate<JavaClass> getIgnored();
+		DescribedPredicate<? super JavaClass> getIgnored();
 
 		ModulithMetadata getMetadata();
 	}
@@ -621,7 +623,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final class TypeKey implements CacheKey {
 
 		private final Class<?> type;
-		private final DescribedPredicate<JavaClass> ignored;
+		private final DescribedPredicate<? super JavaClass> ignored;
 
 		/**
 		 * Creates a new {@link TypeKey} for the given type and {@link DescribedPredicate} of ignored {@link JavaClass}es.
@@ -629,7 +631,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		 * @param type must not be {@literal null}.
 		 * @param ignored must not be {@literal null}.
 		 */
-		TypeKey(Class<?> type, DescribedPredicate<JavaClass> ignored) {
+		TypeKey(Class<?> type, DescribedPredicate<? super JavaClass> ignored) {
 
 			this.type = type;
 			this.ignored = ignored;
@@ -658,7 +660,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getIgnored()
 		 */
 		@Override
-		public DescribedPredicate<JavaClass> getIgnored() {
+		public DescribedPredicate<? super JavaClass> getIgnored() {
 			return ignored;
 		}
 
@@ -694,7 +696,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final class PackageKey implements CacheKey {
 
 		private final String basePackage;
-		private final DescribedPredicate<JavaClass> ignored;
+		private final DescribedPredicate<? super JavaClass> ignored;
 
 		/**
 		 * Creates a new {@link PackageKey} for the given base package and {@link DescribedPredicate} of ignored
@@ -703,7 +705,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		 * @param basePackage must not be {@literal null}.
 		 * @param ignored must not be {@literal null}.
 		 */
-		PackageKey(String basePackage, DescribedPredicate<JavaClass> ignored) {
+		PackageKey(String basePackage, DescribedPredicate<? super JavaClass> ignored) {
 
 			this.basePackage = basePackage;
 			this.ignored = ignored;
@@ -722,7 +724,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		 * (non-Javadoc)
 		 * @see org.springframework.modulith.model.ApplicationModules.CacheKey#getIgnored()
 		 */
-		public DescribedPredicate<JavaClass> getIgnored() {
+		public DescribedPredicate<? super JavaClass> getIgnored() {
 			return ignored;
 		}
 
