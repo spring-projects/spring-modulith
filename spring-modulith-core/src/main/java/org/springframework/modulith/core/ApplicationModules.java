@@ -100,7 +100,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param option must not be {@literal null}.
 	 */
 	protected ApplicationModules(ModulithMetadata metadata,
-			DescribedPredicate<JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
+			DescribedPredicate<? super JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
 		this(metadata, metadata.getBasePackages(), ignored, useFullyQualifiedModuleNames, option);
 	}
 
@@ -118,18 +118,20 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	@Deprecated(forRemoval = true)
 	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
-			DescribedPredicate<JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
+			DescribedPredicate<? super JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
 
 		Assert.notNull(metadata, "ModulithMetadata must not be null!");
 		Assert.notNull(packages, "Base packages must not be null!");
 		Assert.notNull(ignored, "Ignores must not be null!");
 		Assert.notNull(option, "ImportOptions must not be null!");
 
+		DescribedPredicate<? super JavaClass> excluded = DescribedPredicate.or(ignored, IS_AOT_TYPE, IS_SPRING_CGLIB_PROXY);
+
 		this.metadata = metadata;
 		this.allClasses = new ClassFileImporter() //
 				.withImportOption(option) //
 				.importPackages(packages) //
-				.that(not(ignored.or(IS_AOT_TYPE).or(IS_SPRING_CGLIB_PROXY)));
+				.that(not(excluded));
 
 		Assert.notEmpty(allClasses, () -> "No classes found in packages %s!".formatted(packages));
 
@@ -215,7 +217,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param ignored must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<JavaClass> ignored) {
+	public static ApplicationModules of(Class<?> modulithType, DescribedPredicate<? super JavaClass> ignored) {
 
 		Assert.notNull(modulithType, "Modulith root type must not be null!");
 		Assert.notNull(ignored, "Predicate to describe ignored types must not be null!");
@@ -653,12 +655,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private static class CacheKey {
 
-		private final DescribedPredicate<JavaClass> ignored;
+		private final DescribedPredicate<? super JavaClass> ignored;
 		private final ImportOption options;
 		private final Object metadataSource;
 		private final Supplier<ModulithMetadata> metadata;
 
-		public CacheKey(DescribedPredicate<JavaClass> ignored, ImportOption options, Object metadataSource,
+		public CacheKey(DescribedPredicate<? super JavaClass> ignored, ImportOption options, Object metadataSource,
 				Supplier<ModulithMetadata> metadata) {
 
 			this.ignored = ignored;
@@ -667,15 +669,15 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 			this.metadata = SingletonSupplier.of(metadata);
 		}
 
-		static CacheKey of(String pkg, DescribedPredicate<JavaClass> ignored, ImportOption options) {
+		static CacheKey of(String pkg, DescribedPredicate<? super JavaClass> ignored, ImportOption options) {
 			return new CacheKey(ignored, options, pkg, () -> ModulithMetadata.of(pkg));
 		}
 
-		static CacheKey of(Class<?> type, DescribedPredicate<JavaClass> ignored, ImportOption options) {
+		static CacheKey of(Class<?> type, DescribedPredicate<? super JavaClass> ignored, ImportOption options) {
 			return new CacheKey(ignored, options, type, () -> ModulithMetadata.of(type));
 		}
 
-		DescribedPredicate<JavaClass> getIgnored() {
+		DescribedPredicate<? super JavaClass> getIgnored() {
 			return ignored;
 		}
 
