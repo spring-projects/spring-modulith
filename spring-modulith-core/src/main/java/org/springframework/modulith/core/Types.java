@@ -51,12 +51,14 @@ class Types {
 		private static final String ARCHUNIT_RULES = BASE_PACKAGE + ".archunit.JMoleculesDddRules";
 		private static final String MODULE = ANNOTATION_PACKAGE + ".Module";
 
+		private static final boolean PRESENT = ClassUtils.isPresent(AT_ENTITY, JMoleculesTypes.class.getClassLoader());
+
 		static final String AT_DOMAIN_EVENT_HANDLER = BASE_PACKAGE + ".event.annotation.DomainEventHandler";
 		static final String AT_DOMAIN_EVENT = BASE_PACKAGE + ".event.annotation.DomainEvent";
 		static final String DOMAIN_EVENT = BASE_PACKAGE + ".event.types.DomainEvent";
 
 		public static boolean isPresent() {
-			return ClassUtils.isPresent(AT_ENTITY, JMoleculesTypes.class.getClassLoader());
+			return PRESENT;
 		}
 
 		@Nullable

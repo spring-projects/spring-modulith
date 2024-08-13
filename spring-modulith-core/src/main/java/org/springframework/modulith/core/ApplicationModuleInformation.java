@@ -26,8 +26,8 @@ import java.util.stream.Stream;
 import org.jmolecules.ddd.annotation.Module;
 import org.springframework.modulith.ApplicationModule;
 import org.springframework.modulith.ApplicationModule.Type;
+import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -48,15 +48,11 @@ interface ApplicationModuleInformation {
 	 */
 	public static ApplicationModuleInformation of(JavaPackage javaPackage) {
 
-		var lookup = AnnotationLookup.of(javaPackage, __ -> true);
+		var lookup = AnnotationLookup.of(javaPackage.toSingle(), __ -> true);
 
-		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module",
-				ApplicationModuleInformation.class.getClassLoader())
-				&& JMoleculesModule.supports(lookup)) {
-			return new JMoleculesModule(lookup);
-		}
-
-		return new SpringModulithModule(lookup);
+		return JMoleculesTypes.isPresent() && JMoleculesModule.supports(lookup)
+				? new JMoleculesModule(lookup)
+				: new SpringModulithModule(lookup);
 	}
 
 	/**
