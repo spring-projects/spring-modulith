@@ -3,11 +3,25 @@
 		  xsi:schemaLocation="http://maven.apache.org/SETTINGS/1.0.0 http://maven.apache.org/xsd/settings-1.0.0.xsd">
 
 	<servers>
+
 		<server>
 			<id>sonatype-new</id>
 			<username>${env.SONATYPE_USER}</username>
 			<password>${env.SONATYPE_PASSWORD}</password>
 		</server>
+
+		<server>
+			<id>spring-enterprise-snapshot</id>
+			<username>${env.COMMERCIAL_USERNAME}</username>
+			<password>${env.COMMERCIAL_PASSWORD}</password>
+		</server>
+
+		<server>
+			<id>spring-enterprise-release</id>
+			<username>${env.COMMERCIAL_USERNAME}</username>
+			<password>${env.COMMERCIAL_PASSWORD}</password>
+		</server>
+
 	</servers>
 
 	<profiles>
