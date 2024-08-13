@@ -21,10 +21,9 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.jmolecules.ddd.annotation.Module;
 import org.springframework.modulith.ApplicationModule;
+import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 /**
@@ -43,13 +42,11 @@ interface ApplicationModuleInformation {
 	 */
 	public static ApplicationModuleInformation of(JavaPackage javaPackage) {
 
-		if (ClassUtils.isPresent("org.jmolecules.ddd.annotation.Module",
-				ApplicationModuleInformation.class.getClassLoader())
-				&& JMoleculesModule.supports(javaPackage)) {
-			return new JMoleculesModule(javaPackage);
-		}
+		var rootPackage = javaPackage.toSingle();
 
-		return new SpringModulithModule(javaPackage);
+		return JMoleculesTypes.isPresent() && JMoleculesModule.supports(rootPackage)
+				? new JMoleculesModule(rootPackage)
+				: new SpringModulithModule(rootPackage);
 	}
 
 	/**
