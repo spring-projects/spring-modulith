@@ -9,4 +9,30 @@
 			<password>${env.SONATYPE_PASSWORD}</password>
 		</server>
 	</servers>
+
+	<profiles>
+		<profile>
+			<id>spring-enterprise</id>
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+			<repositories>
+				<repository>
+					<id>spring-enterprise-snapshot</id>
+					<url>https://usw1.packages.broadcom.com/artifactory/spring-enterprise-maven-dev-local</url>
+					<releases>
+						<enabled>false</enabled>
+					</releases>
+				</repository>
+				<repository>
+					<id>spring-enterprise-release</id>
+					<url>https://usw1.packages.broadcom.com/artifactory/spring-enterprise-maven-prod-local</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+			</repositories>
+		</profile>
+	</profiles>
+
 </settings>

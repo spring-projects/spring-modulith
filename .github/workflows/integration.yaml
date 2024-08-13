@@ -10,11 +10,15 @@ jobs:
     strategy:
       matrix:
         version:
+        - '3.0.16'
+        - '3.0.17-SNAPSHOT'
         - '3.1.12'
         - '3.1.13-SNAPSHOT'
-        - '3.2.6'
-        - '3.2.7-SNAPSHOT'
-        - '3.3.1-SNAPSHOT'
+        - '3.2.8'
+        - '3.2.9-SNAPSHOT'
+        - '3.3.2'
+        - '3.3.3-SNAPSHOT'
+        - '3.4.0-SNAPSHOT'
     name: Build against Boot ${{ matrix.version }}
     runs-on: ubuntu-latest
 
@@ -37,5 +41,5 @@ jobs:
         DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
       run: |
         cd spring-modulith-examples
-        ../mvnw -B versions:update-parent -s ../settings.xml -Pwith-preview-repos,with-commercial-repos -DskipResolution=true -DparentVersion=${{ matrix.version }}
-        ../mvnw -B clean verify -s ../settings.xml -Pwith-preview-repos,with-commercial-repos -Dspring-boot.version=${{ matrix.version }}
+        ../mvnw -B versions:update-parent -s ../settings.xml -Pspring-enterprise,with-preview-repos -DskipResolution=true -DparentVersion=${{ matrix.version }}
+        ../mvnw -B clean verify -s ../settings.xml -Pspring-enterprise,with-preview-repos -Dspring-boot.version=${{ matrix.version }}
