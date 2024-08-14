@@ -116,14 +116,14 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 					ID IN
 			""";
 
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
+	private static final String SQL_STATEMENT_DELETE_COMPLETED = """
 			DELETE
 			FROM %s
 			WHERE
 					COMPLETION_DATE IS NOT NULL
 			""";
 
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE = """
+	private static final String SQL_STATEMENT_DELETE_COMPLETED_BEFORE = """
 			DELETE
 			FROM %s
 			WHERE
@@ -145,8 +145,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			sqlStatementUpdateById,
 			sqlStatementFindByEventAndListenerId,
 			sqlStatementDelete,
-			sqlStatementDeleteUncompleted,
-			sqlStatementDeleteUncompletedBefore;
+			sqlStatementDeleteCompleted,
+			sqlStatementDeleteCompletedBefore;
 
 	/**
 	 * Creates a new {@link JdbcEventPublicationRepository} for the given {@link JdbcOperations}, {@link EventSerializer},
@@ -180,8 +180,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		this.sqlStatementUpdateById = SQL_STATEMENT_UPDATE_BY_ID.formatted(table);
 		this.sqlStatementFindByEventAndListenerId = SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table);
 		this.sqlStatementDelete = SQL_STATEMENT_DELETE.formatted(table);
-		this.sqlStatementDeleteUncompleted = SQL_STATEMENT_DELETE_UNCOMPLETED.formatted(table);
-		this.sqlStatementDeleteUncompletedBefore = SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE.formatted(table);
+		this.sqlStatementDeleteCompleted = SQL_STATEMENT_DELETE_COMPLETED.formatted(table);
+		this.sqlStatementDeleteCompletedBefore = SQL_STATEMENT_DELETE_COMPLETED_BEFORE.formatted(table);
 	}
 
 	/*
@@ -306,7 +306,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		operations.execute(sqlStatementDeleteUncompleted);
+		operations.execute(sqlStatementDeleteCompleted);
 	}
 
 	/*
@@ -318,7 +318,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		operations.update(sqlStatementDeleteUncompletedBefore, Timestamp.from(instant));
+		operations.update(sqlStatementDeleteCompletedBefore, Timestamp.from(instant));
 	}
 
 	private String serializeEvent(Object event) {
@@ -326,7 +326,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	}
 
 	/**
-	 * Effectively a {@link ResultSetExtractor} to drop {@link TargetEventPublication}s that cannot be deserialized.
+	 * Effectively a {@link org.springframework.jdbc.core.ResultSetExtractor} to drop {@link TargetEventPublication}s that cannot be deserialized.
 	 *
 	 * @param resultSet must not be {@literal null}.
 	 * @return will never be {@literal null}.
