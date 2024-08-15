@@ -40,7 +40,7 @@ public class HourHasPassed implements DomainEvent {
 	 */
 	private HourHasPassed(LocalDateTime time) {
 
-		Assert.notNull(time, "YearMonth must not be null!");
+		Assert.notNull(time, "LocalDateTime must not be null!");
 
 		this.time = time;
 	}
