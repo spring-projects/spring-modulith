@@ -180,22 +180,31 @@ To define nested application modules, explicitly annotate packages that are supp
 ----
 icon:cubes[] Example
 └─ icon:folder[] src/main/java
+   |
    ├─ icon:cube[] example
    |  └─ icon:plus-circle[role=green] Application.java
+   |
+   |  -> Inventory
+   |
    ├─ icon:cube[] example.inventory
    |  ├─ icon:plus-circle[role=green] InventoryManagement.java
    |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
    ├─ icon:cube[] example.inventory.internal
    |  └─ icon:plus-circle[role=red] SomethingInventoryInternal.java
+   |
+   |  -> Inventory > Nested
+   |
    ├─ icon:cube[] example.inventory.nested
    |  ├─ icon:coffee[] package-info.java // @ApplicationModule
    |  └─ icon:plus-circle[role=yellow] NestedApi.java
    ├─ icon:cube[] example.inventory.nested.internal
    |  └─ icon:minus-circle[role=red] NestedInternal.java
+   |
+   |  -> Order
+   |
    └─ icon:cube[] example.order
       ├─ icon:plus-circle[role=green] OrderManagement.java
       └─ icon:minus-circle[role=red] SomethingOrderInternal.java
-
 ----
 
 In this example `inventory` is an application module as described xref:fundamentals.adoc#modules.simple[above].
