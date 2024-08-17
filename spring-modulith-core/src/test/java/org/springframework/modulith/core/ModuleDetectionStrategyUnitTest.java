@@ -34,11 +34,12 @@ class ModuleDetectionStrategyUnitTest {
 
 		var classes = new ClassFileImporter() //
 				.withImportOption(new ImportOption.OnlyIncludeTests()) //
-				.importPackages("jmolecules");
+				.importPackages("example.jmolecules");
 
-		var javaPackage = JavaPackage.of(Classes.of(classes), "jmolecules");
+		var javaPackage = JavaPackage.of(Classes.of(classes), "example");
+		var expected = javaPackage.getSubPackage("jmolecules").orElseThrow();
 
 		assertThat(ApplicationModuleDetectionStrategy.explicitlyAnnotated().getModuleBasePackages(javaPackage))
-				.containsExactly(javaPackage);
+				.containsExactly(expected);
 	}
 }

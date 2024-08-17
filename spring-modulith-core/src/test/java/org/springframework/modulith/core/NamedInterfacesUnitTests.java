@@ -23,6 +23,11 @@ import example.ni.api.ApiType;
 import example.ni.internal.AdditionalSpiType;
 import example.ni.internal.DefaultedNamedInterfaceType;
 import example.ni.internal.Internal;
+import example.ni.nested.InNested;
+import example.ni.nested.a.InNestedA;
+import example.ni.nested.b.InNestedB;
+import example.ni.nested.b.first.InNestedBFirst;
+import example.ni.nested.b.second.InNestedBSecond;
 import example.ni.ontype.Exposed;
 import example.ni.spi.SpiType;
 import example.ninvalid.InvalidDefaultNamedInterface;
@@ -62,7 +67,8 @@ class NamedInterfacesUnitTests {
 
 		var javaPackage = TestUtils.getPackage(InvalidDefaultNamedInterface.class);
 
-		assertThatIllegalStateException().isThrownBy(() -> NamedInterfaces.discoverNamedInterfaces(javaPackage))
+		assertThatIllegalStateException()
+				.isThrownBy(() -> NamedInterfaces.discoverNamedInterfaces(javaPackage))
 				.withMessageContaining("named interface defaulting")
 				.withMessageContaining(InvalidDefaultNamedInterface.class.getSimpleName());
 	}
@@ -76,7 +82,9 @@ class NamedInterfacesUnitTests {
 		assertThat(interfaces).map(NamedInterface::getName)
 				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
 
-		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class, Internal.class);
+		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME,
+				RootType.class, Internal.class, InNested.class, InNestedA.class, InNestedB.class, InNestedBFirst.class,
+				InNestedBSecond.class);
 	}
 
 	@Test // GH-595

@@ -138,10 +138,19 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Classes classes = Classes.of(allClasses);
 		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
-		this.modules = packages.stream() //
+		var sources = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it))
-				.flatMap(strategy::getModuleBasePackages) //
-				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
+				.flatMap(it -> ApplicationModuleSource.from(it, strategy, useFullyQualifiedModuleNames))
+				.distinct()
+				.collect(Collectors.toUnmodifiableSet());
+
+		this.modules = sources.stream() //
+				.map(it -> {
+
+					return new ApplicationModule(it,
+							JavaPackages.onlySubPackagesOf(it.moduleBasePackage(),
+									sources.stream().map(ApplicationModuleSource::moduleBasePackage).toList())); //
+				})
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
 		this.rootPackages = packages.stream() //
@@ -154,9 +163,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.sharedModules = Collections.emptySet();
 
-		this.orderedNames = JGRAPHT_PRESENT //
-				? TopologicalSorter.topologicallySortModules(this) //
-				: modules.values().stream().map(ApplicationModule::getName).toList();
+		Supplier<List<String>> fallback = () -> modules.values().stream()
+				.map(ApplicationModule::getName)
+				.sorted()
+				.toList();
+
+		this.orderedNames = Optional.ofNullable(JGRAPHT_PRESENT ? TopologicalSorter.topologicallySortModules(this) : null)
+				.orElseGet(fallback);
 	}
 
 	/**
@@ -511,6 +524,30 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		};
 	}
 
+	/**
+	 * Returns the parent {@link ApplicationModule} if the given one has one.
+	 *
+	 * @param module must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public Optional<ApplicationModule> getParentOf(ApplicationModule module) {
+
+		Assert.notNull(module, "ApplicationModule must not be null!");
+
+		return module.getParentModule(this);
+	}
+
+	/**
+	 * Returns whether the given {@link ApplicationModule} has a parent one.
+	 *
+	 * @param module must not be {@literal null}.
+	 * @since 1.3
+	 */
+	public boolean hasParent(ApplicationModule module) {
+		return getParentOf(module).isPresent();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -528,6 +565,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	public String toString() {
 
 		return this.stream()
+				.sorted()
 				.map(it -> it.toString(this))
 				.collect(Collectors.joining("\n"));
 	}
@@ -542,7 +580,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		var result = SlicesRuleDefinition.slices() //
 				.assignedFrom(new ApplicationModulesSliceAssignment())
 				.should().beFreeOfCycles() //
-				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
+				.evaluate(allClasses.that(resideInAPackage(rootPackage.asFilter())));
 
 		return result.getFailureReport();
 	}
@@ -623,14 +661,11 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @return will never be {@literal null}.
 	 * @since 1.1
 	 */
-	private static ApplicationModule rootModuleFor(JavaPackage javaPackage) {
+	private static ApplicationModule rootModuleFor(JavaPackage pkg) {
 
-		return new ApplicationModule(javaPackage, true) {
+		var source = ApplicationModuleSource.from(pkg, "root:" + pkg.getName());
 
-			@Override
-			public String getName() {
-				return "root:" + super.getName();
-			}
+		return new ApplicationModule(source, JavaPackages.NONE) {
 
 			@Override
 			public boolean isRootModule() {
@@ -726,21 +761,25 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	private static class TopologicalSorter {
 
+		@Nullable
 		private static List<String> topologicallySortModules(ApplicationModules modules) {
 
 			Graph<ApplicationModule, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-			modules.modules.forEach((__, project) -> {
+			modules.modules.values()
+					.stream()
+					.sorted()
+					.forEach(project -> {
 
-				graph.addVertex(project);
+						graph.addVertex(project);
 
-				project.getDependencies(modules).stream() //
-						.map(ApplicationModuleDependency::getTargetModule) //
-						.forEach(dependency -> {
-							graph.addVertex(dependency);
-							graph.addEdge(project, dependency);
-						});
-			});
+						project.getDependencies(modules).stream() //
+								.map(ApplicationModuleDependency::getTargetModule) //
+								.forEach(dependency -> {
+									graph.addVertex(dependency);
+									graph.addEdge(project, dependency);
+								});
+					});
 
 			var names = new ArrayList<String>();
 			var iterator = new TopologicalOrderIterator<>(graph);
@@ -751,7 +790,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				return names;
 
 			} catch (IllegalArgumentException o_O) {
-				return modules.modules.values().stream().map(ApplicationModule::getName).toList();
+				return null;
 			}
 		}
 	}

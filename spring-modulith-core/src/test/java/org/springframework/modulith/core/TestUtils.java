@@ -47,6 +47,17 @@ public class TestUtils {
 			.of(() -> Classes.of(imported.get()).that(IS_MODULE_TYPE));
 
 	/**
+	 * Creates an {@link ApplicationModules} instance from the given package but only inspecting the test code.
+	 *
+	 * @param basePackage must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public static ApplicationModules of(String basePackage, String... ignoredPackages) {
+		return of(ModulithMetadata.of(basePackage), JavaClass.Predicates.resideInAnyPackage(ignoredPackages));
+	}
+
+	/**
 	 * Returns all {@link Classes} of this module.
 	 *
 	 * @return
@@ -78,12 +89,12 @@ public class TestUtils {
 		return JavaPackage.of(TestUtils.getClasses(packageType), packageType.getPackageName());
 	}
 
-	public static ApplicationModules of(String basePackage, String... ignoredPackages) {
-		return of(ModulithMetadata.of(basePackage), JavaClass.Predicates.resideInAnyPackage(ignoredPackages));
-	}
-
 	public static ApplicationModule getApplicationModule(String packageName) {
-		return new ApplicationModule(getPackage(packageName), false);
+
+		var pkg = getPackage(packageName);
+		var source = ApplicationModuleSource.from(pkg, pkg.getLocalName());
+
+		return new ApplicationModule(source);
 	}
 
 	private static JavaPackage getPackage(String name) {

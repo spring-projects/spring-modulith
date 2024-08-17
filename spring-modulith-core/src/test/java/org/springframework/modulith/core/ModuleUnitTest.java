@@ -33,8 +33,6 @@ import com.acme.withatbean.SampleAggregate;
 import com.acme.withatbean.TestEvents.JMoleculesAnnotated;
 import com.acme.withatbean.TestEvents.JMoleculesImplementing;
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.importer.ClassFileImporter;
 
 /**
  * Unit tests for {@link ApplicationModule}.
@@ -45,10 +43,7 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
 class ModuleUnitTest {
 
 	String packageName = "com.acme.withatbean";
-	JavaClasses classes = new ClassFileImporter().importPackages(packageName);
-	JavaPackage javaPackage = JavaPackage.of(Classes.of(classes), packageName);
-
-	ApplicationModule module = new ApplicationModule(javaPackage, false);
+	ApplicationModule module = TestUtils.getApplicationModule(packageName);
 
 	@Test
 	public void considersExternalSpringBeans() {
@@ -61,8 +56,10 @@ class ModuleUnitTest {
 	@Test
 	void discoversPublishedEvents() {
 
-		JavaClass jMoleculesAnnotated = classes.get(JMoleculesAnnotated.class);
-		JavaClass jMoleculesImplementing = classes.get(JMoleculesImplementing.class);
+		var classes = module.getClasses();
+
+		JavaClass jMoleculesAnnotated = classes.getRequiredClass(JMoleculesAnnotated.class);
+		JavaClass jMoleculesImplementing = classes.getRequiredClass(JMoleculesImplementing.class);
 
 		List<EventType> events = module.getPublishedEvents();
 

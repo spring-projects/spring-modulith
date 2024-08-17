@@ -112,40 +112,36 @@ public class Violations extends RuntimeException {
 
 		Assert.notNull(violation, "Exception must not be null!");
 
-		if (violations.isEmpty()) {
-			return new Violations(List.of(violation));
-		}
-
-		if (violations.contains(violation)) {
-			return this;
-		}
-
-		List<Violation> newExceptions = new ArrayList<>(violations.size() + 1);
-		newExceptions.addAll(violations);
-		newExceptions.add(violation);
-
-		return new Violations(newExceptions);
+		return new Violations(unionByMessage(violations, List.of(violation)));
 	}
 
 	Violations and(Violations other) {
-
-		if (violations.isEmpty()) {
-			return new Violations(other.violations);
-		}
-
-		var newExceptions = new ArrayList<>(violations);
-
-		for (Violation candidate : other.violations) {
-			if (!violations.contains(candidate)) {
-				newExceptions.add(candidate);
-			}
-		}
-
-		return new Violations(newExceptions);
+		return new Violations(unionByMessage(violations, other.violations));
 	}
 
 	Violations and(String violation) {
 		return and(new Violation(violation));
+	}
+
+	private List<Violation> unionByMessage(List<Violation> left, List<Violation> right) {
+
+		if (left.isEmpty()) {
+			return right;
+		}
+
+		if (right.isEmpty()) {
+			return left;
+		}
+
+		var result = new ArrayList<>(left);
+
+		var messages = left.stream().map(Violation::message).toList();
+
+		right.stream()
+				.filter(it -> !messages.contains(it.message()))
+				.forEach(result::add);
+
+		return result.size() == left.size() ? left : result;
 	}
 
 	static record Violation(String message) {}
