@@ -447,7 +447,7 @@ limitations under the License.
 					<artifactId>maven-javadoc-plugin</artifactId>
 					<version>3.8.0</version>
 					<configuration>
-						<doclint>accessibility,html,reference,syntax</doclint>
+						<doclint>accessibility,html,reference</doclint>
 						<show>package</show>
 						<quiet>true</quiet>
 						<links>
