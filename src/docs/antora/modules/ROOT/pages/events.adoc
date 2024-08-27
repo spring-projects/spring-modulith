@@ -273,6 +273,20 @@ This artifact contains two primary abstractions that are available to applicatio
 * `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older that a given duration (for example, 1 minute).
 * `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
 
+[[publication-registry.completion]]
+=== Event Publication Completion
+
+Event publications are marked as completed when a transactional or `@ApplicationModuleListener` execution completes successfully.
+By default, the completion is registered by setting the completion date on an `EventPublication`.
+This means that completed publications will remain in the Event Publication Registry so that they can be inspected through the `CompletedEventPublications` interface as described xref:events.adoc#publication-registry.managing-publications[above].
+A consequence of this is that you'll need to put some code in place that will periodically purge old, completed ``EventPublication``s.
+Otherwise, the persistent abstraction of them, for example a relational database table, will grow unbounded and the interaction with the store creating and completing new ``EventPublication`` might slow down.
+
+Spring Modulith 1.3 introduces a configuration property `spring.modulith.events.completion-mode`.
+It defaults to `UPDATE` which is backed by the strategy described above.
+Alternatively, the completion mode can be set to `DELETE`, which alters the registry's persistence mechanisms to rather delete ``EventPublication``s on completion.
+This means that `CompletedEventPublications` will not return any publications anymore, but at the same time, you don't have to worry about purging the completed events from the persistence store manually anymore.
+
 [[publication-registry.publication-repositories]]
 === Event Publication Repositories
 

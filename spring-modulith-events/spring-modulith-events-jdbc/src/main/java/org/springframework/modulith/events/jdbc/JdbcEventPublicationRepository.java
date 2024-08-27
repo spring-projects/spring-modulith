@@ -116,6 +116,20 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 					ID IN
 			""";
 
+	private static final String SQL_STATEMENT_DELETE_BY_EVENT_AND_LISTENER_ID = """
+			DELETE FROM %s
+			WHERE
+					LISTENER_ID = ?
+					AND SERIALIZED_EVENT = ?
+			""";
+
+	private static final String SQL_STATEMENT_DELETE_BY_ID = """
+			DELETE
+			FROM %s
+			WHERE
+					ID = ?
+			""";
+
 	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
 			DELETE
 			FROM %s
@@ -134,7 +148,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 	private final JdbcOperations operations;
 	private final EventSerializer serializer;
-	private final DatabaseType databaseType;
+	private final JdbcRepositorySettings settings;
+
 	private ClassLoader classLoader;
 
 	private final String sqlStatementInsert,
@@ -145,6 +160,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			sqlStatementUpdateById,
 			sqlStatementFindByEventAndListenerId,
 			sqlStatementDelete,
+			sqlStatementDeleteByEventAndListenerId,
+			sqlStatementDeleteById,
 			sqlStatementDeleteUncompleted,
 			sqlStatementDeleteUncompletedBefore;
 
@@ -154,22 +171,20 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 *
 	 * @param operations must not be {@literal null}.
 	 * @param serializer must not be {@literal null}.
-	 * @param databaseType must not be {@literal null}.
-	 * @param properties must not be {@literal null}.
+	 * @param settings must not be {@literal null}.
 	 */
 	public JdbcEventPublicationRepository(JdbcOperations operations, EventSerializer serializer,
-			DatabaseType databaseType, JdbcConfigurationProperties properties) {
+			JdbcRepositorySettings settings) {
 
 		Assert.notNull(operations, "JdbcOperations must not be null!");
 		Assert.notNull(serializer, "EventSerializer must not be null!");
-		Assert.notNull(databaseType, "DatabaseType must not be null!");
-		Assert.notNull(properties, "JdbcConfigurationProperties must not be null!");
+		Assert.notNull(settings, "DatabaseType must not be null!");
 
 		this.operations = operations;
 		this.serializer = serializer;
-		this.databaseType = databaseType;
+		this.settings = settings;
 
-		var schema = properties.getSchema();
+		var schema = settings.getSchema();
 		var table = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
 
 		this.sqlStatementInsert = SQL_STATEMENT_INSERT.formatted(table);
@@ -180,6 +195,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		this.sqlStatementUpdateById = SQL_STATEMENT_UPDATE_BY_ID.formatted(table);
 		this.sqlStatementFindByEventAndListenerId = SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table);
 		this.sqlStatementDelete = SQL_STATEMENT_DELETE.formatted(table);
+		this.sqlStatementDeleteByEventAndListenerId = SQL_STATEMENT_DELETE_BY_EVENT_AND_LISTENER_ID.formatted(table);
+		this.sqlStatementDeleteById = SQL_STATEMENT_DELETE_BY_ID.formatted(table);
 		this.sqlStatementDeleteUncompleted = SQL_STATEMENT_DELETE_UNCOMPLETED.formatted(table);
 		this.sqlStatementDeleteUncompletedBefore = SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE.formatted(table);
 	}
@@ -222,10 +239,20 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	@Transactional
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		operations.update(sqlStatementUpdateByEventAndListenerId, //
-				Timestamp.from(completionDate), //
-				identifier.getValue(), //
-				serializer.serialize(event));
+		var targetIdentifier = identifier.getValue();
+		var serializedEvent = serializer.serialize(event);
+
+		if (settings.isDeleteCompletion()) {
+
+			operations.update(sqlStatementDeleteByEventAndListenerId, targetIdentifier, serializedEvent);
+
+		} else {
+
+			operations.update(sqlStatementUpdateByEventAndListenerId, //
+					Timestamp.from(completionDate), //
+					targetIdentifier, //
+					serializedEvent);
+		}
 	}
 
 	/*
@@ -235,7 +262,12 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	@Override
 	@Transactional
 	public void markCompleted(UUID identifier, Instant completionDate) {
-		operations.update(sqlStatementUpdateById, Timestamp.from(completionDate), uuidToDatabase(identifier));
+
+		if (settings.isDeleteCompletion()) {
+			operations.update(sqlStatementDeleteById, uuidToDatabase(identifier));
+		} else {
+			operations.update(sqlStatementUpdateById, Timestamp.from(completionDate), uuidToDatabase(identifier));
+		}
 	}
 
 	/*
@@ -294,7 +326,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	@Override
 	public void deletePublications(List<UUID> identifiers) {
 
-		var dbIdentifiers = identifiers.stream().map(databaseType::uuidToDatabase).toList();
+		var dbIdentifiers = identifiers.stream().map(this::uuidToDatabase).toList();
 
 		batch(dbIdentifiers, DELETE_BATCH_SIZE)
 				.forEach(it -> operations.update(sqlStatementDelete.concat(toParameterPlaceholders(it.length)), it));
@@ -376,11 +408,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	}
 
 	private Object uuidToDatabase(UUID id) {
-		return databaseType.uuidToDatabase(id);
+		return settings.getDatabaseType().uuidToDatabase(id);
 	}
 
 	private UUID getUuidFromResultSet(ResultSet rs) throws SQLException {
-		return databaseType.databaseToUUID(rs.getObject("ID"));
+		return settings.getDatabaseType().databaseToUUID(rs.getObject("ID"));
 	}
 
 	@Nullable

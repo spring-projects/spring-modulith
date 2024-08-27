@@ -19,8 +19,10 @@ import jakarta.persistence.EntityManager;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * @author Oliver Drotbohm
@@ -31,7 +33,8 @@ import org.springframework.modulith.events.core.EventSerializer;
 class JpaEventPublicationConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean
-	JpaEventPublicationRepository jpaEventPublicationRepository(EntityManager em, EventSerializer serializer) {
-		return new JpaEventPublicationRepository(em, serializer);
+	JpaEventPublicationRepository jpaEventPublicationRepository(EntityManager em, EventSerializer serializer,
+			Environment environment) {
+		return new JpaEventPublicationRepository(em, serializer, CompletionMode.from(environment));
 	}
 }

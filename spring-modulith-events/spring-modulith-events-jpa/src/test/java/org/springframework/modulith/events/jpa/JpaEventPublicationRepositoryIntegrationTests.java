@@ -16,12 +16,11 @@
 package org.springframework.modulith.events.jpa;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import lombok.RequiredArgsConstructor;
-import lombok.Value;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -33,25 +32,29 @@ import java.util.UUID;
 import javax.sql.DataSource;
 
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
 import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.orm.jpa.vendor.AbstractJpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
-import org.springframework.test.context.TestConstructor;
-import org.springframework.test.context.TestConstructor.AutowireMode;
-import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -59,10 +62,8 @@ import org.springframework.transaction.annotation.Transactional;
  * @author Dmitry Belyaev
  * @author Björn Kieling
  */
-@ExtendWith(SpringExtension.class)
-@TestConstructor(autowireMode = AutowireMode.ALL)
+@SpringBootTest
 @Transactional
-@RequiredArgsConstructor
 class JpaEventPublicationRepositoryIntegrationTests {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
@@ -111,8 +112,16 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		}
 	}
 
-	private final JpaEventPublicationRepository repository;
-	private final EntityManager em;
+	@Autowired JpaEventPublicationRepository repository;
+	@Autowired EntityManager em;
+	@Autowired Environment environment;
+
+	CompletionMode completionMode;
+
+	@BeforeEach
+	void init() {
+		this.completionMode = environment.getProperty(CompletionMode.PROPERTY, CompletionMode.class);
+	}
 
 	@AfterEach
 	public void flush() {
@@ -212,6 +221,8 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	@Test // GH-251
 	void shouldDeleteCompletedEventsBefore() {
 
+		assumeTrue(completionMode == CompletionMode.UPDATE);
+
 		var testEvent1 = new TestEvent("abc");
 		var serializedEvent1 = "{\"eventId\":\"abc\"}";
 		var testEvent2 = new TestEvent("def");
@@ -278,11 +289,26 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 		repository.markCompleted(publication, Instant.now());
 
-		assertThat(repository.findCompletedPublications())
-				.hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent)
-				.isEqualTo(event);
+		if (completionMode == CompletionMode.DELETE) {
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+		} else {
+
+			assertThat(repository.findCompletedPublications())
+					.hasSize(1)
+					.element(0)
+					.extracting(TargetEventPublication::getEvent)
+					.isEqualTo(event);
+		}
+	}
+
+	@Nested
+	@ContextConfiguration(classes = TestConfig.class)
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
+	static class WithDeleteCompletionTests extends JpaEventPublicationRepositoryIntegrationTests {
+
 	}
 
 	private TargetEventPublication createPublication(Object event) {
@@ -299,7 +325,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		em.persist(new JpaEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class));
 	}
 
-	@Value
+	@lombok.Value
 	private static final class TestEvent {
 		String eventId;
 	}

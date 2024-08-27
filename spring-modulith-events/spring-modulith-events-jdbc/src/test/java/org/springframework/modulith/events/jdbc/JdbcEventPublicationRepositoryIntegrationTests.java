@@ -16,11 +16,14 @@
 package org.springframework.modulith.events.jdbc;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import lombok.Value;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -39,6 +42,7 @@ import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
@@ -63,6 +67,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 		@Autowired JdbcOperations operations;
 		@Autowired JdbcEventPublicationRepository repository;
+		@Autowired JdbcRepositorySettings properties;
 
 		@MockBean EventSerializer serializer;
 
@@ -237,6 +242,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 		@Test // GH-251
 		void shouldDeleteCompletedEventsBefore() {
 
+			assumeFalse(properties.isDeleteCompletion());
+
 			var testEvent1 = new TestEvent("abc");
 			var serializedEvent1 = "{\"eventId\":\"abc\"}";
 			var testEvent2 = new TestEvent("def");
@@ -303,11 +310,19 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication, Instant.now());
 
-			assertThat(repository.findCompletedPublications())
-					.hasSize(1)
-					.element(0)
-					.extracting(TargetEventPublication::getEvent)
-					.isEqualTo(event);
+			if (properties.isDeleteCompletion()) {
+
+				assertThat(repository.findCompletedPublications()).isEmpty();
+				assertThat(repository.findIncompletePublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.hasSize(1)
+						.element(0)
+						.extracting(TargetEventPublication::getEvent)
+						.isEqualTo(event);
+			}
 		}
 
 		@Test // GH-258
@@ -318,9 +333,17 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-			assertThat(repository.findCompletedPublications())
-					.extracting(TargetEventPublication::getIdentifier)
-					.containsExactly(publication.getIdentifier());
+			if (properties.isDeleteCompletion()) {
+
+				assertThat(repository.findIncompletePublications()).isEmpty();
+				assertThat(repository.findCompletedPublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
 		}
 
 		@Test // GH-753
@@ -342,7 +365,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			assertThat(publication.getEvent()).isSameAs(publication.getEvent());
 		}
 
-		abstract String table();
+		String table() {
+			return "EVENT_PUBLICATION";
+		}
 
 		private TargetEventPublication createPublication(Object event) {
 
@@ -357,13 +382,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	@Nested
 	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
-	static class WithNoDefinedSchemaName extends TestBase {
-
-		@Override
-		String table() {
-			return "EVENT_PUBLICATION";
-		}
-	}
+	static class WithNoDefinedSchemaName extends TestBase {}
 
 	@Nested
 	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
@@ -387,55 +406,60 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 		}
 	}
 
-	// HSQL
 	@Nested
-	@ActiveProfiles("hsqldb")
-	@Testcontainers(disabledWithoutDocker = false)
+	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			CompletionMode.PROPERTY + "=DELETE" })
+	static class WithDeleteCompletion extends TestBase {}
+
+	// HSQL
+
+	@WithHsql
 	class HsqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("hsqldb")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithHsql
 	class HsqlWithDefinedSchemaName extends WithDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("hsqldb")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithHsql
 	class HsqlWithEmptySchemaName extends WithEmptySchemaName {}
 
+	@WithHsql
+	class HsqlWithEmptyDeleteCompletion extends WithDeleteCompletion {}
+
 	// H2
-	@Nested
-	@ActiveProfiles("h2")
-	@Testcontainers(disabledWithoutDocker = false)
+
+	@WithH2
 	class H2WithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("h2")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithH2
 	class H2WithDefinedSchemaName extends WithDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("h2")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithH2
 	class H2WithEmptySchemaName extends WithEmptySchemaName {}
 
+	@WithH2
+	class H2WithEmptyDeleteCompletion extends WithDeleteCompletion {}
+
 	// Postgres
-	@Nested
-	@ActiveProfiles("postgres")
+
+	@WithPostgres
 	class PostgresWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("postgres")
+	@WithPostgres
 	class PostgresWithDefinedSchemaName extends WithDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("postgres")
+	@WithPostgres
 	class PostgresWithEmptySchemaName extends WithEmptySchemaName {}
 
+	@WithPostgres
+	class PostgresWithDeleteCompletion extends WithDeleteCompletion {}
+
 	// MySQL
-	@Nested
-	@ActiveProfiles("mysql")
+
+	@WithMySql
 	class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMySql
+	class MysqlWithDeleteCompletion extends WithDeleteCompletion {}
 
 	@Value
 	private static final class TestEvent {
@@ -443,4 +467,26 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	}
 
 	private static final class Sample {}
+
+	@Nested
+	@ActiveProfiles("h2")
+	@Testcontainers(disabledWithoutDocker = false)
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithH2 {}
+
+	@Nested
+	@ActiveProfiles("hsql")
+	@Testcontainers(disabledWithoutDocker = false)
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithHsql {}
+
+	@Nested
+	@ActiveProfiles("mysql")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithMySql {}
+
+	@Nested
+	@ActiveProfiles("postgres")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithPostgres {}
 }

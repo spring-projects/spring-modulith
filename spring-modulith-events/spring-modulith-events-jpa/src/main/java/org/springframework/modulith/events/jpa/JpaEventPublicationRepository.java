@@ -28,6 +28,7 @@ import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
@@ -94,9 +95,20 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static final String DELETE = """
 			delete
-			from JpaEventPublication p
-			where
-				p.id in ?1
+			  from JpaEventPublication p
+			 where p.id in ?1
+			""";
+
+	private static final String DELETE_BY_EVENT_AND_LISTENER_ID = """
+			delete JpaEventPublication p
+			 where p.serializedEvent = ?1
+			   and p.listenerId = ?2
+			""";
+
+	private static final String DELETE_BY_ID = """
+			delete
+			  from JpaEventPublication p
+			 where p.id = ?1
 			""";
 
 	private static final String DELETE_COMPLETED = """
@@ -117,6 +129,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private final EntityManager entityManager;
 	private final EventSerializer serializer;
+	private final CompletionMode completionMode;
 
 	/**
 	 * Creates a new {@link JpaEventPublicationRepository} for the given {@link EntityManager} and
@@ -125,13 +138,16 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	 * @param entityManager must not be {@literal null}.
 	 * @param serializer must not be {@literal null}.
 	 */
-	public JpaEventPublicationRepository(EntityManager entityManager, EventSerializer serializer) {
+	public JpaEventPublicationRepository(EntityManager entityManager, EventSerializer serializer,
+			CompletionMode completionMode) {
 
 		Assert.notNull(entityManager, "EntityManager must not be null!");
 		Assert.notNull(serializer, "EventSerializer must not be null!");
+		Assert.notNull(completionMode, "Completion mode must not be null!");
 
 		this.entityManager = entityManager;
 		this.serializer = serializer;
+		this.completionMode = completionMode;
 	}
 
 	/*
@@ -153,11 +169,24 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		entityManager.createQuery(MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID)
-				.setParameter(1, serializeEvent(event))
-				.setParameter(2, identifier.getValue())
-				.setParameter(3, completionDate)
-				.executeUpdate();
+		var serializedEvent = serializeEvent(event);
+		var identifierValue = identifier.getValue();
+
+		if (completionMode == CompletionMode.DELETE) {
+
+			entityManager.createQuery(DELETE_BY_EVENT_AND_LISTENER_ID)
+					.setParameter(1, serializedEvent)
+					.setParameter(2, identifierValue)
+					.executeUpdate();
+
+		} else {
+
+			entityManager.createQuery(MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID)
+					.setParameter(1, serializedEvent)
+					.setParameter(2, identifierValue)
+					.setParameter(3, completionDate)
+					.executeUpdate();
+		}
 	}
 
 	/*
@@ -167,10 +196,19 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
-		entityManager.createQuery(MARK_COMPLETED_BY_ID)
-				.setParameter(1, identifier)
-				.setParameter(2, completionDate)
-				.executeUpdate();
+		if (completionMode == CompletionMode.DELETE) {
+
+			entityManager.createQuery(DELETE_BY_ID)
+					.setParameter(1, identifier)
+					.executeUpdate();
+
+		} else {
+
+			entityManager.createQuery(MARK_COMPLETED_BY_ID)
+					.setParameter(1, identifier)
+					.setParameter(2, completionDate)
+					.executeUpdate();
+		}
 	}
 
 	/*

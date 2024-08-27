@@ -33,6 +33,7 @@ import org.springframework.data.util.TypeInformation;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
@@ -55,17 +56,21 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	private static final Sort DEFAULT_SORT = Sort.by(PUBLICATION_DATE).ascending();
 
 	private final MongoTemplate mongoTemplate;
+	private final CompletionMode completionMode;
 
 	/**
 	 * Creates a new {@link MongoDbEventPublicationRepository} for the given {@link MongoTemplate}.
 	 *
 	 * @param mongoTemplate must not be {@literal null}.
+	 * @param completionMode must not be {@literal null}.
 	 */
-	public MongoDbEventPublicationRepository(MongoTemplate mongoTemplate) {
+	public MongoDbEventPublicationRepository(MongoTemplate mongoTemplate, CompletionMode completionMode) {
 
 		Assert.notNull(mongoTemplate, "MongoTemplate must not be null!");
+		Assert.notNull(completionMode, "Completion mode must not be null!");
 
 		this.mongoTemplate = mongoTemplate;
+		this.completionMode = completionMode;
 	}
 
 	/*
@@ -87,9 +92,18 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		var update = Update.update(COMPLETION_DATE, completionDate);
+		var query = byEventAndListenerId(event, identifier);
 
-		mongoTemplate.findAndModify(byEventAndListenerId(event, identifier), update, MongoDbEventPublication.class);
+		if (completionMode == CompletionMode.DELETE) {
+
+			mongoTemplate.remove(query, MongoDbEventPublication.class);
+
+		} else {
+
+			var update = Update.update(COMPLETION_DATE, completionDate);
+
+			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class);
+		}
 	}
 
 	/*
@@ -99,9 +113,18 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
-		var update = Update.update(COMPLETION_DATE, completionDate);
+		var criateria = query(where(ID).is(identifier));
 
-		mongoTemplate.findAndModify(query(where(ID).is(identifier)), update, MongoDbEventPublication.class);
+		if (completionMode == CompletionMode.DELETE) {
+
+			mongoTemplate.remove(criateria, MongoDbEventPublication.class);
+
+		} else {
+
+			var update = Update.update(COMPLETION_DATE, completionDate);
+
+			mongoTemplate.findAndModify(criateria, update, MongoDbEventPublication.class);
+		}
 	}
 
 	/*

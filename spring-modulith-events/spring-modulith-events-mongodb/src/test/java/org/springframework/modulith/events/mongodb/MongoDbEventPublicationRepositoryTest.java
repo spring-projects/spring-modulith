@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.mongodb;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 
 import lombok.Value;
 
@@ -33,11 +34,14 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * @author Björn Kieling
@@ -51,12 +55,15 @@ class MongoDbEventPublicationRepositoryTest {
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
 	@Autowired MongoTemplate mongoTemplate;
+	@Autowired Environment environment;
 
 	MongoDbEventPublicationRepository repository;
+	CompletionMode completionMode;
 
 	@BeforeEach
 	void setUp() {
-		repository = new MongoDbEventPublicationRepository(mongoTemplate);
+		this.completionMode = CompletionMode.from(environment);
+		this.repository = new MongoDbEventPublicationRepository(mongoTemplate, completionMode);
 	}
 
 	@AfterEach
@@ -137,11 +144,19 @@ class MongoDbEventPublicationRepositoryTest {
 
 		repository.markCompleted(publication, Instant.now());
 
-		assertThat(repository.findCompletedPublications())
-				.hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent)
-				.isEqualTo(event);
+		if (completionMode == CompletionMode.DELETE) {
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+
+		} else {
+
+			assertThat(repository.findCompletedPublications())
+					.hasSize(1)
+					.element(0)
+					.extracting(TargetEventPublication::getEvent)
+					.isEqualTo(event);
+		}
+
 	}
 
 	@Test // GH-258
@@ -152,9 +167,17 @@ class MongoDbEventPublicationRepositoryTest {
 
 		repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-		assertThat(repository.findCompletedPublications())
-				.extracting(TargetEventPublication::getIdentifier)
-				.containsExactly(publication.getIdentifier());
+		if (completionMode == CompletionMode.DELETE) {
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+		} else {
+
+			assertThat(repository.findCompletedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
 	}
 
 	private TargetEventPublication createPublication(Object event) {
@@ -253,6 +276,8 @@ class MongoDbEventPublicationRepositoryTest {
 		@Test // GH-251
 		void shouldDeleteCompletedEventsBefore() {
 
+			assumeTrue(completionMode == CompletionMode.UPDATE);
+
 			var first = createPublication(new TestEvent("abc"));
 			var second = createPublication(new TestEvent("def"));
 
@@ -282,6 +307,10 @@ class MongoDbEventPublicationRepositoryTest {
 					.matches(it -> it.getEvent().equals(second.getEvent()));
 		}
 	}
+
+	@Nested
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
+	static class WithDeleteCompletionTest extends MongoDbEventPublicationRepositoryTest {}
 
 	@Value
 	private static final class TestEvent {

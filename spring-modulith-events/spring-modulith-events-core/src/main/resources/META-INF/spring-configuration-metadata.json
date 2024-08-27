@@ -17,6 +17,12 @@
 			"type": "java.lang.Boolean",
 			"description": "Whether to enable event externalization.",
 			"defaultValue": "true"
+		},
+		{
+			"name": "spring.modulith.events.completion-mode",
+			"type": "org.springframework.modulith.events.support.CompletionMode",
+			"description": "How to complete event publications.",
+			"defaultValue": "update"
 		}
 	]
 }

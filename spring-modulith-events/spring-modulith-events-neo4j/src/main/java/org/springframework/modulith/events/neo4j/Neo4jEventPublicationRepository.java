@@ -38,6 +38,7 @@ import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.DigestUtils;
@@ -69,6 +70,12 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(Cypher.parameter(LISTENER_ID)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.returning(EVENT_PUBLICATION_NODE)
+			.build();
+
+	private static final Statement DELETE_BY_EVENT_AND_LISTENER_ID = Cypher.match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(Cypher.parameter(EVENT_HASH)))
+			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(Cypher.parameter(LISTENER_ID)))
+			.delete(EVENT_PUBLICATION_NODE)
 			.build();
 
 	private static final Statement DELETE_BY_ID_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
@@ -131,17 +138,20 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	private final Neo4jClient neo4jClient;
 	private final Renderer renderer;
 	private final EventSerializer eventSerializer;
+	private final CompletionMode completionMode;
 
 	Neo4jEventPublicationRepository(Neo4jClient neo4jClient, Configuration cypherDslConfiguration,
-			EventSerializer eventSerializer) {
+			EventSerializer eventSerializer, CompletionMode completionMode) {
 
 		Assert.notNull(neo4jClient, "Neo4jClient must not be null!");
 		Assert.notNull(cypherDslConfiguration, "CypherDSL configuration must not be null!");
 		Assert.notNull(eventSerializer, "EventSerializer must not be null!");
+		Assert.notNull(completionMode, "Completion mode must not be null!");
 
 		this.neo4jClient = neo4jClient;
 		this.renderer = Renderer.getRenderer(cypherDslConfiguration);
 		this.eventSerializer = eventSerializer;
+		this.completionMode = completionMode;
 	}
 
 	/*
@@ -184,11 +194,21 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 		var eventHash = DigestUtils.md5DigestAsHex(eventSerializer.serialize(event).toString().getBytes());
 
-		neo4jClient.query(renderer.render(COMPLETE_STATEMENT))
-				.bind(eventHash).to(EVENT_HASH)
-				.bind(identifier.getValue()).to(LISTENER_ID)
-				.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
-				.run();
+		if (completionMode == CompletionMode.DELETE) {
+
+			neo4jClient.query(renderer.render(DELETE_BY_EVENT_AND_LISTENER_ID))
+					.bind(eventHash).to(EVENT_HASH)
+					.bind(identifier.getValue()).to(LISTENER_ID)
+					.run();
+
+		} else {
+
+			neo4jClient.query(renderer.render(COMPLETE_STATEMENT))
+					.bind(eventHash).to(EVENT_HASH)
+					.bind(identifier.getValue()).to(LISTENER_ID)
+					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+					.run();
+		}
 	}
 
 	/*
@@ -199,10 +219,17 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Transactional
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
-		neo4jClient.query(renderer.render(COMPLETE_BY_ID_STATEMENT))
-				.bind(Values.value(identifier.toString())).to(ID)
-				.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
-				.run();
+		if (completionMode == CompletionMode.DELETE) {
+
+			deletePublications(List.of(identifier));
+
+		} else {
+
+			neo4jClient.query(renderer.render(COMPLETE_BY_ID_STATEMENT))
+					.bind(Values.value(identifier.toString())).to(ID)
+					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+					.run();
+		}
 	}
 
 	/*

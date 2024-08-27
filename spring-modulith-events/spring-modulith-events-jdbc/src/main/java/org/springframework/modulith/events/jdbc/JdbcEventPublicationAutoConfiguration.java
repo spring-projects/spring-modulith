@@ -24,12 +24,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * @author Dmitry Belyaev
@@ -48,10 +50,16 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	}
 
 	@Bean
-	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
-			EventSerializer serializer, DatabaseType databaseType, JdbcConfigurationProperties properties) {
+	JdbcRepositorySettings jdbcEventPublicationRepositorySettings(DatabaseType databaseType,
+			JdbcConfigurationProperties properties, Environment environment) {
 
-		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, databaseType, properties);
+		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties.getSchema());
+	}
+
+	@Bean
+	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
+			EventSerializer serializer, JdbcRepositorySettings settings) {
+		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, settings);
 	}
 
 	@Bean

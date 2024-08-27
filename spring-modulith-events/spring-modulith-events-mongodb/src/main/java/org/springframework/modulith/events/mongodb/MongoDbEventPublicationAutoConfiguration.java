@@ -18,9 +18,11 @@ package org.springframework.modulith.events.mongodb;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * Autoconfiguration for MongoDB event publication repository.
@@ -32,7 +34,7 @@ import org.springframework.modulith.events.config.EventPublicationConfigurationE
 class MongoDbEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
 	@Bean
-	MongoDbEventPublicationRepository mongoDbEventPublicationRepository(MongoTemplate template) {
-		return new MongoDbEventPublicationRepository(template);
+	MongoDbEventPublicationRepository mongoDbEventPublicationRepository(MongoTemplate template, Environment environment) {
+		return new MongoDbEventPublicationRepository(template, CompletionMode.from(environment));
 	}
 }

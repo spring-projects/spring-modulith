@@ -6,10 +6,12 @@ import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.core.env.Environment;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * Auto-configuration to register a {@link Neo4jEventPublicationRepository}, a default {@link Configuration} and a
@@ -24,8 +26,9 @@ class Neo4jEventPublicationAutoConfiguration implements EventPublicationConfigur
 
 	@Bean
 	Neo4jEventPublicationRepository neo4jEventPublicationRepository(Neo4jClient neo4jClient,
-			Configuration cypherDslConfiguration, EventSerializer eventSerializer) {
-		return new Neo4jEventPublicationRepository(neo4jClient, cypherDslConfiguration, eventSerializer);
+			Configuration cypherDslConfiguration, EventSerializer eventSerializer, Environment environment) {
+		return new Neo4jEventPublicationRepository(neo4jClient, cypherDslConfiguration, eventSerializer,
+				CompletionMode.from(environment));
 	}
 
 	@Bean

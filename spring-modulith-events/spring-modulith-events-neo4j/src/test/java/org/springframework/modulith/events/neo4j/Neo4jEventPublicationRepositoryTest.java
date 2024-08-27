@@ -1,6 +1,22 @@
+/*
+ * Copyright 2023-2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.modulith.events.neo4j;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 
 import lombok.Value;
@@ -11,6 +27,7 @@ import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.neo4j.cypherdsl.core.renderer.Dialect;
 import org.neo4j.driver.AuthTokens;
@@ -21,10 +38,13 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.util.DigestUtils;
 import org.testcontainers.containers.Neo4jContainer;
@@ -47,10 +67,16 @@ class Neo4jEventPublicationRepositoryTest {
 
 	@Autowired Neo4jEventPublicationRepository repository;
 	@Autowired Driver driver;
+	@Autowired Environment environment;
+
 	@MockBean EventSerializer eventSerializer;
+
+	CompletionMode completionMode;
 
 	@BeforeEach
 	void clearDb() {
+
+		this.completionMode = CompletionMode.from(environment);
 
 		try (var session = driver.session()) {
 			session.run("MATCH (n) detach delete n").consume();
@@ -189,6 +215,8 @@ class Neo4jEventPublicationRepositoryTest {
 	@Test
 	void deleteCompletedPublicationsBefore() throws Exception {
 
+		assumeTrue(completionMode == CompletionMode.UPDATE);
+
 		var testEvent1 = new TestEvent("id1");
 		var event1Serialized = "{\"eventId\":\"id1\"}";
 		var testEvent2 = new TestEvent("id2");
@@ -228,11 +256,19 @@ class Neo4jEventPublicationRepositoryTest {
 
 		repository.markCompleted(publication, Instant.now());
 
-		assertThat(repository.findCompletedPublications())
-				.hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent)
-				.isEqualTo(event);
+		if (completionMode == CompletionMode.DELETE) {
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+		} else {
+
+			assertThat(repository.findCompletedPublications())
+					.hasSize(1)
+					.element(0)
+					.extracting(TargetEventPublication::getEvent)
+					.isEqualTo(event);
+		}
 	}
 
 	@Test // GH-258
@@ -243,9 +279,17 @@ class Neo4jEventPublicationRepositoryTest {
 
 		repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-		assertThat(repository.findCompletedPublications())
-				.extracting(TargetEventPublication::getIdentifier)
-				.containsExactly(publication.getIdentifier());
+		if (completionMode == CompletionMode.DELETE) {
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+		} else {
+
+			assertThat(repository.findCompletedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
 	}
 
 	private TargetEventPublication createPublication(Object event) {
@@ -257,6 +301,10 @@ class Neo4jEventPublicationRepositoryTest {
 
 		return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
 	}
+
+	@Nested
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
+	static class WithDeleteCompletionTest extends Neo4jEventPublicationRepositoryTest {}
 
 	@Value
 	static class TestEvent {
