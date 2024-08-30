@@ -1201,18 +1201,17 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			// Parent child relationships
 
-			return targetModule.getParentModule(modules)
-					.filter(it -> !it.equals(originModule))
-					.map(__ -> {
+			if (!haveSameParentOrDirectParentRelationship(originModule, targetModule, modules)) {
 
-						var violationText = INVALID_SUB_MODULE_REFERENCE
-								.formatted(originModule.getName(), targetModule.getName(),
-										FormatableType.of(source).getAbbreviatedFullName(originModule),
-										FormatableType.of(target).getAbbreviatedFullName(targetModule));
+				var violationText = INVALID_SUB_MODULE_REFERENCE
+						.formatted(originModule.getName(), targetModule.getName(),
+								FormatableType.of(source).getAbbreviatedFullName(originModule),
+								FormatableType.of(target).getAbbreviatedFullName(targetModule));
 
-						return violations.and(new Violation(violationText));
-					})
-					.orElse(violations);
+				return violations.and(new Violation(violationText));
+			}
+
+			return violations;
 		}
 
 		ApplicationModule getExistingModuleOf(JavaClass javaClass, ApplicationModules modules) {
@@ -1346,6 +1345,27 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		private static boolean isInjectionPoint(JavaMember unit) {
 			return INJECTION_TYPES.stream().anyMatch(type -> unit.isAnnotatedWith(type));
+		}
+
+		private static boolean haveSameParentOrDirectParentRelationship(ApplicationModule source, ApplicationModule target,
+				ApplicationModules modules) {
+
+			var sourceParent = modules.getParentOf(source);
+			var targetParent = modules.getParentOf(target);
+
+			// Top-level modules
+			return targetParent.isEmpty()
+
+					// One is parent of the other
+					|| hasValue(sourceParent, target)
+					|| hasValue(targetParent, source)
+
+					// Same immediate parent
+					|| sourceParent.flatMap(it -> targetParent.filter(it::equals)).isPresent();
+		}
+
+		private static <T> boolean hasValue(Optional<T> optional, T expected) {
+			return optional.filter(expected::equals).isPresent();
 		}
 	}
 

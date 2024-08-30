@@ -16,10 +16,12 @@
 package example.ni.nested.b.second;
 
 import example.ni.nested.InNested;
+import example.ni.nested.b.first.InNestedBFirst;
 
 /**
  * @author Oliver Drotbohm
  */
 public class InNestedBSecond {
 	InNested inNested;
+	InNestedBFirst siblingReference;
 }

@@ -211,7 +211,7 @@ In this example `inventory` is an application module as described xref:fundament
 The `@ApplicationModule` annotation on the `nested` package caused that to become a nested application module in turn.
 In that arrangement, the following access rules apply:
 
-* The code in _Nested_ is only available from _Inventory_, i.e. only any of the `SomethingInventoryInternal` types can access `NestedApi`. `NestedInternal` is only accessible from `NestedApi`.
+* The code in _Nested_ is only available from _Inventory_ or any types exposed by sibling application modules nested inside _Inventory_.
 * Any code in the _Nested_ module can access code in parent modules, even internal.
 I.e., both `NestedApi` and `NestedInternal` can access `inventory.internal.SomethingInventoryInternal`.
 * Code from nested modules can also access exposed types by top-level application modules.
