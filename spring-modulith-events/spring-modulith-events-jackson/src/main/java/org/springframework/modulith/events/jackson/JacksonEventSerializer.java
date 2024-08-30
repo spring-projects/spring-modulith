@@ -47,7 +47,7 @@ class JacksonEventSerializer implements EventSerializer {
 
 	/*
 	 * (non-Javadoc)
-	 * @see de.oliverDrotbohm.events.EventSerializer#serialize(java.lang.Object)
+	 * @see org.springframework.modulith.events.core.EventSerializer#serialize(java.lang.Object)
 	 */
 	@Override
 	public Object serialize(Object event) {
@@ -61,7 +61,7 @@ class JacksonEventSerializer implements EventSerializer {
 
 	/*
 	 * (non-Javadoc)
-	 * @see de.oliverDrotbohm.events.EventSerializer#deserialize(java.lang.Object, java.lang.Class)
+	 * @see org.springframework.modulith.events.core.EventSerializer#deserialize(java.lang.Object, java.lang.Class)
 	 */
 	@Override
 	public <T> T deserialize(Object serialized, Class<T> type) {
