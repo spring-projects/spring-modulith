@@ -122,7 +122,7 @@ It can be link:{docs}#testing.bootstrap-modes[tweaked] to explicitly include oth
 == Using Events for Inter-module Interaction
 
 Shifting the integration testing focus towards application modules usually reveals their outgoing dependencies, typically established by references to Spring beans residing in other modules.
-While those can be mocked (by using `@MockBean`) to satisfy the test execution, it is often a better idea to replace the cross-module bean dependencies with an application event being published and consuming that with the previously explicitly invoked component.
+While those can be mocked (by using `@MockitoBean`) to satisfy the test execution, it is often a better idea to replace the cross-module bean dependencies with an application event being published and consuming that with the previously explicitly invoked component.
 
 Our example is already arranged in this preferred way, as it publishes an `OrderCompleted` event during the call to `OrderManagement.complete(…)`.
 Spring Modulith's `PublishedEvents` abstraction allows testing that an integration test case has caused particular application events to be published:

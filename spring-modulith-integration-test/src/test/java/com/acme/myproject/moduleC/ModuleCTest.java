@@ -20,7 +20,7 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.modulith.test.TestUtils;
 
@@ -61,7 +61,7 @@ class ModuleCTest {
 	@NonVerifyingModuleTest(BootstrapMode.DIRECT_DEPENDENCIES)
 	static class SucceedsWithDirectDependencyPlusItsDependenciesMocksTest {
 
-		@MockBean ServiceComponentA serviceComponentA;
+		@MockitoBean ServiceComponentA serviceComponentA;
 
 		@Test
 		void bootstrapsContext() {

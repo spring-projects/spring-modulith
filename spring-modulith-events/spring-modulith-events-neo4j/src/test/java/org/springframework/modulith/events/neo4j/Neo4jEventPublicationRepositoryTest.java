@@ -34,7 +34,7 @@ import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -69,7 +69,7 @@ class Neo4jEventPublicationRepositoryTest {
 	@Autowired Driver driver;
 	@Autowired Environment environment;
 
-	@MockBean EventSerializer eventSerializer;
+	@MockitoBean EventSerializer eventSerializer;
 
 	CompletionMode completionMode;
 
