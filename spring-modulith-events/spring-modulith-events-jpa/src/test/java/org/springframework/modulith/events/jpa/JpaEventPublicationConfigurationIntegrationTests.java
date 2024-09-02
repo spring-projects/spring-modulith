@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -41,7 +41,7 @@ class JpaEventPublicationConfigurationIntegrationTests {
 
 	private final ApplicationContext context;
 
-	@MockBean EventSerializer serializer;
+	@MockitoBean EventSerializer serializer;
 
 	@Test
 	void bootstrapsApplicationComponents() {

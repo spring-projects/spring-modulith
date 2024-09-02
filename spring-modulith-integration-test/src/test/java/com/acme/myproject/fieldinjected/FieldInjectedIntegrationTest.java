@@ -19,7 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.test.ModuleTestExecution;
 
@@ -36,7 +36,7 @@ class FieldInjectedIntegrationTest {
 
 	@Autowired ModuleTestExecution execution;
 
-	@MockBean ServiceComponentA dependency;
+	@MockitoBean ServiceComponentA dependency;
 
 	@Test
 	void rejectsFieldInjection() {

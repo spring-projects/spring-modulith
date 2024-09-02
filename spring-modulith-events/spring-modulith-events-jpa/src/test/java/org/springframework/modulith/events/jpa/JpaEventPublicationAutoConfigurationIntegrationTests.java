@@ -24,7 +24,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestConstructor;
@@ -41,7 +41,7 @@ class JpaEventPublicationAutoConfigurationIntegrationTests {
 
 	private final BeanFactory factory;
 
-	@MockBean EventSerializer serializer;
+	@MockitoBean EventSerializer serializer;
 
 	@Test // GH-10
 	void registersJpaEventPublicationPackageForAutoConfiguration() {

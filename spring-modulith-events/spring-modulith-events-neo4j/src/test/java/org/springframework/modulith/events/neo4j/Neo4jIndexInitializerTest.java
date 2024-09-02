@@ -27,7 +27,7 @@ import org.neo4j.driver.GraphDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.data.neo4j.DataNeo4jTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.neo4j.core.Neo4jClient;
@@ -52,7 +52,7 @@ class Neo4jIndexInitializerTest {
 		@Container private static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
 				.withRandomPassword();
 
-		@MockBean EventSerializer eventSerializer;
+		@MockitoBean EventSerializer eventSerializer;
 
 		@Configuration
 		static class Config {

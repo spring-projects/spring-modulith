@@ -90,7 +90,7 @@ Java::
 @ApplicationModuleTest
 class InventoryIntegrationTests {
 
-  @MockBean SomeOtherComponent someOtherComponent;
+  @MockitoBean SomeOtherComponent someOtherComponent;
 }
 ----
 Kotlin::
@@ -100,11 +100,11 @@ Kotlin::
 @ApplicationModuleTest
 class InventoryIntegrationTests {
 
-  @MockBean SomeOtherComponent someOtherComponent
+  @MockitoBean SomeOtherComponent someOtherComponent
 }
 ----
 ======
-Spring Boot will create bean definitions and instances for the types defined as `@MockBean` and add them to the `ApplicationContext` bootstrapped for the test run.
+Spring Boot will create bean definitions and instances for the types defined as `@MockitoBean` and add them to the `ApplicationContext` bootstrapped for the test run.
 
 If you find your application module depending on too many beans of other ones, that is usually a sign of high coupling between them.
 The dependencies should be reviewed for whether they are candidates for replacement by publishing xref:events.adoc#events[domain events].
