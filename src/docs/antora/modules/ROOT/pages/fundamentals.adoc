@@ -534,7 +534,7 @@ Such a factory can either return arbitrary package names to get an `ApplicationM
 ----
 package example;
 
-public class CustomApplicationModuleSourceFactory implements ApplicationModuleDetectionStrategy {
+public class CustomApplicationModuleSourceFactory implements ApplicationModuleSourceFactory {
 
 	@Override
 	public List<String> getRootPackages() {
