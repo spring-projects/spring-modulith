@@ -141,6 +141,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				pkgs -> importer.importPackages(pkgs).that(not(excluded)), strategy, useFullyQualifiedModuleNames);
 
 		var directSources = packages.stream() //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it))
 				.flatMap(it -> ApplicationModuleSource.from(it, strategy, useFullyQualifiedModuleNames));
 
@@ -158,6 +159,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
 		this.rootPackages = Stream.concat(packages.stream(), contributions.getRootPackages()) //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
 				.toList();
 
