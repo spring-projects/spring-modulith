@@ -139,12 +139,14 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
 		this.modules = packages.stream() //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it))
 				.flatMap(strategy::getModuleBasePackages) //
 				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
 		this.rootPackages = packages.stream() //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
 				.toList();
 
