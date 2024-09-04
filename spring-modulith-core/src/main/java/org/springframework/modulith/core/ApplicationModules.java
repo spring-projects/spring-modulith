@@ -109,12 +109,14 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Classes classes = Classes.of(allClasses);
 
 		this.modules = packages.stream() //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it))
 				.flatMap(DETECTION_STRATEGY::getModuleBasePackages) //
 				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
 		this.rootPackages = packages.stream() //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
 				.toList();
 
