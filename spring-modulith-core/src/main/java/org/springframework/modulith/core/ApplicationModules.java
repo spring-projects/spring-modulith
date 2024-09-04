@@ -96,12 +96,11 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 *
 	 * @param metadata must not be {@literal null}.
 	 * @param ignored must not be {@literal null}.
-	 * @param useFullyQualifiedModuleNames can be {@literal null}.
 	 * @param option must not be {@literal null}.
 	 */
 	protected ApplicationModules(ModulithMetadata metadata,
-			DescribedPredicate<? super JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
-		this(metadata, metadata.getBasePackages(), ignored, useFullyQualifiedModuleNames, option);
+			DescribedPredicate<? super JavaClass> ignored, ImportOption option) {
+		this(metadata, metadata.getBasePackages(), ignored, metadata.useFullyQualifiedModuleNames(), option);
 	}
 
 	/**
@@ -113,8 +112,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param useFullyQualifiedModuleNames can be {@literal null}.
 	 * @param option must not be {@literal null}.
 	 * @deprecated since 1.2, for removal in 1.3. Use {@link ApplicationModules(ModulithMetadata, DescribedPredicate,
-	 *             boolean, ImportOption)} instead and set up {@link ModulithMetadata} to contain the packages you want to
-	 *             use.
+	 *             ImportOption)} instead and set up {@link ModulithMetadata} to contain the packages you want to use.
 	 */
 	@Deprecated(forRemoval = true)
 	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
@@ -128,8 +126,9 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		DescribedPredicate<? super JavaClass> excluded = DescribedPredicate.or(ignored, IS_AOT_TYPE, IS_SPRING_CGLIB_PROXY);
 
 		this.metadata = metadata;
-		this.allClasses = new ClassFileImporter() //
-				.withImportOption(option) //
+		var importer = new ClassFileImporter() //
+				.withImportOption(option);
+		this.allClasses = importer //
 				.importPackages(packages) //
 				.that(not(excluded));
 
@@ -138,9 +137,14 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Classes classes = Classes.of(allClasses);
 		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
-		var sources = packages.stream() //
+		var contributions = ApplicationModuleSourceContributions.of(
+				pkgs -> importer.importPackages(pkgs).that(not(excluded)), strategy, useFullyQualifiedModuleNames);
+
+		var directSources = packages.stream() //
 				.map(it -> JavaPackage.of(classes, it))
-				.flatMap(it -> ApplicationModuleSource.from(it, strategy, useFullyQualifiedModuleNames))
+				.flatMap(it -> ApplicationModuleSource.from(it, strategy, useFullyQualifiedModuleNames));
+
+		var sources = Stream.concat(directSources, contributions.getSources())
 				.distinct()
 				.collect(Collectors.toUnmodifiableSet());
 
@@ -148,12 +152,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.map(it -> {
 
 					return new ApplicationModule(it,
-							JavaPackages.onlySubPackagesOf(it.moduleBasePackage(),
-									sources.stream().map(ApplicationModuleSource::moduleBasePackage).toList())); //
+							JavaPackages.onlySubPackagesOf(it.getModuleBasePackage(),
+									sources.stream().map(ApplicationModuleSource::getModuleBasePackage).toList())); //
 				})
 				.collect(toMap(ApplicationModule::getName, Function.identity()));
 
-		this.rootPackages = packages.stream() //
+		this.rootPackages = Stream.concat(packages.stream(), contributions.getRootPackages()) //
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
 				.toList();
 
@@ -643,8 +647,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return CACHE.computeIfAbsent(cacheKey, key -> {
 
 			var metadata = key.getMetadata();
-			var modules = new ApplicationModules(metadata, key.getIgnored(),
-					metadata.useFullyQualifiedModuleNames(), key.getOptions());
+			var modules = new ApplicationModules(metadata, key.getIgnored(), key.getOptions());
 
 			var sharedModules = metadata.getSharedModuleNames() //
 					.map(modules::getRequiredModule) //

@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.core;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
@@ -29,9 +30,25 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @since 1.3
  */
-record ApplicationModuleSource(
-		JavaPackage moduleBasePackage,
-		String moduleName) {
+public class ApplicationModuleSource {
+
+	private final JavaPackage moduleBasePackage;
+	private final String moduleName;
+
+	/**
+	 * Creates a new {@link ApplicationModuleSource} for the given module base package and module name.
+	 *
+	 * @param moduleBasePackage must not be {@literal null}.
+	 * @param moduleName must not be {@literal null} or empty.
+	 */
+	private ApplicationModuleSource(JavaPackage moduleBasePackage, String moduleName) {
+
+		Assert.notNull(moduleBasePackage, "JavaPackage must not be null!");
+		Assert.hasText(moduleName, "Module name must not be null or empty!");
+
+		this.moduleBasePackage = moduleBasePackage;
+		this.moduleName = moduleName;
+	}
 
 	/**
 	 * Returns a {@link Stream} of {@link ApplicationModuleSource}s by applying the given
@@ -65,5 +82,47 @@ record ApplicationModuleSource(
 		Assert.hasText(name, "Name must not be null or empty!");
 
 		return new ApplicationModuleSource(pkg, name);
+	}
+
+	/**
+	 * @return will never be {@literal null}.
+	 */
+	public JavaPackage getModuleBasePackage() {
+		return moduleBasePackage;
+	}
+
+	/**
+	 * @return will never be {@literal null} or empty.
+	 */
+	public String getModuleName() {
+		return moduleName;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (obj == this) {
+			return true;
+		}
+
+		if (!(obj instanceof ApplicationModuleSource that)) {
+			return false;
+		}
+
+		return Objects.equals(this.moduleName, that.moduleName)
+				&& Objects.equals(this.moduleBasePackage, that.moduleBasePackage);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return Objects.hash(moduleName, moduleBasePackage);
 	}
 }

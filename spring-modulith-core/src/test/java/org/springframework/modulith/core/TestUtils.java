@@ -110,6 +110,6 @@ public class TestUtils {
 	}
 
 	private static ApplicationModules of(ModulithMetadata metadata, DescribedPredicate<JavaClass> ignores) {
-		return new ApplicationModules(metadata, ignores, false, new ImportOption.OnlyIncludeTests()) {};
+		return new ApplicationModules(metadata, ignores, new ImportOption.OnlyIncludeTests()) {};
 	}
 }

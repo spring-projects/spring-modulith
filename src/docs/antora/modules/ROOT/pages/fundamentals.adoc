@@ -1,5 +1,6 @@
 [[fundamentals]]
 = Fundamentals
+:tabsize: 2
 :toc:
 :toclevels: 3
 
@@ -393,64 +394,6 @@ package example.inventory
 ----
 ======
 
-[[customizing-modules]]
-=== Customizing Module Detection
-
-By default, application modules will be expected to be located in direct sub-packages of the package the Spring Boot application class resides in.
-An alternative detection strategy can be activated to only consider package explicitly annotated, either via Spring Modulith's `@ApplicationModule` or jMolecules `@Module` annotation.
-That strategy can be activated by configuring the `spring.modulith.detection-strategy` to `explicitly-annotated`.
-
-.Switching the application module detection strategy to only consider annotated packages
-[source, text]
-----
-spring.modulith.detection-strategy=explicitly-annotated
-----
-
-If the neither default application module detection strategy nor the manually annotated one does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
-That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package the Spring Boot application class resides in.
-You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
-
-Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:
-
-.Implementing a custom `ApplicationModuleDetectionStrategy`
-[tabs]
-======
-Java::
-+
-[source, java, role="primary"]
-----
-package example;
-
-class CustomApplicationModuleDetectionStrategy implements ApplicationModuleDetectionStrategy {
-
-  @Override
-  public Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage) {
-    // Your module detection goes here
-  }
-}
-----
-Kotlin::
-+
-[source, kotlin, role="secondary"]
-----
-package example
-
-class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
-
-  override fun getModuleBasePackages(basePackage: JavaPackage): Stream<JavaPackage> {
-    // Your module detection goes here
-  }
-}
-----
-======
-
-This class can now be registered as `spring.modulith.detection-strategy` as follows:
-
-[source, text]
-----
-spring.modulith.detection-strategy=example.CustomApplicationModuleDetectionStrategy
-----
-
 [[customizing-modules-arrangement]]
 == Customizing the Application Modules Arrangement
 
@@ -514,3 +457,101 @@ The annotation exposes the following attributes to customize:
 |Instructs Spring Modulith to treat the configured packages as additional root application packages. In other words, application module detection will be triggered for those as well.
 
 |===
+
+[[customizing-modules]]
+=== Customizing Module Detection
+
+By default, application modules will be expected to be located in direct sub-packages of the package the Spring Boot application class resides in.
+An alternative detection strategy can be activated to only consider package explicitly annotated, either via Spring Modulith's `@ApplicationModule` or jMolecules `@Module` annotation.
+That strategy can be activated by configuring the `spring.modulith.detection-strategy` to `explicitly-annotated`.
+
+.Switching the application module detection strategy to only consider annotated packages
+[source, text]
+----
+spring.modulith.detection-strategy=explicitly-annotated
+----
+
+If the neither default application module detection strategy nor the manually annotated one does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
+That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package the Spring Boot application class resides in.
+You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
+
+Assume you declare a custom `ApplicationModuleDetectionStrategy` implementation like this:
+
+.Implementing a custom `ApplicationModuleDetectionStrategy`
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+package example;
+
+class CustomApplicationModuleDetectionStrategy implements ApplicationModuleDetectionStrategy {
+
+  @Override
+  public Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage) {
+    // Your module detection goes here
+  }
+}
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+package example
+
+class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
+
+  override fun getModuleBasePackages(basePackage: JavaPackage): Stream<JavaPackage> {
+    // Your module detection goes here
+  }
+}
+----
+======
+
+This class can now be registered as `spring.modulith.detection-strategy` as follows:
+
+[source, text]
+----
+spring.modulith.detection-strategy=example.CustomApplicationModuleDetectionStrategy
+----
+
+=== Contributing Application Modules From Other Packages
+
+While `@Modulithic` allows defining `additionalPackages` to trigger application module detection for packages other than the one of the annotated class, its usage requires knowing about those in advance.
+As of version 1.3, Spring Modulith supports external contributions of application modules via the `ApplicationModuleSource` and `ApplicationModuleSourceFactory` abstractions.
+An implementation of the latter can be registered in a `spring.factories` file located in `META-INF`.
+
+[source, text]
+----
+org.springframework.modulith.core.ApplicationModuleSourceFactory=example.CustomApplicationModuleSourceFactory
+----
+
+Such a factory can either return arbitrary package names to get an `ApplicationModuleDetectionStrategy` applied, or explicitly return packages to create modules for.
+
+[source, java]
+----
+package example;
+
+public class CustomApplicationModuleSourceFactory implements ApplicationModuleDetectionStrategy {
+
+	@Override
+	public List<String> getRootPackages() {
+		return List.of("com.acme.toscan");
+	}
+
+	@Override
+	public ApplicationModuleDetectionStrategy getApplicationModuleDetectionStrategy() {
+		return ApplicationModuleDetectionStrategy.explicitlyAnnotated();
+	}
+
+	@Override
+	public List<String> getModuleBasePackages() {
+		return List.of("com.acme.module");
+	}
+}
+----
+
+The above example would use `com.acme.toscan` to detect xref:fundamentals.adoc#customizing-modules[explicitly declared modules] within that and also create an application module from `com.acme.module`.
+The package names returned from these will subsequently be translated into ``ApplicationModuleSource``s via the corresponding `getApplicationModuleSource(…)` flavors exposed in `ApplicationModuleDetectionStrategy`.
+

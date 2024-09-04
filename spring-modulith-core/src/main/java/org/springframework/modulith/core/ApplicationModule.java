@@ -102,7 +102,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		Assert.notNull(source, "Base package must not be null!");
 		Assert.notNull(exclusions, "Exclusions must not be null!");
 
-		JavaPackage basePackage = source.moduleBasePackage();
+		JavaPackage basePackage = source.getModuleBasePackage();
 
 		this.source = source;
 		this.basePackage = basePackage;
@@ -144,7 +144,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * @return will never be {@literal null} or empty.
 	 */
 	public String getName() {
-		return source.moduleName();
+		return source.getModuleName();
 	}
 
 	/**

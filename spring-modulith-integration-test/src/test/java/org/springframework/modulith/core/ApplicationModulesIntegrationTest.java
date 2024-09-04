@@ -242,6 +242,25 @@ class ApplicationModulesIntegrationTest {
 		assertThatIllegalArgumentException().isThrownBy(() -> ApplicationModules.of("non.existant"));
 	}
 
+	@Test // GH-613
+	void detectsContributedApplicationModules() {
+
+		var location = ApplicationModuleSourceContributions.LOCATION;
+
+		ApplicationModuleSourceContributions.LOCATION = "META-INF/spring-test.factories";
+
+		try {
+
+			var modules = org.springframework.modulith.test.TestUtils.createApplicationModules(Application.class);
+
+			assertThat(modules.getModuleByName("detected")).isNotEmpty();
+			assertThat(modules.getModuleByName("enumerated")).isNotEmpty();
+
+		} finally {
+			ApplicationModuleSourceContributions.LOCATION = location;
+		}
+	}
+
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {
 
 		Stream.of(types).forEach(type -> {

@@ -23,6 +23,7 @@ import org.springframework.boot.test.context.SpringBootContextLoader;
 import org.springframework.boot.test.context.SpringBootTestContextBootstrapper;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.test.context.BootstrapContext;
 import org.springframework.test.context.CacheAwareContextLoaderDelegate;
 import org.springframework.test.context.ContextLoadException;
@@ -30,10 +31,24 @@ import org.springframework.test.context.MergedContextConfiguration;
 import org.springframework.test.context.cache.DefaultCacheAwareContextLoaderDelegate;
 import org.springframework.test.context.support.DefaultBootstrapContext;
 
+import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaClass;
+
 /**
  * @author Oliver Drotbohm
  */
 public class TestUtils {
+
+	/**
+	 * Creates a fresh {@link ApplicationModules} instance no matter the caching state.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public static ApplicationModules createApplicationModules(Class<?> type) {
+		return ApplicationModules.of(type, cacheInvalidator());
+	}
 
 	public static void assertDependencyMissing(Class<?> testClass, Class<?> expectedMissingDependency) {
 
@@ -71,5 +86,16 @@ public class TestUtils {
 
 	private static RuntimeException asRuntimeException(Throwable o_O) {
 		return o_O instanceof RuntimeException ? (RuntimeException) o_O : new RuntimeException(o_O);
+	}
+
+	private static DescribedPredicate<JavaClass> cacheInvalidator() {
+
+		return new DescribedPredicate<JavaClass>("invalidator") {
+
+			@Override
+			public boolean test(JavaClass t) {
+				return false;
+			}
+		};
 	}
 }
