@@ -516,6 +516,7 @@ This class can now be registered as `spring.modulith.detection-strategy` as foll
 spring.modulith.detection-strategy=example.CustomApplicationModuleDetectionStrategy
 ----
 
+[[contributing-application-modules]]
 === Contributing Application Modules From Other Packages
 
 While `@Modulithic` allows defining `additionalPackages` to trigger application module detection for packages other than the one of the annotated class, its usage requires knowing about those in advance.
