@@ -138,7 +138,7 @@ public class ApplicationModulesExporter {
 			json.put("namedInterfaces", toNamedInterfaces(module.getNamedInterfaces()));
 		}
 
-		json.put("dependencies", module.getDependencies(modules).stream() //
+		json.put("dependencies", module.getDirectDependencies(modules).stream() //
 				.collect(Collectors.groupingBy(ApplicationModuleDependency::getTargetModule, MAPPER))
 				.entrySet() //
 				.stream() //

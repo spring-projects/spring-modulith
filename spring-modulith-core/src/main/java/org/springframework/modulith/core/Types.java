@@ -19,6 +19,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
+import java.util.function.Predicate;
 
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.PackageInfo;
@@ -77,6 +78,14 @@ class Types {
 		public static boolean areRulesPresent() {
 			return ClassUtils.isPresent(ARCHUNIT_RULES, JMoleculesTypes.class.getClassLoader());
 		}
+	}
+
+	static class JavaTypes {
+
+		static Predicate<JavaClass> IS_CORE_JAVA_TYPE = it -> it.getName().startsWith("java.")
+				|| it.getName().startsWith("javax.");
+
+		static Predicate<JavaClass> IS_NOT_CORE_JAVA_TYPE = Predicate.not(IS_CORE_JAVA_TYPE);
 	}
 
 	static class JavaXTypes {

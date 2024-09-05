@@ -16,6 +16,7 @@
 package org.springframework.modulith.core;
 
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * The name of a Java package. Packages are sortable comparing their individual segments and deeper packages sorted
@@ -32,14 +33,27 @@ class PackageName implements Comparable<PackageName> {
 	/**
 	 * Creates a new {@link PackageName} with the given name.
 	 *
-	 * @param name must not be {@literal null} or empty.
+	 * @param name must not be {@literal null}.
 	 */
 	public PackageName(String name) {
 
-		Assert.hasText(name, "Name must not be null or empty!");
+		Assert.notNull(name, "Name must not be null!");
 
 		this.name = name;
 		this.segments = name.split("\\.");
+	}
+
+	/**
+	 * Creates a new {@link PackageName} for the given fully-qualified type name.
+	 *
+	 * @param fullyQualifiedName must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 */
+	public static PackageName ofType(String fullyQualifiedName) {
+
+		Assert.notNull(fullyQualifiedName, "Type name must not be null!");
+
+		return new PackageName(ClassUtils.getPackageName(fullyQualifiedName));
 	}
 
 	/**
@@ -119,6 +133,19 @@ class PackageName implements Comparable<PackageName> {
 	}
 
 	/**
+	 * Returns whether the package name contains the given one, i.e. if the given one either is the current one or a
+	 * sub-package of it.
+	 *
+	 * @param reference must not be {@literal null}.
+	 */
+	boolean contains(PackageName reference) {
+
+		Assert.notNull(reference, "Reference package name must not be null!");
+
+		return this.equals(reference) || reference.isSubPackageOf(this);
+	}
+
+	/**
 	 * Returns whether the current {@link PackageName} is the name of a sub-package with the given name.
 	 *
 	 * @param reference must not be {@literal null}.
@@ -129,6 +156,10 @@ class PackageName implements Comparable<PackageName> {
 		Assert.notNull(reference, "Reference package name must not be null!");
 
 		return name.startsWith(reference.name + ".");
+	}
+
+	boolean isEmpty() {
+		return length() == 0;
 	}
 
 	/*

@@ -359,7 +359,7 @@ class Asciidoctor {
 	 */
 	public String renderBeanReferences(ApplicationModule module) {
 
-		var bullets = module.getDependencies(modules, DependencyType.USES_COMPONENT)
+		var bullets = module.getDirectDependencies(modules, DependencyType.USES_COMPONENT)
 				.uniqueStream(ApplicationModuleDependency::getTargetType)
 				.map(it -> "%s (in %s)".formatted(toInlineCode(it.getTargetType()), it.getTargetModule().getDisplayName()))
 				.map(this::toBulletPoint)

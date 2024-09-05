@@ -778,8 +778,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 						graph.addVertex(project);
 
-						project.getDependencies(modules).stream() //
-								.map(ApplicationModuleDependency::getTargetModule) //
+						project.getDirectDependencies(modules).uniqueModules() //
 								.forEach(dependency -> {
 									graph.addVertex(dependency);
 									graph.addEdge(project, dependency);

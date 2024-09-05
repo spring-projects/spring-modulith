@@ -44,4 +44,15 @@ class PackageNameUnitTests {
 				.map(it -> it.getLocalName("com")))
 						.containsExactly("acme.b", "acme.a.second", "acme.a.first.one", "acme.a.first", "acme.a", "acme");
 	}
+
+	@Test // GH-802
+	void caculatesNestingCorrectly() {
+
+		var comAcme = new PackageName("com.acme");
+		var comAcmeA = new PackageName("com.acme.a");
+
+		assertThat(comAcme.contains(comAcme)).isTrue();
+		assertThat(comAcme.contains(comAcmeA)).isTrue();
+		assertThat(comAcmeA.contains(comAcme)).isFalse();
+	}
 }

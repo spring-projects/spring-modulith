@@ -127,7 +127,7 @@ class ApplicationModulesIntegrationTest {
 		ApplicationModule moduleA = modules.getModuleByName("moduleA").orElseThrow(IllegalStateException::new);
 
 		assertThat(module).hasValueSatisfying(it -> {
-			assertThat(it.getDependencies(modules, DependencyType.EVENT_LISTENER).contains(moduleA)).isTrue();
+			assertThat(it.getDirectDependencies(modules, DependencyType.EVENT_LISTENER).contains(moduleA)).isTrue();
 		});
 	}
 
@@ -259,6 +259,17 @@ class ApplicationModulesIntegrationTest {
 		} finally {
 			ApplicationModuleSourceContributions.LOCATION = location;
 		}
+	}
+
+	@Test // GH-802
+	void detectsFullDependencyChain() {
+
+		assertThat(modules.getModuleByName("moduleC")).hasValueSatisfying(it -> {
+
+			assertThat(it.getAllDependencies(modules).uniqueModules())
+					.extracting(ApplicationModule::getName)
+					.containsExactlyInAnyOrder("moduleB", "moduleA");
+		});
 	}
 
 	private static void verifyNamedInterfaces(NamedInterfaces interfaces, String name, Class<?>... types) {

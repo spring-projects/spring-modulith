@@ -36,7 +36,6 @@ import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.core.ApplicationModuleDependency;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyDepth;
 import org.springframework.modulith.core.DependencyType;
@@ -442,8 +441,7 @@ public class Documenter {
 
 		DEPENDENCY_DESCRIPTIONS.entrySet().stream().forEach(entry -> {
 
-			module.getDependencies(modules, entry.getKey()).stream() //
-					.map(ApplicationModuleDependency::getTargetModule) //
+			module.getDirectDependencies(modules, entry.getKey()).uniqueModules() //
 					.map(it -> getComponents(options).get(it)) //
 					.map(it -> component.uses(it, entry.getValue())) //
 					.filter(it -> it != null) //
@@ -475,8 +473,7 @@ public class Documenter {
 		Supplier<Stream<ApplicationModule>> bootstrapDependencies = () -> module.getBootstrapDependencies(modules,
 				options.dependencyDepth);
 		Supplier<Stream<ApplicationModule>> otherDependencies = () -> options.getDependencyTypes()
-				.flatMap(it -> module.getDependencies(modules, it).stream()
-						.map(ApplicationModuleDependency::getTargetModule));
+				.flatMap(it -> module.getDirectDependencies(modules, it).uniqueModules());
 
 		Supplier<Stream<ApplicationModule>> dependencies = () -> Stream.concat(bootstrapDependencies.get(),
 				otherDependencies.get());

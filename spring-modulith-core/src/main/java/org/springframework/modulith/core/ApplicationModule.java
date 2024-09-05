@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
+import org.springframework.modulith.core.Types.JavaTypes;
 import org.springframework.modulith.core.Types.SpringTypes;
 import org.springframework.modulith.core.Violations.Violation;
 import org.springframework.util.Assert;
@@ -163,19 +164,34 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * @param modules must not be {@literal null}.
 	 * @param type must not be {@literal null}.
 	 * @return will never be {@literal null}.
+	 * @deprecated since 1.3. Use {@link #getDirectDependencies(ApplicationModules, DependencyType...)} instead.
 	 */
+	@Deprecated
 	public ApplicationModuleDependencies getDependencies(ApplicationModules modules, DependencyType... type) {
+		return getDirectDependencies(modules, type);
+	}
 
-		Assert.notNull(modules, "ApplicationModules must not be null!");
-		Assert.notNull(type, "DependencyTypes must not be null!");
+	/**
+	 * Returns the direct {@link ApplicationModuleDependencies} of the current {@link ApplicationModule}.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public ApplicationModuleDependencies getDirectDependencies(ApplicationModules modules, DependencyType... type) {
+		return getDependencies(modules, DependencyDepth.IMMEDIATE, type);
+	}
 
-		var dependencies = getAllModuleDependencies(modules) //
-				.filter(it -> type.length == 0 ? true : Arrays.stream(type).anyMatch(it::hasType)) //
-				.distinct() //
-				.<ApplicationModuleDependency> flatMap(it -> DefaultApplicationModuleDependency.of(it, modules)) //
-				.toList();
-
-		return ApplicationModuleDependencies.of(dependencies, modules);
+	/**
+	 * Returns the all {@link ApplicationModuleDependencies} (including transitive ones) of the current
+	 * {@link ApplicationModule}.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public ApplicationModuleDependencies getAllDependencies(ApplicationModules modules, DependencyType... type) {
+		return getDependencies(modules, DependencyDepth.ALL, type);
 	}
 
 	/**
@@ -299,20 +315,20 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * @param type must not be {@literal null}.
 	 */
 	public boolean contains(JavaClass type) {
-		return classes.contains(type);
+		return contains(type.getName());
 	}
 
 	/**
 	 * Returns whether the current module contains the given type.
 	 *
-	 * @param type can be {@literal null}.
+	 * @param type must not be {@literal null}.
 	 */
-	public boolean contains(@Nullable Class<?> type) {
-		return type != null && getType(type.getName()).isPresent();
+	public boolean contains(Class<?> type) {
+		return contains(type.getName());
 	}
 
 	/**
-	 * Returns the {@link JavaClass} for the given candidate simple of fully-qualified type name.
+	 * Returns the {@link JavaClass} for the given candidate simple or fully-qualified type name.
 	 *
 	 * @param candidate must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
@@ -363,23 +379,17 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
-	 * Returns whether the module has a base package with the given name.
+	 * Returns whether the given module contains a type with the given simple or fully qualified name.
 	 *
-	 * @param candidate must not be {@literal null} or empty.
-	 * @return whether the module has a base package with the given name.
-	 * @since 1.1
+	 * @param candidate must not be {@literal null}.
+	 * @since 1.3
 	 */
-	boolean hasBasePackage(String candidate) {
-		return basePackage.getName().equals(candidate);
-	}
+	public boolean contains(String candidate) {
 
-	/*
-	 * (non-Javadoc)
-	 * @see java.lang.Object#toString()
-	 */
-	@Override
-	public String toString() {
-		return toString(null);
+		var candidatePackageName = PackageName.ofType(candidate);
+
+		return (candidatePackageName.isEmpty() || basePackage.getPackageName().contains(candidatePackageName))
+				&& getType(candidate).isPresent();
 	}
 
 	public String toString(@Nullable ApplicationModules modules) {
@@ -450,6 +460,17 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return builder.toString();
 	}
 
+	/**
+	 * Returns whether the module has a base package with the given name.
+	 *
+	 * @param candidate must not be {@literal null} or empty.
+	 * @return whether the module has a base package with the given name.
+	 * @since 1.1
+	 */
+	boolean hasBasePackage(String candidate) {
+		return basePackage.getName().equals(candidate);
+	}
+
 	Classes getSpringBeansInternal() {
 		return springBeans.get();
 	}
@@ -480,19 +501,6 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return Stream.concat(explicitlyDeclaredModules, sharedDependencies) //
 				.distinct() //
 				.collect(Collectors.collectingAndThen(Collectors.toList(), DeclaredDependencies::closed));
-	}
-
-	/**
-	 * Returns whether the given module contains a type with the given simple or fully qualified name.
-	 *
-	 * @param candidate must not be {@literal null} or empty.
-	 * @return
-	 */
-	boolean contains(String candidate) {
-
-		Assert.hasText(candidate, "Candidate must not be null or empty!");
-
-		return getType(candidate).isPresent();
 	}
 
 	/**
@@ -542,6 +550,26 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.core.ApplicationModuleDependenciesAware#getDependencies(org.springframework.modulith.core.ApplicationModules, org.springframework.modulith.core.DependencyDepth, org.springframework.modulith.core.DependencyType[])
+	 */
+	public ApplicationModuleDependencies getDependencies(ApplicationModules modules, DependencyDepth depth,
+			DependencyType... types) {
+
+		Assert.notNull(modules, "ApplicationModules must not be null!");
+		Assert.notNull(depth, "DependencyDepth must not be null!");
+		Assert.notNull(types, "DependencyTypes must not be null!");
+
+		return getAllModuleDependencies(modules) //
+				.filter(it -> types.length == 0 ? true : Arrays.stream(types).anyMatch(it::hasType)) //
+				.distinct() //
+				.flatMap(it -> DefaultApplicationModuleDependency.of(it, modules)) //
+				.distinct() //
+				.flatMap(it -> resolveRecurseively(modules, it, depth, types)) //
+				.collect(Collectors.collectingAndThen(Collectors.toList(), ApplicationModuleDependencies::of));
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -573,6 +601,15 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	public int hashCode() {
 		return Objects.hash(source, basePackage, aggregateRoots, information, namedInterfaces, publishedEvents, springBeans,
 				valueTypes);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return toString(null);
 	}
 
 	/*
@@ -646,33 +683,6 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 				.flatMap(it -> it.map(Stream::of).orElseGet(Stream::empty));
 	}
 
-	private Stream<QualifiedDependency> getModuleDependenciesOf(JavaClass type, ApplicationModules modules) {
-
-		var evidentType = ArchitecturallyEvidentType.of(type, getSpringBeansInternal());
-
-		var injections = QualifiedDependency.fromType(evidentType) //
-				.filter(it -> isDependencyToOtherModule(it.getTarget(), modules)); //
-
-		var directDependencies = type.getDirectDependenciesFromSelf().stream() //
-				.filter(it -> isDependencyToOtherModule(it.getTargetClass(), modules)) //
-				.map(QualifiedDependency::new);
-
-		return Stream.concat(injections, directDependencies).distinct();
-	}
-
-	private boolean isDependencyToOtherModule(JavaClass dependency, ApplicationModules modules) {
-		return modules.contains(dependency) && !contains(dependency);
-	}
-
-	private Classes findAggregateRoots(Classes source) {
-
-		return source.stream() //
-				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal()))
-				.filter(ArchitecturallyEvidentType::isAggregateRoot) //
-				.map(ArchitecturallyEvidentType::getType) //
-				.collect(Classes.toClasses());
-	}
-
 	/**
 	 * Returns the current module's immediate parent module, if present.
 	 *
@@ -744,6 +754,58 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return result.toList();
 	}
 
+	private List<JavaClass> findArchitecturallyEvidentType(Predicate<ArchitecturallyEvidentType> selector) {
+
+		var springBeansInternal = getSpringBeansInternal();
+
+		return classes.stream()
+				.map(it -> ArchitecturallyEvidentType.of(it, springBeansInternal))
+				.filter(selector)
+				.map(ArchitecturallyEvidentType::getType)
+				.toList();
+	}
+
+	private Stream<QualifiedDependency> getModuleDependenciesOf(JavaClass type, ApplicationModules modules) {
+
+		var evidentType = ArchitecturallyEvidentType.of(type, getSpringBeansInternal());
+
+		var injections = QualifiedDependency.fromType(evidentType) //
+				.filter(it -> isDependencyToOtherModule(it.getTarget(), modules)); //
+
+		var directDependencies = type.getDirectDependenciesFromSelf().stream() //
+				.filter(it -> JavaTypes.IS_NOT_CORE_JAVA_TYPE.test(it.getTargetClass())) //
+				.filter(it -> isDependencyToOtherModule(it.getTargetClass(), modules)) //
+				.map(QualifiedDependency::new);
+
+		return Stream.concat(injections, directDependencies).distinct();
+	}
+
+	private boolean isDependencyToOtherModule(JavaClass dependency, ApplicationModules modules) {
+		return modules.contains(dependency) && !contains(dependency);
+	}
+
+	private Classes findAggregateRoots(Classes source) {
+
+		return source.stream() //
+				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal()))
+				.filter(ArchitecturallyEvidentType::isAggregateRoot) //
+				.map(ArchitecturallyEvidentType::getType) //
+				.collect(Classes.toClasses());
+	}
+
+	private Stream<ApplicationModuleDependency> resolveRecurseively(ApplicationModules modules,
+			DefaultApplicationModuleDependency dependency, DependencyDepth depth, DependencyType... type) {
+
+		var tail = depth == DependencyDepth.ALL
+				? dependency.getTargetModule()
+						.getDependencies(modules, depth, type)
+						.stream()
+						.distinct()
+				: Stream.<ApplicationModuleDependency> empty();
+
+		return Stream.concat(Stream.of(dependency), tail);
+	}
+
 	private static Classes filterSpringBeans(Classes source) {
 
 		Map<Boolean, List<JavaClass>> collect = source.that(isConfiguration()).stream() //
@@ -767,17 +829,6 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 	private static Predicate<JavaClass> hasSimpleOrFullyQualifiedName(String candidate) {
 		return it -> it.getSimpleName().equals(candidate) || it.getFullName().equals(candidate);
-	}
-
-	private List<JavaClass> findArchitecturallyEvidentType(Predicate<ArchitecturallyEvidentType> selector) {
-
-		var springBeansInternal = getSpringBeansInternal();
-
-		return classes.stream()
-				.map(it -> ArchitecturallyEvidentType.of(it, springBeansInternal))
-				.filter(selector)
-				.map(ArchitecturallyEvidentType::getType)
-				.toList();
 	}
 
 	static class DeclaredDependency {
@@ -1084,21 +1135,31 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 					DependencyType.forDependency(dependency));
 		}
 
-		static QualifiedDependency fromCodeUnitParameter(JavaCodeUnit codeUnit, JavaClass parameter) {
+		static Stream<QualifiedDependency> fromCodeUnitParameter(JavaCodeUnit codeUnit, JavaClass parameter) {
+
+			if (JavaTypes.IS_CORE_JAVA_TYPE.test(parameter)) {
+				return Stream.empty();
+			}
 
 			var description = createDescription(codeUnit, parameter, "parameter");
 			var type = DependencyType.forCodeUnit(codeUnit) //
 					.defaultOr(() -> DependencyType.forParameter(parameter));
 
-			return new QualifiedDependency(codeUnit.getOwner(), parameter, description, type);
+			return Stream.of(new QualifiedDependency(codeUnit.getOwner(), parameter, description, type));
 		}
 
-		static QualifiedDependency fromCodeUnitReturnType(JavaCodeUnit codeUnit) {
+		static Stream<QualifiedDependency> fromCodeUnitReturnType(JavaCodeUnit codeUnit) {
+
+			var returnType = codeUnit.getRawReturnType();
+
+			if (JavaTypes.IS_CORE_JAVA_TYPE.test(returnType)) {
+				return Stream.empty();
+			}
 
 			var description = createDescription(codeUnit, codeUnit.getRawReturnType(), "return type");
 
-			return new QualifiedDependency(codeUnit.getOwner(), codeUnit.getRawReturnType(), description,
-					DependencyType.DEFAULT);
+			return Stream.of(new QualifiedDependency(codeUnit.getOwner(), codeUnit.getRawReturnType(), description,
+					DependencyType.DEFAULT));
 		}
 
 		static Stream<QualifiedDependency> fromType(ArchitecturallyEvidentType type) {
@@ -1112,9 +1173,10 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			var parameterDependencies = codeUnit.getRawParameterTypes()//
 					.stream() //
-					.map(it -> fromCodeUnitParameter(codeUnit, it));
+					.filter(JavaTypes.IS_NOT_CORE_JAVA_TYPE) //
+					.flatMap(it -> fromCodeUnitParameter(codeUnit, it));
 
-			var returnType = Stream.of(fromCodeUnitReturnType(codeUnit));
+			var returnType = fromCodeUnitReturnType(codeUnit);
 
 			return Stream.concat(parameterDependencies, returnType);
 		}
@@ -1268,6 +1330,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			return constructors.stream() //
 					.filter(it -> constructors.size() == 1 || isInjectionPoint(it)) //
 					.flatMap(it -> it.getRawParameterTypes().stream() //
+							.filter(Predicate.not(JavaTypes.IS_CORE_JAVA_TYPE))
 							.map(parameter -> {
 								return source.isInjectable() && !source.isConfigurationProperties()
 										? new InjectionDependency(it, parameter)
@@ -1279,11 +1342,16 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		private static Stream<QualifiedDependency> fromFieldsOf(JavaClass source) {
 
 			return source.getAllFields().stream() //
+					.filter(it -> JavaTypes.IS_NOT_CORE_JAVA_TYPE.test(it.getRawType())) //
 					.filter(QualifiedDependency::isInjectionPoint) //
 					.map(field -> new InjectionDependency(field, field.getRawType()));
 		}
 
 		private static Stream<QualifiedDependency> fromMethodsOf(JavaClass source) {
+
+			if (JavaTypes.IS_CORE_JAVA_TYPE.test(source)) {
+				return Stream.empty();
+			}
 
 			var methods = source.getAllMethods().stream() //
 					.filter(it -> !it.getOwner().isEquivalentTo(Object.class)) //
@@ -1295,8 +1363,8 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			var returnTypes = methods.stream() //
 					.filter(it -> !it.getRawReturnType().isPrimitive()) //
-					.filter(it -> !it.getRawReturnType().getPackageName().startsWith("java")) //
-					.map(it -> fromCodeUnitReturnType(it));
+					.filter(it -> JavaTypes.IS_NOT_CORE_JAVA_TYPE.test(it.getRawReturnType())) //
+					.flatMap(it -> fromCodeUnitReturnType(it));
 
 			var injectionMethods = methods.stream() //
 					.filter(QualifiedDependency::isInjectionPoint) //
@@ -1304,12 +1372,14 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			var methodInjections = injectionMethods.stream() //
 					.flatMap(it -> it.getRawParameterTypes().stream() //
+							.filter(JavaTypes.IS_NOT_CORE_JAVA_TYPE) //
 							.map(parameter -> new InjectionDependency(it, parameter)));
 
 			var otherMethods = methods.stream() //
 					.filter(it -> !injectionMethods.contains(it)) //
 					.flatMap(it -> it.getRawParameterTypes().stream() //
-							.map(parameter -> fromCodeUnitParameter(it, parameter)));
+							.filter(JavaTypes.IS_NOT_CORE_JAVA_TYPE) //
+							.flatMap(parameter -> fromCodeUnitParameter(it, parameter)));
 
 			return Stream.concat(Stream.concat(methodInjections, otherMethods), returnTypes);
 		}
@@ -1427,7 +1497,8 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		}
 	}
 
-	private static class DefaultApplicationModuleDependency implements ApplicationModuleDependency {
+	private static class DefaultApplicationModuleDependency
+			implements ApplicationModuleDependency {
 
 		private final QualifiedDependency dependency;
 		private final ApplicationModule target;
@@ -1455,7 +1526,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 * @param dependency must not be {@literal null}.
 		 * @param modules must not be {@literal null}.
 		 */
-		static Stream<ApplicationModuleDependency> of(QualifiedDependency dependency, ApplicationModules modules) {
+		static Stream<DefaultApplicationModuleDependency> of(QualifiedDependency dependency, ApplicationModules modules) {
 
 			return modules.getModuleByType(dependency.getTarget()).stream()
 					.map(it -> new DefaultApplicationModuleDependency(dependency, it));
