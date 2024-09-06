@@ -37,7 +37,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
  * @author Oliver Drotbohm
  * @author Peter Gafert
  */
-class ModulithTest {
+public class ModulithTest {
 
 	static final DescribedPredicate<JavaClass> DEFAULT_EXCLUSIONS = Filters.withoutModules("cycleA", "cycleB", "invalid2",
 			"invalid3", "fieldinjected");

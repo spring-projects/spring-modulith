@@ -1,17 +1,26 @@
+/*
+ * Copyright 2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.modulith.junit.diff;
 
-import java.io.IOException;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.springframework.modulith.junit.diff.JGitUtil.*;
+
 import java.util.stream.Stream;
 
 import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.Status;
-import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Repository;
-import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
-import org.springframework.core.env.PropertyResolver;
-import org.springframework.lang.NonNull;
 
 import com.tngtech.archunit.thirdparty.com.google.common.collect.Streams;
 
@@ -19,27 +28,30 @@ import com.tngtech.archunit.thirdparty.com.google.common.collect.Streams;
  * Implementation to get latest local file changes.
  *
  * @author Lukas Dohmen
+ * @author David Bilge
+ * @author Oliver Drotbohm
  */
-public class UncommittedChangesDetector implements FileModificationDetector {
+enum UncommittedChangesDetector implements FileModificationDetector {
 
+	INSTANCE;
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.junit.FileModificationDetector#getModifiedFiles()
+	 */
 	@Override
-	public @NonNull Set<ModifiedFilePath> getModifiedFiles(@NonNull PropertyResolver propertyResolver)
-			throws IOException {
-
-		try (var repo = new FileRepositoryBuilder().findGitDir().build()) {
-			return findUncommittedChanges(repo).collect(Collectors.toSet());
-		}
+	public Stream<ModifiedFile> getModifiedFiles() {
+		return withRepository(UncommittedChangesDetector::findUncommittedChanges);
 	}
 
-	private static Stream<ModifiedFilePath> findUncommittedChanges(Repository repository) throws IOException {
-		try (Git git = new Git(repository)) {
-			Status status = git.status().call();
+	private static Stream<ModifiedFile> findUncommittedChanges(Repository repository) {
+
+		return withTry(() -> new Git(repository), git -> {
+
+			var status = git.status().call();
 
 			return Streams.concat(status.getUncommittedChanges().stream(), status.getUntracked().stream())
-					.map(ModifiedFilePath::new);
-		} catch (GitAPIException e) {
-			throw new IOException("Unable to find uncommitted changes", e);
-		}
+					.map(ModifiedFile::new);
+		});
 	}
-
 }

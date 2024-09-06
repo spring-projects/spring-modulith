@@ -1,15 +1,25 @@
+/*
+ * Copyright 2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.modulith.junit.diff;
 
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
+import static org.springframework.modulith.junit.diff.JGitUtil.*;
+
 import java.util.stream.Stream;
 
-import org.eclipse.jgit.diff.DiffEntry;
 import org.eclipse.jgit.lib.BranchConfig;
-import org.springframework.core.env.PropertyResolver;
-import org.springframework.lang.NonNull;
 
 /**
  * <p>
@@ -17,25 +27,30 @@ import org.springframework.lang.NonNull;
  * <p>
  * To be precise, this finds the diff between the local HEAD and its tracking branch and the uncommitted and untracked
  * changes. <em>Note:</em> This will not fetch from the remote first!
+ *
+ * @author Lukas Dohmen
+ * @author David Bilge
+ * @author Oliver Drotbohm
  */
-public class UnpushedCommitsDetector implements FileModificationDetector {
+enum UnpushedCommitsDetector implements FileModificationDetector {
 
+	INSTANCE;
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.junit.FileModificationDetector#getModifiedFiles()
+	 */
 	@Override
-	public @NonNull Set<ModifiedFilePath> getModifiedFiles(@NonNull PropertyResolver propertyResolver)
-			throws IOException {
-		try (var repo = JGitUtil.buildRepository()) {
-			String localBranch = repo.getFullBranch();
-			String trackingBranch = new BranchConfig(repo.getConfig(), repo.getBranch()).getTrackingBranch();
+	public Stream<ModifiedFile> getModifiedFiles() {
 
-			Stream<DiffEntry> diff = localBranch != null && trackingBranch != null
-					? JGitUtil.diffRefs(repo, localBranch, trackingBranch)
+		return withRepository(repo -> {
+
+			var localBranch = repo.getFullBranch();
+			var trackingBranch = new BranchConfig(repo.getConfig(), repo.getBranch()).getTrackingBranch();
+
+			return localBranch != null && trackingBranch != null
+					? toModifiedFiles(repo, localBranch, trackingBranch)
 					: Stream.empty();
-
-			HashSet<ModifiedFilePath> result = new HashSet<>();
-			result.addAll(new UncommittedChangesDetector().getModifiedFiles(propertyResolver));
-			result.addAll(JGitUtil.convertDiffEntriesToFileChanges(diff).collect(Collectors.toSet()));
-			return result;
-		}
+		});
 	}
-
 }

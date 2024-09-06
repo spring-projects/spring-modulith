@@ -63,12 +63,13 @@
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
+
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-junit</artifactId>
-			<version>1.3.0-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
+
 	</dependencies>
 
 </project>

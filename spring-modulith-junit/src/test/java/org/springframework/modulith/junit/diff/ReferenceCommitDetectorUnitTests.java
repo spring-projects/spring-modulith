@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 the original author or authors.
+ * Copyright 2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.acme.myproject.moduleD;
+package org.springframework.modulith.junit.diff;
 
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ConfigurableApplicationContext;
-
-import com.acme.myproject.NonVerifyingModuleTest;
-import com.acme.myproject.moduleE.ServiceComponentE;
 
 /**
+ * Unit tests for {@link ReferenceCommitDetector}.
+ *
  * @author Oliver Drotbohm
  */
-@NonVerifyingModuleTest
-public class ModuleDTest {
+class ReferenceCommitDetectorUnitTests {
 
-	@Autowired ConfigurableApplicationContext context;
+	@Test // GH-31
+	void detectsChangesOfHead() {
 
-	@Test // GH-320
-	void dropsManuallyDeclaredBeanOfNonIncludedModule() {
-		assertThat(context.getBeanNamesForType(ServiceComponentE.class)).isEmpty();
+		var detector = new ReferenceCommitDetector(null);
+
+		assertThat(detector.getModifiedFiles()).isEmpty();
 	}
 }
