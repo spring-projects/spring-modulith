@@ -52,10 +52,9 @@ public class ApplicationModuleDependencies {
 
 	/**
 	 * Creates a new {@link ApplicationModuleDependencies} for the given {@link List} of
-	 * {@link ApplicationModuleDependency} and {@link ApplicationModules}.
+	 * {@link ApplicationModuleDependency}.
 	 *
 	 * @param dependencies must not be {@literal null}.
-	 * @param modules must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
 	static ApplicationModuleDependencies of(List<ApplicationModuleDependency> dependencies) {
