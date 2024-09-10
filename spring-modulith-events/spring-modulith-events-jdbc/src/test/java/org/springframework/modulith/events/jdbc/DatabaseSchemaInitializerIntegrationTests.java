@@ -122,4 +122,8 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("mysql")
 	class MySQL extends WithInitEnabled {}
+
+	@Nested
+	@ActiveProfiles("mssql")
+	class MSSQL extends WithInitEnabled {}
 }

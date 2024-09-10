@@ -45,7 +45,20 @@ enum DatabaseType {
 		}
 	},
 
-	POSTGRES("postgresql", "PostgreSQL");
+	POSTGRES("postgresql", "PostgreSQL"),
+
+	MSSQL("sqlserver", "Microsoft SQL Server"){
+
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+	};
 
 	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name not supported on MySQL!";
 
@@ -86,6 +99,7 @@ enum DatabaseType {
 			case MYSQL -> throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
 			case H2, HSQLDB -> "SET SCHEMA " + schema;
 			case POSTGRES -> "SET search_path TO " + schema;
+			case MSSQL -> "";  // No equivalent schema-switching command in MSSQL
 		};
 	}
 }
