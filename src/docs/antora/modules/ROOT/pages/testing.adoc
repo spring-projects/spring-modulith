@@ -1,5 +1,6 @@
 [[testing]]
 = Integration Testing Application Modules
+:tabsize: 2
 
 Spring Modulith allows to run integration tests bootstrapping individual application modules in isolation or combination with others.
 To achieve this, place a JUnit test class in an application module package or any sub-package of that and annotate it with `@ApplicationModuleTest`:
@@ -16,7 +17,7 @@ package example.order;
 @ApplicationModuleTest
 class OrderIntegrationTests {
 
-  // Individual test cases go here
+	// Individual test cases go here
 }
 ----
 Kotlin::
@@ -28,7 +29,7 @@ package example.order
 @ApplicationModuleTest
 class OrderIntegrationTests {
 
-  // Individual test cases go here
+	// Individual test cases go here
 }
 ----
 ======
@@ -39,11 +40,11 @@ If you configure the log level for `org.springframework.modulith` to `DEBUG`, yo
 .The log output of an application module integration test bootstrap
 [source, text, subs="macros"]
 ----
-  .   ____          _            __ _ _
+	.   ____          _            __ _ _
  /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
 ( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
  \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
+	'  |____| .__|_| |_|_| |_\__, | / / / /
  =========|_|==============|___/=/_/_/_/
  :: Spring Boot ::       (v3.0.0-SNAPSHOT)
 
@@ -90,7 +91,7 @@ Java::
 @ApplicationModuleTest
 class InventoryIntegrationTests {
 
-  @MockitoBean SomeOtherComponent someOtherComponent;
+	@MockitoBean SomeOtherComponent someOtherComponent;
 }
 ----
 Kotlin::
@@ -100,7 +101,7 @@ Kotlin::
 @ApplicationModuleTest
 class InventoryIntegrationTests {
 
-  @MockitoBean SomeOtherComponent someOtherComponent
+	@MockitoBean SomeOtherComponent someOtherComponent
 }
 ----
 ======
@@ -128,10 +129,10 @@ Java::
 @ApplicationModuleTest
 class SomeApplicationModuleTest {
 
-  @Test
-  public void someModuleIntegrationTest(Scenario scenario) {
-    // Use the Scenario API to define your integration test
-  }
+	@Test
+	public void someModuleIntegrationTest(Scenario scenario) {
+		// Use the Scenario API to define your integration test
+	}
 }
 ----
 Kotlin::
@@ -141,10 +142,10 @@ Kotlin::
 @ApplicationModuleTest
 class SomeApplicationModuleTest {
 
-  @Test
-  fun someModuleIntegrationTest(scenario: Scenario) {
-    // Use the Scenario API to define your integration test
-  }
+	@Test
+	fun someModuleIntegrationTest(scenario: Scenario) {
+		// Use the Scenario API to define your integration test
+	}
 }
 ----
 ======
@@ -254,18 +255,18 @@ Java::
 [source, java, role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
-  .andWaitForEventOfType(SomeOtherEvent.class)
-  .matching(event -> …)
-  .toArriveAndVerify(event -> …);
+	.andWaitForEventOfType(SomeOtherEvent.class)
+	.matching(event -> …)
+	.toArriveAndVerify(event -> …);
 ----
 Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
-  .andWaitForEventOfType(SomeOtherEvent::class.java)
-  .matching { event -> … }
-  .toArriveAndVerify { event -> … }
+	.andWaitForEventOfType(SomeOtherEvent::class.java)
+	.matching { event -> … }
+	.toArriveAndVerify { event -> … }
 ----
 ======
 
@@ -280,16 +281,16 @@ Java::
 [source, java, role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
-  .andWaitForStateChange(() -> someBean.someMethod(…)))
-  .andVerify(result -> …);
+	.andWaitForStateChange(() -> someBean.someMethod(…)))
+	.andVerify(result -> …);
 ----
 Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
 scenario.publish(MyApplicationEvent(…))
-  .andWaitForStateChange { someBean.someMethod(…) }
-  .andVerify { result -> … }
+	.andWaitForStateChange { someBean.someMethod(…) }
+	.andVerify { result -> … }
 ----
 ======
 
@@ -310,20 +311,20 @@ Java::
 [source, java, subs="+quotes", role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
-  **.customize(conditionFactory -> conditionFactory.atMost(Duration.ofSeconds(2)))**
-  .andWaitForEventOfType(SomeOtherEvent.class)
-  .matching(event -> …)
-  .toArriveAndVerify(event -> …);
+	**.customize(conditionFactory -> conditionFactory.atMost(Duration.ofSeconds(2)))**
+	.andWaitForEventOfType(SomeOtherEvent.class)
+	.matching(event -> …)
+	.toArriveAndVerify(event -> …);
 ----
 Kotlin::
 +
 [source, kotlin, subs="+quotes", role="secondary"]
 ----
 scenario.publish(MyApplicationEvent(…))
-  **.customize { it.atMost(Duration.ofSeconds(2)) }**
-  .andWaitForEventOfType(SomeOtherEvent::class.java)
-  .matching { event -> … }
-  .toArriveAndVerify { event -> … }
+	**.customize { it.atMost(Duration.ofSeconds(2)) }**
+	.andWaitForEventOfType(SomeOtherEvent::class.java)
+	.matching { event -> … }
+	.toArriveAndVerify { event -> … }
 ----
 ======
 
@@ -339,18 +340,18 @@ Java::
 @ExtendWith(MyCustomizer.class)
 class MyTests {
 
-  @Test
-  void myTestCase(Scenario scenario) {
-    // scenario will be pre-customized with logic defined in MyCustomizer
-  }
+	@Test
+	void myTestCase(Scenario scenario) {
+		// scenario will be pre-customized with logic defined in MyCustomizer
+	}
 
-  static class MyCustomizer implements ScenarioCustomizer {
+	static class MyCustomizer implements ScenarioCustomizer {
 
-    @Override
-    Function<ConditionFactory, ConditionFactory> getDefaultCustomizer(Method method, ApplicationContext context) {
-      return conditionFactory -> …;
-    }
-  }
+		@Override
+		Function<ConditionFactory, ConditionFactory> getDefaultCustomizer(Method method, ApplicationContext context) {
+			return conditionFactory -> …;
+		}
+	}
 }
 ----
 Kotlin::
@@ -360,17 +361,45 @@ Kotlin::
 @ExtendWith(MyCustomizer::class)
 class MyTests {
 
-  @Test
-  fun myTestCase(scenario: Scenario) {
-    // scenario will be pre-customized with logic defined in MyCustomizer
-  }
+	@Test
+	fun myTestCase(scenario: Scenario) {
+		// scenario will be pre-customized with logic defined in MyCustomizer
+	}
 
-  class MyCustomizer : ScenarioCustomizer {
+	class MyCustomizer : ScenarioCustomizer {
 
-    override fun getDefaultCustomizer(method: Method, context: ApplicationContext): UnaryOperator<ConditionFactory> {
-      return UnaryOperator { conditionFactory -> … }
-    }
-  }
+		override fun getDefaultCustomizer(method: Method, context: ApplicationContext): UnaryOperator<ConditionFactory> {
+			return UnaryOperator { conditionFactory -> … }
+		}
+	}
 }
 ----
 ======
+
+[[change-aware-test-execution]]
+== Change-Aware Test Execution
+
+As of version 1.3, Spring Modulith ships with a JUnit Jupiter extension that will optimize the execution of tests, so that tests not affected by changes to the project will be skipped.
+To enable that optimization, declare the `spring-modulith-junit` artifact as a dependency in test scope:
+
+[source, xml]
+----
+<dependency>
+	<groupId>org.springframework.modulith</groupId>
+	<artifactId>spring-modulith-junit</artifactId>
+	<scope>test</scope>
+</dependency>
+----
+
+Tests will be selected for execution if they reside in either a root module, a module that has seen a change or one that transitively depends on one that has seen a change.
+The optimization will back off optimizing the execution under the following circumstances:
+
+* The test execution originates from an IDE as we assume the execution is triggered explicitly.
+* The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle`, `gradle.properties`).
+* The set of changes contains a change to any classpath resource.
+* The project does not contain a change at all (typical in a CI build).
+
+To optimize the execution in a CI environment, you need to populate the xref:appendix.adoc#configuration-properties[`spring.modulith.test.reference-commit` property] pointing to the commit of the last successful build and make sure that the build checks out all commits up to the reference one.
+The algorithm detecting changes to application modules will then consider all files changed in that delta.
+To override the project modification detection, declare an implementation of `FileModificationDetector` via the xref:appendix.adoc#configuration-properties[`spring.modulith.test.file-modification-detector` property].
+
