@@ -47,7 +47,18 @@ enum DatabaseType {
 
 	POSTGRES("postgresql", "PostgreSQL"),
 
-	MSSQL("sqlserver", "Microsoft SQL Server");
+	MSSQL("sqlserver", "Microsoft SQL Server"){
+
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+	};
 
 	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name not supported on MySQL!";
 
