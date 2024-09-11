@@ -453,6 +453,16 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@WithPostgres
 	class PostgresWithDeleteCompletion extends WithDeleteCompletion {}
 
+	// MSSQL
+	@WithMssql
+	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMssql
+	class MssqlWithEmptySchemaName extends WithEmptySchemaName {}
+
+	@WithMssql
+	class MssqlWithDeleteCompletion extends WithDeleteCompletion {}
+
 	// MySQL
 
 	@WithMySql
@@ -489,4 +499,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@ActiveProfiles("postgres")
 	@Retention(RetentionPolicy.RUNTIME)
 	@interface WithPostgres {}
+
+	@Nested
+	@ActiveProfiles("mssql")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithMssql {}
 }
