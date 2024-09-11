@@ -67,8 +67,9 @@ class DatabaseSchemaInitializer implements InitializingBean {
 
 			var initialSchema = connection.getSchema();
 			var schemaName = properties.getSchema();
+			var useSchema = schemaName != null && !schemaName.isEmpty();
 
-			if (schemaName != null && !schemaName.isEmpty()) { // A schema name has been specified.
+			if (useSchema) { // A schema name has been specified.
 
 				if (eventPublicationTableExists(schemaName)) {
 					return;
@@ -82,7 +83,7 @@ class DatabaseSchemaInitializer implements InitializingBean {
 			new ResourceDatabasePopulator(locator.getSchemaResource(databaseType)).execute(dataSource);
 
 			// Return to the initial schema.
-			if (initialSchema != null) {
+			if (initialSchema != null && useSchema) {
 				jdbcOperations.execute(databaseType.getSetSchemaSql(initialSchema));
 			}
 		}

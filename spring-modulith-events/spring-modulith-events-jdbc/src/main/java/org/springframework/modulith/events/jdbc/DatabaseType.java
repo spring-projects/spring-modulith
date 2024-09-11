@@ -43,11 +43,16 @@ enum DatabaseType {
 		UUID databaseToUUID(Object id) {
 			return UUID.fromString(id.toString());
 		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
 	},
 
 	POSTGRES("postgresql", "PostgreSQL"),
 
-	MSSQL("sqlserver", "Microsoft SQL Server"){
+	MSSQL("sqlserver", "Microsoft SQL Server") {
 
 		@Override
 		Object uuidToDatabase(UUID id) {
@@ -57,6 +62,11 @@ enum DatabaseType {
 		@Override
 		UUID databaseToUUID(Object id) {
 			return UUID.fromString(id.toString());
+		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
 		}
 	};
 
@@ -92,14 +102,21 @@ enum DatabaseType {
 		return "/schema-" + value + ".sql";
 	}
 
+	boolean isSchemaSupported() {
+		return true;
+	}
+
 	String getSetSchemaSql(String schema) {
+
+		if (!isSchemaSupported()) {
+			throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
+		}
 
 		return switch (this) {
 
-			case MYSQL -> throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
 			case H2, HSQLDB -> "SET SCHEMA " + schema;
 			case POSTGRES -> "SET search_path TO " + schema;
-			case MSSQL -> "";  // No equivalent schema-switching command in MSSQL
+			default -> throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
 		};
 	}
 }

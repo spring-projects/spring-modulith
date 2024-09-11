@@ -44,11 +44,18 @@ class DatabaseSchemaInitializerUnitTests {
 	@ParameterizedTest
 	@ValueSource(strings = { "", "test" })
 	void rejectsExplicitSchemaNameForMySql(String schema) {
-		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema)));
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MYSQL));
 	}
 
-	private DatabaseSchemaInitializer createInitializer(JdbcConfigurationProperties properties) {
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, DatabaseType.MYSQL, jdbcTemplate, properties);
+	// GH-804
+	@ParameterizedTest
+	@ValueSource(strings = { "", "test" })
+	void rejectsExplicitSchemaNameForMSSql(String schema) {
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MSSQL));
+	}
+
+	private DatabaseSchemaInitializer createInitializer(JdbcConfigurationProperties properties, DatabaseType type) {
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, type, jdbcTemplate, properties);
 	}
 
 	private static JdbcConfigurationProperties withSchema(String schema) {

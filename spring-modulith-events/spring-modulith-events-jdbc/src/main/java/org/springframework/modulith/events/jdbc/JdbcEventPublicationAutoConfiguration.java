@@ -79,7 +79,9 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 			var metadata = JdbcUtils.extractDatabaseMetaData(dataSource, DatabaseMetaData::getDatabaseProductName);
 			name = JdbcUtils.commonDatabaseName(metadata);
 
-		} catch (Exception o_O) {}
+		} catch (Exception o_O) {
+			throw new RuntimeException(o_O);
+		}
 
 		return name == null ? "UNKNOWN" : name;
 	}

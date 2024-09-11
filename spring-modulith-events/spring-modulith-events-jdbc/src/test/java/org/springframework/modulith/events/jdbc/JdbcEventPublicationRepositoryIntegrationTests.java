@@ -36,7 +36,6 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -46,6 +45,7 @@ import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -454,11 +454,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	class PostgresWithDeleteCompletion extends WithDeleteCompletion {}
 
 	// MSSQL
-	@WithMssql
-	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
 	@WithMssql
-	class MssqlWithEmptySchemaName extends WithEmptySchemaName {}
+	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
 	@WithMssql
 	class MssqlWithDeleteCompletion extends WithDeleteCompletion {}

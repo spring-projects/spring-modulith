@@ -64,7 +64,7 @@ class JdbcConfigurationProperties {
 
 	void verify(DatabaseType databaseType) {
 
-		if (schema != null && databaseType.equals(DatabaseType.MYSQL)) {
+		if (schema != null && !databaseType.isSchemaSupported()) {
 			throw new IllegalStateException(DatabaseType.SCHEMA_NOT_SUPPORTED);
 		}
 	}
