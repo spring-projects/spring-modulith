@@ -51,13 +51,27 @@ class Types {
 		private static final String MODULE = ANNOTATION_PACKAGE + ".Module";
 
 		private static final boolean PRESENT = ClassUtils.isPresent(AT_ENTITY, JMoleculesTypes.class.getClassLoader());
+		private static final boolean MODULE_PRESENT = ClassUtils.isPresent(MODULE, JMoleculesTypes.class.getClassLoader());
 
 		static final String AT_DOMAIN_EVENT_HANDLER = BASE_PACKAGE + ".event.annotation.DomainEventHandler";
 		static final String AT_DOMAIN_EVENT = BASE_PACKAGE + ".event.annotation.DomainEvent";
 		static final String DOMAIN_EVENT = BASE_PACKAGE + ".event.types.DomainEvent";
 
+		/**
+		 * Returns whether jMolecules is generally present.
+		 *
+		 * @see #isModulePresent()
+		 */
 		public static boolean isPresent() {
 			return PRESENT;
+		}
+
+		/**
+		 * Returns whether the jMolecules {@link Module} type is present. We need to guard for this explicitly as the Kotlin
+		 * variant of jMolecules DDD does not ship that type.
+		 */
+		public static boolean isModulePresent() {
+			return MODULE_PRESENT;
 		}
 
 		@Nullable
@@ -65,7 +79,7 @@ class Types {
 		public static Class<? extends Annotation> getModuleAnnotationTypeIfPresent() {
 
 			try {
-				return isPresent()
+				return isModulePresent()
 						? (Class<? extends Annotation>) ClassUtils.forName(MODULE, JMoleculesTypes.class.getClassLoader())
 						: null;
 			} catch (Exception o_O) {

@@ -44,7 +44,7 @@ interface ApplicationModuleInformation {
 
 		var rootPackage = javaPackage.toSingle();
 
-		return JMoleculesTypes.isPresent() && JMoleculesModule.supports(rootPackage)
+		return JMoleculesTypes.isModulePresent() && JMoleculesModule.supports(rootPackage)
 				? new JMoleculesModule(rootPackage)
 				: new SpringModulithModule(rootPackage);
 	}
