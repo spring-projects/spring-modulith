@@ -179,7 +179,7 @@ Kotlin::
 scenario.publish(MyApplicationEvent(…)).…
 
 // Start with a bean invocation
-scenario.stimulate(() -> someBean.someMethod(…)).…
+scenario.stimulate(Runnable { someBean.someMethod(…) }).…
 ----
 ======
 
@@ -263,9 +263,9 @@ Kotlin::
 [source, kotlin, role="secondary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
-  .andWaitForEventOfType(SomeOtherEvent::class)
-  .matching(event -> …)
-  .toArriveAndVerify(event -> …)
+  .andWaitForEventOfType(SomeOtherEvent::class.java)
+  .matching { event -> … }
+  .toArriveAndVerify { event -> … }
 ----
 ======
 
@@ -287,9 +287,9 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-scenario.publish(new MyApplicationEvent(…))
-  .andWaitForStateChange(() -> someBean.someMethod(…)))
-  .andVerify(result -> …)
+scenario.publish(MyApplicationEvent(…))
+  .andWaitForStateChange { someBean.someMethod(…) }
+  .andVerify { result -> … }
 ----
 ======
 
@@ -310,7 +310,7 @@ Java::
 [source, java, subs="+quotes", role="primary"]
 ----
 scenario.publish(new MyApplicationEvent(…))
-  **.customize(it -> it.atMost(Duration.ofSeconds(2)))**
+  **.customize(conditionFactory -> conditionFactory.atMost(Duration.ofSeconds(2)))**
   .andWaitForEventOfType(SomeOtherEvent.class)
   .matching(event -> …)
   .toArriveAndVerify(event -> …);
@@ -320,10 +320,10 @@ Kotlin::
 [source, kotlin, subs="+quotes", role="secondary"]
 ----
 scenario.publish(MyApplicationEvent(…))
-  **.customize(it -> it.atMost(Duration.ofSeconds(2)))**
-  .andWaitForEventOfType(SomeOtherEvent::class)
-  .matching(event -> …)
-  .toArriveAndVerify(event -> …)
+  **.customize { it.atMost(Duration.ofSeconds(2)) }**
+  .andWaitForEventOfType(SomeOtherEvent::class.java)
+  .matching { event -> … }
+  .toArriveAndVerify { event -> … }
 ----
 ======
 
@@ -348,7 +348,7 @@ class MyTests {
 
     @Override
     Function<ConditionFactory, ConditionFactory> getDefaultCustomizer(Method method, ApplicationContext context) {
-      return it -> …;
+      return conditionFactory -> …;
     }
   }
 }
@@ -361,14 +361,14 @@ Kotlin::
 class MyTests {
 
   @Test
-  fun myTestCase(scenario : Scenario) {
+  fun myTestCase(scenario: Scenario) {
     // scenario will be pre-customized with logic defined in MyCustomizer
   }
 
   class MyCustomizer : ScenarioCustomizer {
 
-    override fun getDefaultCustomizer(method : Method, context : ApplicationContext) : Function<ConditionFactory, ConditionFactory> {
-      return it -> …
+    override fun getDefaultCustomizer(method: Method, context: ApplicationContext): UnaryOperator<ConditionFactory> {
+      return UnaryOperator { conditionFactory -> … }
     }
   }
 }

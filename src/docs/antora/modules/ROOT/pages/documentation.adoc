@@ -39,7 +39,7 @@ Kotlin::
 [source, kotlin, role="secondary"]
 ----
 class DocumentationTests {
-    private val modules = ApplicationModules.of(Application::class)
+    private val modules = ApplicationModules.of(Application::class.java)
 
     @Test
     fun writeDocumentationSnippets() {
@@ -240,7 +240,7 @@ Kotlin::
 ----
 class DocumentationTests {
 
-  private val modules = ApplicationModules.of(Application::class)
+  private val modules = ApplicationModules.of(Application::class.java)
 
   @Test
   fun writeDocumentationSnippets() {
@@ -336,7 +336,7 @@ Kotlin::
 ----
 class DocumentationTests {
 
-  private val modules = ApplicationModules.of(Application::class)
+  private val modules = ApplicationModules.of(Application::class.java)
 
   @Test
   fun writeDocumentationSnippets() {
