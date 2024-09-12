@@ -122,7 +122,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-var modules = ApplicationModules.of(Application::class)
+var modules = ApplicationModules.of(Application::class.java)
 ----
 ======
 To get an impression of what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:

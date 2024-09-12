@@ -16,7 +16,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-ApplicationModules.of(Application::class).verify()
+ApplicationModules.of(Application::class.java).verify()
 ----
 ======
 The verification includes the following rules:

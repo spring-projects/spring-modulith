@@ -425,7 +425,7 @@ class ExternalizationConfiguration {
 
     return EventExternalizationConfiguration.externalizing()                 // <1>
       .select(EventExternalizationConfiguration.annotatedAsExternalized())   // <2>
-      .mapping(SomeEvent.class, it -> …)                                     // <3>
+      .mapping(SomeEvent.class, event -> …)                                  // <3>
       .routeKey(WithKeyProperty.class, WithKeyProperty::getKey)              // <4>
       .build();
   }
@@ -443,8 +443,8 @@ class ExternalizationConfiguration {
 
     EventExternalizationConfiguration.externalizing()                         // <1>
       .select(EventExternalizationConfiguration.annotatedAsExternalized())    // <2>
-      .mapping(SomeEvent::class, it -> …)                                     // <3>
-      .routeKey(WithKeyProperty::class, WithKeyProperty::getKey)              // <4>
+      .mapping(SomeEvent::class.java) { event -> … }                           // <3>
+      .routeKey(WithKeyProperty::class.java, WithKeyProperty::getKey)         // <4>
       .build()
   }
 }
@@ -501,7 +501,7 @@ class OrderIntegrationTests {
   fun someTestMethod(events: PublishedEvents events) {
 
     // …
-    var matchingMapped = events.ofType(OrderCompleted::class)
+    val matchingMapped = events.ofType(OrderCompleted::class.java)
       .matching(OrderCompleted::getOrderId, reference.getId())
 
     assertThat(matchingMapped).hasSize(1)
@@ -546,7 +546,7 @@ class OrderIntegrationTests {
 
     // …
     assertThat(events)
-      .contains(OrderCompleted::class)
+      .contains(OrderCompleted::class.java)
       .matching(OrderCompleted::getOrderId, reference.getId())
   }
 }
