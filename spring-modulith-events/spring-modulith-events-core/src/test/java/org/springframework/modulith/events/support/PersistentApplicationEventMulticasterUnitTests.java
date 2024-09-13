@@ -76,6 +76,18 @@ class PersistentApplicationEventMulticasterUnitTests {
 		verify(registry).processIncompletePublications(any(), any(), any());
 	}
 
+	@Test // GH-240, GH-251, GH-823
+	void triggersRepublicationIfLegacyConfigExplicitlyEnabled() {
+
+		var source = new MapPropertySource("test",
+				Map.of(PersistentApplicationEventMulticaster.REPUBLISH_ON_RESTART_LEGACY, "true"));
+		environment.getPropertySources().addFirst(source);
+
+		multicaster.afterSingletonsInstantiated();
+
+		verify(registry).processIncompletePublications(any(), any(), any());
+	}
+
 	@Test // GH-277
 	void honorsListenerCondition() throws Exception {
 
