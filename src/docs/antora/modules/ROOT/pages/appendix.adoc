@@ -69,6 +69,7 @@ Can either be the class name of a custom implementation of `ApplicationModuleDet
 |`spring.modulith.republish-outstanding-events-on-restart`
 |`false`
 |Whether to republish outstanding event publications on restarts of the application.
+Usually not recommended in multi-instance deployments as other instances might still be processing events.
 |===
 
 [appendix]
