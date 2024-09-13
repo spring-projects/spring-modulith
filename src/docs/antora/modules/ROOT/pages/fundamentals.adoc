@@ -39,7 +39,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-var modules = ApplicationModules.of(Application::class)
+val modules = ApplicationModules.of(Application::class.java)
 ----
 ======
 The `modules` will contain an in-memory representation of the application module arrangement derived from the codebase.
@@ -102,7 +102,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-ApplicationModules.of(Application::class, JavaClass.Predicates.resideInAPackage("com.example.db")).verify()
+ApplicationModules.of(Application::class.java, JavaClass.Predicates.resideInAPackage("com.example.db")).verify()
 ----
 ======
 
