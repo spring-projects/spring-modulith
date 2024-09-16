@@ -255,7 +255,13 @@ public class Changes implements Iterable<Change> {
 		record OtherFileChange(String path) implements Change {
 
 			private static final Collection<String> CLASSPATH_RESOURCES = Set.of("src/main/resources", "src/test/resources");
-			private static final Collection<String> BUILD_FILES = Set.of("build.gradle", "build.kt", "pom.xml");
+			private static final Collection<String> BUILD_FILES = Set.of(
+
+					// Gradle
+					"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts",
+
+					// Maven
+					"pom.xml");
 
 			/**
 			 * Returns whether the change affects a build resource.

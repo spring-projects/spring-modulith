@@ -49,7 +49,13 @@ class ChangesUnitTests {
 	@TestFactory // GH-31
 	Stream<DynamicTest> detectsNonClasspathFileChange() {
 
-		var files = Stream.of("pom.xml", "build.gradle", "build.kt");
+		var files = Stream.of(
+
+				// Maven
+				"pom.xml",
+
+				// Gradle
+				"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts");
 
 		return DynamicTest.stream(files, it -> it + " is considered build resource", it -> {
 

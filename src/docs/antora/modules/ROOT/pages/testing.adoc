@@ -395,7 +395,7 @@ Tests will be selected for execution if they reside in either a root module, a m
 The optimization will back off optimizing the execution under the following circumstances:
 
 * The test execution originates from an IDE as we assume the execution is triggered explicitly.
-* The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle`, `gradle.properties`).
+* The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle(.kts)`, `gradle.properties`, and `settings.gradle(.kts)`).
 * The set of changes contains a change to any classpath resource.
 * The project does not contain a change at all (typical in a CI build).
 
