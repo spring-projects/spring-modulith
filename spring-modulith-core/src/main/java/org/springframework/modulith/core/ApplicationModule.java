@@ -306,7 +306,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return getType(type.getName())
 				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal()))
 				.orElseThrow(() -> new IllegalArgumentException("Couldn't find type %s in module %s!".formatted(
-						FormatableType.of(type).getAbbreviatedFullName(this), getName())));
+						FormattableType.of(type).getAbbreviatedFullName(this), getName())));
 	}
 
 	/**
@@ -1267,8 +1267,8 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 				var violationText = INVALID_SUB_MODULE_REFERENCE
 						.formatted(originModule.getName(), targetModule.getName(),
-								FormatableType.of(source).getAbbreviatedFullName(originModule),
-								FormatableType.of(target).getAbbreviatedFullName(targetModule));
+								FormattableType.of(source).getAbbreviatedFullName(originModule),
+								FormattableType.of(target).getAbbreviatedFullName(targetModule));
 
 				return violations.and(new Violation(violationText));
 			}
@@ -1289,7 +1289,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 */
 		@Override
 		public String toString() {
-			return type.format(FormatableType.of(source), FormatableType.of(target));
+			return type.format(FormattableType.of(source), FormattableType.of(target));
 		}
 
 		/*

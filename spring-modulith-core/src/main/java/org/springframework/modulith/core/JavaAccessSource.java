@@ -30,7 +30,7 @@ class JavaAccessSource implements Source {
 
 	private final static Pattern LAMBDA_EXTRACTOR = Pattern.compile("lambda\\$(.*)\\$.*");
 
-	private final FormatableType type;
+	private final FormattableType type;
 	private final JavaCodeUnit method;
 	private final String name;
 
@@ -41,7 +41,7 @@ class JavaAccessSource implements Source {
 	 */
 	public JavaAccessSource(JavaAccess<?> access) {
 
-		this.type = FormatableType.of(access.getOriginOwner());
+		this.type = FormattableType.of(access.getOriginOwner());
 		this.method = access.getOrigin();
 
 		String name = method.getName();

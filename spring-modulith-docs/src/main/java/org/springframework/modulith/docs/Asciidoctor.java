@@ -31,7 +31,7 @@ import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.core.EventType;
-import org.springframework.modulith.core.FormatableType;
+import org.springframework.modulith.core.FormattableType;
 import org.springframework.modulith.core.Source;
 import org.springframework.modulith.core.SpringBean;
 import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
@@ -254,7 +254,7 @@ class Asciidoctor {
 
 		var module = modules.getModuleByType(source).orElse(null);
 		var typeAndMethod = toCode(
-				toTypeAndMethod(FormatableType.of(source).getAbbreviatedFullName(module), methodSignature));
+				toTypeAndMethod(FormattableType.of(source).getAbbreviatedFullName(module), methodSignature));
 
 		if (module == null
 				|| !source.getModifiers().contains(JavaModifier.PUBLIC)

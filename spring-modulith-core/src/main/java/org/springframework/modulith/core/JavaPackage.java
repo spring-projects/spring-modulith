@@ -383,7 +383,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 					if (annotatedTypes.size() > 1) {
 
 						throw new IllegalStateException(MULTIPLE_TYPES_ANNOTATED_WITH.formatted(name,
-								FormatableType.of(annotationType).getAbbreviatedFullName(), annotatedTypes));
+								FormattableType.of(annotationType).getAbbreviatedFullName(), annotatedTypes));
 					}
 
 					return annotatedTypes.isEmpty() ? Optional.empty() : Optional.of(annotatedTypes.get(0));

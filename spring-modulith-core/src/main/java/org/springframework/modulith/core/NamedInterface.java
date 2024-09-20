@@ -117,7 +117,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 			// Illegal in the base package
 			Assert.state(withDefaultedNamedInterface.isEmpty(),
 					() -> "Cannot use named interface defaulting for type(s) %s located in base package!"
-							.formatted(FormatableType.format(withDefaultedNamedInterface)));
+							.formatted(FormattableType.format(withDefaultedNamedInterface)));
 		}
 
 		return new NamedInterface(UNNAMED_NAME, basePackageClasses
@@ -227,7 +227,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 	public String toString() {
 
 		return "NamedInterface: name=%s, types=[%s]" //
-				.formatted(name, classes.isEmpty() ? "" : " " + FormatableType.format(classes) + " ");
+				.formatted(name, classes.isEmpty() ? "" : " " + FormattableType.format(classes) + " ");
 	}
 
 	/**
