@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith</artifactId>
-		<version>1.2.4</version>
+		<version>1.2.5-SNAPSHOT</version>
 	</parent>
 
 	<name>Spring Modulith - Actuator</name>
