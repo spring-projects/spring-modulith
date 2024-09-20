@@ -10,7 +10,7 @@
 
 	<groupId>org.springframework.modulith</groupId>
 	<artifactId>spring-modulith-examples</artifactId>
-	<version>1.3.0-SNAPSHOT</version>
+	<version>1.3.0-M3</version>
 	<packaging>pom</packaging>
 
 	<name>Spring Modulith - Examples</name>
@@ -100,7 +100,7 @@
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
-				<version>1.3.0-SNAPSHOT</version>
+				<version>1.3.0-M3</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>
@@ -183,4 +183,8 @@
 			</releases>
 		</pluginRepository>
 	</pluginRepositories>
+
+  <scm>
+    <tag>1.3.0-M3</tag>
+  </scm>
 </project>
