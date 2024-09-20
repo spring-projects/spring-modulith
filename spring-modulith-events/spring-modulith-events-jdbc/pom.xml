@@ -13,7 +13,7 @@
 
 	<properties>
 		<module.name>org.springframework.modulith.events.jdbc</module.name>
-		<testcontainers.version>1.17.3</testcontainers.version>
+		<testcontainers.version>1.17.6</testcontainers.version>
 	</properties>
 
 	<dependencyManagement>
