@@ -173,6 +173,18 @@ a|* `spring-modulith-docs`
 |===
 
 [appendix]
+[[deprecated-modules]]
+== Deprecated modules
+
+.Deprecated modules table
+[cols="2,1,3", options="header, unbreakable"]
+|===
+|Module|Deprecated since|Description
+|`spring-modulith-events-aws-sns`|`1.3`|Please migrate to `io.awspring.cloud:spring-cloud-aws-modulith-events-sns`. See https://github.com/awspring/spring-cloud-aws/tree/main/spring-cloud-aws-sns[this link]
+|`spring-modulith-events-aws-sqs`|`1.3`|Please migrate to `io.awspring.cloud:spring-cloud-aws-modulith-events-sqs`. See https://github.com/awspring/spring-cloud-aws/tree/main/spring-cloud-aws-sqs[this link]
+|===
+
+[appendix]
 [[schemas]]
 == Event publication registry schemas
 
