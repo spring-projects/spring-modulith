@@ -47,6 +47,13 @@ class DatabaseSchemaInitializerUnitTests {
 		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MYSQL));
 	}
 
+	// GH-836
+	@ParameterizedTest
+	@ValueSource(strings = { "", "test" })
+	void rejectsExplicitSchemaNameForMariDB(String schema) {
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MARIADB));
+	}
+
 	// GH-804
 	@ParameterizedTest
 	@ValueSource(strings = { "", "test" })

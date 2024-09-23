@@ -50,6 +50,24 @@ enum DatabaseType {
 		}
 	},
 
+	MARIADB("mariadb", "MariaDB") {
+
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
+	},
+
 	POSTGRES("postgresql", "PostgreSQL"),
 
 	MSSQL("sqlserver", "Microsoft SQL Server") {

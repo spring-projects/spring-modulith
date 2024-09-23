@@ -469,6 +469,14 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@WithMySql
 	class MysqlWithDeleteCompletion extends WithDeleteCompletion {}
 
+	// MariaDB
+
+	@WithMariaDB
+	class MariaDBWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMariaDB
+	class MariaDBWithDeleteCompletion extends WithDeleteCompletion {}
+
 	@Value
 	private static final class TestEvent {
 		String eventId;
@@ -492,6 +500,11 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@ActiveProfiles("mysql")
 	@Retention(RetentionPolicy.RUNTIME)
 	@interface WithMySql {}
+
+	@Nested
+	@ActiveProfiles("mariadb")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithMariaDB {}
 
 	@Nested
 	@ActiveProfiles("postgres")
