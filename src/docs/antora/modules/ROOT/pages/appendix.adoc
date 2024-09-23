@@ -203,6 +203,14 @@ include::{jdbc-schema-base}/schema-hsqldb.sql[]
 include::{jdbc-schema-base}/schema-mysql.sql[]
 ----
 
+[[schemas.mariadb]]
+=== MariaDB
+
+[source, sql]
+----
+include::{jdbc-schema-base}/schema-mariadb.sql[]
+----
+
 [[schemas.postgresql]]
 === PostgreSQL
 
