@@ -101,6 +101,7 @@ Usually propagated in CI environments to consider all changes since the last suc
 |`spring-modulith-starter-core`
 |`compile`
 a|* `spring-modulith-api`
+* `spring-modulith-apt`
 * `spring-modulith-moments`
 * `spring-modulith-core` (runtime)
 * `spring-modulith-runtime` (runtime)
@@ -155,6 +156,7 @@ a|* `spring-modulith-docs`
 |Module|Typical scope|Description
 |`spring-modulith-actuator`|`runtime`|A Spring Boot actuator to expose the application module structure via an actuator.
 |`spring-modulith-api`|`compile`|The abstractions to be used in your production code to customize Spring Modulith's default behavior.
+|`spring-modulith-apt`|`compile`|An annotation processor to extract Javadoc for inclusion in xref:documentation.adoc#application-module-canvas[Application Module Canvases].
 |`spring-modulith-core`|`runtime`|The core application module model and API.
 |`spring-modulith-docs`|`test`|The `Documenter` API to create Asciidoctor and PlantUML documentation from the module model.
 |`spring-modulith-events-amqp`|`runtime`|Event externalization support for AMQP.

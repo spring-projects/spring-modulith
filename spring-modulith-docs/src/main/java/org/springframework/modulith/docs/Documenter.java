@@ -415,12 +415,12 @@ public class Documenter {
 				.append(addTableRow("Bean references", asciidoctor.renderBeanReferences(module), options)) //
 
 				// Aggregates
-				.append(addTableRow(aggregates, "Aggregate roots", mapper, options)) //
-				.append(addTableRow(valueTypes, "Value types", mapper, options)) //
+				.append(addTableRow("Aggregate roots", options, aggregates, mapper)) //
+				.append(addTableRow("Value types", options, valueTypes, mapper)) //
 
 				// Events
-				.append(addTableRow("Published events", asciidoctor.renderEvents(module), options)) //
-				.append(addTableRow(module.getEventsListenedTo(modules), "Events listened to", mapper, options)) //
+				.append(addTableRow("Published events", asciidoctor.renderPublishedEvents(module), options)) //
+				.append(addTableRow("Events listened to", asciidoctor.renderEventsListenedTo(module), options)) //
 
 				// Properties
 				.append(addTableRow("Properties",
@@ -632,8 +632,8 @@ public class Documenter {
 				: writeTableRow(title, content);
 	}
 
-	private static <T> String addTableRow(List<T> types, String header, Function<List<T>, String> mapper,
-			CanvasOptions options) {
+	private static <T> String addTableRow(String header, CanvasOptions options, List<T> types,
+			Function<List<T>, String> mapper) {
 		return options.hideEmptyLines && types.isEmpty() ? "" : writeTableRow(header, mapper.apply(types));
 	}
 

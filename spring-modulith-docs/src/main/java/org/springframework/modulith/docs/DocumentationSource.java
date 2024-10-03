@@ -17,6 +17,7 @@ package org.springframework.modulith.docs;
 
 import java.util.Optional;
 
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
 
 /**
@@ -33,4 +34,13 @@ interface DocumentationSource {
 	 * @return will never be {@literal null}.
 	 */
 	Optional<String> getDocumentation(JavaMethod method);
+
+	/**
+	 * Returns the documentation to be used for the given {@link JavaClass}.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	Optional<String> getDocumentation(JavaClass type);
 }

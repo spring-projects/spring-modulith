@@ -19,6 +19,7 @@ import java.util.Optional;
 
 import org.springframework.util.Assert;
 
+import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
 
 /**
@@ -30,7 +31,7 @@ import com.tngtech.archunit.core.domain.JavaMethod;
 class CodeReplacingDocumentationSource implements DocumentationSource {
 
 	private final DocumentationSource delegate;
-	private final Asciidoctor codeSource;
+	private final Asciidoctor asciidoctor;
 
 	/**
 	 * Creates a new {@link CodeReplacingDocumentationSource} for the given delegate {@link DocumentationSource} and
@@ -45,7 +46,7 @@ class CodeReplacingDocumentationSource implements DocumentationSource {
 		Assert.notNull(asciidoctor, "Asciidoctor must not be null!");
 
 		this.delegate = delegate;
-		this.codeSource = asciidoctor;
+		this.asciidoctor = asciidoctor;
 	}
 
 	/*
@@ -56,6 +57,16 @@ class CodeReplacingDocumentationSource implements DocumentationSource {
 	public Optional<String> getDocumentation(JavaMethod method) {
 
 		return delegate.getDocumentation(method)
-				.map(codeSource::toAsciidoctor);
+				.map(asciidoctor::toAsciidoctor);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.docs.DocumentationSource#getDocumentation(com.tngtech.archunit.core.domain.JavaClass)
+	 */
+	@Override
+	public Optional<String> getDocumentation(JavaClass type) {
+		return delegate.getDocumentation(type)
+				.map(asciidoctor::toAsciidoctor);
 	}
 }
