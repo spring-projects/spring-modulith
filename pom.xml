@@ -40,7 +40,7 @@
 		<flapdoodle-mongodb.version>4.14.0</flapdoodle-mongodb.version>
 		<jgit.version>6.10.0.202406032230-r</jgit.version>
 		<jgrapht.version>1.5.2</jgrapht.version>
-		<jmolecules-bom.version>2023.1.4</jmolecules-bom.version>
+		<jmolecules-bom.version>2023.1.5</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>3.4.0-M3</spring-boot.version>
