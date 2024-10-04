@@ -211,20 +211,28 @@ include::{jdbc-schema-base}/schema-h2.sql[]
 include::{jdbc-schema-base}/schema-hsqldb.sql[]
 ----
 
-[[schemas.mysql]]
-=== MySQL
-
-[source, sql]
-----
-include::{jdbc-schema-base}/schema-mysql.sql[]
-----
-
 [[schemas.mariadb]]
 === MariaDB
 
 [source, sql]
 ----
 include::{jdbc-schema-base}/schema-mariadb.sql[]
+----
+
+[[schemas.sqlserver]]
+=== Microsoft SQL Server
+
+[source, sql]
+----
+include::{jdbc-schema-base}/schema-sqlserver.sql[]
+----
+
+[[schemas.mysql]]
+=== MySQL
+
+[source, sql]
+----
+include::{jdbc-schema-base}/schema-mysql.sql[]
 ----
 
 [[schemas.postgresql]]
