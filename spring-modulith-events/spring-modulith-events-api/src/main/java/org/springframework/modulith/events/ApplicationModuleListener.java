@@ -52,6 +52,8 @@ public @interface ApplicationModuleListener {
 
 	/**
 	 * Whether the transaction to be run for the event listener is supposed to be read-only (default {@literal false}).
+	 *
+	 * @see Transactional#readOnly()
 	 */
 	@AliasFor(annotation = Transactional.class, attribute = "readOnly")
 	boolean readOnlyTransaction() default false;
@@ -72,7 +74,7 @@ public @interface ApplicationModuleListener {
 	 * {@code ""}, meaning the event is always handled.
 	 *
 	 * @since 1.2
-	 * @see EventListener#condition
+	 * @see EventListener#condition()
 	 */
 	@AliasFor(annotation = EventListener.class, attribute = "condition")
 	String condition() default "";

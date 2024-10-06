@@ -16,13 +16,13 @@
 package org.springframework.modulith.events;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.springframework.core.annotation.AnnotatedElementUtils.*;
 
 import java.lang.reflect.Method;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,7 +37,7 @@ class ApplicationModuleListenerUnitTests {
 	void exposesEventListenerCondition() throws Exception {
 
 		var method = Sample.class.getDeclaredMethod("someMethod", Object.class);
-		var annotation = AnnotatedElementUtils.findMergedAnnotation(method, EventListener.class);
+		var annotation = findMergedAnnotation(method, EventListener.class);
 
 		assertThat(annotation.condition()).isEqualTo("#{false}");
 	}
@@ -45,9 +45,7 @@ class ApplicationModuleListenerUnitTests {
 	@Test // GH-518
 	void exposesConditionToAdapter() throws Exception {
 
-		var method = Sample.class.getDeclaredMethod("someMethod", Object.class);
-
-		var adapter = new CustomAdapter("someName", Sample.class, method) {};
+		var adapter = new CustomAdapter("someName", Sample.class.getDeclaredMethod("someMethod", Object.class));
 
 		assertThat(adapter.getCondition()).isEqualTo("#{false}");
 	}
@@ -72,8 +70,8 @@ class ApplicationModuleListenerUnitTests {
 
 	static class CustomAdapter extends ApplicationListenerMethodAdapter {
 
-		public CustomAdapter(String beanName, Class<?> targetClass, Method method) {
-			super(beanName, targetClass, method);
+		public CustomAdapter(String beanName, Method method) {
+			super(beanName, method.getDeclaringClass(), method);
 		}
 
 		/*
