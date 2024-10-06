@@ -76,4 +76,13 @@ public @interface ApplicationModuleListener {
 	 */
 	@AliasFor(annotation = EventListener.class, attribute = "condition")
 	String condition() default "";
+
+	/**
+	 * The transaction propagation type. Defaults to {@link Propagation#REQUIRES_NEW}
+	 *
+	 * @since 1.3
+	 * @see Transactional#propagation()
+	 */
+	@AliasFor(annotation = Transactional.class, attribute = "propagation")
+	Propagation propagation() default Propagation.REQUIRES_NEW;
 }

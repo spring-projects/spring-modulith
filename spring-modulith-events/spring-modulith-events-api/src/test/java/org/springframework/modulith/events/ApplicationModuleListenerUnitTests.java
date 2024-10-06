@@ -23,6 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Unit tests for {@link ApplicationModuleListener}.
@@ -50,10 +52,22 @@ class ApplicationModuleListenerUnitTests {
 		assertThat(adapter.getCondition()).isEqualTo("#{false}");
 	}
 
+	@Test // GH-858
+	void declaresCustomTransactionPropagation() throws Exception {
+
+		var method = Sample.class.getDeclaredMethod("withCustomPropagation");
+		var annotation = findMergedAnnotation(method, Transactional.class);
+
+		assertThat(annotation.propagation()).isEqualTo(Propagation.SUPPORTS);
+	}
+
 	static class Sample {
 
 		@ApplicationModuleListener(condition = "#{false}")
 		void someMethod(Object event) {}
+
+		@ApplicationModuleListener(propagation = Propagation.SUPPORTS)
+		void withCustomPropagation() {}
 	}
 
 	static class CustomAdapter extends ApplicationListenerMethodAdapter {
