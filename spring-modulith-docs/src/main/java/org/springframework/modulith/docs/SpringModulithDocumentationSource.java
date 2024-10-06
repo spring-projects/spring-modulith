@@ -41,7 +41,6 @@ import com.tngtech.archunit.core.domain.JavaMethod;
  *
  * @author Oliver Drotbohm
  * @since 1.3
- * @see the {@code spring-modulith-apt} artifact.
  */
 class SpringModulithDocumentationSource implements DocumentationSource {
 
