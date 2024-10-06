@@ -87,6 +87,39 @@ limitations under the License.
 		</license>
 	</licenses>
 
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>org.springframework</groupId>
+				<artifactId>spring-framework-bom</artifactId>
+				<version>${spring-framework.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.jmolecules</groupId>
+				<artifactId>jmolecules-bom</artifactId>
+				<version>${jmolecules-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>io.awspring.cloud</groupId>
+				<artifactId>spring-cloud-aws-dependencies</artifactId>
+				<version>${spring-cloud-aws-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
 	<profiles>
 
 		<profile>
@@ -148,7 +181,6 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.8.0</version>
 						<executions>
 							<execution>
 								<id>attach-javadocs</id>
@@ -174,7 +206,6 @@ limitations under the License.
 					<plugin>
 						<groupId>org.jfrog.buildinfo</groupId>
 						<artifactId>artifactory-maven-plugin</artifactId>
-						<version>${artifactory-maven-plugin.version}</version>
 						<inherited>false</inherited>
 						<executions>
 							<execution>
@@ -211,7 +242,6 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-gpg-plugin</artifactId>
-						<version>3.2.5</version>
 						<executions>
 							<execution>
 								<id>sign-artifacts</id>
@@ -262,7 +292,6 @@ limitations under the License.
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-javadoc-plugin</artifactId>
-						<version>3.8.0</version>
 						<inherited>false</inherited>
 						<executions>
 							<execution>
@@ -287,7 +316,6 @@ limitations under the License.
 						<plugin>
 							<groupId>io.spring.maven.antora</groupId>
 							<artifactId>antora-component-version-maven-plugin</artifactId>
-							<version>0.0.4</version>
 							<executions>
 								<execution>
 									<goals>
@@ -325,7 +353,6 @@ limitations under the License.
 						<plugin>
 							<groupId>org.apache.maven.plugins</groupId>
 							<artifactId>maven-assembly-plugin</artifactId>
-							<version>3.7.1</version>
 							<executions>
 								<execution>
 									<id>docs</id>
@@ -349,7 +376,6 @@ limitations under the License.
 						<plugin>
 							<groupId>org.jfrog.buildinfo</groupId>
 							<artifactId>artifactory-maven-plugin</artifactId>
-							<version>${artifactory-maven-plugin.version}</version>
 							<inherited>false</inherited>
 							<executions>
 								<execution>
@@ -396,39 +422,6 @@ limitations under the License.
 
 	</profiles>
 
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-framework-bom</artifactId>
-				<version>${spring-framework.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-dependencies</artifactId>
-				<version>${spring-boot.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>org.jmolecules</groupId>
-				<artifactId>jmolecules-bom</artifactId>
-				<version>${jmolecules-bom.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<dependency>
-				<groupId>io.awspring.cloud</groupId>
-				<artifactId>spring-cloud-aws-dependencies</artifactId>
-				<version>${spring-cloud-aws-bom.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 	<dependencies>
 
 		<dependency>
@@ -447,8 +440,33 @@ limitations under the License.
 			<plugins>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.13.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.5.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>3.3.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.6.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.4.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-javadoc-plugin</artifactId>
-					<version>3.8.0</version>
+					<version>3.10.1</version>
 					<configuration>
 						<doclint>accessibility,html,reference</doclint>
 						<show>package</show>
@@ -460,6 +478,36 @@ limitations under the License.
 						</links>
 					</configuration>
 				</plugin>
+				<plugin>
+					<groupId>org.jfrog.buildinfo</groupId>
+					<artifactId>artifactory-maven-plugin</artifactId>
+					<version>3.6.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>3.1.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>3.2.7</version>
+				</plugin>
+				<plugin>
+					<groupId>io.spring.maven.antora</groupId>
+					<artifactId>antora-component-version-maven-plugin</artifactId>
+					<version>0.0.4</version>
+				</plugin>
+				<plugin>
+					<groupId>io.spring.maven.antora</groupId>
+					<artifactId>antora-maven-plugin</artifactId>
+					<version>0.0.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>3.7.1</version>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -468,7 +516,6 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.13.0</version>
 				<configuration>
 					<source>17</source>
 					<target>17</target>
@@ -489,7 +536,6 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.4.0</version>
 				<configuration>
 					<excludes>
 						<exclude />
@@ -500,7 +546,6 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-source-plugin</artifactId>
-				<version>3.3.0</version>
 				<executions>
 					<execution>
 						<id>attach-sources</id>
@@ -514,7 +559,6 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-jar-plugin</artifactId>
-				<version>3.4.2</version>
 				<configuration>
 					<archive>
 						<manifestEntries>
@@ -529,7 +573,6 @@ limitations under the License.
 			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>flatten-maven-plugin</artifactId>
-				<version>1.6.0</version>
 				<executions>
 					<execution>
 						<id>flatten</id>
@@ -561,7 +604,6 @@ limitations under the License.
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-release-plugin</artifactId>
-				<version>3.1.1</version>
 				<configuration>
 					<releaseProfiles>sonatype</releaseProfiles>
 					<autoVersionSubmodules>true</autoVersionSubmodules>
