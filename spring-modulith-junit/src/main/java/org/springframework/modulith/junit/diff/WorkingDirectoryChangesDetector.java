@@ -57,13 +57,10 @@ class WorkingDirectoryChangesDetector implements FileModificationDetector {
 	public static WorkingDirectoryChangesDetector of(FileModificationDetector delegate) {
 
 		var pathToRepo = JGitUtil.withRepository(it -> it.getDirectory().getParent());
-
-		// someFolder/.
-		var currentWorkingDirectory = new File(".").getAbsolutePath();
-
-		// Strip repository base and /.
-		var repositoryRelative = currentWorkingDirectory.substring(pathToRepo.length() + 1,
-				currentWorkingDirectory.length() - 2);
+		var currentWorkingDirectory = new File("").getAbsolutePath();
+		var repositoryRelative = !pathToRepo.equals(currentWorkingDirectory)
+				? currentWorkingDirectory.substring(pathToRepo.length() + 1)
+				: "";
 
 		return new WorkingDirectoryChangesDetector(delegate, repositoryRelative);
 	}

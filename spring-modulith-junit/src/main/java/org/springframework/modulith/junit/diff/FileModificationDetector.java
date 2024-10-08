@@ -100,7 +100,7 @@ public interface FileModificationDetector {
 			return new ReferenceCommitDetector(referenceCommit);
 		}
 
-		log.info("Using default file modification detector (uncommitted and unpushed changes).");
+		log.info("Using default file modification detector (uncommitted and unpushed changes):");
 
 		return () -> Stream.of(UncommittedChangesDetector.INSTANCE, UnpushedCommitsDetector.INSTANCE)
 				.flatMap(it -> it.getModifiedFiles());
