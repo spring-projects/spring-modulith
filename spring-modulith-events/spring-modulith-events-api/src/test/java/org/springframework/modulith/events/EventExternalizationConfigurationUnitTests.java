@@ -22,6 +22,8 @@ import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
@@ -128,6 +130,21 @@ class EventExternalizationConfigurationUnitTests {
 
 		assertThat(target.getTarget()).isEqualTo(expected);
 		assertThat(target.getKey()).isNull();
+	}
+
+	@Test // GH-855
+	void registersHeaderExtractor() {
+
+		var configuration = defaults("org.springframework.modulith")
+				.headers(AnotherSampleEvent.class, it -> Map.of("another", "anotherValue"))
+				.headers(SampleEvent.class, it -> Map.of("sample", "value"))
+				.build();
+
+		assertThat(configuration.getHeadersFor(new SampleEvent()))
+				.containsEntry("sample", "value");
+
+		assertThat(configuration.getHeadersFor(new AnotherSampleEvent()))
+				.containsEntry("another", "anotherValue");
 	}
 
 	@Retention(RetentionPolicy.RUNTIME)

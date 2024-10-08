@@ -28,6 +28,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaOperations;
+import org.springframework.messaging.Message;
 
 /**
  * @author Oliver Drotbohm
@@ -44,9 +45,9 @@ public class TestApplication {
 
 		var mock = mock(KafkaOperations.class);
 
-		when(mock.send(any(), any())).then(invocation -> {
+		when(mock.send(any(Message.class))).then(invocation -> {
 
-			logger.info("Sending message {} to {}.", invocation.getArguments()[1], invocation.getArguments()[0]);
+			logger.info("Sending message {}.", invocation.getArguments()[0]);
 
 			return null;
 		});
