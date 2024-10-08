@@ -412,7 +412,7 @@ class Asciidoctor {
 	}
 
 	public String renderPlantUmlInclude(String componentsFilename) {
-		return "plantuml::" + componentsFilename + "[]" + System.lineSeparator();
+		return "plantuml::" + componentsFilename + "[,,format=svg]" + System.lineSeparator();
 	}
 
 	public String renderGeneralInclude(String componentsFilename) {
