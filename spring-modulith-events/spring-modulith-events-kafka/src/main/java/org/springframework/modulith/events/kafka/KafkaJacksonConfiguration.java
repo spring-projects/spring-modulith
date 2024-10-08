@@ -22,6 +22,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.kafka.support.converter.ByteArrayJsonMessageConverter;
 import org.springframework.kafka.support.converter.JsonMessageConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,7 +42,7 @@ class KafkaJacksonConfiguration {
 	@Bean
 	@ConditionalOnBean(ObjectMapper.class)
 	@ConditionalOnMissingBean(JsonMessageConverter.class)
-	JsonMessageConverter jsonMessageConverter(ObjectMapper mapper) {
-		return new JsonMessageConverter(mapper);
+	ByteArrayJsonMessageConverter jsonMessageConverter(ObjectMapper mapper) {
+		return new ByteArrayJsonMessageConverter(mapper);
 	}
 }

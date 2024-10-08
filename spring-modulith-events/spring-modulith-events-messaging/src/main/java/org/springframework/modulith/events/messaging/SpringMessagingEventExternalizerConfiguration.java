@@ -66,6 +66,7 @@ class SpringMessagingEventExternalizerConfiguration {
 			var message = MessageBuilder
 					.withPayload(payload)
 					.setHeader(MODULITH_ROUTING_HEADER, target.toString())
+					.copyHeadersIfAbsent(configuration.getHeadersFor(payload))
 					.build();
 
 			if (logger.isDebugEnabled()) {

@@ -19,7 +19,9 @@ import static org.springframework.core.annotation.AnnotatedElementUtils.*;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -187,6 +189,15 @@ public interface EventExternalizationConfiguration {
 	 * @return will never be {@literal null}.
 	 */
 	RoutingTarget determineTarget(Object event);
+
+	/**
+	 * Returns the headers to be attached to the message sent out for the given event.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	Map<String, Object> getHeadersFor(Object event);
 
 	/**
 	 * API to define which events are supposed to be selected for externalization.
@@ -367,6 +378,7 @@ public interface EventExternalizationConfiguration {
 		private final Predicate<Object> filter;
 		private final Function<Object, Object> mapper;
 		private final Function<Object, RoutingTarget> router;
+		private final Function<Object, Map<String, Object>> headers;
 
 		/**
 		 * Creates a new {@link Router} for the given selector {@link Predicate} and mapper and router {@link Function}s.
@@ -374,16 +386,20 @@ public interface EventExternalizationConfiguration {
 		 * @param filter must not be {@literal null}.
 		 * @param mapper must not be {@literal null}.
 		 * @param router must not be {@literal null}.
+		 * @param headers must not be {@literal null}.
 		 */
-		Router(Predicate<Object> filter, Function<Object, Object> mapper, Function<Object, RoutingTarget> router) {
+		Router(Predicate<Object> filter, Function<Object, Object> mapper, Function<Object, RoutingTarget> router,
+				Function<Object, Map<String, Object>> headers) {
 
 			Assert.notNull(filter, "Selector must not be null!");
 			Assert.notNull(mapper, "Mapper must not be null!");
 			Assert.notNull(router, "Router must not be null!");
+			Assert.notNull(headers, "Headers extractor must not be null!");
 
 			this.filter = filter;
 			this.mapper = mapper;
 			this.router = router;
+			this.headers = headers;
 		}
 
 		/**
@@ -392,7 +408,7 @@ public interface EventExternalizationConfiguration {
 		 * @param filter must not be {@literal null}.
 		 */
 		Router(Predicate<Object> filter) {
-			this(filter, Function.identity(), DEFAULT_ROUTER);
+			this(filter, Function.identity(), DEFAULT_ROUTER, it -> Collections.emptyMap());
 		}
 
 		/**
@@ -406,7 +422,7 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(mapper, "Mapper must not be null!");
 
-			return new Router(filter, mapper, router);
+			return new Router(filter, mapper, router, headers);
 		}
 
 		/**
@@ -428,7 +444,42 @@ public interface EventExternalizationConfiguration {
 					.map(mapper::apply)
 					.orElse(it);
 
-			return new Router(filter, this.mapper.compose(combined), router);
+			return new Router(filter, this.mapper.compose(combined), router, headers);
+		}
+
+		/**
+		 * Registers the given function to extract headers from the events to be externalized. Will reset the entire header
+		 * extractor arrangement. For type-specific extractions, see {@link #headers(Class, Function)}.
+		 *
+		 * @param extractor must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @see #headers(Class, Function)
+		 * @since 1.3
+		 */
+		public Router headers(Function<Object, Map<String, Object>> extractor) {
+
+			Assert.notNull(extractor, "Headers extractor must not be null!");
+
+			return new Router(filter, mapper, router, extractor);
+		}
+
+		/**
+		 * Registers the given type-specific function to extract headers from the events to be externalized.
+		 *
+		 * @param extractor must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 1.3
+		 */
+		public <T> Router headers(Class<T> type, Function<T, Map<String, Object>> extractor) {
+
+			Assert.notNull(type, "Type must not be null!");
+			Assert.notNull(extractor, "Headers extractor must not be null!");
+
+			Function<Object, Map<String, Object>> combined = it -> toOptional(type, it)
+					.map(extractor::apply)
+					.orElseGet(() -> this.headers.apply(it));
+
+			return new Router(filter, mapper, router, combined);
 		}
 
 		/**
@@ -437,7 +488,7 @@ public interface EventExternalizationConfiguration {
 		 * @return will never be {@literal null}.
 		 */
 		public Router routeMapped() {
-			return new Router(filter, mapper, router.compose(mapper));
+			return new Router(filter, mapper, router.compose(mapper), headers);
 		}
 
 		/**
@@ -450,7 +501,7 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(router, "Router must not be null!");
 
-			return new Router(filter, mapper, router);
+			return new Router(filter, mapper, router, headers);
 		}
 
 		/**
@@ -466,9 +517,11 @@ public interface EventExternalizationConfiguration {
 			Assert.notNull(type, "Type must not be null!");
 			Assert.notNull(router, "Router must not be null!");
 
-			return new Router(filter, mapper, it -> toOptional(type, it)
+			Function<Object, RoutingTarget> adapted = it -> toOptional(type, it)
 					.map(router::apply)
-					.orElseGet(() -> this.router.apply(it)));
+					.orElseGet(() -> this.router.apply(it));
+
+			return new Router(filter, mapper, adapted, headers);
 		}
 
 		/**
@@ -487,9 +540,11 @@ public interface EventExternalizationConfiguration {
 			Assert.notNull(type, "Type must not be null!");
 			Assert.notNull(extractor, "Extractor must not be null!");
 
-			return new Router(filter, mapper, it -> toOptional(type, it)
+			Function<Object, RoutingTarget> adapted = it -> toOptional(type, it)
 					.map(t -> this.router.apply(t).withKey(extractor.apply(t)))
-					.orElseGet(() -> this.router.apply(it)));
+					.orElseGet(() -> this.router.apply(it));
+
+			return new Router(filter, mapper, adapted, headers);
 		}
 
 		/**
@@ -503,9 +558,9 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(router, "Router must not be null!");
 
-			return new Router(filter, mapper, it -> router.apply(it)
-					.orElseGet(() -> this.router.apply(it)))
-							.build();
+			Function<Object, RoutingTarget> adapted = it -> router.apply(it).orElseGet(() -> this.router.apply(it));
+
+			return new Router(filter, mapper, adapted, headers).build();
 		}
 
 		/**
@@ -533,16 +588,16 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(router, "Router must not be null!");
 
-			return new Router(filter, mapper, it -> router.apply(it.getClass()));
+			return new Router(filter, mapper, it -> router.apply(it.getClass()), headers);
 		}
 
 		/**
-		 * Creates a new {@link EventExternalizationConfiguration} refelcting the current configuration.
+		 * Creates a new {@link EventExternalizationConfiguration} reflecting the current configuration.
 		 *
 		 * @return will never be {@literal null}.
 		 */
 		public EventExternalizationConfiguration build() {
-			return new DefaultEventExternalizationConfiguration(filter, mapper, router);
+			return new DefaultEventExternalizationConfiguration(filter, mapper, router, headers);
 		}
 
 		private static <T> Optional<T> toOptional(Class<T> type, Object source) {
