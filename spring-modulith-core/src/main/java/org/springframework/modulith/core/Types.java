@@ -19,8 +19,12 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.function.Predicate;
 
+import org.jmolecules.archunit.JMoleculesArchitectureRules;
+import org.jmolecules.archunit.JMoleculesDddRules;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.PackageInfo;
 import org.springframework.util.Assert;
@@ -29,6 +33,7 @@ import org.springframework.util.ClassUtils;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.lang.ArchRule;
 
 /**
  * @author Oliver Drotbohm
@@ -49,8 +54,13 @@ class Types {
 		private static final String BASE_PACKAGE = "org.jmolecules";
 		private static final String ANNOTATION_PACKAGE = BASE_PACKAGE + ".ddd.annotation";
 		private static final String AT_ENTITY = ANNOTATION_PACKAGE + ".Entity";
-		private static final String ARCHUNIT_RULES = BASE_PACKAGE + ".archunit.JMoleculesDddRules";
 		private static final String MODULE = ANNOTATION_PACKAGE + ".Module";
+
+		private static final String DDD_RULES = BASE_PACKAGE + ".archunit.JMoleculesDddRules";
+		private static final String ARCHITECTURE_RULES = BASE_PACKAGE + ".archunit.JMoleculesArchitectureRules";
+		private static final String HEXAGONAL = BASE_PACKAGE + ".architecture.hexagonal.Port";
+		private static final String LAYERED = BASE_PACKAGE + ".architecture.layered.InfrastructureLayer";
+		private static final String ONION = BASE_PACKAGE + ".architecture.onion.classical.InfrastructureRing";
 
 		private static final boolean PRESENT = ClassUtils.isPresent(AT_ENTITY, JMoleculesTypes.class.getClassLoader());
 		private static final boolean MODULE_PRESENT = ClassUtils.isPresent(MODULE, JMoleculesTypes.class.getClassLoader());
@@ -89,8 +99,38 @@ class Types {
 			}
 		}
 
-		public static boolean areRulesPresent() {
-			return ClassUtils.isPresent(ARCHUNIT_RULES, JMoleculesTypes.class.getClassLoader());
+		/**
+		 * Returns all architectural rules to enforce depending on the classpath arrangement.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public static Collection<ArchRule> getRules() {
+
+			var classLoader = JMoleculesTypes.class.getClassLoader();
+			var rules = new ArrayList<ArchRule>();
+
+			if (ClassUtils.isPresent(DDD_RULES, classLoader)) {
+				rules.add(JMoleculesDddRules.all());
+			}
+
+			if (!ClassUtils.isPresent(ARCHITECTURE_RULES, classLoader)) {
+				return rules;
+			}
+
+			if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
+				rules.add(JMoleculesArchitectureRules.ensureHexagonal());
+			}
+
+			if (ClassUtils.isPresent(LAYERED, classLoader)) {
+				rules.add(JMoleculesArchitectureRules.ensureLayering());
+			}
+
+			if (ClassUtils.isPresent(ONION, classLoader)) {
+				rules.add(JMoleculesArchitectureRules.ensureOnionClassical());
+				rules.add(JMoleculesArchitectureRules.ensureOnionSimple());
+			}
+
+			return rules;
 		}
 	}
 

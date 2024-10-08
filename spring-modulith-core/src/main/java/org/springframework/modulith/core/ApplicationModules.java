@@ -20,6 +20,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.HasName.Predicates.*;
 import static java.util.stream.Collectors.*;
+import static org.springframework.modulith.core.Violations.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,12 +35,10 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.jmolecules.archunit.JMoleculesDddRules;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
-import org.springframework.modulith.core.Violations.Violation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -461,24 +460,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public Violations detectViolations() {
 
-		Violations violations = rootPackages.stream() //
+		var cycleViolations = rootPackages.stream() //
 				.map(this::assertNoCyclesFor) //
 				.flatMap(it -> it.getDetails().stream()) //
-				.map(Violation::new) //
-				.collect(Violations.toViolations());
+				.collect(toViolations());
 
-		if (JMoleculesTypes.areRulesPresent()) {
+		var jMoleculesViolations = JMoleculesTypes.getRules().stream()
+				.map(it -> it.evaluate(allClasses))
+				.map(EvaluationResult::getFailureReport)
+				.flatMap(it -> it.getDetails().stream())
+				.collect(toViolations());
 
-			EvaluationResult result = JMoleculesDddRules.all().evaluate(allClasses);
-
-			for (String message : result.getFailureReport().getDetails()) {
-				violations = violations.and(message);
-			}
-		}
-
-		return Stream.concat(rootModules.get().stream(), modules.values().stream()) //
+		var dependencyViolations = Stream.concat(rootModules.get().stream(), modules.values().stream()) //
 				.map(it -> it.detectDependencies(this)) //
-				.reduce(violations, Violations::and);
+				.reduce(NONE, Violations::and);
+
+		return cycleViolations.and(jMoleculesViolations).and(dependencyViolations);
 	}
 
 	/**

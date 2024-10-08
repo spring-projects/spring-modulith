@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.core;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,13 +51,13 @@ public class Violations extends RuntimeException {
 	}
 
 	/**
-	 * A {@link Collector} to turn a {@link java.util.stream.Stream} of {@link RuntimeException}s into a
-	 * {@link Violations} instance.
+	 * A {@link Collector} to turn a {@link java.util.stream.Stream} of {@link String}s into a {@link Violations}
+	 * instance.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static Collector<Violation, ?, Violations> toViolations() {
-		return Collectors.collectingAndThen(Collectors.toList(), Violations::new);
+	static Collector<String, ?, Violations> toViolations() {
+		return mapping(Violation::new, collectingAndThen(Collectors.toList(), Violations::new));
 	}
 
 	/*
@@ -110,13 +112,18 @@ public class Violations extends RuntimeException {
 	 */
 	Violations and(Violation violation) {
 
-		Assert.notNull(violation, "Exception must not be null!");
+		Assert.notNull(violation, "Violation must not be null!");
 
-		return new Violations(unionByMessage(violations, List.of(violation)));
+		return and(new Violations(List.of(violation)));
 	}
 
-	Violations and(Violations other) {
-		return new Violations(unionByMessage(violations, other.violations));
+	Violations and(Violations that) {
+
+		Assert.notNull(that, "Violations must not be null!");
+
+		return hasViolations() || that.hasViolations()
+				? new Violations(unionByMessage(violations, that.violations))
+				: NONE;
 	}
 
 	Violations and(String violation) {
