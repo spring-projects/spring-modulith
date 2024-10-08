@@ -19,6 +19,7 @@ import static org.springframework.core.annotation.AnnotatedElementUtils.*;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.BiPredicate;
@@ -66,6 +67,25 @@ public interface EventExternalizationConfiguration {
 		return DefaultEventExternalizationConfiguration.builder()
 				.selectByPackagesAndFilter(packages, AnnotationTargetLookup::hasExternalizedAnnotation)
 				.routeAll(router);
+	}
+
+	/**
+	 * Creates a default {@link DefaultEventExternalizationConfiguration} with the following characteristics:
+	 * <ul>
+	 * <li>Only events that reside in any of the given packages and that are annotated with any supported
+	 * {@code Externalized} annotation will be considered.</li>
+	 * <li>Routing information is discovered from the {code Externalized} annotation and, if missing, will default to the
+	 * application-local name of the event type. In other words, an event type {@code com.acme.myapp.mymodule.MyEvent}
+	 * will result in a route {@code mymodule.MyEvent}.</li>
+	 * </ul>
+	 *
+	 * @param packages must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 * @see Externalized
+	 * @since 1.3
+	 */
+	public static Router defaults(String... packages) {
+		return defaults(List.of(packages));
 	}
 
 	/**

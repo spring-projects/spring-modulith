@@ -22,7 +22,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -120,7 +119,7 @@ class EventExternalizationConfigurationUnitTests {
 	@Test // GH-248
 	void defaultSetup() {
 
-		var configuration = defaults(List.of("org.springframework.modulith")).build();
+		var configuration = defaults("org.springframework.modulith").build();
 
 		var target = configuration.determineTarget(new AnotherSampleEvent());
 
