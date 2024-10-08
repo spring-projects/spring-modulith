@@ -210,18 +210,12 @@ class Asciidoctor {
 
 	public String renderEventsListenedTo(ApplicationModule module) {
 
-		var builder = new StringBuilder();
-
-		module.getSpringBeans().stream()
+		return module.getSpringBeans().stream()
 				.map(SpringBean::toArchitecturallyEvidentType)
 				.filter(ArchitecturallyEvidentType::isEventListener)
-				.forEach(it -> {
-					it.getReferenceMethods()
-							.map(method -> renderReferenceMethod(method, 0))
-							.forEach(builder::append);
-				});
-
-		return builder.toString();
+				.flatMap(ArchitecturallyEvidentType::getReferenceMethods)
+				.map(it -> renderReferenceMethod(it, 0))
+				.collect(Collectors.joining(System.lineSeparator()));
 	}
 
 	public String renderConfigurationProperties(List<ModuleProperty> properties) {
