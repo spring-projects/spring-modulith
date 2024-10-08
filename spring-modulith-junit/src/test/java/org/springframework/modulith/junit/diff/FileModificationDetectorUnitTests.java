@@ -56,9 +56,9 @@ class FileModificationDetectorUnitTests {
 	@Test // GH-31
 	void selectingDefaultExplicitlyUsesDefault() {
 
-		var explicitDetector = FileModificationDetector.getDetector(setupEnvironment("default", null));
+		var explicitDetector = FileModificationDetector.getTargetDetector(setupEnvironment("default", null));
 
-		assertThat(FileModificationDetector.getDetector(setupEnvironment(null, null)))
+		assertThat(FileModificationDetector.getTargetDetector(setupEnvironment(null, null)))
 				.isEqualTo(explicitDetector);
 	}
 
@@ -74,7 +74,7 @@ class FileModificationDetectorUnitTests {
 
 		var environment = setupEnvironment(detector, referenceCommit);
 
-		assertThat(FileModificationDetector.getDetector(environment)).isInstanceOf(expected);
+		assertThat(FileModificationDetector.getTargetDetector(environment)).isInstanceOf(expected);
 	}
 
 	private static Environment setupEnvironment(String detector, String referenceCommit) {

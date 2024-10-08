@@ -52,6 +52,10 @@ public interface FileModificationDetector {
 	 * @return will never be {@literal null}.
 	 */
 	public static FileModificationDetector getDetector(PropertyResolver propertyResolver) {
+		return WorkingDirectoryChangesDetector.of(getTargetDetector(propertyResolver));
+	}
+
+	static FileModificationDetector getTargetDetector(PropertyResolver propertyResolver) {
 
 		Assert.notNull(propertyResolver, "PropertyResolver must not be null!");
 

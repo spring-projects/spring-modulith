@@ -18,6 +18,7 @@ package org.springframework.modulith.junit.diff;
 import java.util.Arrays;
 import java.util.stream.Stream;
 
+import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
 /**
@@ -38,5 +39,21 @@ public record ModifiedFile(String path) {
 
 	public static Stream<ModifiedFile> of(String... paths) {
 		return Arrays.stream(paths).map(ModifiedFile::new);
+	}
+
+	/**
+	 * Returns the current {@link ModifiedFile} as relative to the given reference path. I.e., a {@code foo/bar.txt} with
+	 * a reference of {@code foo} would result in {@code bar.txt}.
+	 *
+	 * @param reference must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	ModifiedFile asRelativeTo(String reference) {
+
+		Assert.notNull(reference, "Path must not be null!");
+		Assert.isTrue(reference.startsWith(reference),
+				() -> "Modified file at %s is not located in %s!".formatted(reference, reference));
+
+		return reference.isEmpty() ? this : new ModifiedFile(this.path.substring(reference.length() + 1));
 	}
 }
