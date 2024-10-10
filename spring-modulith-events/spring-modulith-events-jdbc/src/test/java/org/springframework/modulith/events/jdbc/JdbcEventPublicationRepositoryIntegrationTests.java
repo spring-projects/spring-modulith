@@ -476,6 +476,14 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	@WithMariaDB
 	class MariaDBWithDeleteCompletion extends WithDeleteCompletion {}
+	
+	// Oracle
+
+	@WithOracle
+	class OracleWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithOracle
+	class OracleWithDeleteCompletion extends WithDeleteCompletion {}
 
 	@Value
 	private static final class TestEvent {
@@ -515,4 +523,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@ActiveProfiles("mssql")
 	@Retention(RetentionPolicy.RUNTIME)
 	@interface WithMssql {}
+	
+	@Nested
+	@ActiveProfiles("oracle")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithOracle {}
 }

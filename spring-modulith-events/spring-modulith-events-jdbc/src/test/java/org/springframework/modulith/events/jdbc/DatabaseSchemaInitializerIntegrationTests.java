@@ -130,4 +130,8 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("mssql")
 	class MSSQL extends WithInitEnabled {}
+	
+	@Nested
+	@ActiveProfiles("oracle")
+	class Oracle extends WithInitEnabled {}
 }

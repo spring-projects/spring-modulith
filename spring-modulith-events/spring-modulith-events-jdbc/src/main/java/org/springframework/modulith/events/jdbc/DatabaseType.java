@@ -86,6 +86,24 @@ enum DatabaseType {
 		boolean isSchemaSupported() {
 			return false;
 		}
+	},
+
+	ORACLE("oracle", "Oracle") {
+
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
 	};
 
 	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name not supported on MySQL!";
