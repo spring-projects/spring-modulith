@@ -400,7 +400,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		var completionDate = rs.getTimestamp("COMPLETION_DATE");
 		var publicationDate = rs.getTimestamp("PUBLICATION_DATE").toInstant();
 		var listenerId = rs.getString("LISTENER_ID");
-		var serializedEvent = rs.getString("SERIALIZED_EVENT");
+		var serializedEvent = Optional.ofNullable(rs.getString("SERIALIZED_EVENT")).orElse("");
 
 		return new JdbcEventPublication(id, publicationDate, listenerId,
 				() -> serializer.deserialize(serializedEvent, eventClass),
