@@ -1,4 +1,4 @@
--- cause oracle database support 'create xx if not exists' from 23c, lower version should create table and index manually 
+-- oracle database support 'create xx if not exists' from 23c, lower version should create table and index manually 
 
 CREATE TABLE IF NOT EXISTS EVENT_PUBLICATION
 (
