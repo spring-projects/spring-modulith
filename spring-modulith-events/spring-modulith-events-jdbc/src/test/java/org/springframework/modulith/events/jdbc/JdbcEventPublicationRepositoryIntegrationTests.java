@@ -353,10 +353,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			var event = new Sample();
 
 			// Serialize to whatever
-			doReturn("").when(serializer).serialize(event);
+			doReturn("sample").when(serializer).serialize(event);
 
 			// Return fresh instances for every deserialization attempt
-			doAnswer(__ -> new Sample()).when(serializer).deserialize("", Sample.class);
+			doAnswer(__ -> new Sample()).when(serializer).deserialize("sample", Sample.class);
 
 			repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
 
@@ -476,7 +476,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	@WithMariaDB
 	class MariaDBWithDeleteCompletion extends WithDeleteCompletion {}
-	
+
 	// Oracle
 
 	@WithOracle
@@ -523,7 +523,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@ActiveProfiles("mssql")
 	@Retention(RetentionPolicy.RUNTIME)
 	@interface WithMssql {}
-	
+
 	@Nested
 	@ActiveProfiles("oracle")
 	@Retention(RetentionPolicy.RUNTIME)
