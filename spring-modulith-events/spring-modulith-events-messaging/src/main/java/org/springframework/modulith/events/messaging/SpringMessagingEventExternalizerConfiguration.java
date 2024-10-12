@@ -53,7 +53,7 @@ class SpringMessagingEventExternalizerConfiguration {
 
     private static final Logger logger = LoggerFactory.getLogger(SpringMessagingEventExternalizerConfiguration.class);
 
-    public static final String MODULITH_DESTINATION_HEADER = "modulith-destination";
+    public static final String MODULITH_ROUTING_HEADER = "modulithRouting";
 
     @AutoConfiguration
     @ConditionalOnMissingBean(value = MessageChannel.class, annotation = ModulithEventsMessageChannel.class)
@@ -83,7 +83,7 @@ class SpringMessagingEventExternalizerConfiguration {
             var routing = BrokerRouting.of(target, context);
             var message = MessageBuilder
                     .withPayload(payload)
-                    .setHeader(MODULITH_DESTINATION_HEADER, routing)
+                    .setHeader(MODULITH_ROUTING_HEADER, routing)
                     .build();
             modulithEventsMessageChannel.send(message);
             return CompletableFuture.completedFuture(null);
