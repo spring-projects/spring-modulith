@@ -7,11 +7,12 @@ To keep application modules as decoupled as possible from each other, their prim
 This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see xref:testing.adoc[Integration Testing Application Modules]).
 
 Often we will find application components defined like this:
+
 [tabs]
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Service
 @RequiredArgsConstructor
@@ -31,7 +32,7 @@ public class OrderManagement {
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Service
 class OrderManagement(val inventory: InventoryManagement) {
@@ -55,7 +56,7 @@ We can change the application module interaction as follows:
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Service
 @RequiredArgsConstructor
@@ -76,7 +77,7 @@ public class OrderManagement {
 
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Service
 class OrderManagement(val events: ApplicationEventPublisher, val dependency: OrderInternal) {
@@ -101,7 +102,7 @@ A different way of approaching this is by moving the event consumption to asynch
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Component
 class InventoryManagement {
@@ -113,7 +114,7 @@ class InventoryManagement {
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Component
 class InventoryManagement {
@@ -124,6 +125,7 @@ class InventoryManagement {
 }
 ----
 ======
+
 This now effectively decouples the original transaction from the execution of the listener.
 While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
 Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
@@ -138,7 +140,7 @@ To run a transactional event listener in a transaction itself, it would need to 
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Component
 class InventoryManagement {
@@ -151,7 +153,7 @@ class InventoryManagement {
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Component
 class InventoryManagement {
@@ -171,7 +173,7 @@ To ease the declaration of what is supposed to describe the default way of integ
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Component
 class InventoryManagement {
@@ -182,7 +184,7 @@ class InventoryManagement {
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Component
 class InventoryManagement {
@@ -212,7 +214,9 @@ image::event-publication-registry-end.png[]
 [[publication-registry.starters]]
 === Spring Boot Event Registry Starters
 
-Using the transactional event publication log requires a combination of artifacts added to your application. To ease that task, Spring Modulith provides starter POMs that are centered around the <<publication-registry.publication-repositories, persistence technology>> to be used and default to the Jackson-based <<publication-registry.serialization, EventSerializer>> implementation. The following starters are available:
+Using the transactional event publication log requires a combination of artifacts added to your application.
+To ease that task, Spring Modulith provides starter POMs that are centered around the <<publication-registry.publication-repositories, persistence technology>> to be used and default to the Jackson-based <<publication-registry.serialization, EventSerializer>> implementation.
+The following starters are available:
 
 [%header,cols="1,3,6"]
 |===
@@ -249,7 +253,7 @@ That API is available through the `spring-modulith-events-api` artifact that you
 ======
 Maven::
 +
-[source, xml, subs="+attributes", role="primary"]
+[source,xml,subs="+attributes",role="primary"]
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
@@ -260,7 +264,7 @@ Maven::
 
 Gradle::
 +
-[source, subs="+attributes", role="secondary"]
+[source,subs="+attributes",role="secondary"]
 ----
 dependencies {
   implementation 'org.springframework.modulith:spring-modulith-events-api:{projectVersion}'
@@ -306,10 +310,11 @@ Spring Modulith provides a Jackson-based JSON implementation through the `spring
 
 [[publication-registry.customize-publication-date]]
 === Customizing the Event Publication Date
+
 By default, the Event Publication Registry will use the date returned by the `Clock.systemUTC()` as event publication date.
 If you want to customize this, register a bean of type clock with the application context:
 
-[source, java]
+[source,java]
 ----
 @Configuration
 class MyConfiguration {
@@ -372,7 +377,7 @@ When routing key is set, requires SNS to be configured as a FIFO topic with cont
 |Spring Messaging
 |`spring-modulith-events-messaging`
 |Uses Spring's core `Message` and `MessageChannel` support.
-Forwards routing information as a header - called `modulithRouting` - to be processed in whatever way by downstream components, typically in a Spring Integration `IntegrationFlow`.
+Resolves the target `MessageChannel` by its bean name given the `target` in the `Externalized` annotation. Forwards routing information as a header - called `modulithRouting` - to be processed in whatever way by downstream components, typically in a Spring Integration `IntegrationFlow`.
 
 |===
 
@@ -405,7 +410,7 @@ The key can be a SpEL expression which will get the event instance configured as
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Externalized("customer-created::#{#this.getLastname()}") // <2>
 class CustomerCreated {
@@ -417,7 +422,7 @@ class CustomerCreated {
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Externalized("customer-created::#{#this.getLastname()}") // <2>
 class CustomerCreated {
@@ -438,13 +443,13 @@ If the key calculation becomes more involved, it is advisable to rather delegate
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Externalized("…::#{@beanName.someMethod(#this)}")
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Externalized("…::#{@beanName.someMethod(#this)}")
 ----
@@ -453,7 +458,6 @@ Kotlin::
 [[externalization.api]]
 === Programmatic Event Externalization Configuration
 
-
 The `spring-modulith-events-api` artifact contains `EventExternalizationConfiguration` that allows developers to customize all of the above mentioned steps.
 
 .Programmatically configuring event externalization
@@ -461,7 +465,7 @@ The `spring-modulith-events-api` artifact contains `EventExternalizationConfigur
 ======
 Java::
 +
-[source, java, role="primary"]
+[source,java,role="primary"]
 ----
 @Configuration
 class ExternalizationConfiguration {
@@ -479,7 +483,7 @@ class ExternalizationConfiguration {
 ----
 Kotlin::
 +
-[source, kotlin, role="secondary"]
+[source,kotlin,role="secondary"]
 ----
 @Configuration
 class ExternalizationConfiguration {
@@ -520,7 +524,7 @@ Spring Modulith's `@ApplicationModuleTest` enables the ability to get a `Publish
 ======
 Java::
 +
-[source, java, subs="quotes", role="primary"]
+[source,java,subs="quotes",role="primary"]
 ----
 @ApplicationModuleTest
 class OrderIntegrationTests {
@@ -538,7 +542,7 @@ class OrderIntegrationTests {
 ----
 Kotlin::
 +
-[source, kotlin, subs="quotes", role="secondary"]
+[source,kotlin,subs="quotes",role="secondary"]
 ----
 @ApplicationModuleTest
 class OrderIntegrationTests {
@@ -565,7 +569,7 @@ If you are using AssertJ for those assertions anyway, you can also use `Assertab
 ======
 Java::
 +
-[source, java, subs="quotes", role="primary"]
+[source,java,subs="quotes",role="primary"]
 ----
 @ApplicationModuleTest
 class OrderIntegrationTests {
@@ -582,7 +586,7 @@ class OrderIntegrationTests {
 ----
 Kotlin::
 +
-[source, kotlin, subs="quotes", role="secondary"]
+[source,kotlin,subs="quotes",role="secondary"]
 ----
 @ApplicationModuleTest
 class OrderIntegrationTests {

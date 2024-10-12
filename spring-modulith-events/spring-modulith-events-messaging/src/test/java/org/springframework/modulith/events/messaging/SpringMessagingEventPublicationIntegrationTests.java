@@ -18,6 +18,7 @@ package org.springframework.modulith.events.messaging;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
@@ -44,12 +45,15 @@ import static org.assertj.core.api.AssertionsForInterfaceTypes.assertThat;
 @SpringBootTest
 class SpringMessagingEventPublicationIntegrationTests {
 
+    private static final String CHANNEL_NAME = "target";
+    
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
     @Autowired
     TestPublisher publisher;
     @Autowired
     CompletedEventPublications completed;
 
-    private final static AtomicInteger COUNTER = new AtomicInteger();
 
     @SpringBootApplication
     static class TestConfiguration {
@@ -60,10 +64,9 @@ class SpringMessagingEventPublicationIntegrationTests {
             return new TestPublisher(publisher);
         }
 
-
         @Bean
         IntegrationFlow inboundIntegrationFlow(
-                @ModulithEventsMessageChannel MessageChannel inbound) {
+                @Qualifier(CHANNEL_NAME) MessageChannel inbound) {
 
             return IntegrationFlow
                     .from(inbound)
@@ -74,11 +77,11 @@ class SpringMessagingEventPublicationIntegrationTests {
                     .get();
         }
 
-        @Bean
-        @ModulithEventsMessageChannel
-        DirectChannelSpec springMessagingTestMessageChannel() {
+        @Bean(value = CHANNEL_NAME)
+        DirectChannelSpec target() {
             return MessageChannels.direct();
         }
+
     }
 
     @Test
@@ -89,19 +92,9 @@ class SpringMessagingEventPublicationIntegrationTests {
         Thread.sleep(200);
         assertThat(COUNTER.get()).isEqualTo(publishes);
         assertThat(completed.findAll()).hasSize(publishes);
-	/*	 
-
-		
-
-		
-
-		var info = rabbit.getQueueInfo("queue");
-
-		assertThat(info.getMessageCount()).isEqualTo(1);
-		*/
     }
 
-    @Externalized("target")
+    @Externalized(CHANNEL_NAME)
     static class TestEvent {
     }
 

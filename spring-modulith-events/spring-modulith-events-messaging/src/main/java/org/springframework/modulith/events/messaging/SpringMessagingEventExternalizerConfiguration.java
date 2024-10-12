@@ -21,13 +21,10 @@ import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
-import org.springframework.integration.dsl.DirectChannelSpec;
-import org.springframework.integration.dsl.MessageChannels;
 import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
@@ -55,23 +52,10 @@ class SpringMessagingEventExternalizerConfiguration {
 
     public static final String MODULITH_ROUTING_HEADER = "modulithRouting";
 
-    @AutoConfiguration
-    @ConditionalOnMissingBean(value = MessageChannel.class, annotation = ModulithEventsMessageChannel.class)
-    @ConditionalOnClass(MessageChannel.class)
-    static class IntegrationConfiguration {
-
-
-        @Bean
-        @ModulithEventsMessageChannel
-        DirectChannelSpec modulithEventsMessageChannel() {
-            return MessageChannels.direct();
-        }
-    }
 
     @Bean
     DelegatingEventExternalizer springMessagingEventExternalizer(
             EventExternalizationConfiguration configuration,
-            @ModulithEventsMessageChannel MessageChannel modulithEventsMessageChannel,
             BeanFactory factory) {
 
         logger.debug("Registering domain event externalization for Spring Messaging…");
@@ -85,7 +69,10 @@ class SpringMessagingEventExternalizerConfiguration {
                     .withPayload(payload)
                     .setHeader(MODULITH_ROUTING_HEADER, routing)
                     .build();
-            modulithEventsMessageChannel.send(message);
+            if (logger.isDebugEnabled())
+                logger.info("trying to find a {} with name {}", MessageChannel.class.getName(), routing.getTarget());
+            var bean = factory.getBean(routing.getTarget(), MessageChannel.class);
+            bean.send(message);
             return CompletableFuture.completedFuture(null);
         });
     }
