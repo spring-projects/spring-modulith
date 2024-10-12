@@ -368,6 +368,12 @@ When routing key is set, requires SQS queue to be configured as a FIFO queue.
 |Uses Spring Cloud AWS SNS support.
 The logical routing key will be used as SNS message group id.
 When routing key is set, requires SNS to be configured as a FIFO topic with content based deduplication enabled.
+
+|Spring Messaging
+|`spring-modulith-events-messaging`
+|Uses Spring's core `Message` and `MessageChannel` support.
+Resolves the target `MessageChannel` by its bean name given the `target` in the `Externalized` annotation. Forwards routing information as a header - called `modulithRouting` - to be processed in whatever way by downstream components, typically in a Spring Integration `IntegrationFlow`.
+
 |===
 
 [[externalization.fundamentals]]
