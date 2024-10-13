@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2024 the original author or authors.
+ * Copyright 2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
-import org.springframework.integration.core.GenericHandler;
 import org.springframework.integration.dsl.DirectChannelSpec;
 import org.springframework.integration.dsl.IntegrationFlow;
 import org.springframework.integration.dsl.MessageChannels;
@@ -42,12 +41,14 @@ import org.springframework.transaction.annotation.Transactional;
  * Integration tests for Spring Messaging-based event publication.
  *
  * @author Josh Long
+ * @author Oliver Drotbohm
+ * @since 1.3
  */
 @SpringBootTest
 class SpringMessagingEventPublicationIntegrationTests {
 
+	private static final String TARGET = "target::#{someExpression}";
 	private static final String CHANNEL_NAME = "target";
-
 	private static final AtomicInteger COUNTER = new AtomicInteger();
 
 	@Autowired TestPublisher publisher;
@@ -62,12 +63,15 @@ class SpringMessagingEventPublicationIntegrationTests {
 		}
 
 		@Bean
-		IntegrationFlow inboundIntegrationFlow(
-				@Qualifier(CHANNEL_NAME) MessageChannel inbound) {
+		IntegrationFlow inboundIntegrationFlow(@Qualifier(CHANNEL_NAME) MessageChannel inbound) {
 
 			return IntegrationFlow
 					.from(inbound)
-					.handle((GenericHandler<TestEvent>) (payload, headers) -> {
+					.handle((__, headers) -> {
+
+						assertThat(headers.get(SpringMessagingEventExternalizerConfiguration.MODULITH_ROUTING_HEADER))
+								.isEqualTo(TARGET);
+
 						COUNTER.incrementAndGet();
 						return null;
 					})
@@ -83,16 +87,20 @@ class SpringMessagingEventPublicationIntegrationTests {
 
 	@Test
 	void publishesEventToSpringMessaging() throws Exception {
+
 		var publishes = 2;
+
 		for (var i = 0; i < publishes; i++) {
 			publisher.publishEvent();
 		}
+
 		Thread.sleep(200);
+
 		assertThat(COUNTER.get()).isEqualTo(publishes);
 		assertThat(completed.findAll()).hasSize(publishes);
 	}
 
-	@Externalized(CHANNEL_NAME)
+	@Externalized(TARGET)
 	static class TestEvent {}
 
 	@RequiredArgsConstructor

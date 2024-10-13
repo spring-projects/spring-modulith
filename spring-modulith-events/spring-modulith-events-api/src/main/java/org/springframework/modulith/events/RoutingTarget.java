@@ -174,7 +174,7 @@ public class RoutingTarget {
 	 */
 	@Override
 	public String toString() {
-		return target + "::" + (key == null ? "" : key);
+		return target + (key == null ? "" : "::" + key);
 	}
 
 	/*

@@ -167,6 +167,7 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-jms`|`runtime`|Event externalization support for JMS.
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-kafka`|`runtime`|Event externalization support for Kafka.
+|`spring-modulith-events-messaging`|`runtime`|Event externalization support into Spring Messaging ``MessageChannel``s.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-neo4j`|`runtime`|A Neo4j-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-junit`|`test`|Test execution optimizations based on the application module structure. Find more details xref:testing.adoc#change-aware-test-execution[here].

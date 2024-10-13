@@ -24,9 +24,9 @@
 		<module>spring-modulith-events-jms</module>
 		<module>spring-modulith-events-jpa</module>
 		<module>spring-modulith-events-kafka</module>
+		<module>spring-modulith-events-messaging</module>
 		<module>spring-modulith-events-mongodb</module>
 		<module>spring-modulith-events-neo4j</module>
-		<module>spring-modulith-events-messaging</module>
 	</modules>
 
 	<profiles>

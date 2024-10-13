@@ -31,30 +31,28 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
-import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to a Spring Messaging
- * {@link MessageChannel message channel}.
+ * {@link MessageChannel}.
  *
  * @author Josh Long
+ * @author Oliver Drotbohm
  */
 @AutoConfiguration
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
 @ConditionalOnClass(MessageChannel.class)
-@ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
-		havingValue = "true",
+@ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled", havingValue = "true",
 		matchIfMissing = true)
 class SpringMessagingEventExternalizerConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(SpringMessagingEventExternalizerConfiguration.class);
 
-	public static final String MODULITH_ROUTING_HEADER = "modulithRouting";
+	public static final String MODULITH_ROUTING_HEADER = "springModulith_routingTarget";
 
 	@Bean
-	DelegatingEventExternalizer springMessagingEventExternalizer(
-			EventExternalizationConfiguration configuration,
+	DelegatingEventExternalizer springMessagingEventExternalizer(EventExternalizationConfiguration configuration,
 			BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization for Spring Messaging…");
@@ -63,16 +61,19 @@ class SpringMessagingEventExternalizerConfiguration {
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
-			var routing = BrokerRouting.of(target, context);
+
+			var targetChannel = target.getTarget();
 			var message = MessageBuilder
 					.withPayload(payload)
-					.setHeader(MODULITH_ROUTING_HEADER, routing)
+					.setHeader(MODULITH_ROUTING_HEADER, target.toString())
 					.build();
+
 			if (logger.isDebugEnabled()) {
-				logger.info("trying to find a {} with name {}", MessageChannel.class.getName(), routing.getTarget());
+				logger.debug("trying to find a {} with name {}", MessageChannel.class.getName(), targetChannel);
 			}
-			var bean = factory.getBean(routing.getTarget(), MessageChannel.class);
-			bean.send(message);
+
+			factory.getBean(targetChannel, MessageChannel.class).send(message);
+
 			return CompletableFuture.completedFuture(null);
 		});
 	}
