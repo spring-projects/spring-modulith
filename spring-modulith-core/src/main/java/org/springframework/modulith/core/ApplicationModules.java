@@ -81,12 +81,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	private final ModulithMetadata metadata;
-	private final Map<String, ApplicationModule> modules;
+	private final Map<ApplicationModuleIdentifier, ApplicationModule> modules;
 	private final JavaClasses allClasses;
 	private final List<JavaPackage> rootPackages;
 	private final Supplier<List<ApplicationModule>> rootModules;
 	private final Set<ApplicationModule> sharedModules;
-	private final List<String> orderedNames;
+	private final List<ApplicationModuleIdentifier> orderedNames;
 
 	private boolean verified;
 
@@ -155,7 +155,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 							JavaPackages.onlySubPackagesOf(it.getModuleBasePackage(),
 									sources.stream().map(ApplicationModuleSource::getModuleBasePackage).toList())); //
 				})
-				.collect(toMap(ApplicationModule::getName, Function.identity()));
+				.collect(toMap(ApplicationModule::getIdentifier, Function.identity()));
 
 		this.rootPackages = Stream.concat(packages.stream(), contributions.getRootPackages()) //
 				.distinct()
@@ -168,8 +168,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.sharedModules = Collections.emptySet();
 
-		Supplier<List<String>> fallback = () -> modules.values().stream()
-				.map(ApplicationModule::getName)
+		Supplier<List<ApplicationModuleIdentifier>> fallback = () -> modules.values().stream()
+				.map(ApplicationModule::getIdentifier)
 				.sorted()
 				.toList();
 
@@ -188,12 +188,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param rootPackages must not be {@literal null}.
 	 * @param rootModules must not be {@literal null}.
 	 * @param sharedModules must not be {@literal null}.
-	 * @param orderedNames must not be {@literal null}.
+	 * @param orderedIdentifiers must not be {@literal null}.
 	 * @param verified
 	 */
-	private ApplicationModules(ModulithMetadata metadata, Map<String, ApplicationModule> modules, JavaClasses allClasses,
-			List<JavaPackage> rootPackages, Supplier<List<ApplicationModule>> rootModules,
-			Set<ApplicationModule> sharedModules, List<String> orderedNames, boolean verified) {
+	private ApplicationModules(ModulithMetadata metadata, Map<ApplicationModuleIdentifier, ApplicationModule> modules,
+			JavaClasses allClasses, List<JavaPackage> rootPackages, Supplier<List<ApplicationModule>> rootModules,
+			Set<ApplicationModule> sharedModules, List<ApplicationModuleIdentifier> orderedIdentifiers, boolean verified) {
 
 		Assert.notNull(metadata, "ModulithMetadata must not be null!");
 		Assert.notNull(modules, "Application modules must not be null!");
@@ -201,7 +201,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Assert.notNull(rootPackages, "Root JavaPackages must not be null!");
 		Assert.notNull(rootModules, "Root modules must not be null!");
 		Assert.notNull(sharedModules, "Shared ApplicationModules must not be null!");
-		Assert.notNull(orderedNames, "Ordered application module names must not be null!");
+		Assert.notNull(orderedIdentifiers, "Ordered application module identifiers must not be null!");
 
 		this.metadata = metadata;
 		this.modules = modules;
@@ -209,7 +209,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.rootPackages = rootPackages;
 		this.rootModules = rootModules;
 		this.sharedModules = sharedModules;
-		this.orderedNames = orderedNames;
+		this.orderedNames = orderedIdentifiers;
 		this.verified = verified;
 	}
 
@@ -370,7 +370,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		Assert.hasText(name, "Module name must not be null or empty!");
 
-		return Optional.ofNullable(modules.get(name));
+		return Optional.ofNullable(modules.get(ApplicationModuleIdentifier.of(name)));
 	}
 
 	/**
@@ -601,7 +601,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.map(it -> Class.class.isInstance(it) ? Class.class.cast(it) : it.getClass())
 				.map(Class::getName)
 				.flatMap(this::getModuleByType)
-				.map(ApplicationModule::getName)
+				.map(ApplicationModule::getIdentifier)
 				.map(orderedNames::indexOf)
 				.orElse(null);
 	}
@@ -612,12 +612,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param moduleName must not be {@literal null}.
 	 * @return
 	 */
-	private ApplicationModule getRequiredModule(String moduleName) {
+	private ApplicationModule getRequiredModule(ApplicationModuleIdentifier identifier) {
 
-		var module = modules.get(moduleName);
+		var module = modules.get(identifier);
 
 		if (module == null) {
-			throw new IllegalArgumentException(String.format("Module %s does not exist!", moduleName));
+			throw new IllegalArgumentException(String.format("Module %s does not exist!", identifier));
 		}
 
 		return module;
@@ -648,7 +648,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 			var metadata = key.getMetadata();
 			var modules = new ApplicationModules(metadata, key.getIgnored(), key.getOptions());
 
-			var sharedModules = metadata.getSharedModuleNames() //
+			var sharedModules = metadata.getSharedModuleIdentifiers() //
 					.map(modules::getRequiredModule) //
 					.collect(Collectors.toSet());
 
@@ -764,7 +764,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static class TopologicalSorter {
 
 		@Nullable
-		private static List<String> topologicallySortModules(ApplicationModules modules) {
+		private static List<ApplicationModuleIdentifier> topologicallySortModules(ApplicationModules modules) {
 
 			Graph<ApplicationModule, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
@@ -782,12 +782,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 								});
 					});
 
-			var names = new ArrayList<String>();
+			var names = new ArrayList<ApplicationModuleIdentifier>();
 			var iterator = new TopologicalOrderIterator<>(graph);
 
 			try {
 
-				iterator.forEachRemaining(it -> names.add(0, it.getName()));
+				iterator.forEachRemaining(it -> names.add(0, it.getIdentifier()));
 				return names;
 
 			} catch (IllegalArgumentException o_O) {
@@ -807,7 +807,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 			return getModuleByType(javaClass)
 					.filter(Predicate.not(ApplicationModule::isOpen))
-					.map(ApplicationModule::getName)
+					.map(ApplicationModule::getIdentifier)
+					.map(ApplicationModuleIdentifier::toString)
 					.map(SliceIdentifier::of)
 					.orElse(SliceIdentifier.ignore());
 		}

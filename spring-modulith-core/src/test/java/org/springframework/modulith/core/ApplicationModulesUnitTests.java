@@ -32,7 +32,8 @@ class ApplicationModulesUnitTests {
 	void discoversComplexModuleArrangement() {
 
 		assertThat(modules)
-				.extracting(ApplicationModule::getName)
+				.extracting(ApplicationModule::getIdentifier)
+				.extracting(Object::toString)
 				.containsExactlyInAnyOrder(
 						"invalid",
 						"jmolecules",
@@ -55,11 +56,13 @@ class ApplicationModulesUnitTests {
 		assertThat(ni.getParentModule(modules)).isEmpty();
 
 		assertThat(ni.getDirectlyNestedModules(modules))
-				.extracting(ApplicationModule::getName)
+				.extracting(ApplicationModule::getIdentifier)
+				.extracting(Object::toString)
 				.containsExactlyInAnyOrder("ni.nested");
 
 		assertThat(ni.getNestedModules(modules))
-				.extracting(ApplicationModule::getName)
+				.extracting(ApplicationModule::getIdentifier)
+				.extracting(Object::toString)
 				.containsExactlyInAnyOrder("ni.nested", "ni.nested.b.first", "ni.nested.b.second");
 	}
 

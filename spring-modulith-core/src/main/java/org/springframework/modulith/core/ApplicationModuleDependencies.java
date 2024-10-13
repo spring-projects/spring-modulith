@@ -85,7 +85,8 @@ public class ApplicationModuleDependencies {
 		Assert.hasText(name, "Module name must not be null or empty!");
 
 		return modules.stream()
-				.map(ApplicationModule::getName)
+				.map(ApplicationModule::getIdentifier)
+				.map(Object::toString)
 				.anyMatch(name::equals);
 	}
 

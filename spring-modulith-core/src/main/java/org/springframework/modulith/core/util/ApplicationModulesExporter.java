@@ -32,6 +32,7 @@ import java.util.stream.Stream;
 
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependency;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.core.NamedInterface;
@@ -119,11 +120,11 @@ public class ApplicationModulesExporter {
 		return Json.toString(toMap(Details.FULL));
 	}
 
-	private Map<String, Object> toMap(Details details) {
+	private Map<ApplicationModuleIdentifier, Object> toMap(Details details) {
 
 		return modules.stream()
 				.collect(
-						Collectors.toMap(ApplicationModule::getName, it -> toInfo(it, modules, details), (l, r) -> r,
+						Collectors.toMap(ApplicationModule::getIdentifier, it -> toInfo(it, modules, details), (l, r) -> r,
 								LinkedHashMap::new));
 	}
 
@@ -157,7 +158,7 @@ public class ApplicationModulesExporter {
 	private static Map<String, Object> toInfo(Entry<ApplicationModule, ? extends Set<DependencyType>> types) {
 
 		return Map.of( //
-				"target", types.getKey().getName(), //
+				"target", types.getKey().getIdentifier().toString(), //
 				"types", types.getValue() //
 		);
 	}

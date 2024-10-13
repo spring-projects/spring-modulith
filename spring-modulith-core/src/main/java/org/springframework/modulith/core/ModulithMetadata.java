@@ -103,8 +103,19 @@ public interface ModulithMetadata {
 	 * Returns the name of shared modules, i.e. modules that are supposed to always be included in bootstraps.
 	 *
 	 * @return will never be {@literal null}.
+	 * @deprecated since 1.3, use {@link #getSharedModuleIdentifiers()} instead.
 	 */
+	@Deprecated
 	Stream<String> getSharedModuleNames();
+
+	/**
+	 * Returns the {@link ApplicationModuleIdentifier}s of shared modules, i.e. modules that are supposed to always be
+	 * included in bootstraps.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	Stream<ApplicationModuleIdentifier> getSharedModuleIdentifiers();
 
 	/**
 	 * Returns the name of the system.

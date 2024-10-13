@@ -133,7 +133,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 		return name;
 	}
 
-	String getQualifiedName(String qualifier) {
+	String getQualifiedName(ApplicationModuleIdentifier qualifier) {
 		return qualifier + " :: " + name;
 	}
 

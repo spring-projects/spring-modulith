@@ -117,6 +117,15 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.core.ModulithMetadata#getSharedModuleIdentifiers()
+	 */
+	@Override
+	public Stream<ApplicationModuleIdentifier> getSharedModuleIdentifiers() {
+		return getSharedModuleNames().map(ApplicationModuleIdentifier::of);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.model.ModulithMetadata#getSystemName()
 	 */
 	@Override

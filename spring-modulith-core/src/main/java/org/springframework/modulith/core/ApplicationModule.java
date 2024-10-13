@@ -143,9 +143,21 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * Returns the logical name of the module.
 	 *
 	 * @return will never be {@literal null} or empty.
+	 * @deprecated since 1.3, use {@link #getIdentifier()} instead.
 	 */
+	@Deprecated
 	public String getName() {
-		return source.getModuleName();
+		return getIdentifier().toString();
+	}
+
+	/**
+	 * Returns the logical identifier of the module.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public ApplicationModuleIdentifier getIdentifier() {
+		return ApplicationModuleIdentifier.of(source.getModuleName());
 	}
 
 	/**
@@ -306,7 +318,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return getType(type.getName())
 				.map(it -> ArchitecturallyEvidentType.of(it, getSpringBeansInternal()))
 				.orElseThrow(() -> new IllegalArgumentException("Couldn't find type %s in module %s!".formatted(
-						FormattableType.of(type).getAbbreviatedFullName(this), getName())));
+						FormattableType.of(type).getAbbreviatedFullName(this), getIdentifier())));
 	}
 
 	/**
@@ -404,11 +416,11 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		if (modules != null) {
 			modules.getParentOf(this).ifPresent(it -> {
-				builder.append("> Parent module: ").append(it.getName()).append("\n");
+				builder.append("> Parent module: ").append(it.getIdentifier()).append("\n");
 			});
 		}
 
-		builder.append("> Logical name: ").append(getName()).append('\n');
+		builder.append("> Logical name: ").append(getIdentifier()).append('\n');
 		builder.append("> Base package: ").append(basePackage.getName()).append('\n');
 
 		builder.append("> Excluded packages: ");
@@ -438,8 +450,12 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			List<ApplicationModule> dependencies = getBootstrapDependencies(modules).toList();
 
 			builder.append("> Direct module dependencies: ");
-			builder.append(dependencies.isEmpty() ? "none"
-					: dependencies.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+			builder.append(dependencies.isEmpty()
+					? "none"
+					: dependencies.stream()
+							.map(ApplicationModule::getIdentifier)
+							.map(ApplicationModuleIdentifier::toString)
+							.collect(Collectors.joining(", ")));
 			builder.append('\n');
 		}
 
@@ -739,7 +755,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	private String getQualifiedName(NamedInterface namedInterface) {
-		return namedInterface.getQualifiedName(getName());
+		return namedInterface.getQualifiedName(getIdentifier());
 	}
 
 	private Collection<ApplicationModule> doGetNestedModules(ApplicationModules modules, boolean recursive) {
@@ -877,7 +893,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			var target = modules.getModuleByName(targetModuleName)
 					.orElseThrow(() -> new IllegalArgumentException(
-							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(source.getName(), targetModuleName)));
+							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(source.getIdentifier(), targetModuleName)));
 
 			if (WILDCARD.equals(namedInterfaceName)) {
 				return new DeclaredDependency(target, null);
@@ -888,7 +904,8 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 					? namedInterfaces.getUnnamedInterface()
 					: namedInterfaces.getByName(namedInterfaceName)
 							.orElseThrow(() -> new IllegalArgumentException(
-									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfaceName, source.getName(), identifier)));
+									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfaceName, source.getIdentifier(),
+											identifier)));
 
 			return new DeclaredDependency(target, namedInterface);
 		}
@@ -943,7 +960,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		@Override
 		public String toString() {
 
-			var result = target.getName();
+			var result = target.getIdentifier().toString();
 
 			if (namedInterface == null) {
 				return result + " :: " + WILDCARD;
@@ -1230,14 +1247,14 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 						.toList();
 
 				var targetString = targetNamedInterfaces.isEmpty()
-						? "module '%s'".formatted(targetModule.getName())
+						? "module '%s'".formatted(targetModule.getIdentifier())
 						: "named interface(s) '%s'".formatted(
 								targetNamedInterfaces.stream()
 										.map(targetModule::getQualifiedName)
 										.collect(Collectors.joining(", ")));
 
 				var message = "Module '%s' depends on %s via %s -> %s. Allowed targets: %s." //
-						.formatted(originModule.getName(), targetString, source.getName(), target.getName(),
+						.formatted(originModule.getIdentifier(), targetString, source.getName(), target.getName(),
 								declaredDependencies.toString());
 
 				return violations.and(new Violation(message));
@@ -1256,7 +1273,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			if (!targetModule.isExposed(target)) {
 
 				var violationText = INTERNAL_REFERENCE
-						.formatted(originModule.getName(), target.getName(), targetModule.getName());
+						.formatted(originModule.getIdentifier(), target.getName(), targetModule.getIdentifier());
 
 				return violations.and(new Violation(violationText + lineSeparator() + description));
 			}
@@ -1266,7 +1283,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			if (!haveSameParentOrDirectParentRelationship(originModule, targetModule, modules)) {
 
 				var violationText = INVALID_SUB_MODULE_REFERENCE
-						.formatted(originModule.getName(), targetModule.getName(),
+						.formatted(originModule.getIdentifier(), targetModule.getIdentifier(),
 								FormattableType.of(source).getAbbreviatedFullName(originModule),
 								FormattableType.of(target).getAbbreviatedFullName(targetModule));
 
