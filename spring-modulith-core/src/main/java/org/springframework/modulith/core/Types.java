@@ -25,8 +25,10 @@ import java.util.function.Predicate;
 
 import org.jmolecules.archunit.JMoleculesArchitectureRules;
 import org.jmolecules.archunit.JMoleculesDddRules;
+import org.jmolecules.ddd.annotation.Module;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.PackageInfo;
+import org.springframework.modulith.core.ApplicationModuleSource.ApplicationModuleSourceMetadata;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -87,16 +89,18 @@ class Types {
 		}
 
 		@Nullable
-		@SuppressWarnings("unchecked")
 		public static Class<? extends Annotation> getModuleAnnotationTypeIfPresent() {
+			return isModulePresent() ? Module.class : null;
+		}
 
-			try {
-				return isModulePresent()
-						? (Class<? extends Annotation>) ClassUtils.forName(MODULE, JMoleculesTypes.class.getClassLoader())
-						: null;
-			} catch (Exception o_O) {
-				return null;
-			}
+		/**
+		 * Returns an {@link ApplicationModuleSourceMetadata} for the {@link Module} annotation if present.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		@Nullable
+		public static ApplicationModuleSourceMetadata getIdentifierSource() {
+			return isModulePresent() ? ApplicationModuleSourceMetadata.forAnnotation(Module.class, Module::id) : null;
 		}
 
 		/**

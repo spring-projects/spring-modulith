@@ -15,10 +15,16 @@
  */
 package org.springframework.modulith.core;
 
+import java.lang.annotation.Annotation;
 import java.util.Objects;
+import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.springframework.modulith.ApplicationModule;
+import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 /**
  * The source of an {@link ApplicationModule}. Essentially a {@link JavaPackage} and associated naming strategy for the
@@ -32,8 +38,13 @@ import org.springframework.util.Assert;
  */
 public class ApplicationModuleSource {
 
+	private static final ApplicationModuleSourceMetadata ANNOTATION_IDENTIFIER_SOURCE = ApplicationModuleSourceMetadata
+			.delegating(
+					JMoleculesTypes.getIdentifierSource(),
+					ApplicationModuleSourceMetadata.forAnnotation(ApplicationModule.class, ApplicationModule::id));
+
 	private final JavaPackage moduleBasePackage;
-	private final String moduleName;
+	private final ApplicationModuleIdentifier identifier;
 
 	/**
 	 * Creates a new {@link ApplicationModuleSource} for the given module base package and module name.
@@ -41,50 +52,55 @@ public class ApplicationModuleSource {
 	 * @param moduleBasePackage must not be {@literal null}.
 	 * @param moduleName must not be {@literal null} or empty.
 	 */
-	private ApplicationModuleSource(JavaPackage moduleBasePackage, String moduleName) {
+	private ApplicationModuleSource(JavaPackage moduleBasePackage, ApplicationModuleIdentifier identifier) {
 
 		Assert.notNull(moduleBasePackage, "JavaPackage must not be null!");
-		Assert.hasText(moduleName, "Module name must not be null or empty!");
 
 		this.moduleBasePackage = moduleBasePackage;
-		this.moduleName = moduleName;
+		this.identifier = identifier;
 	}
 
 	/**
 	 * Returns a {@link Stream} of {@link ApplicationModuleSource}s by applying the given
 	 * {@link ApplicationModuleDetectionStrategy} to the given base package.
 	 *
-	 * @param pkg must not be {@literal null}.
+	 * @param rootPackage must not be {@literal null}.
 	 * @param strategy must not be {@literal null}.
 	 * @param fullyQualifiedModuleNames whether to use fully qualified module names.
 	 * @return will never be {@literal null}.
 	 */
-	public static Stream<ApplicationModuleSource> from(JavaPackage pkg, ApplicationModuleDetectionStrategy strategy,
-			boolean fullyQualifiedModuleNames) {
+	public static Stream<ApplicationModuleSource> from(JavaPackage rootPackage,
+			ApplicationModuleDetectionStrategy strategy, boolean fullyQualifiedModuleNames) {
 
-		Assert.notNull(pkg, "Base package must not be null!");
+		Assert.notNull(rootPackage, "Root package must not be null!");
 		Assert.notNull(strategy, "ApplicationModuleDetectionStrategy must not be null!");
 
-		return strategy.getModuleBasePackages(pkg)
-				.flatMap(it -> it.andSubPackagesAnnotatedWith(org.springframework.modulith.ApplicationModule.class))
-				.map(it -> new ApplicationModuleSource(it, fullyQualifiedModuleNames ? it.getName() : pkg.getTrailingName(it)));
+		return strategy.getModuleBasePackages(rootPackage)
+				.flatMap(ANNOTATION_IDENTIFIER_SOURCE::withNestedPackages)
+				.map(it -> {
+
+					var id = ANNOTATION_IDENTIFIER_SOURCE.lookupIdentifier(it)
+							.orElseGet(() -> ApplicationModuleIdentifier.of(
+									fullyQualifiedModuleNames ? it.getName() : rootPackage.getTrailingName(it)));
+
+					return new ApplicationModuleSource(it, id);
+				});
 	}
 
 	/**
 	 * Creates a new {@link ApplicationModuleSource} for the given {@link JavaPackage} and name.
 	 *
 	 * @param pkg must not be {@literal null}.
-	 * @param name must not be {@literal null} or empty.
+	 * @param identifier must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 */
-	public static ApplicationModuleSource from(JavaPackage pkg, String name) {
-
-		Assert.hasText(name, "Name must not be null or empty!");
-
-		return new ApplicationModuleSource(pkg, name);
+	static ApplicationModuleSource from(JavaPackage pkg, String identifier) {
+		return new ApplicationModuleSource(pkg, ApplicationModuleIdentifier.of(identifier));
 	}
 
 	/**
+	 * Returns the base package for the module.
+	 *
 	 * @return will never be {@literal null}.
 	 */
 	public JavaPackage getModuleBasePackage() {
@@ -92,10 +108,12 @@ public class ApplicationModuleSource {
 	}
 
 	/**
-	 * @return will never be {@literal null} or empty.
+	 * Returns the {@link ApplicationModuleIdentifier} to be used for the module.
+	 *
+	 * @return will never be {@literal null}.
 	 */
-	public String getModuleName() {
-		return moduleName;
+	public ApplicationModuleIdentifier getIdentifier() {
+		return identifier;
 	}
 
 	/*
@@ -113,7 +131,7 @@ public class ApplicationModuleSource {
 			return false;
 		}
 
-		return Objects.equals(this.moduleName, that.moduleName)
+		return Objects.equals(this.identifier, that.identifier)
 				&& Objects.equals(this.moduleBasePackage, that.moduleBasePackage);
 	}
 
@@ -123,6 +141,105 @@ public class ApplicationModuleSource {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(moduleName, moduleBasePackage);
+		return Objects.hash(identifier, moduleBasePackage);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "ApplicationModuleSource(" + identifier + ", " + moduleBasePackage.getName() + ")";
+	}
+
+	/**
+	 * An intermediate abstraction to detect both the {@link ApplicationModuleIdentifier} and potentially nested module
+	 * declarations for the {@link JavaPackage}s returned from the first pass of module detection.
+	 *
+	 * @author Oliver Drotbohm
+	 * @see ApplicationModuleDetectionStrategy
+	 */
+	interface ApplicationModuleSourceMetadata {
+
+		/**
+		 * Returns an optional {@link ApplicationModuleIdentifier} obtained by the annotation on the given package.
+		 *
+		 * @param pkg must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		Optional<ApplicationModuleIdentifier> lookupIdentifier(JavaPackage pkg);
+
+		/**
+		 * Return a {@link Stream} of {@link JavaPackage}s that are
+		 *
+		 * @param pkg must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		Stream<JavaPackage> withNestedPackages(JavaPackage pkg);
+
+		/**
+		 * Creates a new {@link ApplicationModuleSourceFactory} detecting the {@link ApplicationModuleIdentifier} based on a
+		 * particular annotation's attribute. It also detects nested {@link JavaPackage}s annotated with the given
+		 * annotation as nested module base packages.
+		 *
+		 * @param <T> an annotation type
+		 * @param annotation must not be {@literal null}.
+		 * @param extractor must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		static <T extends Annotation> ApplicationModuleSourceMetadata forAnnotation(Class<T> annotation,
+				Function<T, String> extractor) {
+
+			Assert.notNull(annotation, "Annotation type must not be null!");
+			Assert.notNull(extractor, "Attribute extractor must not be null!");
+
+			return new ApplicationModuleSourceMetadata() {
+
+				@Override
+				public Optional<ApplicationModuleIdentifier> lookupIdentifier(JavaPackage pkg) {
+
+					return pkg.getAnnotation(annotation)
+							.map(extractor)
+							.filter(StringUtils::hasText)
+							.map(ApplicationModuleIdentifier::of);
+				}
+
+				@Override
+				public Stream<JavaPackage> withNestedPackages(JavaPackage pkg) {
+					return pkg.getSubPackagesAnnotatedWith(annotation);
+				}
+			};
+		}
+
+		/**
+		 * Returns an {@link ApplicationModuleSourceFactory} delegating to the given ones, chosing the first identifier
+		 * found and assembling nested packages of all delegate {@link ApplicationModuleSourceFactory} instances.
+		 *
+		 * @param delegates must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		private static ApplicationModuleSourceMetadata delegating(ApplicationModuleSourceMetadata... delegates) {
+
+			return new ApplicationModuleSourceMetadata() {
+
+				@Override
+				public Stream<JavaPackage> withNestedPackages(JavaPackage pkg) {
+
+					return Stream.concat(Stream.of(pkg), Stream.of(delegates)
+							.filter(Objects::nonNull)
+							.flatMap(it -> it.withNestedPackages(pkg)));
+				}
+
+				@Override
+				public Optional<ApplicationModuleIdentifier> lookupIdentifier(JavaPackage pkg) {
+
+					return Stream.of(delegates)
+							.filter(Objects::nonNull)
+							.flatMap(it -> it.lookupIdentifier(pkg).stream())
+							.findFirst();
+				}
+			};
+		}
 	}
 }

@@ -33,6 +33,13 @@ public @interface ApplicationModule {
 	public static final String OPEN_TOKEN = "¯\\_(ツ)_/¯";
 
 	/**
+	 * The identifier of the module. Must not contain a double colon ({@code ::}).
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	String id() default "";
+
+	/**
 	 * The human readable name of the module to be used for display and documentation purposes.
 	 *
 	 * @return will never be {@literal null}.

@@ -36,11 +36,11 @@ class ApplicationModulesUnitTests {
 				.extracting(Object::toString)
 				.containsExactlyInAnyOrder(
 						"invalid",
-						"jmolecules",
+						"customId",
 						"ni",
 						"ni.nested",
 						"ni.nested.b.first",
-						"ni.nested.b.second",
+						"secondCustomized",
 						"springbean");
 	}
 
@@ -63,7 +63,7 @@ class ApplicationModulesUnitTests {
 		assertThat(ni.getNestedModules(modules))
 				.extracting(ApplicationModule::getIdentifier)
 				.extracting(Object::toString)
-				.containsExactlyInAnyOrder("ni.nested", "ni.nested.b.first", "ni.nested.b.second");
+				.containsExactlyInAnyOrder("ni.nested", "ni.nested.b.first", "secondCustomized");
 	}
 
 	@Test // GH 578

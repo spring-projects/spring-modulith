@@ -157,7 +157,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * @since 1.3
 	 */
 	public ApplicationModuleIdentifier getIdentifier() {
-		return ApplicationModuleIdentifier.of(source.getModuleName());
+		return source.getIdentifier();
 	}
 
 	/**
