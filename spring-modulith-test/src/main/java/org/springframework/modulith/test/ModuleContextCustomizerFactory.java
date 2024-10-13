@@ -31,6 +31,7 @@ import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.JavaPackage;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
@@ -112,8 +113,10 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 				logHeadline("Extra includes:");
 
-				LOGGER.info("> "
-						+ extraIncludes.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+				LOGGER.info("> " + extraIncludes.stream()
+						.map(ApplicationModule::getIdentifier)
+						.map(ApplicationModuleIdentifier::toString)
+						.collect(Collectors.joining(", ")));
 			}
 
 			var sharedModules = modules.getSharedModules();
@@ -122,8 +125,10 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 				logHeadline("Shared modules:");
 
-				LOGGER.info("> "
-						+ sharedModules.stream().map(ApplicationModule::getName).collect(Collectors.joining(", ")));
+				LOGGER.info("> " + sharedModules.stream()
+						.map(ApplicationModule::getIdentifier)
+						.map(ApplicationModuleIdentifier::toString)
+						.collect(Collectors.joining(", ")));
 			}
 
 			var dependencies = execution.getDependencies();
