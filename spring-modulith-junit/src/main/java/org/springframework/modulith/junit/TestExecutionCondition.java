@@ -91,17 +91,18 @@ class TestExecutionCondition {
 			for (String changedClass : changedClasses) {
 
 				if (it.contains(changedClass)) {
-					return enabled("Changes detected in module %s, executing test.".formatted(it.getName()));
+					return enabled("Changes detected in module %s, executing test.".formatted(it.getIdentifier()));
 				}
 
 				var dependency = dependencies.getModuleByType(changedClass);
 
 				if (dependency != null) {
-					return enabled("Changes detected in dependent module %s, executing test.".formatted(dependency.getName()));
+					return enabled(
+							"Changes detected in dependent module %s, executing test.".formatted(dependency.getIdentifier()));
 				}
 			}
 
-			return disabled("Test residing in module %s not affected by changes!".formatted(it.getName()));
+			return disabled("Test residing in module %s not affected by changes!".formatted(it.getIdentifier()));
 
 		}).orElseGet(() -> enabled("Test in package %s does not reside in any module!".formatted(packageName)));
 	}
