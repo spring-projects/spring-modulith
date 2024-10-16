@@ -206,7 +206,7 @@ image::event-publication-registry-start.png[]
 
 Each transactional event listener is wrapped into an aspect that marks that log entry as completed if the execution of the listener succeeds.
 In case the listener fails, the log entry stays untouched so that retry mechanisms can be deployed depending on the application's needs.
-Automatic re-publication of the events can be enabled via the xref:appendix.adoc#configuration-properties[`spring.modulith.republish-outstanding-events-on-restart`] property.
+Automatic re-publication of the events can be enabled via the xref:appendix.adoc#configuration-properties[`spring.modulith.events.republish-outstanding-events-on-restart`] property.
 
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
