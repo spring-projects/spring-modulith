@@ -13,7 +13,7 @@
 			"defaultValue": "false",
 			"deprecation": {
 				"replacement": "spring.modulith.events.republish-outstanding-events-on-restart", 
-				"reason": "Moved to spring.modulit.events namespace. To be removed in 1.4.",
+				"reason": "Moved to spring.modulith.events namespace. To be removed in 1.4.",
 				"since" : "1.3"
 			}
 		},
