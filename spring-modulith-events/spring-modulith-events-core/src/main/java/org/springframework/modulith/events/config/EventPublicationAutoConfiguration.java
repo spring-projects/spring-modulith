@@ -54,6 +54,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  * @author Oliver Drotbohm
  * @author Björn Kieling
  * @author Dmitry Belyaev
+ * @author Josh Long
  */
 @AutoConfiguration
 @Import(AsyncEnablingConfiguration.class)
