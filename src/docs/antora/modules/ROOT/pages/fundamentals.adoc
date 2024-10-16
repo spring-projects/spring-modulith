@@ -61,7 +61,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-modules.forEach(println(it))
+modules.forEach { println(it) }
 ----
 ======
 .The console output of our application module arrangement
