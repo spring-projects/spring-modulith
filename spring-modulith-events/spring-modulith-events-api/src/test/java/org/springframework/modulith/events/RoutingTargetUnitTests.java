@@ -82,4 +82,22 @@ class RoutingTargetUnitTests {
 		assertThat(first.hashCode()).isEqualTo(second.hashCode());
 		assertThat(first.hashCode()).isNotEqualTo(third);
 	}
+
+	@Test // GH-881
+	void trimsTargetAndKeyOnParsing() {
+
+		var target = RoutingTarget.parse(" target :: key ");
+
+		assertThat(target.getTarget()).isEqualTo("target");
+		assertThat(target.getKey()).isEqualTo("key");
+	}
+
+	@Test // GH-881
+	void trimsTargetAndKeyOnBuilding() {
+
+		var target = RoutingTarget.forTarget(" target ").andKey(" key ");
+
+		assertThat(target.getTarget()).isEqualTo("target");
+		assertThat(target.getKey()).isEqualTo("key");
+	}
 }

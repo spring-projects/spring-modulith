@@ -78,7 +78,7 @@ class SnsEventExternalizerConfiguration {
 				builder.groupId(key);
 			}
 
-			operations.sendNotification(routing.getTarget(), builder.build());
+			operations.sendNotification(routing.getTarget(payload), builder.build());
 
 			return CompletableFuture.completedFuture(null);
 		});

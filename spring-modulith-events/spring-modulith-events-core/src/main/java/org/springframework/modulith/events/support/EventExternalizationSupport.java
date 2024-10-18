@@ -24,6 +24,7 @@ import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.core.ConditionalEventListener;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.util.Assert;
 
 /**
@@ -66,7 +67,7 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 	 * @param event must not be {@literal null}.
 	 * @return the externalization result, will never be {@literal null}.
 	 */
-	@ApplicationModuleListener
+	@ApplicationModuleListener(propagation = Propagation.SUPPORTS)
 	public CompletableFuture<?> externalize(Object event) {
 
 		Assert.notNull(event, "Object must not be null!");

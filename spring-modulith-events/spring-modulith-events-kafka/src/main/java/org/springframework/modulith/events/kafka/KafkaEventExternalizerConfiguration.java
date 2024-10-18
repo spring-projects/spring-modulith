@@ -71,7 +71,7 @@ class KafkaEventExternalizerConfiguration {
 
 			var message = builder
 					.setHeaderIfAbsent(KafkaHeaders.KEY, routing.getKey(payload))
-					.setHeaderIfAbsent(KafkaHeaders.TOPIC, routing.getTarget())
+					.setHeaderIfAbsent(KafkaHeaders.TOPIC, routing.getTarget(payload))
 					.build();
 
 			return operations.send(message);

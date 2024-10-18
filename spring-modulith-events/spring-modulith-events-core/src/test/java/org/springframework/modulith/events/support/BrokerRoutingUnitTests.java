@@ -55,6 +55,15 @@ class BrokerRoutingUnitTests {
 		verifyNoInteractions(context);
 	}
 
+	@Test // GH-881
+	void evaluatesSpelExpressionForTarget() {
+
+		var target = RoutingTarget.forTarget("#{@bean.getKey(#this)}").withoutKey();
+		var routing = BrokerRouting.of(target, getEvaluationContext());
+
+		assertThat(routing.getTarget(new TestEvent())).isEqualTo("foo");
+	}
+
 	private static EvaluationContext getEvaluationContext() {
 
 		var evaluationContext = new StandardEvaluationContext();

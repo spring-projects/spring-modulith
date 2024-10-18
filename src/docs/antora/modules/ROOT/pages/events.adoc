@@ -404,7 +404,7 @@ By default, no routing key is used.
 === Annotation-based Event Externalization Configuration
 
 To define a custom routing key via the `@Externalized` annotations, a pattern of `$target::$key` can be used for the target/value attribute available in each of the particular annotations.
-The key can be a SpEL expression which will get the event instance configured as root object.
+Both the target and key can be a SpEL expression which will get the event instance configured as root object.
 
 .Defining a dynamic routing key via SpEL expression
 [tabs]

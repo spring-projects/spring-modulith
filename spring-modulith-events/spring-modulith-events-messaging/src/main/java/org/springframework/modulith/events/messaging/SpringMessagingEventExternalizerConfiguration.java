@@ -31,6 +31,7 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
+import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
@@ -62,7 +63,7 @@ class SpringMessagingEventExternalizerConfiguration {
 
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
 
-			var targetChannel = target.getTarget();
+			var targetChannel = BrokerRouting.of(target, context).getTarget(payload);
 			var message = MessageBuilder
 					.withPayload(payload)
 					.setHeader(MODULITH_ROUTING_HEADER, target.toString())

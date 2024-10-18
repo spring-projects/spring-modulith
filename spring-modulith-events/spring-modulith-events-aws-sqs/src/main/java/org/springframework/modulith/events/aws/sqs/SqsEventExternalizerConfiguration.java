@@ -72,7 +72,7 @@ class SqsEventExternalizerConfiguration {
 
 			return CompletableFuture.completedFuture(operations.send(sqsSendOptions -> {
 
-				var options = sqsSendOptions.queue(routing.getTarget()).payload(payload);
+				var options = sqsSendOptions.queue(routing.getTarget(payload)).payload(payload);
 				var key = routing.getKey(payload);
 
 				if (key != null) {
