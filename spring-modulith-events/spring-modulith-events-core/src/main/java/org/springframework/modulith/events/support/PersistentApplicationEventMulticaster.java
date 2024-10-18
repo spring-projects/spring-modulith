@@ -55,13 +55,13 @@ import org.springframework.util.ReflectionUtils;
  * application restart or via a schedule.
  * <p>
  * Republication is handled in {@link #afterSingletonsInstantiated()} inspecting the {@link EventPublicationRegistry}
- * for incomplete publications and
+ * for incomplete publications and publishing them all.
  *
  * @author Oliver Drotbohm
  * @see CompletionRegisteringAdvisor
  */
 public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
-		implements IncompleteEventPublications, SmartInitializingSingleton {
+		implements IncompleteEventPublications {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
 	private static final Method LEGACY_SHOULD_HANDLE = ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
@@ -69,8 +69,6 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private static final Method SHOULD_HANDLE = ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
 			"shouldHandle", ApplicationEvent.class);
 
-	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
-	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
 	private final @NonNull Supplier<Environment> environment;
@@ -164,25 +162,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		doResubmitUncompletedPublicationsOlderThan(duration, __ -> true);
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.beans.factory.SmartInitializingSingleton#afterSingletonsInstantiated()
-	 */
-	@Override
-	public void afterSingletonsInstantiated() {
-
-		var env = environment.get();
-
-		Boolean republishOnRestart = Optional.ofNullable(env.getProperty(REPUBLISH_ON_RESTART, Boolean.class))
-				.orElseGet(() -> env.getProperty(REPUBLISH_ON_RESTART_LEGACY, Boolean.class));
-
-		if (!Boolean.TRUE.equals(republishOnRestart)) {
-			return;
-		}
-
-		resubmitIncompletePublications(__ -> true);
-	}
-
+ 
 	private void invokeTargetListener(TargetEventPublication publication) {
 
 		var listeners = new TransactionalEventListeners(
