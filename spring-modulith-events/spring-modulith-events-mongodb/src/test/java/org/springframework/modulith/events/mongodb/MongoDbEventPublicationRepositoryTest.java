@@ -18,8 +18,6 @@ package org.springframework.modulith.events.mongodb;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
-import lombok.Value;
-
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -312,8 +310,5 @@ class MongoDbEventPublicationRepositoryTest {
 	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
 	static class WithDeleteCompletionTest extends MongoDbEventPublicationRepositoryTest {}
 
-	@Value
-	private static final class TestEvent {
-		String eventId;
-	}
+	private record TestEvent(String eventId) {}
 }

@@ -18,7 +18,6 @@ package org.springframework.modulith.events.jpa;
 import static org.assertj.core.api.Assertions.*;
 
 import example.ExampleApplication;
-import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.BeanFactory;
@@ -36,14 +35,17 @@ import org.springframework.test.context.TestConstructor.AutowireMode;
 @SpringBootTest
 @ContextConfiguration(classes = ExampleApplication.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
-@RequiredArgsConstructor
 class JpaEventPublicationAutoConfigurationIntegrationTests {
 
 	private final BeanFactory factory;
 
 	@MockitoBean EventSerializer serializer;
 
-	@Test // GH-10
+    JpaEventPublicationAutoConfigurationIntegrationTests(BeanFactory factory) {
+        this.factory = factory;
+    }
+
+    @Test // GH-10
 	void registersJpaEventPublicationPackageForAutoConfiguration() {
 
 		var examplePackage = ExampleApplication.class.getPackageName();

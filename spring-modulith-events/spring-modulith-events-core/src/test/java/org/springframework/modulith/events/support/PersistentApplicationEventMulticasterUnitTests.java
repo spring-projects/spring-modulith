@@ -19,8 +19,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import lombok.AllArgsConstructor;
-
 import java.util.List;
 import java.util.Map;
 
@@ -132,8 +130,11 @@ class PersistentApplicationEventMulticasterUnitTests {
 		void on(SampleEvent event) {}
 	}
 
-	@AllArgsConstructor
 	static class SampleEvent {
 		public boolean supported;
+
+		public SampleEvent(boolean supported) {
+			this.supported = supported;
+		}
 	}
 }

@@ -18,11 +18,8 @@ package org.springframework.modulith.events;
 import static org.assertj.core.api.Assertions.*;
 import static org.springframework.modulith.events.EventExternalizationConfiguration.*;
 
-import lombok.RequiredArgsConstructor;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.Test;
@@ -160,10 +157,13 @@ class EventExternalizationConfigurationUnitTests {
 	@Externalized("::key")
 	static class KeyOnlyAnnotated {}
 
-	@RequiredArgsConstructor
 	static class WithKeyProperty {
 
 		private final String key;
+
+		WithKeyProperty(String key) {
+			this.key = key;
+		}
 
 		String getKey() {
 			return key;
