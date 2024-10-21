@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.mongodb;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
@@ -24,8 +25,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.bson.Document;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.aggregation.MergeOperation.WhenDocumentsMatch;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -96,7 +101,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		var query = byEventAndListenerId(event, identifier);
+		var criteria = byEventAndListenerId(event, identifier);
+		var query = defaultQuery(criteria);
 		var update = Update.update(COMPLETION_DATE, completionDate);
 
 		if (completionMode == CompletionMode.DELETE) {
@@ -105,9 +111,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
-			var completedEvent = mongoTemplate.findAndRemove(query, MongoDbEventPublication.class, collection);
-			mongoTemplate.save(completedEvent, archiveCollection);
+			markCompleted(criteria, completionDate);
+
 		} else {
 
 			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
@@ -121,21 +126,20 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
-		var criteria = query(where(ID).is(identifier));
+		var criteria = where(ID).is(identifier).and(COMPLETION_DATE).isNull();
+		var query = query(criteria);
 		var update = Update.update(COMPLETION_DATE, completionDate);
 
 		if (completionMode == CompletionMode.DELETE) {
 
-			mongoTemplate.remove(criteria, MongoDbEventPublication.class, collection);
+			mongoTemplate.remove(query, MongoDbEventPublication.class, collection);
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			mongoTemplate.findAndModify(criteria, update, MongoDbEventPublication.class, collection);
-			var completedEvent = mongoTemplate.findAndRemove(criteria, MongoDbEventPublication.class, collection);
-			mongoTemplate.save(completedEvent, archiveCollection);
+			markCompleted(criteria, completionDate);
 
 		} else {
-			mongoTemplate.findAndModify(criteria, update, MongoDbEventPublication.class, collection);
+			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
 		}
 	}
 
@@ -168,7 +172,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	public Optional<TargetEventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		var results = readMapped(byEventAndListenerId(event, targetIdentifier));
+		var results = readMapped(defaultQuery(byEventAndListenerId(event, targetIdentifier)));
 
 		// if there are several events with exactly the same payload we return the oldest one first
 		return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
@@ -230,13 +234,13 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	}
 
-	private Query byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
+	private Criteria byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
 
 		var eventAsMongoType = mongoTemplate.getConverter().convertToMongoType(event, TypeInformation.OBJECT);
 
-		return defaultQuery(where(EVENT).is(eventAsMongoType) //
+		return where(EVENT).is(eventAsMongoType) //
 				.and(LISTENER_ID).is(identifier.getValue())
-				.and(COMPLETION_DATE).isNull());
+				.and(COMPLETION_DATE).isNull();
 	}
 
 	private static MongoDbEventPublication domainToDocument(TargetEventPublication publication) {
@@ -254,6 +258,28 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	private static Query defaultQuery(Criteria criteria) {
 		return query(criteria).with(DEFAULT_SORT);
+	}
+
+	private void markCompleted(Criteria lookup, Instant now) {
+
+		var aggregation = newAggregation(MongoDbEventPublication.class,
+
+				match(lookup),
+
+				addFields()
+						.addFieldWithValue(COMPLETION_DATE, now)
+						.build(),
+
+				merge()
+						.intoCollection(archiveCollection)
+						.on(ID)
+						.whenMatched(WhenDocumentsMatch.keepExistingDocument())
+						.build());
+
+		mongoTemplate
+				.aggregate(aggregation, collection, Document.class)
+				.forEach(it -> mongoTemplate.remove(query(where(Fields.UNDERSCORE_ID).is(it.get(Fields.UNDERSCORE_ID))),
+						collection));
 	}
 
 	private static class MongoDbEventPublicationAdapter implements TargetEventPublication {
@@ -326,4 +352,6 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			return Objects.hash(publication);
 		}
 	}
+
+	record IdOnly(@Id UUID id) {}
 }
