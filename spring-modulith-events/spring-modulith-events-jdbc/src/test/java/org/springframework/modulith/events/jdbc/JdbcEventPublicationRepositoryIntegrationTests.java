@@ -20,8 +20,6 @@ import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import lombok.Value;
-
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.time.Instant;
@@ -485,10 +483,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@WithOracle
 	class OracleWithDeleteCompletion extends WithDeleteCompletion {}
 
-	@Value
-	private static final class TestEvent {
-		String eventId;
-	}
+	private record TestEvent(String eventId) {}
 
 	private static final class Sample {}
 

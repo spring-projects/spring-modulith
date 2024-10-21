@@ -325,8 +325,5 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		em.persist(new JpaEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class));
 	}
 
-	@lombok.Value
-	private static final class TestEvent {
-		String eventId;
-	}
+	private record TestEvent(String eventId) {}
 }

@@ -19,8 +19,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 
-import lombok.Value;
-
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
@@ -306,10 +304,7 @@ class Neo4jEventPublicationRepositoryTest {
 	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
 	static class WithDeleteCompletionTest extends Neo4jEventPublicationRepositoryTest {}
 
-	@Value
-	static class TestEvent {
-		String eventId;
-	}
+	private record TestEvent(String eventId) {}
 
 	@Import({ TestApplication.class })
 	@Configuration
