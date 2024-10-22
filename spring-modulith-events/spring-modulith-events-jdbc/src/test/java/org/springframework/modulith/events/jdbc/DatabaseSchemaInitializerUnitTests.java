@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.jdbc.JdbcConfigurationProperties.SchemaInitialization;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * Unit tests for {@link DatabaseSchemaInitializer}.
@@ -50,7 +51,7 @@ class DatabaseSchemaInitializerUnitTests {
 	// GH-836
 	@ParameterizedTest
 	@ValueSource(strings = { "", "test" })
-	void rejectsExplicitSchemaNameForMariDB(String schema) {
+	void rejectsExplicitSchemaNameForMariaDB(String schema) {
 		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MARIADB));
 	}
 
@@ -61,8 +62,17 @@ class DatabaseSchemaInitializerUnitTests {
 		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MSSQL));
 	}
 
+	@ParameterizedTest
+	@ValueSource(strings = { "", "test" })
+	void rejectsExplicitSchemaNameForOracle(String schema) {
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.ORACLE));
+	}
+
 	private DatabaseSchemaInitializer createInitializer(JdbcConfigurationProperties properties, DatabaseType type) {
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, type, jdbcTemplate, properties);
+
+		var settings = new JdbcRepositorySettings(type, CompletionMode.UPDATE, properties.getSchema());
+
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
 	}
 
 	private static JdbcConfigurationProperties withSchema(String schema) {

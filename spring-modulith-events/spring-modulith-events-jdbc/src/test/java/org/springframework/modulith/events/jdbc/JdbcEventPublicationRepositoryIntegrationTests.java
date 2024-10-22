@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -53,6 +54,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  * @author Raed Ben Hamouda
+ * @author Cora Iberkleid
  */
 class JdbcEventPublicationRepositoryIntegrationTests {
 
@@ -69,9 +71,15 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 		@MockitoBean EventSerializer serializer;
 
+		@AfterEach
 		@BeforeEach
 		void cleanUp() {
+
 			operations.execute("TRUNCATE TABLE " + table());
+
+			if (properties.isArchiveCompletion()) {
+				operations.execute("TRUNCATE TABLE " + archiveTable());
+			}
 		}
 
 		@Test // GH-3
@@ -228,13 +236,20 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
 			var publication = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-
 			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+
 			repository.markCompleted(publication, Instant.now());
+
 			repository.deleteCompletedPublications();
 
 			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
+
+			if (properties.isArchiveCompletion()) {
+				assertThat(operations.query("SELECT * FROM " + archiveTable(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+						.hasSize(0);
+			}
+
 		}
 
 		@Test // GH-251
@@ -259,9 +274,12 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(testEvent1, TARGET_IDENTIFIER, now.minusSeconds(30));
 			repository.markCompleted(testEvent2, TARGET_IDENTIFIER, now);
+
 			repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
 
-			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+			var table = properties.isArchiveCompletion() ? archiveTable() : table();
+
+			assertThat(operations.query("SELECT * FROM " + table, (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
 		}
 
@@ -331,9 +349,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
 
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
 			if (properties.isDeleteCompletion()) {
 
-				assertThat(repository.findIncompletePublications()).isEmpty();
 				assertThat(repository.findCompletedPublications()).isEmpty();
 
 			} else {
@@ -341,6 +360,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 				assertThat(repository.findCompletedPublications())
 						.extracting(TargetEventPublication::getIdentifier)
 						.containsExactly(publication.getIdentifier());
+			}
+
+			if (properties.isArchiveCompletion()) {
+				assertThat(operations.queryForObject("SELECT COUNT(*) FROM " + archiveTable(), int.class)).isOne();
 			}
 		}
 
@@ -367,6 +390,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			return "EVENT_PUBLICATION";
 		}
 
+		String archiveTable() { return table() + "_ARCHIVE"; }
+
 		private TargetEventPublication createPublication(Object event) {
 
 			var token = event.toString();
@@ -378,36 +403,36 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 		}
 	}
 
-	@Nested
 	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
-	static class WithNoDefinedSchemaName extends TestBase {}
+	static abstract class WithNoDefinedSchemaName extends TestBase {}
 
-	@Nested
 	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
 			"spring.modulith.events.jdbc.schema=test" })
-	static class WithDefinedSchemaName extends TestBase {
+	static abstract class WithDefinedSchemaName extends TestBase {
 
 		@Override
 		String table() {
-			return "test.EVENT_PUBLICATION";
+			return "test." + super.table();
 		}
 	}
 
-	@Nested
 	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
 			"spring.modulith.events.jdbc.schema=" })
-	static class WithEmptySchemaName extends TestBase {
+	static abstract class WithEmptySchemaName extends TestBase {}
 
-		@Override
-		String table() {
-			return "EVENT_PUBLICATION";
-		}
-	}
-
-	@Nested
 	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
 			CompletionMode.PROPERTY + "=DELETE" })
-	static class WithDeleteCompletion extends TestBase {}
+	static abstract class WithDeleteCompletion extends TestBase {}
+
+	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			CompletionMode.PROPERTY + "=ARCHIVE" })
+	static abstract class WithArchiveCompletion extends TestBase {
+
+		@Override
+		String archiveTable() {
+			return "EVENT_PUBLICATION_ARCHIVE";
+		}
+	}
 
 	// HSQL
 
@@ -421,7 +446,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	class HsqlWithEmptySchemaName extends WithEmptySchemaName {}
 
 	@WithHsql
-	class HsqlWithEmptyDeleteCompletion extends WithDeleteCompletion {}
+	class HsqlWithDeleteCoqmpletion extends WithDeleteCompletion {}
+
+	@WithHsql
+	class HsqlWithArchiveCompletion extends WithArchiveCompletion {}
 
 	// H2
 
@@ -435,7 +463,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	class H2WithEmptySchemaName extends WithEmptySchemaName {}
 
 	@WithH2
-	class H2WithEmptyDeleteCompletion extends WithDeleteCompletion {}
+	class H2WithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithH2
+	class H2WithArchiveCompletion extends WithArchiveCompletion {}
 
 	// Postgres
 
@@ -451,13 +482,8 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@WithPostgres
 	class PostgresWithDeleteCompletion extends WithDeleteCompletion {}
 
-	// MSSQL
-
-	@WithMssql
-	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
-
-	@WithMssql
-	class MssqlWithDeleteCompletion extends WithDeleteCompletion {}
+	@WithPostgres
+	class PostgresWithArchiveCompletion extends WithArchiveCompletion {}
 
 	// MySQL
 
@@ -467,6 +493,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@WithMySql
 	class MysqlWithDeleteCompletion extends WithDeleteCompletion {}
 
+	@WithMySql
+	class MysqlWithArchiveCompletion extends WithArchiveCompletion {}
+
 	// MariaDB
 
 	@WithMariaDB
@@ -475,6 +504,20 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	@WithMariaDB
 	class MariaDBWithDeleteCompletion extends WithDeleteCompletion {}
 
+	@WithMariaDB
+	class MariaDBWithArchiveCompletion extends WithArchiveCompletion {}
+
+	// MSSQL
+
+	@WithMssql
+	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMssql
+	class MssqlWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithMssql
+	class MssqlWithArchiveCompletion extends WithArchiveCompletion {}
+
 	// Oracle
 
 	@WithOracle
@@ -482,6 +525,9 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 	@WithOracle
 	class OracleWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithOracle
+	class OracleWithArchiveCompletion extends WithArchiveCompletion {}
 
 	private record TestEvent(String eventId) {}
 

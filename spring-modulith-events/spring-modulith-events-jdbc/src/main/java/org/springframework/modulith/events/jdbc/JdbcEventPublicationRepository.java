@@ -50,6 +50,7 @@ import org.springframework.util.ObjectUtils;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  * @author Raed Ben Hamouda
+ * @author Cora Iberkleid
  */
 class JdbcEventPublicationRepository implements EventPublicationRepository, BeanClassLoaderAware {
 
@@ -130,18 +131,37 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 					ID = ?
 			""";
 
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED = """
+	private static final String SQL_STATEMENT_DELETE_COMPLETED = """
 			DELETE
 			FROM %s
 			WHERE
 					COMPLETION_DATE IS NOT NULL
 			""";
 
-	private static final String SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE = """
+	private static final String SQL_STATEMENT_DELETE_COMPLETED_BEFORE = """
 			DELETE
 			FROM %s
 			WHERE
 					COMPLETION_DATE < ?
+			""";
+
+	private static final String SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID = """
+			-- Only copy if no entry in target table
+			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, COMPLETION_DATE)
+			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, ?
+			 	FROM %s
+			 	WHERE ID = ? 
+			 	  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID)
+			""";
+
+	private static final String SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID = """
+			-- Only copy if no entry in target table
+			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, COMPLETION_DATE)
+			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, ?
+			 	FROM %s
+			 	WHERE LISTENER_ID = ?
+				  AND SERIALIZED_EVENT = ?
+				  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID) 
 			""";
 
 	private static final int DELETE_BATCH_SIZE = 100;
@@ -162,8 +182,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			sqlStatementDelete,
 			sqlStatementDeleteByEventAndListenerId,
 			sqlStatementDeleteById,
-			sqlStatementDeleteUncompleted,
-			sqlStatementDeleteUncompletedBefore;
+			sqlStatementDeleteCompleted,
+			sqlStatementDeleteCompletedBefore,
+			sqlStatementCopyToArchive,
+			sqlStatementCopyToArchiveByEventAndListenerId;
 
 	/**
 	 * Creates a new {@link JdbcEventPublicationRepository} for the given {@link JdbcOperations}, {@link EventSerializer},
@@ -186,9 +208,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 		var schema = settings.getSchema();
 		var table = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
+		var completedTable = settings.isArchiveCompletion() ? table + "_ARCHIVE" : table;
 
 		this.sqlStatementInsert = SQL_STATEMENT_INSERT.formatted(table);
-		this.sqlStatementFindCompleted = SQL_STATEMENT_FIND_COMPLETED.formatted(table);
+		this.sqlStatementFindCompleted = SQL_STATEMENT_FIND_COMPLETED.formatted(completedTable);
 		this.sqlStatementFindUncompleted = SQL_STATEMENT_FIND_UNCOMPLETED.formatted(table);
 		this.sqlStatementFindUncompletedBefore = SQL_STATEMENT_FIND_UNCOMPLETED_BEFORE.formatted(table);
 		this.sqlStatementUpdateByEventAndListenerId = SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table);
@@ -197,8 +220,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		this.sqlStatementDelete = SQL_STATEMENT_DELETE.formatted(table);
 		this.sqlStatementDeleteByEventAndListenerId = SQL_STATEMENT_DELETE_BY_EVENT_AND_LISTENER_ID.formatted(table);
 		this.sqlStatementDeleteById = SQL_STATEMENT_DELETE_BY_ID.formatted(table);
-		this.sqlStatementDeleteUncompleted = SQL_STATEMENT_DELETE_UNCOMPLETED.formatted(table);
-		this.sqlStatementDeleteUncompletedBefore = SQL_STATEMENT_DELETE_UNCOMPLETED_BEFORE.formatted(table);
+		this.sqlStatementDeleteCompleted = SQL_STATEMENT_DELETE_COMPLETED.formatted(completedTable);
+		this.sqlStatementDeleteCompletedBefore = SQL_STATEMENT_DELETE_COMPLETED_BEFORE.formatted(completedTable);
+		this.sqlStatementCopyToArchive = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable, table, completedTable);
+		this.sqlStatementCopyToArchiveByEventAndListenerId = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID.formatted(completedTable, table, completedTable);
 	}
 
 	/*
@@ -246,6 +271,14 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 			operations.update(sqlStatementDeleteByEventAndListenerId, targetIdentifier, serializedEvent);
 
+		} else if (settings.isArchiveCompletion()) {
+
+			operations.update(sqlStatementCopyToArchiveByEventAndListenerId, //
+					Timestamp.from(completionDate), //
+					targetIdentifier, //
+					serializedEvent);
+			operations.update(sqlStatementDeleteByEventAndListenerId, targetIdentifier, serializedEvent);
+
 		} else {
 
 			operations.update(sqlStatementUpdateByEventAndListenerId, //
@@ -263,10 +296,18 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	@Transactional
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
+		var databaseId = uuidToDatabase(identifier);
+		var timestamp = Timestamp.from(completionDate);
+
 		if (settings.isDeleteCompletion()) {
-			operations.update(sqlStatementDeleteById, uuidToDatabase(identifier));
+			operations.update(sqlStatementDeleteById, databaseId);
+
+		} else if (settings.isArchiveCompletion()) {
+			operations.update(sqlStatementCopyToArchive, timestamp, databaseId);
+			operations.update(sqlStatementDeleteById, databaseId);
+
 		} else {
-			operations.update(sqlStatementUpdateById, Timestamp.from(completionDate), uuidToDatabase(identifier));
+			operations.update(sqlStatementUpdateById, timestamp, databaseId);
 		}
 	}
 
@@ -338,7 +379,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		operations.execute(sqlStatementDeleteUncompleted);
+		operations.execute(sqlStatementDeleteCompleted);
 	}
 
 	/*
@@ -350,7 +391,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		operations.update(sqlStatementDeleteUncompletedBefore, Timestamp.from(instant));
+		operations.update(sqlStatementDeleteCompletedBefore, Timestamp.from(instant));
 	}
 
 	private String serializeEvent(Object event) {
@@ -457,9 +498,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 * @param id must not be {@literal null}.
 		 * @param publicationDate must not be {@literal null}.
 		 * @param listenerId must not be {@literal null} or empty.
-		 * @param serializedEvent must not be {@literal null} or empty.
-		 * @param eventType must not be {@literal null}.
-		 * @param serializer must not be {@literal null}.
+		 * @param event must not be {@literal null}..
 		 * @param completionDate can be {@literal null}.
 		 */
 		public JdbcEventPublication(UUID id, Instant publicationDate, String listenerId, Supplier<Object> event,
@@ -468,6 +507,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			Assert.notNull(id, "Id must not be null!");
 			Assert.notNull(publicationDate, "Publication date must not be null!");
 			Assert.hasText(listenerId, "Listener id must not be null or empty!");
+			Assert.notNull(event, "Event must not be null!");
 
 			this.id = id;
 			this.publicationDate = publicationDate;

@@ -19,6 +19,7 @@ import java.sql.DatabaseMetaData;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -44,6 +45,8 @@ import org.springframework.modulith.events.support.CompletionMode;
 @EnableConfigurationProperties(JdbcConfigurationProperties.class)
 class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
+	@Autowired Environment environment;
+
 	@Bean
 	DatabaseType databaseType(DataSource dataSource) {
 		return DatabaseType.from(fromDataSource(dataSource));
@@ -51,7 +54,7 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 
 	@Bean
 	JdbcRepositorySettings jdbcEventPublicationRepositorySettings(DatabaseType databaseType,
-			JdbcConfigurationProperties properties, Environment environment) {
+			JdbcConfigurationProperties properties) {
 
 		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties.getSchema());
 	}
@@ -65,9 +68,9 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
 	DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
-			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcConfigurationProperties properties) {
+			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcRepositorySettings settings) {
 
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, databaseType, jdbcTemplate, properties);
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
 	}
 
 	private static String fromDataSource(DataSource dataSource) {
