@@ -25,6 +25,7 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  * @author Raed Ben Hamouda
+ * @author Cora Iberkleid
  */
 enum DatabaseType {
 
@@ -106,7 +107,7 @@ enum DatabaseType {
 		}
 	};
 
-	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name not supported on MySQL!";
+	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name is not supported!";
 
 	static DatabaseType from(String productName) {
 
@@ -137,6 +138,8 @@ enum DatabaseType {
 	String getSchemaResourceFilename() {
 		return "/schema-" + value + ".sql";
 	}
+
+	String getArchiveSchemaResourceFilename() { return "/schema-" + value + "-archive.sql"; }
 
 	boolean isSchemaSupported() {
 		return true;

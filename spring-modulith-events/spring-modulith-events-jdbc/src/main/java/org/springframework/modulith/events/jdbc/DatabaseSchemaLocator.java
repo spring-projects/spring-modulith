@@ -19,6 +19,9 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.util.Assert;
 
+import java.util.Collection;
+import java.util.List;
+
 /**
  * Simple wrapper around a {@link ResourceLoader} to load database specific schema files from the classpath.
  *
@@ -41,16 +44,22 @@ public class DatabaseSchemaLocator {
 	}
 
 	/**
-	 * Loads the {@link Resource} containing the schema for the given {@link DatabaseType} from the classpath.
+	 * Loads the {@link Resource} containing the schema for the given {@link JdbcRepositorySettings} from the classpath.
 	 * 
-	 * @param databaseType must not be {@literal null}.
+	 * @param settings must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	Resource getSchemaResource(DatabaseType databaseType) {
+	Collection<Resource> getSchemaResource(JdbcRepositorySettings settings) {
 
-		Assert.notNull(databaseType, "DatabaseType must not be null!");
+		Assert.notNull(settings, "JdbcRepositorySettings must not be null!");
 
+		var databaseType = settings.getDatabaseType();
 		var schemaResourceFilename = databaseType.getSchemaResourceFilename();
-		return resourceLoader.getResource(ResourceLoader.CLASSPATH_URL_PREFIX + schemaResourceFilename);
+		var schemaResource = resourceLoader.getResource(ResourceLoader.CLASSPATH_URL_PREFIX + schemaResourceFilename);
+
+		return !settings.isArchiveCompletion()
+				? List.of(schemaResource)
+				: List.of(schemaResource, resourceLoader.getResource(ResourceLoader.CLASSPATH_URL_PREFIX + databaseType.getArchiveSchemaResourceFilename()));
+
 	}
 }

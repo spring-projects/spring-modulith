@@ -47,6 +47,10 @@ public class JdbcRepositorySettings {
 		this.databaseType = databaseType;
 		this.schema = schema;
 		this.completionMode = completionMode;
+
+		if (schema != null && !databaseType.isSchemaSupported()) {
+			throw new IllegalStateException(DatabaseType.SCHEMA_NOT_SUPPORTED);
+		}
 	}
 
 	/**
@@ -74,4 +78,14 @@ public class JdbcRepositorySettings {
 	public boolean isDeleteCompletion() {
 		return completionMode == CompletionMode.DELETE;
 	}
+
+	/**
+	 * Returns whether we use the archiving completion mode.
+	 */
+	public boolean isArchiveCompletion() { return completionMode == CompletionMode.ARCHIVE; }
+
+	/**
+	 * Returns whether we use the updating completion mode.
+	 */
+	public boolean isUpdateCompletion() { return completionMode == CompletionMode.UPDATE; }
 }
