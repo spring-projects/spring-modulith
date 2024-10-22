@@ -36,7 +36,13 @@ public enum CompletionMode {
 	/**
 	 * Completes an {@link org.springframework.modulith.events.EventPublication} by removing the database entry.
 	 */
-	DELETE;
+	DELETE,
+
+	/**
+	 * Completes an {@link org.springframework.modulith.events.EventPublication} by moving the database entry to
+	 * an archive.
+	 */
+	ARCHIVE;
 
 	public static final String PROPERTY = "spring.modulith.events.completion-mode";
 
