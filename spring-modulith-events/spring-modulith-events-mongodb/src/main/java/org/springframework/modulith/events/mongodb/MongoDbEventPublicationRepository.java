@@ -52,11 +52,13 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	private static final String ID = "id";
 	private static final String LISTENER_ID = "listenerId";
 	private static final String PUBLICATION_DATE = "publicationDate";
-
 	private static final Sort DEFAULT_SORT = Sort.by(PUBLICATION_DATE).ascending();
+
+	static final String ARCHIVE_COLLECTION = "event_publication_archive";
 
 	private final MongoTemplate mongoTemplate;
 	private final CompletionMode completionMode;
+	private final String collection, archiveCollection;
 
 	/**
 	 * Creates a new {@link MongoDbEventPublicationRepository} for the given {@link MongoTemplate}.
@@ -71,6 +73,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		this.mongoTemplate = mongoTemplate;
 		this.completionMode = completionMode;
+		this.collection = "event_publication";
+		this.archiveCollection = completionMode == CompletionMode.ARCHIVE ? ARCHIVE_COLLECTION : collection;
 	}
 
 	/*
@@ -80,7 +84,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public TargetEventPublication create(TargetEventPublication publication) {
 
-		mongoTemplate.save(domainToDocument(publication));
+		mongoTemplate.save(domainToDocument(publication), collection);
 
 		return publication;
 	}
@@ -93,16 +97,20 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
 		var query = byEventAndListenerId(event, identifier);
+		var update = Update.update(COMPLETION_DATE, completionDate);
 
 		if (completionMode == CompletionMode.DELETE) {
 
-			mongoTemplate.remove(query, MongoDbEventPublication.class);
+			mongoTemplate.remove(query, MongoDbEventPublication.class, collection);
 
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
+			var completedEvent = mongoTemplate.findAndRemove(query, MongoDbEventPublication.class, collection);
+			mongoTemplate.save(completedEvent, archiveCollection);
 		} else {
 
-			var update = Update.update(COMPLETION_DATE, completionDate);
-
-			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class);
+			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
 		}
 	}
 
@@ -113,17 +121,21 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
-		var criateria = query(where(ID).is(identifier));
+		var criteria = query(where(ID).is(identifier));
+		var update = Update.update(COMPLETION_DATE, completionDate);
 
 		if (completionMode == CompletionMode.DELETE) {
 
-			mongoTemplate.remove(criateria, MongoDbEventPublication.class);
+			mongoTemplate.remove(criteria, MongoDbEventPublication.class, collection);
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			mongoTemplate.findAndModify(criteria, update, MongoDbEventPublication.class, collection);
+			var completedEvent = mongoTemplate.findAndRemove(criteria, MongoDbEventPublication.class, collection);
+			mongoTemplate.save(completedEvent, archiveCollection);
 
 		} else {
-
-			var update = Update.update(COMPLETION_DATE, completionDate);
-
-			mongoTemplate.findAndModify(criateria, update, MongoDbEventPublication.class);
+			mongoTemplate.findAndModify(criteria, update, MongoDbEventPublication.class, collection);
 		}
 	}
 
@@ -168,7 +180,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
-		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)));
+		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)), archiveCollection);
 	}
 
 	/*
@@ -177,7 +189,9 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deletePublications(List<UUID> identifiers) {
-		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class);
+
+		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, collection);
+		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	/*
@@ -186,7 +200,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		mongoTemplate.remove(query(where(COMPLETION_DATE).ne(null)), MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where(COMPLETION_DATE).ne(null)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	/*
@@ -198,16 +212,22 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		mongoTemplate.remove(query(where(COMPLETION_DATE).lt(instant)), MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where(COMPLETION_DATE).lt(instant)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	private List<TargetEventPublication> readMapped(Query query) {
+		return readMapped(query, collection);
+	}
+
+	private List<TargetEventPublication> readMapped(Query query, String collection) {
 
 		return mongoTemplate.query(MongoDbEventPublication.class)
+				.inCollection(collection)
 				.matching(query)
 				.stream()
 				.map(MongoDbEventPublicationRepository::documentToDomain)
 				.toList();
+
 	}
 
 	private Query byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
