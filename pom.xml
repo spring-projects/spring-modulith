@@ -36,7 +36,7 @@
 		<archunit.version>1.1.1</archunit.version>
 		<artifactory-maven-plugin.version>3.6.1</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>4.16.1</flapdoodle-mongodb.version>
-		<jmolecules-bom.version>2023.1.4</jmolecules-bom.version>
+		<jmolecules-bom.version>2023.1.7</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring.version>6.1.14</spring.version> <!-- For Javadoc links only -->
