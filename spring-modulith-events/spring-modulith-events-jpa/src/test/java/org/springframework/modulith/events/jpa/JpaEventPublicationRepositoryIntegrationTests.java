@@ -164,7 +164,8 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
 
-			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER)).isEmpty();
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+					.isEmpty();
 		}
 
 		@Test // GH-25
@@ -204,13 +205,11 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			repository.markCompleted(testEvent1, TARGET_IDENTIFIER, Instant.now());
 			repository.deleteCompletedPublications();
 
-			assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
-					.hasSize(1) //
+			assertThat(getIncompletePublications()).hasSize(1) //
 					.element(0).extracting(it -> it.serializedEvent).isEqualTo(serializedEvent2);
 
 			if (completionMode == CompletionMode.ARCHIVE) {
-				assertThat(em.createQuery("select p from ArchivedJpaEventPublication p", ArchivedJpaEventPublication.class).getResultList())
-						.hasSize(0);
+				assertThat(getArchivedPublications()).hasSize(0);
 			}
 		}
 
@@ -252,15 +251,9 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
 
-			var entityName = completionMode == CompletionMode.ARCHIVE
-					? ArchivedJpaEventPublication.class.getSimpleName()
-					: JpaEventPublication.class.getSimpleName();
+			var type = repository.getCompletedEntityType();
 
-			var type = completionMode == CompletionMode.ARCHIVE
-					? ArchivedJpaEventPublication.class
-					: JpaEventPublication.class;
-
-			assertThat(em.createQuery("select p from " + entityName + " p", type).getResultList())
+			assertThat(em.createQuery("select p from " + type.getSimpleName() + " p", type).getResultList())
 					.hasSize(1) //
 					.element(0).extracting(it -> it.serializedEvent).isEqualTo(serializedEvent2);
 
@@ -333,11 +326,8 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication, Instant.now());
 
-			assertThat(repository.findCompletedPublications())
-					.hasSize(1);
-
-			assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
-					.hasSize(0);
+			assertThat(repository.findCompletedPublications()).hasSize(1);
+			assertThat(getIncompletePublications()).hasSize(0);
 		}
 
 		@Test // GH 806
@@ -350,11 +340,16 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-			assertThat(repository.findCompletedPublications())
-					.hasSize(1);
+			assertThat(repository.findCompletedPublications()).hasSize(1);
+			assertThat(getIncompletePublications()).hasSize(0);
+		}
 
-			assertThat(em.createQuery("select p from JpaEventPublication p", JpaEventPublication.class).getResultList())
-					.hasSize(0);
+		private List<JpaEventPublication> getIncompletePublications() {
+			return em.createQuery("select p from DefaultJpaEventPublication p", JpaEventPublication.class).getResultList();
+		}
+
+		private List<JpaEventPublication> getArchivedPublications() {
+			return em.createQuery("select p from ArchivedJpaEventPublication p", JpaEventPublication.class).getResultList();
 		}
 
 		private TargetEventPublication createPublication(Object event) {
@@ -368,11 +363,10 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		}
 
 		private void savePublicationAt(LocalDateTime date) {
-			em.persist(new JpaEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class));
+			em.persist(JpaEventPublication.of(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class));
 		}
 
-		private record TestEvent(String eventId) {
-		}
+		private record TestEvent(String eventId) {}
 	}
 
 	@Nested
