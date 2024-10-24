@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.events.neo4j;
 
+import static org.neo4j.cypherdsl.core.Cypher.*;
+
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
@@ -48,6 +51,7 @@ import org.springframework.util.DigestUtils;
  *
  * @author Gerrit Meier
  * @author Oliver Drotbohm
+ * @author Cora Iberkleid
  * @since 1.1
  */
 @Transactional
@@ -61,84 +65,114 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	private static final String PUBLICATION_DATE = "publicationDate";
 	private static final String COMPLETION_DATE = "completionDate";
 
-	private static final Node EVENT_PUBLICATION_NODE = Cypher.node("Neo4jEventPublication")
+	private static final Node EVENT_PUBLICATION_NODE = node("Neo4jEventPublication")
 			.named("neo4jEventPublication");
 
-	private static final Statement INCOMPLETE_BY_EVENT_AND_TARGET_IDENTIFIER_STATEMENT = Cypher
-			.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(Cypher.parameter(EVENT_HASH)))
-			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(Cypher.parameter(LISTENER_ID)))
+	private static final Node EVENT_PUBLICATION_COMPLETED_NODE = node("Neo4jEventPublicationCompleted")
+			.named("neo4jEventPublicationCompleted");
+
+	private static final Statement INCOMPLETE_BY_EVENT_AND_TARGET_IDENTIFIER_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.returning(EVENT_PUBLICATION_NODE)
 			.build();
 
-	private static final Statement DELETE_BY_EVENT_AND_LISTENER_ID = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(Cypher.parameter(EVENT_HASH)))
-			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(Cypher.parameter(LISTENER_ID)))
+	private static final Statement DELETE_BY_EVENT_AND_LISTENER_ID = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.delete(EVENT_PUBLICATION_NODE)
 			.build();
 
-	private static final Statement DELETE_BY_ID_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(ID).in(Cypher.parameter(ID)))
+	private static final Statement DELETE_BY_ID_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(ID).in(parameter(ID)))
 			.delete(EVENT_PUBLICATION_NODE)
 			.build();
 
-	private static final Statement DELETE_COMPLETED_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNotNull())
-			.delete(EVENT_PUBLICATION_NODE)
+	private static final Function<Node, Statement> DELETE_COMPLETED_STATEMENT = node -> match(node)
+			.where(node.property(COMPLETION_DATE).isNotNull())
+			.delete(node)
 			.build();
 
-	private static final Statement DELETE_COMPLETED_BEFORE_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).lt(Cypher.parameter(PUBLICATION_DATE)))
-			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNotNull())
-			.delete(EVENT_PUBLICATION_NODE)
+	private static final Function<Node, Statement> DELETE_COMPLETED_BEFORE_STATEMENT = node -> match(node)
+			.where(node.property(PUBLICATION_DATE).lt(parameter(PUBLICATION_DATE)))
+			.and(node.property(COMPLETION_DATE).isNotNull())
+			.delete(node)
 			.build();
 
-	private static final Statement INCOMPLETE_PUBLISHED_BEFORE_STATEMENT = Cypher
-			.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).lt(Cypher.parameter(PUBLICATION_DATE)))
+	private static final Statement INCOMPLETE_PUBLISHED_BEFORE_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).lt(parameter(PUBLICATION_DATE)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.returning(EVENT_PUBLICATION_NODE)
 			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
 			.build();
 
 	private static final Statement CREATE_STATEMENT = Cypher.create(EVENT_PUBLICATION_NODE)
-			.set(EVENT_PUBLICATION_NODE.property(ID).to(Cypher.parameter(ID)))
-			.set(EVENT_PUBLICATION_NODE.property(EVENT_SERIALIZED).to(Cypher.parameter(EVENT_SERIALIZED)))
-			.set(EVENT_PUBLICATION_NODE.property(EVENT_HASH).to(Cypher.parameter(EVENT_HASH)))
-			.set(EVENT_PUBLICATION_NODE.property(EVENT_TYPE).to(Cypher.parameter(EVENT_TYPE)))
-			.set(EVENT_PUBLICATION_NODE.property(LISTENER_ID).to(Cypher.parameter(LISTENER_ID)))
-			.set(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).to(Cypher.parameter(PUBLICATION_DATE)))
+			.set(EVENT_PUBLICATION_NODE.property(ID).to(parameter(ID)))
+			.set(EVENT_PUBLICATION_NODE.property(EVENT_SERIALIZED).to(parameter(EVENT_SERIALIZED)))
+			.set(EVENT_PUBLICATION_NODE.property(EVENT_HASH).to(parameter(EVENT_HASH)))
+			.set(EVENT_PUBLICATION_NODE.property(EVENT_TYPE).to(parameter(EVENT_TYPE)))
+			.set(EVENT_PUBLICATION_NODE.property(LISTENER_ID).to(parameter(LISTENER_ID)))
+			.set(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).to(parameter(PUBLICATION_DATE)))
 			.build();
 
-	private static final Statement COMPLETE_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(Cypher.parameter(EVENT_HASH)))
-			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(Cypher.parameter(LISTENER_ID)))
+	private static final Statement COMPLETE_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
-			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(Cypher.parameter(COMPLETION_DATE)))
+			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 			.build();
 
-	private static final Statement COMPLETE_BY_ID_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(ID).eq(Cypher.parameter(ID)))
-			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(Cypher.parameter(COMPLETION_DATE)))
+	private static final Statement COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+			.and(not(exists(match(EVENT_PUBLICATION_COMPLETED_NODE)
+					.where(EVENT_PUBLICATION_COMPLETED_NODE.property(ID).eq(parameter(ID)))
+					.returning(literalTrue()).build())))
+			.with(EVENT_PUBLICATION_NODE)
+			.create(EVENT_PUBLICATION_COMPLETED_NODE)
+			.set(EVENT_PUBLICATION_COMPLETED_NODE.property(ID).to(EVENT_PUBLICATION_NODE.property(ID)))
+			.set(EVENT_PUBLICATION_COMPLETED_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 			.build();
 
-	private static final ResultStatement INCOMPLETE_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
+	private static final Statement COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+			.and(not(exists(match(EVENT_PUBLICATION_COMPLETED_NODE)
+					.where(EVENT_PUBLICATION_COMPLETED_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+					.and(EVENT_PUBLICATION_COMPLETED_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+					.returning(literalTrue()).build())))
+			.with(EVENT_PUBLICATION_NODE)
+			.create(EVENT_PUBLICATION_COMPLETED_NODE)
+			.set(EVENT_PUBLICATION_COMPLETED_NODE.property(ID).to(EVENT_PUBLICATION_NODE.property(ID)))
+			.set(EVENT_PUBLICATION_COMPLETED_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+			.build();
+
+	private static final Function<Node, Statement> COMPLETE_BY_ID_STATEMENT = node -> match(node)
+			.where(node.property(ID).eq(parameter(ID)))
+			.set(node.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+			.build();
+
+	private static final ResultStatement INCOMPLETE_STATEMENT = match(EVENT_PUBLICATION_NODE)
 			.where(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.returning(EVENT_PUBLICATION_NODE)
 			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
 			.build();
 
-	private static final ResultStatement ALL_COMPLETED_STATEMENT = Cypher.match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNotNull())
-			.returning(EVENT_PUBLICATION_NODE)
-			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+	private static final Function<Node, ResultStatement> ALL_COMPLETED_STATEMENT = node -> match(node)
+			.where(node.property(COMPLETION_DATE).isNotNull())
+			.returning(node)
+			.orderBy(node.property(PUBLICATION_DATE))
 			.build();
 
 	private final Neo4jClient neo4jClient;
 	private final Renderer renderer;
 	private final EventSerializer eventSerializer;
 	private final CompletionMode completionMode;
+
+	private final Statement deleteCompletedStatement;
+	private final Statement deleteCompletedBeforeStatement;
+	private final Statement completedByIdStatement;
+	private final ResultStatement allCompletedStatement;
 
 	Neo4jEventPublicationRepository(Neo4jClient neo4jClient, Configuration cypherDslConfiguration,
 			EventSerializer eventSerializer, CompletionMode completionMode) {
@@ -152,6 +186,13 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 		this.renderer = Renderer.getRenderer(cypherDslConfiguration);
 		this.eventSerializer = eventSerializer;
 		this.completionMode = completionMode;
+
+		var archiveNode = completionMode == CompletionMode.ARCHIVE ? EVENT_PUBLICATION_COMPLETED_NODE : EVENT_PUBLICATION_NODE;
+
+		this.deleteCompletedStatement = DELETE_COMPLETED_STATEMENT.apply(archiveNode);
+		this.deleteCompletedBeforeStatement = DELETE_COMPLETED_BEFORE_STATEMENT.apply(archiveNode);
+		this.completedByIdStatement = COMPLETE_BY_ID_STATEMENT.apply(archiveNode);
+		this.allCompletedStatement = ALL_COMPLETED_STATEMENT.apply(archiveNode);
 	}
 
 	/*
@@ -201,6 +242,18 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 					.bind(identifier.getValue()).to(LISTENER_ID)
 					.run();
 
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			neo4jClient.query(renderer.render(COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT))
+					.bind(eventHash).to(EVENT_HASH)
+					.bind(identifier.getValue()).to(LISTENER_ID)
+					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+					.run();
+			neo4jClient.query(renderer.render(DELETE_BY_EVENT_AND_LISTENER_ID))
+					.bind(eventHash).to(EVENT_HASH)
+					.bind(identifier.getValue()).to(LISTENER_ID)
+					.run();
+
 		} else {
 
 			neo4jClient.query(renderer.render(COMPLETE_STATEMENT))
@@ -223,13 +276,22 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 			deletePublications(List.of(identifier));
 
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			neo4jClient.query(renderer.render(COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT))
+					.bind("").to(ID)
+					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+					.run();
+			deletePublications(List.of(identifier));
+
 		} else {
 
-			neo4jClient.query(renderer.render(COMPLETE_BY_ID_STATEMENT))
+			neo4jClient.query(renderer.render(completedByIdStatement))
 					.bind(Values.value(identifier.toString())).to(ID)
 					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
 					.run();
 		}
+
 	}
 
 	/*
@@ -287,7 +349,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
 
-		return new ArrayList<>(neo4jClient.query(renderer.render(ALL_COMPLETED_STATEMENT))
+		return new ArrayList<>(neo4jClient.query(renderer.render(allCompletedStatement))
 				.fetchAs(TargetEventPublication.class)
 				.mappedBy(this::mapRecordToPublication)
 				.all());
@@ -313,7 +375,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	@Transactional
 	public void deleteCompletedPublications() {
-		neo4jClient.query(renderer.render(DELETE_COMPLETED_STATEMENT)).run();
+		neo4jClient.query(renderer.render(deleteCompletedStatement)).run();
 	}
 
 	/*
@@ -324,7 +386,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Transactional
 	public void deleteCompletedPublicationsBefore(Instant instant) {
 
-		neo4jClient.query(renderer.render(DELETE_COMPLETED_BEFORE_STATEMENT))
+		neo4jClient.query(renderer.render(deleteCompletedBeforeStatement))
 				.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(PUBLICATION_DATE)
 				.run();
 	}

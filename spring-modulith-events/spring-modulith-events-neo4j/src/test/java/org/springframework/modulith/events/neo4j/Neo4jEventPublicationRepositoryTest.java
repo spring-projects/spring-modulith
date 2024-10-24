@@ -32,7 +32,7 @@ import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -42,8 +42,9 @@ import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.util.DigestUtils;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -53,256 +54,270 @@ import org.testcontainers.utility.DockerImageName;
 /**
  * @author Gerrit Meier
  */
-@SpringJUnitConfig(Neo4jEventPublicationRepositoryTest.Config.class)
-@Testcontainers(disabledWithoutDocker = true)
 class Neo4jEventPublicationRepositoryTest {
+
+	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
 	@Container //
 	static final Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
 			.withRandomPassword();
 
-	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
+	@Import(TestApplication.class)
+	@ImportAutoConfiguration({ Neo4jEventPublicationAutoConfiguration.class })
+	@Testcontainers(disabledWithoutDocker = true)
+	@ContextConfiguration(classes = Config.class)
+	static abstract class TestBase {
 
-	@Autowired Neo4jEventPublicationRepository repository;
-	@Autowired Driver driver;
-	@Autowired Environment environment;
+		@Autowired Neo4jEventPublicationRepository repository;
+		@Autowired Driver driver;
+		@Autowired Environment environment;
 
-	@MockitoBean EventSerializer eventSerializer;
+		@MockitoBean EventSerializer eventSerializer;
 
-	CompletionMode completionMode;
+		CompletionMode completionMode;
 
-	@BeforeEach
-	void clearDb() {
+		@BeforeEach
+		void clearDb() {
 
-		this.completionMode = CompletionMode.from(environment);
+			this.completionMode = CompletionMode.from(environment);
 
-		try (var session = driver.session()) {
-			session.run("MATCH (n) detach delete n").consume();
+			try (var session = driver.session()) {
+				session.run("MATCH (n) detach delete n").consume();
+			}
 		}
-	}
 
-	@Test
-	void createEventPublication() {
+		@Test
+		void createEventPublication() {
 
-		var testEvent = new TestEvent("id");
-		var eventSerialized = "{\"eventId\":\"id\"}";
-		var eventHash = DigestUtils.md5DigestAsHex(eventSerialized.getBytes());
+			var testEvent = new TestEvent("id");
+			var eventSerialized = "{\"eventId\":\"id\"}";
+			var eventHash = DigestUtils.md5DigestAsHex(eventSerialized.getBytes());
 
-		when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
-		var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
+			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-		try (var session = driver.session()) {
+			try (var session = driver.session()) {
 
-			var result = session.run("MATCH (p:Neo4jEventPublication) return p")
-					.single();
+				var result = session.run("MATCH (p:Neo4jEventPublication) return p")
+						.single();
 
-			var neo4jEventPublicationNode = result.get("p").asNode();
+				var neo4jEventPublicationNode = result.get("p").asNode();
 
-			assertThat(UUID.fromString(neo4jEventPublicationNode.get("identifier").asString()))
-					.isEqualTo(publication.getIdentifier());
-			assertThat(neo4jEventPublicationNode.get("publicationDate").asZonedDateTime().toInstant())
-					.isEqualTo(publication.getPublicationDate());
-			assertThat(neo4jEventPublicationNode.get("listenerId").asString())
-					.isEqualTo(publication.getTargetIdentifier().getValue());
-			assertThat(neo4jEventPublicationNode.get("completionDate").isNull()).isTrue();
-			assertThat(neo4jEventPublicationNode.get("eventSerialized").asString()).isEqualTo(eventSerialized);
-			assertThat(neo4jEventPublicationNode.get("eventHash").asString()).isEqualTo(eventHash);
+				assertThat(UUID.fromString(neo4jEventPublicationNode.get("identifier").asString()))
+						.isEqualTo(publication.getIdentifier());
+				assertThat(neo4jEventPublicationNode.get("publicationDate").asZonedDateTime().toInstant())
+						.isEqualTo(publication.getPublicationDate());
+				assertThat(neo4jEventPublicationNode.get("listenerId").asString())
+						.isEqualTo(publication.getTargetIdentifier().getValue());
+				assertThat(neo4jEventPublicationNode.get("completionDate").isNull()).isTrue();
+				assertThat(neo4jEventPublicationNode.get("eventSerialized").asString()).isEqualTo(eventSerialized);
+				assertThat(neo4jEventPublicationNode.get("eventHash").asString()).isEqualTo(eventHash);
+			}
 		}
-	}
 
-	@Test
-	void updateEventPublication() {
+		@Test
+		void updateEventPublication() {
 
-		var testEvent1 = new TestEvent("id1");
-		var event1Serialized = "{\"eventId\":\"id1\"}";
-		var testEvent2 = new TestEvent("id2");
-		var event2Serialized = "{\"eventId\":\"id2\"}";
+			var testEvent1 = new TestEvent("id1");
+			var event1Serialized = "{\"eventId\":\"id1\"}";
+			var testEvent2 = new TestEvent("id2");
+			var event2Serialized = "{\"eventId\":\"id2\"}";
 
-		when(eventSerializer.serialize(testEvent1)).thenReturn(event1Serialized);
-		when(eventSerializer.serialize(testEvent2)).thenReturn(event2Serialized);
-		when(eventSerializer.deserialize(event2Serialized, TestEvent.class)).thenReturn(testEvent2);
+			when(eventSerializer.serialize(testEvent1)).thenReturn(event1Serialized);
+			when(eventSerializer.serialize(testEvent2)).thenReturn(event2Serialized);
+			when(eventSerializer.deserialize(event2Serialized, TestEvent.class)).thenReturn(testEvent2);
 
-		var event1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-		var event2 = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+			var event1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+			var event2 = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 
-		var now = Instant.now();
-		repository.markCompleted(event1, now);
+			var now = Instant.now();
+			repository.markCompleted(event1, now);
 
-		assertThat(repository.findIncompletePublications()).hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent).isEqualTo(event2.getEvent());
-	}
-
-	@Test
-	void findInCompletePastPublications() {
-
-		var testEvent = new TestEvent("id");
-		var eventSerialized = "{\"eventId\":\"id\"}";
-
-		when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
-		when(eventSerializer.deserialize(eventSerialized, TestEvent.class)).thenReturn(testEvent);
-
-		var event = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
-
-		var newer = Instant.now().plus(1L, ChronoUnit.MINUTES);
-		var older = Instant.now().minus(1L, ChronoUnit.MINUTES);
-
-		assertThat(repository.findIncompletePublicationsPublishedBefore(newer)).hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent).isEqualTo(event.getEvent());
-
-		assertThat(repository.findIncompletePublicationsPublishedBefore(older)).hasSize(0);
-	}
-
-	@Test
-	void findIncompleteByEventAndTargetIdentifier() {
-
-		var testEvent = new TestEvent("id");
-		var eventSerialized = "{\"eventId\":\"id\"}";
-
-		when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
-		when(eventSerializer.deserialize(eventSerialized, TestEvent.class)).thenReturn(testEvent);
-
-		var event = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
-
-		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, event.getTargetIdentifier()))
-				.isPresent();
-	}
-
-	@Test
-	void deletePublicationById() {
-
-		var testEvent = new TestEvent("id");
-		var eventSerialized = "{\"eventId\":\"id\"}";
-
-		when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
-
-		var event = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
-		assertThat(repository.findIncompletePublications()).hasSize(1);
-
-		repository.deletePublications(List.of(event.getIdentifier()));
-		assertThat(repository.findIncompletePublications()).hasSize(0);
-	}
-
-	@Test
-	void deleteCompletedPublications() {
-
-		var testEvent1 = new TestEvent("id1");
-		var event1Serialized = "{\"eventId\":\"id1\"}";
-		var testEvent2 = new TestEvent("id2");
-		var event2Serialized = "{\"eventId\":\"id2\"}";
-
-		when(eventSerializer.serialize(testEvent1)).thenReturn(event1Serialized);
-		when(eventSerializer.serialize(testEvent2)).thenReturn(event2Serialized);
-		when(eventSerializer.deserialize(event1Serialized, TestEvent.class)).thenReturn(testEvent1);
-		when(eventSerializer.deserialize(event2Serialized, TestEvent.class)).thenReturn(testEvent2);
-
-		var event1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-
-		repository.markCompleted(event1, Instant.now());
-
-		repository.deleteCompletedPublications();
-
-		try (var session = driver.session()) {
-			var count = session.run("MATCH (n) WHERE n.completionDate is not null return count(n)").single().get("count(n)")
-					.asLong();
-			assertThat(count).isEqualTo(0);
-		}
-	}
-
-	@Test
-	void deleteCompletedPublicationsBefore() throws Exception {
-
-		assumeTrue(completionMode == CompletionMode.UPDATE);
-
-		var testEvent1 = new TestEvent("id1");
-		var event1Serialized = "{\"eventId\":\"id1\"}";
-		var testEvent2 = new TestEvent("id2");
-		var event2Serialized = "{\"eventId\":\"id2\"}";
-
-		when(eventSerializer.serialize(testEvent1)).thenReturn(event1Serialized);
-		when(eventSerializer.serialize(testEvent2)).thenReturn(event2Serialized);
-		when(eventSerializer.deserialize(event1Serialized, TestEvent.class)).thenReturn(testEvent1);
-		when(eventSerializer.deserialize(event2Serialized, TestEvent.class)).thenReturn(testEvent2);
-
-		var event1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-
-		Instant old = Instant.now();
-		repository.markCompleted(event1, old);
-		Thread.sleep(100);
-		var event2 = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
-		repository.markCompleted(event2, Instant.now());
-
-		repository.deleteCompletedPublicationsBefore(old.plus(10, ChronoUnit.MILLIS));
-		// defensive check just to be sure
-		assertThat(repository.findIncompletePublications()).hasSize(0);
-
-		try (var session = driver.session()) {
-
-			var records = session.run("MATCH (n) WHERE n.completionDate is not null return n").list();
-
-			assertThat(records.size()).isEqualTo(1);
-			assertThat(records.get(0).get("n").asNode().get("eventSerialized").asString()).contains("id2");
-		}
-	}
-
-	@Test // GH-451
-	void findsCompletedPublications() {
-
-		var event = new TestEvent("first");
-		var publication = createPublication(event);
-
-		repository.markCompleted(publication, Instant.now());
-
-		if (completionMode == CompletionMode.DELETE) {
-
-			assertThat(repository.findCompletedPublications()).isEmpty();
-			assertThat(repository.findIncompletePublications()).isEmpty();
-
-		} else {
-
-			assertThat(repository.findCompletedPublications())
-					.hasSize(1)
+			assertThat(repository.findIncompletePublications()).hasSize(1)
 					.element(0)
-					.extracting(TargetEventPublication::getEvent)
-					.isEqualTo(event);
+					.extracting(TargetEventPublication::getEvent).isEqualTo(event2.getEvent());
 		}
-	}
 
-	@Test // GH-258
-	void marksPublicationAsCompletedById() {
+		@Test
+		void findInCompletePastPublications() {
 
-		var event = new TestEvent("first");
-		var publication = createPublication(event);
+			var testEvent = new TestEvent("id");
+			var eventSerialized = "{\"eventId\":\"id\"}";
 
-		repository.markCompleted(publication.getIdentifier(), Instant.now());
+			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
+			when(eventSerializer.deserialize(eventSerialized, TestEvent.class)).thenReturn(testEvent);
 
-		if (completionMode == CompletionMode.DELETE) {
+			var event = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			assertThat(repository.findCompletedPublications()).isEmpty();
-			assertThat(repository.findIncompletePublications()).isEmpty();
+			var newer = Instant.now().plus(1L, ChronoUnit.MINUTES);
+			var older = Instant.now().minus(1L, ChronoUnit.MINUTES);
 
-		} else {
+			assertThat(repository.findIncompletePublicationsPublishedBefore(newer)).hasSize(1)
+					.element(0)
+					.extracting(TargetEventPublication::getEvent).isEqualTo(event.getEvent());
 
-			assertThat(repository.findCompletedPublications())
-					.extracting(TargetEventPublication::getIdentifier)
-					.containsExactly(publication.getIdentifier());
+			assertThat(repository.findIncompletePublicationsPublishedBefore(older)).hasSize(0);
 		}
-	}
 
-	private TargetEventPublication createPublication(Object event) {
+		@Test
+		void findIncompleteByEventAndTargetIdentifier() {
 
-		var token = event.toString();
+			var testEvent = new TestEvent("id");
+			var eventSerialized = "{\"eventId\":\"id\"}";
 
-		doReturn(token).when(eventSerializer).serialize(event);
-		doReturn(event).when(eventSerializer).deserialize(token, event.getClass());
+			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
+			when(eventSerializer.deserialize(eventSerialized, TestEvent.class)).thenReturn(testEvent);
 
-		return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+			var event = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+
+			assertThat(
+					repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, event.getTargetIdentifier()))
+							.isPresent();
+		}
+
+		@Test
+		void deletePublicationById() {
+
+			var testEvent = new TestEvent("id");
+			var eventSerialized = "{\"eventId\":\"id\"}";
+
+			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
+
+			var event = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+			assertThat(repository.findIncompletePublications()).hasSize(1);
+
+			repository.deletePublications(List.of(event.getIdentifier()));
+			assertThat(repository.findIncompletePublications()).hasSize(0);
+		}
+
+		@Test
+		void deleteCompletedPublications() {
+
+			var testEvent1 = new TestEvent("id1");
+			var event1Serialized = "{\"eventId\":\"id1\"}";
+			var testEvent2 = new TestEvent("id2");
+			var event2Serialized = "{\"eventId\":\"id2\"}";
+
+			when(eventSerializer.serialize(testEvent1)).thenReturn(event1Serialized);
+			when(eventSerializer.serialize(testEvent2)).thenReturn(event2Serialized);
+			when(eventSerializer.deserialize(event1Serialized, TestEvent.class)).thenReturn(testEvent1);
+			when(eventSerializer.deserialize(event2Serialized, TestEvent.class)).thenReturn(testEvent2);
+
+			var event1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+
+			repository.markCompleted(event1, Instant.now());
+
+			repository.deleteCompletedPublications();
+
+			try (var session = driver.session()) {
+				var count = session.run("MATCH (n) WHERE n.completionDate is not null return count(n)").single().get("count(n)")
+						.asLong();
+				assertThat(count).isEqualTo(0);
+			}
+		}
+
+		@Test
+		void deleteCompletedPublicationsBefore() throws Exception {
+
+			assumeTrue(completionMode == CompletionMode.UPDATE);
+
+			var testEvent1 = new TestEvent("id1");
+			var event1Serialized = "{\"eventId\":\"id1\"}";
+			var testEvent2 = new TestEvent("id2");
+			var event2Serialized = "{\"eventId\":\"id2\"}";
+
+			when(eventSerializer.serialize(testEvent1)).thenReturn(event1Serialized);
+			when(eventSerializer.serialize(testEvent2)).thenReturn(event2Serialized);
+			when(eventSerializer.deserialize(event1Serialized, TestEvent.class)).thenReturn(testEvent1);
+			when(eventSerializer.deserialize(event2Serialized, TestEvent.class)).thenReturn(testEvent2);
+
+			var event1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+
+			Instant old = Instant.now();
+			repository.markCompleted(event1, old);
+			Thread.sleep(100);
+			var event2 = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+			repository.markCompleted(event2, Instant.now());
+
+			repository.deleteCompletedPublicationsBefore(old.plus(10, ChronoUnit.MILLIS));
+			// defensive check just to be sure
+			assertThat(repository.findIncompletePublications()).hasSize(0);
+
+			try (var session = driver.session()) {
+
+				var records = session.run("MATCH (n) WHERE n.completionDate is not null return n").list();
+
+				assertThat(records.size()).isEqualTo(1);
+				assertThat(records.get(0).get("n").asNode().get("eventSerialized").asString()).contains("id2");
+			}
+		}
+
+		@Test // GH-451
+		void findsCompletedPublications() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markCompleted(publication, Instant.now());
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findCompletedPublications()).isEmpty();
+				assertThat(repository.findIncompletePublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.hasSize(1)
+						.element(0)
+						.extracting(TargetEventPublication::getEvent)
+						.isEqualTo(event);
+			}
+		}
+
+		@Test // GH-258
+		void marksPublicationAsCompletedById() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findCompletedPublications()).isEmpty();
+				assertThat(repository.findIncompletePublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+		}
+
+		private TargetEventPublication createPublication(Object event) {
+
+			var token = event.toString();
+
+			doReturn(token).when(eventSerializer).serialize(event);
+			doReturn(event).when(eventSerializer).deserialize(token, event.getClass());
+
+			return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+		}
 	}
 
 	@Nested
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=UPDATE")
+	class WithUpdateCompletionTest extends TestBase {}
+
+	@Nested
 	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
-	static class WithDeleteCompletionTest extends Neo4jEventPublicationRepositoryTest {}
+	class WithDeleteCompletionTest extends TestBase {}
+
+	@Nested
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=ARCHIVE")
+	class WithArchiveCompletionTest extends TestBase {}
 
 	private record TestEvent(String eventId) {}
 
