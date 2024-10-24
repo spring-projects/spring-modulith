@@ -29,6 +29,7 @@ import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
+import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
@@ -41,11 +42,12 @@ import org.springframework.util.Assert;
  * @author Cora Iberkleid
  */
 @Transactional
+@Repository
 class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static String BY_EVENT_AND_LISTENER_ID = """
 			select p
-			from JpaEventPublication p
+			from DefaultJpaEventPublication p
 			where
 				p.serializedEvent = ?1
 				and p.listenerId = ?2
@@ -63,7 +65,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static String INCOMPLETE = """
 			select p
-			from JpaEventPublication p
+			from DefaultJpaEventPublication p
 			where
 				p.completionDate is null
 			order by
@@ -72,7 +74,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static String INCOMPLETE_BEFORE = """
 			select p
-			from JpaEventPublication p
+			from DefaultJpaEventPublication p
 			where
 				p.completionDate is null
 				and p.publicationDate < ?1
@@ -81,7 +83,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			""";
 
 	private static final String MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID = """
-			update JpaEventPublication p
+			update DefaultJpaEventPublication p
 			   set p.completionDate = ?3
 			 where p.serializedEvent = ?1
 			   and p.listenerId = ?2
@@ -89,26 +91,26 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			""";
 
 	private static final String MARK_COMPLETED_BY_ID = """
-			update JpaEventPublication p
+			update DefaultJpaEventPublication p
 			   set p.completionDate = ?2
 			 where p.id = ?1
 			""";
 
 	private static final String DELETE = """
 			delete
-			  from JpaEventPublication p
+			  from DefaultJpaEventPublication p
 			 where p.id in ?1
 			""";
 
 	private static final String DELETE_BY_EVENT_AND_LISTENER_ID = """
-			delete JpaEventPublication p
+			delete DefaultJpaEventPublication p
 			 where p.serializedEvent = ?1
 			   and p.listenerId = ?2
 			""";
 
 	private static final String DELETE_BY_ID = """
 			delete
-			  from JpaEventPublication p
+			  from DefaultJpaEventPublication p
 			 where p.id = ?1
 			""";
 
@@ -152,14 +154,12 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		this.serializer = serializer;
 		this.completionMode = completionMode;
 
-		var archiveEntityName = completionMode == CompletionMode.ARCHIVE
-				? ArchivedJpaEventPublication.class.getSimpleName()
-				: JpaEventPublication.class.getSimpleName();
+		var archiveEntityName = getCompletedEntityType().getSimpleName();
 
 		this.getCompleted = COMPLETE.formatted(archiveEntityName);
-        this.deleteCompleted = DELETE_COMPLETED.formatted(archiveEntityName);
+		this.deleteCompleted = DELETE_COMPLETED.formatted(archiveEntityName);
 		this.deleteCompletedBefore = DELETE_COMPLETED_BEFORE.formatted(archiveEntityName);
-    }
+	}
 
 	/*
 	 * (non-Javadoc)
@@ -192,15 +192,13 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			var publication = entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.class)
+			var publication = entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.getIncompleteType())
 					.setParameter(1, serializedEvent)
 					.setParameter(2, identifierValue)
 					.getSingleResult();
 
-			var archived = publication.archive(completionDate);
-
 			entityManager.remove(publication);
-			entityManager.persist(archived);
+			entityManager.persist(publication.archive(completionDate));
 
 		} else {
 
@@ -227,12 +225,10 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			var publication = entityManager.find(JpaEventPublication.class, identifier);
-
-			var archived = publication.archive(completionDate);
+			var publication = entityManager.find(JpaEventPublication.getIncompleteType(), identifier);
 
 			entityManager.remove(publication);
-			entityManager.persist(archived);
+			entityManager.persist(publication.archive(completionDate));
 
 		} else {
 
@@ -251,7 +247,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Transactional(readOnly = true)
 	public List<TargetEventPublication> findIncompletePublications() {
 
-		return entityManager.createQuery(INCOMPLETE, JpaEventPublication.class)
+		return entityManager.createQuery(INCOMPLETE, JpaEventPublication.getIncompleteType())
 				.getResultStream()
 				.map(this::entityToDomain)
 				.toList();
@@ -265,7 +261,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Transactional(readOnly = true)
 	public List<TargetEventPublication> findIncompletePublicationsPublishedBefore(Instant instant) {
 
-		return entityManager.createQuery(INCOMPLETE_BEFORE, JpaEventPublication.class)
+		return entityManager.createQuery(INCOMPLETE_BEFORE, JpaEventPublication.getIncompleteType())
 				.setParameter(1, instant)
 				.getResultStream()
 				.map(this::entityToDomain)
@@ -292,9 +288,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
 
-		var type = completionMode == CompletionMode.ARCHIVE
-				? ArchivedJpaEventPublication.class
-				: JpaEventPublication.class;
+		var type = getCompletedEntityType();
 
 		return entityManager.createQuery(getCompleted, type)
 				.getResultList()
@@ -338,12 +332,22 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				.executeUpdate();
 	}
 
-	private Optional<JpaEventPublication> findEntityBySerializedEventAndListenerIdAndCompletionDateNull( //
+	/**
+	 * Returns the type representing completed event publications.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public Class<? extends JpaEventPublication> getCompletedEntityType() {
+		return JpaEventPublication.getCompletedType(completionMode);
+	}
+
+	private Optional<? extends JpaEventPublication> findEntityBySerializedEventAndListenerIdAndCompletionDateNull( //
 			Object event, PublicationTargetIdentifier listenerId) {
 
 		var serializedEvent = serializeEvent(event);
 
-		var query = entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.class)
+		var query = entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.getIncompleteType())
 				.setParameter(1, serializedEvent)
 				.setParameter(2, listenerId.getValue());
 
@@ -355,9 +359,11 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	}
 
 	private JpaEventPublication domainToEntity(TargetEventPublication domain) {
-		return new JpaEventPublication(domain.getIdentifier(), domain.getPublicationDate(),
-				domain.getTargetIdentifier().getValue(),
-				serializeEvent(domain.getEvent()), domain.getEvent().getClass());
+
+		var event = domain.getEvent();
+
+		return JpaEventPublication.of(domain.getIdentifier(), domain.getPublicationDate(),
+				domain.getTargetIdentifier().getValue(), serializeEvent(event), event.getClass());
 	}
 
 	private TargetEventPublication entityToDomain(JpaEventPublication entity) {
