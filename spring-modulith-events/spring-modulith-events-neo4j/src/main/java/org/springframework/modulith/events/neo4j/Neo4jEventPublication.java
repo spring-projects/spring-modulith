@@ -18,6 +18,8 @@ package org.springframework.modulith.events.neo4j;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.lang.Nullable;
+
 /**
  * The event publication entity definition.
  *
@@ -32,15 +34,16 @@ class Neo4jEventPublication {
 	public final Object event;
 	public final String eventHash;
 
-	public Instant completionDate;
+	public @Nullable Instant completionDate;
 
 	public Neo4jEventPublication(UUID identifier, Instant publicationDate, String listenerId, Object event,
-			String eventHash) {
+			String eventHash, @Nullable Instant completionDate) {
 
 		this.identifier = identifier;
 		this.publicationDate = publicationDate;
 		this.listenerId = listenerId;
 		this.event = event;
 		this.eventHash = eventHash;
+		this.completionDate = completionDate;
 	}
 }
