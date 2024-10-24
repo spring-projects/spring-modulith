@@ -15,10 +15,7 @@
  */
 package org.springframework.modulith.events.jpa;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -34,6 +31,7 @@ import org.springframework.util.Assert;
  */
 @Entity
 @Table(name = "EVENT_PUBLICATION")
+@Inheritance(strategy = InheritanceType.TABLE_PER_CLASS)
 class JpaEventPublication {
 
 	final @Id @Column(length = 16) UUID id;
@@ -68,7 +66,7 @@ class JpaEventPublication {
 		this.eventType = eventType;
 	}
 
-	JpaEventPublication() {
+	protected JpaEventPublication() {
 
 		this.id = null;
 		this.publicationDate = null;
@@ -77,9 +75,11 @@ class JpaEventPublication {
 		this.eventType = null;
 	}
 
-	JpaEventPublication markCompleted() {
+	ArchivedJpaEventPublication archive(Instant instant) {
 
-		this.completionDate = Instant.now();
-		return this;
+		var result = new ArchivedJpaEventPublication(id, publicationDate, listenerId, serializedEvent, eventType);
+		result.completionDate = instant;
+
+		return result;
 	}
 }
