@@ -38,6 +38,7 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @author Dmitry Belyaev
  * @author Björn Kieling
+ * @author Cora Iberkleid
  */
 @Transactional
 class JpaEventPublicationRepository implements EventPublicationRepository {
@@ -53,7 +54,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static String COMPLETE = """
 			select p
-			from JpaEventPublication p
+			from %s p
 			where
 				p.completionDate is not null
 			order by
@@ -113,14 +114,14 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static final String DELETE_COMPLETED = """
 			delete
-			from JpaEventPublication p
+			from %s p
 			where
 				p.completionDate is not null
 			""";
 
 	private static final String DELETE_COMPLETED_BEFORE = """
 			delete
-			from JpaEventPublication p
+			from %s p
 			where
 				p.completionDate < ?1
 			""";
@@ -130,6 +131,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	private final EntityManager entityManager;
 	private final EventSerializer serializer;
 	private final CompletionMode completionMode;
+
+	private final String getCompleted, deleteCompleted, deleteCompletedBefore;
 
 	/**
 	 * Creates a new {@link JpaEventPublicationRepository} for the given {@link EntityManager} and
@@ -148,7 +151,15 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		this.entityManager = entityManager;
 		this.serializer = serializer;
 		this.completionMode = completionMode;
-	}
+
+		var archiveEntityName = completionMode == CompletionMode.ARCHIVE
+				? ArchivedJpaEventPublication.class.getSimpleName()
+				: JpaEventPublication.class.getSimpleName();
+
+		this.getCompleted = COMPLETE.formatted(archiveEntityName);
+        this.deleteCompleted = DELETE_COMPLETED.formatted(archiveEntityName);
+		this.deleteCompletedBefore = DELETE_COMPLETED_BEFORE.formatted(archiveEntityName);
+    }
 
 	/*
 	 * (non-Javadoc)
@@ -179,6 +190,18 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 					.setParameter(2, identifierValue)
 					.executeUpdate();
 
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			var publication = entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.class)
+					.setParameter(1, serializedEvent)
+					.setParameter(2, identifierValue)
+					.getSingleResult();
+
+			var archived = publication.archive(completionDate);
+
+			entityManager.remove(publication);
+			entityManager.persist(archived);
+
 		} else {
 
 			entityManager.createQuery(MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID)
@@ -201,6 +224,15 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			entityManager.createQuery(DELETE_BY_ID)
 					.setParameter(1, identifier)
 					.executeUpdate();
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			var publication = entityManager.find(JpaEventPublication.class, identifier);
+
+			var archived = publication.archive(completionDate);
+
+			entityManager.remove(publication);
+			entityManager.persist(archived);
 
 		} else {
 
@@ -260,7 +292,11 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
 
-		return entityManager.createQuery(COMPLETE, JpaEventPublication.class)
+		var type = completionMode == CompletionMode.ARCHIVE
+				? ArchivedJpaEventPublication.class
+				: JpaEventPublication.class;
+
+		return entityManager.createQuery(getCompleted, type)
 				.getResultList()
 				.stream()
 				.map(this::entityToDomain)
@@ -285,7 +321,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		entityManager.createQuery(DELETE_COMPLETED).executeUpdate();
+		entityManager.createQuery(deleteCompleted).executeUpdate();
 	}
 
 	/*
@@ -297,7 +333,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		entityManager.createQuery(DELETE_COMPLETED_BEFORE)
+		entityManager.createQuery(deleteCompletedBefore)
 				.setParameter(1, instant)
 				.executeUpdate();
 	}
@@ -341,6 +377,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		private final JpaEventPublication publication;
 		private final EventSerializer serializer;
+		private Object deserializedEvent;
 
 		/**
 		 * Creates a new {@link JpaEventPublicationAdapter} for the given {@link JpaEventPublication} and
@@ -373,7 +410,12 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		 */
 		@Override
 		public Object getEvent() {
-			return serializer.deserialize(publication.serializedEvent, publication.eventType);
+
+			if (deserializedEvent == null) {
+				this.deserializedEvent = serializer.deserialize(publication.serializedEvent, publication.eventType);
+			}
+
+			return deserializedEvent;
 		}
 
 		/*
