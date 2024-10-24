@@ -42,9 +42,8 @@ import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
-import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.util.DigestUtils;
 import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
@@ -53,7 +52,12 @@ import org.testcontainers.utility.DockerImageName;
 
 /**
  * @author Gerrit Meier
+ * @author Cora Iberkleid
+ * @author Oliver Drotbohm
  */
+@Testcontainers(disabledWithoutDocker = true)
+@SpringJUnitConfig(Neo4jEventPublicationRepositoryTest.Config.class)
+@ImportAutoConfiguration(classes = Neo4jEventPublicationAutoConfiguration.class)
 class Neo4jEventPublicationRepositoryTest {
 
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
@@ -62,17 +66,12 @@ class Neo4jEventPublicationRepositoryTest {
 	static final Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
 			.withRandomPassword();
 
-	@Import(TestApplication.class)
-	@ImportAutoConfiguration({ Neo4jEventPublicationAutoConfiguration.class })
-	@Testcontainers(disabledWithoutDocker = true)
-	@ContextConfiguration(classes = Config.class)
 	static abstract class TestBase {
 
 		@Autowired Neo4jEventPublicationRepository repository;
 		@Autowired Driver driver;
 		@Autowired Environment environment;
-
-		@MockitoBean EventSerializer eventSerializer;
+		@Autowired EventSerializer eventSerializer;
 
 		CompletionMode completionMode;
 
@@ -334,6 +333,11 @@ class Neo4jEventPublicationRepositoryTest {
 		@Bean
 		org.neo4j.cypherdsl.core.renderer.Configuration cypherDslConfiguration() {
 			return org.neo4j.cypherdsl.core.renderer.Configuration.newConfig().withDialect(Dialect.NEO4J_5).build();
+		}
+
+		@Bean
+		EventSerializer eventSerializer() {
+			return mock(EventSerializer.class);
 		}
 	}
 }
