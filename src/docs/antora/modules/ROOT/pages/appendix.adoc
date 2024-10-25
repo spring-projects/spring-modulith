@@ -19,8 +19,15 @@
 Can either be the class name of a custom implementation of `ApplicationModuleDetectionStrategy` or `direct-subpackages` (which is also the final fallback if nothing is configured) or `explicitly-annotated` to only select packages explicitly annotated with `@ApplicationModule` or jMolecules' `@Module`. See xref:fundamentals.adoc#customizing-modules[Customize Application Module Detection] for details.
 
 |`spring.modulith.events.completion-mode`
-|`UPDATE`
-|How to mark event publications as completed. The default sets the completion date on the database entry, `DELETE` removes the entry right away. For details, see xref:events.adoc#publication-registry.completion[Event Publication Completion].
+|`update`
+a|How to mark an event publication as completed.
+The following values are supported:
+
+* `update` (default) -- Sets the completion date on the event publication entry.
+* `delete` -- Removes the event publication entry.
+Completed event publications are not available via `CompletedEventPublications`.
+* `archive` -- Removes the event publication entry from the primary database abstraction (table, collection or node) and creates one in a archive (a table, collection or node of same schema).
+For details, see xref:events.adoc#publication-registry.completion[Event Publication Completion].
 
 |`spring.modulith.events.externalization.enabled`
 |`true`

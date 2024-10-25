@@ -286,10 +286,14 @@ This means that completed publications will remain in the Event Publication Regi
 A consequence of this is that you'll need to put some code in place that will periodically purge old, completed ``EventPublication``s.
 Otherwise, the persistent abstraction of them, for example a relational database table, will grow unbounded and the interaction with the store creating and completing new ``EventPublication`` might slow down.
 
-Spring Modulith 1.3 introduces a configuration property `spring.modulith.events.completion-mode`.
+Spring Modulith 1.3 introduces a configuration property `spring.modulith.events.completion-mode` to support two additional modes of completion.
 It defaults to `UPDATE` which is backed by the strategy described above.
 Alternatively, the completion mode can be set to `DELETE`, which alters the registry's persistence mechanisms to rather delete ``EventPublication``s on completion.
 This means that `CompletedEventPublications` will not return any publications anymore, but at the same time, you don't have to worry about purging the completed events from the persistence store manually anymore.
+
+The third option is the `ARCHIVE` mode, which copies the entry into an archive table, collection or node.
+For that archive entry, the completion date is set and the original entry is removed.
+Contrary to the `DELETE` mode, completed event publications are then still accessible via the `CompletedEventPublications` abstraction.
 
 [[publication-registry.publication-repositories]]
 === Event Publication Repositories
