@@ -262,7 +262,7 @@ icon:cubes[] Example
    |  ├— icon:coffee[] package-info.java
    |  └─ icon:plus-circle[role=green] SomeSpiInterface.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
+      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
 ----
 
 .`package-info.java` in `example.order.spi`
