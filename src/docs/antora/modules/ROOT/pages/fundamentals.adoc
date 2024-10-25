@@ -159,7 +159,7 @@ icon:cubes[] Example
    ├─ **icon:cube[] example.order**
    |  └─ icon:plus-circle[role=green] OrderManagement.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[role=red] SomethingOrderInternal.java
+      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
 ----
 
 In such an arrangement, the `order` package is considered an API package.
@@ -191,13 +191,13 @@ icon:cubes[] Example
    |  ├─ icon:plus-circle[role=green] InventoryManagement.java
    |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
    ├─ icon:cube[] example.inventory.internal
-   |  └─ icon:plus-circle[role=red] SomethingInventoryInternal.java
+   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
    |
    |  -> Inventory > Nested
    |
    ├─ icon:cube[] example.inventory.nested
    |  ├─ icon:coffee[] package-info.java // @ApplicationModule
-   |  └─ icon:plus-circle[role=yellow] NestedApi.java
+   |  └─ icon:plus-circle[role=orange] NestedApi.java
    ├─ icon:cube[] example.inventory.nested.internal
    |  └─ icon:minus-circle[role=red] NestedInternal.java
    |
@@ -311,7 +311,7 @@ icon:cubes[] Example
    |  ├— icon:coffee[] package-info.java
    |  └─ icon:plus-circle[role=green] SomeSpiInterface.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
+      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
 ----
 
 .`package-info.java` in `example.order.spi`
