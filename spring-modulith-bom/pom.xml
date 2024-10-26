@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith</artifactId>
-		<version>1.2.5</version>
+		<version>1.2.6-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -22,137 +22,137 @@
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-actuator</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-api</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-core</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-docs</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-amqp</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-api</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-aws-sns</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-aws-sqs</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-core</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jackson</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jdbc</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jms</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jpa</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-kafka</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-mongodb</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-tests</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-moments</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-observability</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-runtime</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-core</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-insight</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-jdbc</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-jpa</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-mongodb</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-neo4j</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-test</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-test</artifactId>
-				<version>1.2.5</version>
+				<version>1.2.6-SNAPSHOT</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
