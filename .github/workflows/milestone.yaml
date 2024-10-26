@@ -21,21 +21,6 @@ jobs:
         java-version: 17
         cache: 'maven'
 
-    - name: Build with Maven
-      env:
-        DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-      run: ./mvnw -B
-
-    - name: Deploy to Artifactory
-      env:
-        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
-        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
-        DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-      run: ./mvnw -B clean deploy -Pci,artifactory
-
-    - name: Setup Graphviz
-      uses: ts-graphviz/setup-graphviz@v1
-
     - name: Deploy documentation
       env:
         ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
