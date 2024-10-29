@@ -39,6 +39,7 @@ import org.neo4j.cypherdsl.core.renderer.Renderer;
 import org.neo4j.driver.Values;
 import org.neo4j.driver.types.TypeSystem;
 import org.springframework.data.neo4j.core.Neo4jClient;
+import org.springframework.data.util.Lazy;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -130,22 +131,24 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 			.build();
 
-	private static final Statement COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT = applyProperties(match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
-			.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
-					.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(ID).eq(parameter(ID)))
-					.returning(literalTrue()).build())))
-			.with(EVENT_PUBLICATION_NODE));
-
-	private static final Statement COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT = applyProperties(
-			match(EVENT_PUBLICATION_NODE)
-					.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
-					.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT = Lazy
+			.of(() -> applyProperties(match(EVENT_PUBLICATION_NODE)
+					.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
 					.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
-							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
-							.and(EVENT_PUBLICATION_ARCHIVE_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(ID).eq(parameter(ID)))
 							.returning(literalTrue()).build())))
-					.with(EVENT_PUBLICATION_NODE));
+					.with(EVENT_PUBLICATION_NODE)));
+
+	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT = Lazy
+			.of(() -> applyProperties(
+					match(EVENT_PUBLICATION_NODE)
+							.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+							.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+							.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
+									.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+									.and(EVENT_PUBLICATION_ARCHIVE_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+									.returning(literalTrue()).build())))
+							.with(EVENT_PUBLICATION_NODE)));
 
 	private static Statement applyProperties(OrderableOngoingReadingAndWithWithoutWhere source) {
 
@@ -260,7 +263,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			neo4jClient.query(renderer.render(COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT))
+			neo4jClient.query(renderer.render(COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT.get()))
 					.bind(eventHash).to(EVENT_HASH)
 					.bind(identifier.getValue()).to(LISTENER_ID)
 					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
@@ -295,7 +298,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			neo4jClient.query(renderer.render(COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT))
+			neo4jClient.query(renderer.render(COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT.get()))
 					.bind(Values.value(identifier.toString())).to(ID)
 					.bind(Values.value(completionDate.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
 					.run();
