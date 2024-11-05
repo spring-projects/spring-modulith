@@ -44,8 +44,10 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
 
 import com.tngtech.archunit.base.DescribedPredicate;
+import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
+import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.HasName;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -67,12 +69,17 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
 	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
 			ApplicationModules.class.getClassLoader());
-	private static final DescribedPredicate<CanBeAnnotated> IS_AOT_TYPE;
+	private static final DescribedPredicate<CanBeAnnotated> IS_AOT_TYPE, IS_GENERATED;
 	private static final DescribedPredicate<HasName> IS_SPRING_CGLIB_PROXY = nameContaining("$$SpringCGLIB$$");
 
 	static {
+
 		IS_AOT_TYPE = ClassUtils.isPresent("org.springframework.aot.generate.Generated",
 				ApplicationModules.class.getClassLoader()) ? getAtGenerated() : DescribedPredicate.alwaysFalse();
+
+		IS_GENERATED = annotatedWith(JavaClass.Predicates.simpleName("Generated")
+				.onResultOf(JavaType::toErasure)
+				.onResultOf(JavaAnnotation::getType));
 	}
 
 	@Nullable
