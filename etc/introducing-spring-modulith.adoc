@@ -14,7 +14,7 @@ https://spring.io/projects/spring-modulith[_Spring Modulith_] is a new, experime
 [[example]]
 == An Example
 
-Let us have a look at https://github.com/spring-projects/spring-modulith/tree/main/spring-modulith-example[a concrete example].
+Let us have a look at https://github.com/spring-projects/spring-modulith/tree/main/spring-modulith-examples[a concrete example].
 Assume we need to develop an e-commerce application, for which we start with two logical modules.
 An _order_ module deals with order processing, and an _inventory_ keeps track of the stock for the products we sell.
 Our primary focus for this post is the use case that the inventory needs to be updated once an order is completed.
