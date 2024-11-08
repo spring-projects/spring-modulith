@@ -31,7 +31,7 @@ import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 /**
  * @author Oliver Drotbohm
  */
-class ModuleTracingSupport implements BeanClassLoaderAware, BeanFactoryAware {
+class ModuleObservabilitySupport implements BeanClassLoaderAware, BeanFactoryAware {
 
 	private ClassLoader classLoader;
 	private @Nullable AbstractAutoProxyCreator creator;

@@ -15,14 +15,12 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
-import brave.TracingCustomizer;
-import brave.baggage.BaggageField;
-import brave.baggage.BaggagePropagationConfig;
-import brave.baggage.BaggagePropagationCustomizer;
 import brave.handler.MutableSpan;
 import brave.handler.SpanHandler;
 import brave.propagation.TraceContext;
-import io.micrometer.tracing.Tracer;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.ObservationFilter;
+import io.micrometer.observation.ObservationRegistry;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -34,9 +32,11 @@ import org.springframework.boot.task.SimpleAsyncTaskExecutorCustomizer;
 import org.springframework.boot.task.ThreadPoolTaskExecutorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
 import org.springframework.modulith.observability.ModuleEventListener;
-import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor;
+import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor;
+import org.springframework.modulith.observability.ModulePassingObservationFilter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
@@ -47,17 +47,18 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 class ModuleObservabilityAutoConfiguration {
 
 	@Bean
-	static ModuleTracingBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
-			ObjectProvider<Tracer> tracer, ConfigurableListableBeanFactory factory) {
-		return new ModuleTracingBeanPostProcessor(runtime, () -> tracer.getObject(), factory);
+	static ModuleObservabilityBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
+			ObjectProvider<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory, Environment environment) {
+		return new ModuleObservabilityBeanPostProcessor(runtime, observationRegistry::getObject, factory, environment);
 	}
 
 	@Bean
 	static ModuleEventListener tracingModuleEventListener(ApplicationModulesRuntime runtime,
-			ObjectProvider<Tracer> tracer) {
-		return new ModuleEventListener(runtime, () -> tracer.getObject());
+			ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<MeterRegistry> meterRegistry) {
+		return new ModuleEventListener(runtime, observationRegistry::getObject, meterRegistry::getObject);
 	}
 
+	// TODO: Have a custom thread pool for modulith
 	@Bean
 	@ConditionalOnThreading(Threading.VIRTUAL)
 	SimpleAsyncTaskExecutorCustomizer simpleAsyncTaskExecutorCustomizer() {
@@ -70,51 +71,31 @@ class ModuleObservabilityAutoConfiguration {
 		return executor -> executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
 	}
 
-	/**
-	 * Brave-specific auto configuration.
-	 *
-	 * @author Oliver Drotbohm
-	 */
-	@ConditionalOnClass(TracingCustomizer.class)
-	static class ModulithsBraveIntegrationAutoConfiguration {
+	@Bean
+	ObservationFilter modulePassingObservationFilter() {
+		return new ModulePassingObservationFilter();
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(SpanHandler.class)
+	static class BraveConfiguration {
+		/**
+		 * Corresponds to {@link ModulithObservations.LowKeys#MODULE_KEY}
+		 */
+		private static final String MODULE_KEY_TAG_NAME = "module.key";
 
 		@Bean
-		BaggagePropagationCustomizer moduleBaggagePropagationCustomizer() {
-
-			return builder -> builder
-					.add(BaggagePropagationConfig.SingleBaggageField
-							.local(BaggageField.create(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY)));
-		}
-
-		@Bean
-		SpanHandler spanHandler() {
-
+		SpanHandler localServiceNameRenamingSpanHandler() {
 			return new SpanHandler() {
-
-				/*
-				 * (non-Javadoc)
-				 * @see brave.handler.SpanHandler#end(brave.propagation.TraceContext, brave.handler.MutableSpan, brave.handler.SpanHandler.Cause)
-				 */
-				@Override
-				public boolean end(TraceContext context, MutableSpan span, Cause cause) {
-
-					String value = span.tag(ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
-
-					if (value != null) {
-						span.localServiceName(value);
-						return true;
+				@Override public boolean end(TraceContext context, MutableSpan span, Cause cause) {
+					String tag = span.tag(MODULE_KEY_TAG_NAME);
+					if (tag != null) {
+						span.localServiceName(tag);
 					}
-
-					BaggageField field = BaggageField.getByName(context, ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY);
-					value = field.getValue();
-
-					if (value != null) {
-						span.localServiceName(value);
-					}
-
-					return true;
+					return super.end(context, span, cause);
 				}
 			};
 		}
 	}
+
 }

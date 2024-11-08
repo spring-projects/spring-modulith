@@ -25,14 +25,15 @@ import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
- * Unit tests for {@link ModuleTracingBeanPostProcessor}.
+ * Unit tests for {@link ModuleObservabilityBeanPostProcessor}.
  *
  * @author Oliver Drotbohm
  */
-class ModuleTracingBeanPostProcessorUnitTests {
+class ModuleObservabilityBeanPostProcessorUnitTests {
 
 	@Test // GH-498
 	void doesNotProxyConfiguationProperties() {
@@ -44,7 +45,7 @@ class ModuleTracingBeanPostProcessorUnitTests {
 		doReturn(SampleProperties.class).when(mock).getUserClass(any(), any());
 		doReturn(true).when(mock).isApplicationClass(any());
 
-		var processor = new ModuleTracingBeanPostProcessor(mock, () -> null, beanFactory);
+		var processor = new ModuleObservabilityBeanPostProcessor(mock, () -> null, beanFactory, new MockEnvironment());
 
 		var bean = new SampleProperties();
 		var result = processor.postProcessAfterInitialization(bean, "properties");
@@ -56,8 +57,8 @@ class ModuleTracingBeanPostProcessorUnitTests {
 	void processorIsRegisteredBefore() {
 
 		var rabbitProcessor = new RabbitListenerAnnotationBeanPostProcessor();
-		var tracingProcessor = new ModuleTracingBeanPostProcessor(mock(ApplicationModulesRuntime.class), () -> null,
-				new DefaultListableBeanFactory());
+		var tracingProcessor = new ModuleObservabilityBeanPostProcessor(mock(ApplicationModulesRuntime.class), () -> null,
+				new DefaultListableBeanFactory(), new MockEnvironment());
 
 		assertThat(rabbitProcessor.getOrder()).isGreaterThan(tracingProcessor.getOrder());
 

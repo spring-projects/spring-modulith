@@ -25,6 +25,7 @@ import org.springframework.aop.support.AopUtils;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
 import org.springframework.modulith.core.FormattableType;
 import org.springframework.modulith.core.SpringBean;

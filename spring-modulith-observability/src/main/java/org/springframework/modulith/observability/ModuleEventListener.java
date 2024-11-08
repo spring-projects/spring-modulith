@@ -15,13 +15,17 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.tracing.Tracer;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.observation.Observation.Event;
+import io.micrometer.observation.ObservationRegistry;
 
 import java.util.function.Supplier;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.modulith.observability.ModulithObservations.Events;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -31,21 +35,25 @@ import org.springframework.util.Assert;
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<Tracer> tracer;
+	private final Supplier<ObservationRegistry> observationRegistry;
+	private final Supplier<MeterRegistry> meterRegistry;
 
 	/**
-	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link Tracer}.
+	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link ObservationRegistry} and {@link MeterRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param tracer must not be {@literal null}.
+	 * @param observationRegistrySupplier must not be {@literal null}.
 	 */
-	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer) {
+	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistrySupplier,
+			Supplier<MeterRegistry> meterRegistrySupplier) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(tracer, "Tracer must not be null!");
+		Assert.notNull(observationRegistrySupplier, "ObservationRegistry must not be null!");
+		Assert.notNull(meterRegistrySupplier, "MeterRegistry must not be null!");
 
 		this.runtime = runtime;
-		this.tracer = tracer;
+		this.observationRegistry = observationRegistrySupplier;
+		this.meterRegistry = meterRegistrySupplier;
 	}
 
 	/*
@@ -74,12 +82,20 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		var span = tracer.get().currentSpan();
+		MeterRegistry registry = meterRegistry.get();
+		if (registry != null) {
+			Counter.builder(ModulithMetrics.EVENTS.getName()) //
+					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), event.getClass().getSimpleName()) //
+					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
+					.register(registry).increment();
+		}
 
-		if (span == null) {
+		var observation = observationRegistry.get().getCurrentObservation();
+
+		if (observation == null) {
 			return;
 		}
 
-		span.event("Published " + payloadType.getName());
+		observation.event(Event.of(Events.EVENT_PUBLICATION_SUCCESS.getName(), "Published " + payloadType.getName()));
 	}
 }

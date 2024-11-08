@@ -24,11 +24,15 @@ import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 
 import com.tngtech.archunit.core.domain.JavaClass;
+import org.springframework.modulith.core.ArchitecturallyEvidentType;
 
 /**
+ * Information about observed module.
+ *
  * @author Oliver Drotbohm
+ * @since 1.4
  */
-interface ObservedModule {
+public interface ObservedModule {
 
 	/**
 	 * Returns the name of the application module.
@@ -86,7 +90,7 @@ interface ObservedModule {
 	 * method invocation on a Spring bean.
 	 *
 	 * @param invocation must not be {@literal null}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	boolean isEventListenerInvocation(MethodInvocation invocation);
 }

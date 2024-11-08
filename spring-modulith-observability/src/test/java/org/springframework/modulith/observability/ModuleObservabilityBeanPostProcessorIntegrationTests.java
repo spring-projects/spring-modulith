@@ -16,11 +16,10 @@
 package org.springframework.modulith.observability;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import example.ExampleApplication;
 import example.sample.SampleComponent;
-import io.micrometer.tracing.Tracer;
+import io.micrometer.observation.ObservationRegistry;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.Advisor;
@@ -29,24 +28,24 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor.ApplicationModuleObservingAdvisor;
+import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor.ApplicationModuleObservingAdvisor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.modulith.test.TestApplicationModules;
 import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 
 /**
- * Integration tests for {@link ModuleTracingBeanPostProcessor}.
+ * Integration tests for {@link ModuleObservabilityBeanPostProcessor}.
  *
  * @author Oliver Drotbohm
  */
-class ModuleTracingBeanPostProcessorIntegrationTests {
+class ModuleObservabilityBeanPostProcessorIntegrationTests {
 
 	@Test
 	void decoratesExposedComponentsWithTracingInterceptor() {
 
 		SampleComponent bean = SpringApplication
-				.run(new Class<?>[] { ExampleApplication.class, ModuleTracingConfiguration.class }, new String[] {})
+				.run(new Class<?>[] { ExampleApplication.class, ModuleObservabilityConfiguration.class }, new String[] {})
 				.getBean(SampleComponent.class);
 
 		assertThat(bean).isInstanceOfSatisfying(Advised.class, it -> {
@@ -61,16 +60,15 @@ class ModuleTracingBeanPostProcessorIntegrationTests {
 	}
 
 	@Configuration
-	static class ModuleTracingConfiguration {
+	static class ModuleObservabilityConfiguration {
 
-		@Bean
-		ModuleTracingBeanPostProcessor foo(ConfigurableApplicationContext context) {
+		@Bean ModuleObservabilityBeanPostProcessor foo(ConfigurableApplicationContext context) {
 
 			var runtime = ApplicationRuntime.of(context);
 			var modulesRuntime = new ApplicationModulesRuntime(() -> TestApplicationModules.of(ExampleApplication.class),
 					runtime);
 
-			return new ModuleTracingBeanPostProcessor(modulesRuntime, () -> mock(Tracer.class), context.getBeanFactory());
+			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP, context.getBeanFactory(), context.getEnvironment());
 		}
 	}
 

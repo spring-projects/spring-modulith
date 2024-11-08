@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.tracing.Tracer;
+import io.micrometer.observation.ObservationRegistry;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -34,6 +34,7 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.Ordered;
+import org.springframework.core.env.Environment;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -43,32 +44,40 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor, Ordered {
+public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySupport
+		implements BeanPostProcessor, Ordered {
 
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<Tracer> tracer;
+	private final Supplier<ObservationRegistry> observationRegistry;
 	private final Map<String, Advisor> advisors;
 	private final ConfigurableListableBeanFactory factory;
+	private final Environment environment;
 
 	/**
-	 * Creates a new {@link ModuleTracingBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
-	 * {@link Tracer}.
+	 * Creates a new {@link ModuleObservabilityBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
+	 * {@link ObservationRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param tracer must not be {@literal null}.
+	 * @param observationRegistry must not be {@literal null}.
+	 * @param factory must not be {@literal null}.
+	 * @param environment must not be {@literal null}.
 	 */
-	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer,
-			ConfigurableListableBeanFactory factory) {
+	public ModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime,
+			Supplier<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory,
+			Environment environment) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(tracer, "Tracer must not be null!");
+		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+		Assert.notNull(factory, "BeanFactory must not be null!");
+		Assert.notNull(environment, "Environment must not be null!");
 
 		this.runtime = runtime;
-		this.tracer = tracer;
+		this.observationRegistry = observationRegistry;
 		this.advisors = new HashMap<>();
 		this.factory = factory;
+		this.environment = environment;
 	}
 
 	/*
@@ -99,15 +108,17 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 		var modules = runtime.get();
 
-		return modules.getModuleByType(type.getName()).map(DefaultObservedModule::new).map(it -> {
+		return modules.getModuleByType(type.getName())
+				.map(DefaultObservedModule::new)
+				.map(it -> {
 
-			var moduleType = it.getObservedModuleType(type, modules);
+					var moduleType = it.getObservedModuleType(type, modules);
 
-			return moduleType != null //
-					? addAdvisor(bean, getOrBuildAdvisor(it, moduleType)) //
-					: bean;
+					return moduleType != null //
+							? addAdvisor(bean, getOrBuildAdvisor(it, moduleType)) //
+							: bean;
 
-		}).orElse(bean);
+				}).orElse(bean);
 	}
 
 	private boolean isInfrastructureBean(String beanName) {
@@ -129,8 +140,9 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 	private Advisor getOrBuildAdvisor(ObservedModule module, ObservedModuleType type) {
 
-		return advisors.computeIfAbsent(module.getName(), __ -> {
-			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, tracer.get()));
+		return advisors.computeIfAbsent(module.getIdentifier().toString(), __ -> {
+			return new ApplicationModuleObservingAdvisor(type,
+					ModuleEntryInterceptor.of(module, observationRegistry.get(), environment));
 		});
 	}
 

@@ -37,8 +37,9 @@ import com.tngtech.archunit.core.domain.JavaClass;
  * Represents a type in an {@link ObservedModule}.
  *
  * @author Oliver Drotbohm
+ * @since 1.4
  */
-class ObservedModuleType {
+public class ObservedModuleType {
 
 	private static final Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
 	private static final Predicate<Method> IS_USER_METHOD = it -> !Modifier.isPrivate(it.getModifiers())
