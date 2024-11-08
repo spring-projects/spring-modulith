@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -29,8 +30,27 @@ import com.tngtech.archunit.core.domain.JavaClass;
  */
 interface ObservedModule {
 
+	/**
+	 * Returns the name of the application module.
+	 *
+	 * @return will never be {@literal null}.
+	 * @deprecated since 1.3, use {@link #getIdentifier()} instead.
+	 */
+	@Deprecated(forRemoval = true)
 	String getName();
 
+	/**
+	 * Returns the {@link ApplicationModuleIdentifier} of the underlying module.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	ApplicationModuleIdentifier getIdentifier();
+
+	/**
+	 * Returns the human-readable name of the module.
+	 *
+	 * @return will never be {@literal null}.
+	 */
 	String getDisplayName();
 
 	/**
@@ -60,4 +80,13 @@ interface ObservedModule {
 	 */
 	@Nullable
 	ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules);
+
+	/**
+	 * Returns whether the given {@link MethodInvocation} is the invocation of an event listener as opposed to a standard
+	 * method invocation on a Spring bean.
+	 *
+	 * @param invocation must not be {@literal null}.
+	 * @since 1.3
+	 */
+	boolean isEventListenerInvocation(MethodInvocation invocation);
 }

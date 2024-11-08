@@ -21,13 +21,17 @@ import java.util.Arrays;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
 import org.springframework.modulith.core.FormattableType;
 import org.springframework.modulith.core.SpringBean;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaMethod;
 
 class DefaultObservedModule implements ObservedModule {
 
@@ -51,7 +55,16 @@ class DefaultObservedModule implements ObservedModule {
 	 */
 	@Override
 	public String getName() {
-		return module.getName();
+		return getIdentifier().toString();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.observability.ObservedModule#getIdentifier()
+	 */
+	@Override
+	public ApplicationModuleIdentifier getIdentifier() {
+		return module.getIdentifier();
 	}
 
 	/*
@@ -69,37 +82,7 @@ class DefaultObservedModule implements ObservedModule {
 	 */
 	@Override
 	public String getInvokedMethod(MethodInvocation invocation) {
-
-		Method method = invocation.getMethod();
-
-		if (module.contains(method.getDeclaringClass())) {
-			return toString(invocation.getMethod(), module);
-		}
-
-		if (!ProxyMethodInvocation.class.isInstance(invocation)) {
-			return toString(invocation.getMethod(), module);
-		}
-
-		// For class-based proxies, use the target class
-
-		var advised = (Advised) ((ProxyMethodInvocation) invocation).getProxy();
-		var targetClass = advised.getTargetClass();
-
-		if (module.contains(targetClass)) {
-			return toString(targetClass, method, module);
-		}
-
-		// For JDK proxies, find original interface the method was logically declared on
-
-		for (Class<?> type : advised.getProxiedInterfaces()) {
-			if (module.contains(type)) {
-				if (Arrays.asList(type.getMethods()).contains(method)) {
-					return toString(type, method, module);
-				}
-			}
-		}
-
-		return toString(invocation.getMethod(), module);
+		return toString(findModuleLocalMethod(invocation), module);
 	}
 
 	/*
@@ -144,11 +127,61 @@ class DefaultObservedModule implements ObservedModule {
 				.orElse(null);
 	}
 
-	private static String toString(Method method, ApplicationModule module) {
-		return toString(method.getDeclaringClass(), method, module);
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.observability.ObservedModule#isEventListenerInvocation(org.aopalliance.intercept.MethodInvocation)
+	 */
+	@Override
+	public boolean isEventListenerInvocation(MethodInvocation invocation) {
+
+		var method = findModuleLocalMethod(invocation);
+		var type = module.getArchitecturallyEvidentType(method.getDeclaringClass());
+
+		return type.isEventListener()
+				&& type.getReferenceMethods()
+						.map(ReferenceMethod::getMethod)
+						.map(JavaMethod::reflect)
+						.anyMatch(method::equals);
 	}
 
-	private static String toString(Class<?> type, Method method, ApplicationModule module) {
+	private Method findModuleLocalMethod(MethodInvocation invocation) {
+
+		Method method = invocation.getMethod();
+
+		if (module.contains(method.getDeclaringClass())) {
+			return invocation.getMethod();
+		}
+
+		if (!ProxyMethodInvocation.class.isInstance(invocation)) {
+			return invocation.getMethod();
+		}
+
+		// For class-based proxies, use the target class
+
+		var advised = (Advised) ((ProxyMethodInvocation) invocation).getProxy();
+		var targetClass = advised.getTargetClass();
+
+		if (module.contains(targetClass)) {
+
+			return AopUtils.getMostSpecificMethod(method, targetClass);
+		}
+
+		// For JDK proxies, find original interface the method was logically declared on
+
+		for (Class<?> type : advised.getProxiedInterfaces()) {
+			if (module.contains(type)) {
+				if (Arrays.asList(type.getMethods()).contains(method)) {
+					return AopUtils.getMostSpecificMethod(method, targetClass);
+				}
+			}
+		}
+
+		return invocation.getMethod();
+	}
+
+	private static String toString(Method method, ApplicationModule module) {
+
+		var type = method.getDeclaringClass();
 
 		var typeName = module.getType(type.getName())
 				.map(FormattableType::of)
