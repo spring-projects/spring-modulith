@@ -36,7 +36,7 @@ import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
-import org.springframework.modulith.core.FormatableType;
+import org.springframework.modulith.core.FormattableType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.util.Assert;
@@ -123,7 +123,7 @@ class SpringModulithRuntimeAutoConfiguration {
 		public void initialize() {
 
 			var listenerType = AopUtils.getTargetClass(delegate);
-			var formattable = FormatableType.of(listenerType);
+			var formattable = FormattableType.of(listenerType);
 
 			var formattedListenerType = modules.getModuleByType(listenerType)
 					.map(formattable::getAbbreviatedFullName)

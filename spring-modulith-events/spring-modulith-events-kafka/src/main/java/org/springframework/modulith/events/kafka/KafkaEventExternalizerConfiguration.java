@@ -27,6 +27,9 @@ import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.kafka.core.KafkaTemplate;
+import org.springframework.kafka.support.KafkaHeaders;
+import org.springframework.messaging.Message;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.support.BrokerRouting;
@@ -61,7 +64,17 @@ class KafkaEventExternalizerConfiguration {
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
 
 			var routing = BrokerRouting.of(target, context);
-			return operations.send(routing.getTarget(), routing.getKey(payload), payload);
+
+			var builder = payload instanceof Message<?> message
+					? MessageBuilder.fromMessage(message)
+					: MessageBuilder.withPayload(payload).copyHeaders(configuration.getHeadersFor(payload));
+
+			var message = builder
+					.setHeaderIfAbsent(KafkaHeaders.KEY, routing.getKey(payload))
+					.setHeaderIfAbsent(KafkaHeaders.TOPIC, routing.getTarget(payload))
+					.build();
+
+			return operations.send(message);
 		});
 	}
 }

@@ -26,6 +26,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * Unit tests for {@link DatabaseSchemaInitializer}.
@@ -46,8 +47,9 @@ public class DatabaseSchemaLocatorUnitTests {
 
 		var locator = new DatabaseSchemaLocator(resourceLoader);
 		var captor = ArgumentCaptor.forClass(String.class);
+		var settings = new JdbcRepositorySettings(DatabaseType.H2, CompletionMode.UPDATE, null);
 
-		assertThatNoException().isThrownBy(() -> locator.getSchemaResource(DatabaseType.H2));
+		assertThatNoException().isThrownBy(() -> locator.getSchemaResource(settings));
 		verify(resourceLoader).getResource(captor.capture());
 		assertThat(captor.getValue()).startsWith(ResourceLoader.CLASSPATH_URL_PREFIX);
 	}

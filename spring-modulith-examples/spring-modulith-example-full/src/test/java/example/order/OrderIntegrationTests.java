@@ -16,7 +16,6 @@
 package example.order;
 
 import lombok.RequiredArgsConstructor;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.modulith.test.Scenario;
@@ -28,16 +27,16 @@ import org.springframework.modulith.test.Scenario;
 @RequiredArgsConstructor
 class OrderIntegrationTests {
 
-	private final OrderManagement orders;
+    private final OrderManagement orders;
 
-	@Test
-	void publishesOrderCompletion(Scenario scenario) {
+    @Test
+    void publishesOrderCompletion(Scenario scenario) {
+        // this is a change
+        var reference = new Order();
 
-		var reference = new Order();
-
-		scenario.stimulate(() -> orders.complete(reference))
-				.andWaitForEventOfType(OrderCompleted.class)
-				.matchingMappedValue(OrderCompleted::orderId, reference.getId())
-				.toArrive();
-	}
+        scenario.stimulate(() -> orders.complete(reference))
+                .andWaitForEventOfType(OrderCompleted.class)
+                .matchingMappedValue(OrderCompleted::orderId, reference.getId())
+                .toArrive();
+    }
 }

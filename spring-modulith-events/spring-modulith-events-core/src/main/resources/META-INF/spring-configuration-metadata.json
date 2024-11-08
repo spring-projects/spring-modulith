@@ -10,13 +10,30 @@
 			"name": "spring.modulith.republish-outstanding-events-on-restart",
 			"type": "java.lang.Boolean",
 			"description": "Whether to republish outstanding event publications on restarts of the application.",
-			"defaultValue": "false"
+			"defaultValue": "false",
+			"deprecation": {
+				"replacement": "spring.modulith.events.republish-outstanding-events-on-restart", 
+				"reason": "Moved to spring.modulith.events namespace. To be removed in 1.4.",
+				"since" : "1.3"
+			}
 		},
 		{
 			"name": "spring.modulith.events.externalization.enabled",
 			"type": "java.lang.Boolean",
 			"description": "Whether to enable event externalization.",
 			"defaultValue": "true"
+		},
+		{
+			"name": "spring.modulith.events.completion-mode",
+			"type": "org.springframework.modulith.events.support.CompletionMode",
+			"description": "How to complete event publications.",
+			"defaultValue": "update"
+		},
+		{
+			"name": "spring.modulith.events.republish-outstanding-events-on-restart",
+			"type": "java.lang.Boolean",
+			"description": "Whether to republish outstanding event publications on restarts of the application.",
+			"defaultValue": "false"
 		}
 	]
 }

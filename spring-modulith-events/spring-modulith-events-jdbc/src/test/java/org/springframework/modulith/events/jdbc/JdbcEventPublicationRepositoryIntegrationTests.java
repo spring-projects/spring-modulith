@@ -16,11 +16,12 @@
 package org.springframework.modulith.events.jdbc;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import lombok.Value;
-
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -28,20 +29,22 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -51,6 +54,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  * @author Raed Ben Hamouda
+ * @author Cora Iberkleid
  */
 class JdbcEventPublicationRepositoryIntegrationTests {
 
@@ -63,12 +67,19 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 		@Autowired JdbcOperations operations;
 		@Autowired JdbcEventPublicationRepository repository;
+		@Autowired JdbcRepositorySettings properties;
 
-		@MockBean EventSerializer serializer;
+		@MockitoBean EventSerializer serializer;
 
+		@AfterEach
 		@BeforeEach
 		void cleanUp() {
+
 			operations.execute("TRUNCATE TABLE " + table());
+
+			if (properties.isArchiveCompletion()) {
+				operations.execute("TRUNCATE TABLE " + archiveTable());
+			}
 		}
 
 		@Test // GH-3
@@ -225,17 +236,26 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
 			var publication = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-
 			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+
 			repository.markCompleted(publication, Instant.now());
+
 			repository.deleteCompletedPublications();
 
 			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
+
+			if (properties.isArchiveCompletion()) {
+				assertThat(operations.query("SELECT * FROM " + archiveTable(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+						.hasSize(0);
+			}
+
 		}
 
 		@Test // GH-251
 		void shouldDeleteCompletedEventsBefore() {
+
+			assumeFalse(properties.isDeleteCompletion());
 
 			var testEvent1 = new TestEvent("abc");
 			var serializedEvent1 = "{\"eventId\":\"abc\"}";
@@ -254,9 +274,12 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(testEvent1, TARGET_IDENTIFIER, now.minusSeconds(30));
 			repository.markCompleted(testEvent2, TARGET_IDENTIFIER, now);
+
 			repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
 
-			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+			var table = properties.isArchiveCompletion() ? archiveTable() : table();
+
+			assertThat(operations.query("SELECT * FROM " + table, (rs, __) -> rs.getString("SERIALIZED_EVENT")))
 					.hasSize(1).element(0).isEqualTo(serializedEvent2);
 		}
 
@@ -303,11 +326,19 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication, Instant.now());
 
-			assertThat(repository.findCompletedPublications())
-					.hasSize(1)
-					.element(0)
-					.extracting(TargetEventPublication::getEvent)
-					.isEqualTo(event);
+			if (properties.isDeleteCompletion()) {
+
+				assertThat(repository.findCompletedPublications()).isEmpty();
+				assertThat(repository.findIncompletePublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.hasSize(1)
+						.element(0)
+						.extracting(TargetEventPublication::getEvent)
+						.isEqualTo(event);
+			}
 		}
 
 		@Test // GH-258
@@ -318,9 +349,22 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-			assertThat(repository.findCompletedPublications())
-					.extracting(TargetEventPublication::getIdentifier)
-					.containsExactly(publication.getIdentifier());
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (properties.isDeleteCompletion()) {
+
+				assertThat(repository.findCompletedPublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+
+			if (properties.isArchiveCompletion()) {
+				assertThat(operations.queryForObject("SELECT COUNT(*) FROM " + archiveTable(), int.class)).isOne();
+			}
 		}
 
 		@Test // GH-753
@@ -330,10 +374,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			var event = new Sample();
 
 			// Serialize to whatever
-			doReturn("").when(serializer).serialize(event);
+			doReturn("sample").when(serializer).serialize(event);
 
 			// Return fresh instances for every deserialization attempt
-			doAnswer(__ -> new Sample()).when(serializer).deserialize("", Sample.class);
+			doAnswer(__ -> new Sample()).when(serializer).deserialize("sample", Sample.class);
 
 			repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
 
@@ -342,7 +386,11 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			assertThat(publication.getEvent()).isSameAs(publication.getEvent());
 		}
 
-		abstract String table();
+		String table() {
+			return "EVENT_PUBLICATION";
+		}
+
+		String archiveTable() { return table() + "_ARCHIVE"; }
 
 		private TargetEventPublication createPublication(Object event) {
 
@@ -355,92 +403,170 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 		}
 	}
 
-	@Nested
 	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
-	static class WithNoDefinedSchemaName extends TestBase {
+	static abstract class WithNoDefinedSchemaName extends TestBase {}
 
-		@Override
-		String table() {
-			return "EVENT_PUBLICATION";
-		}
-	}
-
-	@Nested
 	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
 			"spring.modulith.events.jdbc.schema=test" })
-	static class WithDefinedSchemaName extends TestBase {
+	static abstract class WithDefinedSchemaName extends TestBase {
 
 		@Override
 		String table() {
-			return "test.EVENT_PUBLICATION";
+			return "test." + super.table();
 		}
 	}
 
-	@Nested
 	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
 			"spring.modulith.events.jdbc.schema=" })
-	static class WithEmptySchemaName extends TestBase {
+	static abstract class WithEmptySchemaName extends TestBase {}
+
+	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			CompletionMode.PROPERTY + "=DELETE" })
+	static abstract class WithDeleteCompletion extends TestBase {}
+
+	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
+			CompletionMode.PROPERTY + "=ARCHIVE" })
+	static abstract class WithArchiveCompletion extends TestBase {
 
 		@Override
-		String table() {
-			return "EVENT_PUBLICATION";
+		String archiveTable() {
+			return "EVENT_PUBLICATION_ARCHIVE";
 		}
 	}
 
 	// HSQL
-	@Nested
-	@ActiveProfiles("hsqldb")
-	@Testcontainers(disabledWithoutDocker = false)
+
+	@WithHsql
 	class HsqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("hsqldb")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithHsql
 	class HsqlWithDefinedSchemaName extends WithDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("hsqldb")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithHsql
 	class HsqlWithEmptySchemaName extends WithEmptySchemaName {}
 
+	@WithHsql
+	class HsqlWithDeleteCoqmpletion extends WithDeleteCompletion {}
+
+	@WithHsql
+	class HsqlWithArchiveCompletion extends WithArchiveCompletion {}
+
 	// H2
-	@Nested
-	@ActiveProfiles("h2")
-	@Testcontainers(disabledWithoutDocker = false)
+
+	@WithH2
 	class H2WithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
 
-	@Nested
-	@ActiveProfiles("h2")
-	@Testcontainers(disabledWithoutDocker = false)
+	@WithH2
 	class H2WithDefinedSchemaName extends WithDefinedSchemaName {}
 
+	@WithH2
+	class H2WithEmptySchemaName extends WithEmptySchemaName {}
+
+	@WithH2
+	class H2WithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithH2
+	class H2WithArchiveCompletion extends WithArchiveCompletion {}
+
+	// Postgres
+
+	@WithPostgres
+	class PostgresWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithPostgres
+	class PostgresWithDefinedSchemaName extends WithDefinedSchemaName {}
+
+	@WithPostgres
+	class PostgresWithEmptySchemaName extends WithEmptySchemaName {}
+
+	@WithPostgres
+	class PostgresWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithPostgres
+	class PostgresWithArchiveCompletion extends WithArchiveCompletion {}
+
+	// MySQL
+
+	@WithMySql
+	class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMySql
+	class MysqlWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithMySql
+	class MysqlWithArchiveCompletion extends WithArchiveCompletion {}
+
+	// MariaDB
+
+	@WithMariaDB
+	class MariaDBWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMariaDB
+	class MariaDBWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithMariaDB
+	class MariaDBWithArchiveCompletion extends WithArchiveCompletion {}
+
+	// MSSQL
+
+	@WithMssql
+	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithMssql
+	class MssqlWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithMssql
+	class MssqlWithArchiveCompletion extends WithArchiveCompletion {}
+
+	// Oracle
+
+	@WithOracle
+	class OracleWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+
+	@WithOracle
+	class OracleWithDeleteCompletion extends WithDeleteCompletion {}
+
+	@WithOracle
+	class OracleWithArchiveCompletion extends WithArchiveCompletion {}
+
+	private record TestEvent(String eventId) {}
+
+	private static final class Sample {}
+
 	@Nested
 	@ActiveProfiles("h2")
 	@Testcontainers(disabledWithoutDocker = false)
-	class H2WithEmptySchemaName extends WithEmptySchemaName {}
-
-	// Postgres
-	@Nested
-	@ActiveProfiles("postgres")
-	class PostgresWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithH2 {}
 
 	@Nested
-	@ActiveProfiles("postgres")
-	class PostgresWithDefinedSchemaName extends WithDefinedSchemaName {}
+	@ActiveProfiles("hsql")
+	@Testcontainers(disabledWithoutDocker = false)
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithHsql {}
 
-	@Nested
-	@ActiveProfiles("postgres")
-	class PostgresWithEmptySchemaName extends WithEmptySchemaName {}
-
-	// MySQL
 	@Nested
 	@ActiveProfiles("mysql")
-	class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithMySql {}
 
-	@Value
-	private static final class TestEvent {
-		String eventId;
-	}
+	@Nested
+	@ActiveProfiles("mariadb")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithMariaDB {}
 
-	private static final class Sample {}
+	@Nested
+	@ActiveProfiles("postgres")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithPostgres {}
+
+	@Nested
+	@ActiveProfiles("mssql")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithMssql {}
+
+	@Nested
+	@ActiveProfiles("oracle")
+	@Retention(RetentionPolicy.RUNTIME)
+	@interface WithOracle {}
 }

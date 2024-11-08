@@ -15,7 +15,17 @@
  */
 package example.ni;
 
+import example.ni.nested.b.first.InNestedBFirst;
+import lombok.RequiredArgsConstructor;
+
+import org.springframework.stereotype.Component;
+
 /**
  * @author Oliver Drotbohm
  */
-public interface RootType {}
+@Component
+@RequiredArgsConstructor
+public class RootType {
+
+	final InNestedBFirst inNestedBFirst;
+}

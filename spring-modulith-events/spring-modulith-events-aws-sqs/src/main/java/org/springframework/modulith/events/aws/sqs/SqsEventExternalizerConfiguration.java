@@ -58,6 +58,11 @@ class SqsEventExternalizerConfiguration {
 
 		logger.debug("Registering domain event externalization to SQS…");
 
+		logger.warn("""
+				The module 'spring-modulith-events-aws-sqs' is deprecated since the version 1.3 of Spring Modulith.
+				To continue using AWS SQS integration, migrate to 'io.awspring.cloud:spring-cloud-aws-modulith-events-sqs'.
+				""");
+
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
@@ -67,7 +72,7 @@ class SqsEventExternalizerConfiguration {
 
 			return CompletableFuture.completedFuture(operations.send(sqsSendOptions -> {
 
-				var options = sqsSendOptions.queue(routing.getTarget()).payload(payload);
+				var options = sqsSendOptions.queue(routing.getTarget(payload)).payload(payload);
 				var key = routing.getKey(payload);
 
 				if (key != null) {

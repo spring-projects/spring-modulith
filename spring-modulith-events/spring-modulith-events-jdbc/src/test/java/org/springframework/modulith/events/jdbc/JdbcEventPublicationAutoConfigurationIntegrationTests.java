@@ -20,11 +20,11 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.testapp.TestApplication;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 /**
  * @author Dmitry Belyaev
@@ -38,7 +38,7 @@ class JdbcEventPublicationAutoConfigurationIntegrationTests {
 
 	@Autowired ApplicationContext context;
 
-	@MockBean EventSerializer serializer;
+	@MockitoBean EventSerializer serializer;
 
 	@Test // GH-3
 	void bootstrapsApplicationComponents() {

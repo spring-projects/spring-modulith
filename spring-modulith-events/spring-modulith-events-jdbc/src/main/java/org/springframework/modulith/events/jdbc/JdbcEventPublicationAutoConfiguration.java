@@ -19,17 +19,20 @@ import java.sql.DatabaseMetaData;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
 import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * @author Dmitry Belyaev
@@ -42,24 +45,32 @@ import org.springframework.modulith.events.core.EventSerializer;
 @EnableConfigurationProperties(JdbcConfigurationProperties.class)
 class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
+	@Autowired Environment environment;
+
 	@Bean
 	DatabaseType databaseType(DataSource dataSource) {
 		return DatabaseType.from(fromDataSource(dataSource));
 	}
 
 	@Bean
-	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
-			EventSerializer serializer, DatabaseType databaseType, JdbcConfigurationProperties properties) {
+	JdbcRepositorySettings jdbcEventPublicationRepositorySettings(DatabaseType databaseType,
+			JdbcConfigurationProperties properties) {
 
-		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, databaseType, properties);
+		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties.getSchema());
+	}
+
+	@Bean
+	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
+			EventSerializer serializer, JdbcRepositorySettings settings) {
+		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, settings);
 	}
 
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
 	DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
-			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcConfigurationProperties properties) {
+			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcRepositorySettings settings) {
 
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, databaseType, jdbcTemplate, properties);
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
 	}
 
 	private static String fromDataSource(DataSource dataSource) {
@@ -71,7 +82,9 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 			var metadata = JdbcUtils.extractDatabaseMetaData(dataSource, DatabaseMetaData::getDatabaseProductName);
 			name = JdbcUtils.commonDatabaseName(metadata);
 
-		} catch (Exception o_O) {}
+		} catch (Exception o_O) {
+			throw new RuntimeException(o_O);
+		}
 
 		return name == null ? "UNKNOWN" : name;
 	}

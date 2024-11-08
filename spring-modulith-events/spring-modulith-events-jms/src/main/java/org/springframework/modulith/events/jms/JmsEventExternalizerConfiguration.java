@@ -19,15 +19,19 @@ import java.util.concurrent.CompletableFuture;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.jms.core.JmsOperations;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
@@ -48,15 +52,19 @@ class JmsEventExternalizerConfiguration {
 
 	@Bean
 	DelegatingEventExternalizer jmsEventExternalizer(EventExternalizationConfiguration configuration,
-			JmsOperations operations, EventSerializer serializer) {
+			JmsOperations operations, EventSerializer serializer, BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization to JMS…");
+
+		var context = new StandardEvaluationContext();
+		context.setBeanResolver(new BeanFactoryResolver(factory));
 
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
 
 			var serialized = serializer.serialize(payload);
+			var routing = BrokerRouting.of(target, context);
 
-			operations.send(target.getTarget(), session -> session.createTextMessage(serialized.toString()));
+			operations.send(routing.getTarget(payload), session -> session.createTextMessage(serialized.toString()));
 
 			return CompletableFuture.completedFuture(null);
 		});

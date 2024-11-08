@@ -1,0 +1,47 @@
+{
+	"groups": [
+		{
+			"name": "spring.modulith.test",
+			"description": "Properties configuring the execution of modulith-specific tests."
+		}
+	],
+	"properties": [
+		{
+			"name": "spring.modulith.test.file-modification-detector",
+			"type": "java.lang.String",
+			"description": "A strategy to determine the list of changed files to consider for test execution. The default will consider a potentially configured spring.modulith.test.reference-commit and fall back to both uncommited changes and the ones made in commits on top of the current tracking branch."
+		},
+		{
+			"name": "spring.modulith.test.reference-commit",
+			"type": "java.lang.String",
+			"description": "The hash of the commit to track back changes to. Usually set in a CI environment."
+		}
+	],
+	"hints": [
+		{
+			"name": "spring.modulith.test.file-modification-detector",
+			"values": [				
+				{
+					"value": "uncommitted-changes",
+					"description" : "Considers all uncommitted changes."
+				},
+				{
+					"value": "default",
+					"description" : "Consider both uncommited changes and the ones made in commits on top of the current tracking branch."
+				},
+				{
+					"value": "reference-commit",
+					"description" : "Considers changes between the current head and a given reference commit set in spring.modulith.test.reference-commit."
+				}
+			],
+			"providers": [ 
+				{
+					"name": "class-reference",
+					"parameters": {
+						"target": "org.springframework.modulith.junit.diff.FileModificationDetector"
+					}
+				}
+			]
+		}
+	]
+}

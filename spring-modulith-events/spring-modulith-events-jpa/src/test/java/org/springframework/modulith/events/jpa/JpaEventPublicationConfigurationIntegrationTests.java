@@ -18,11 +18,10 @@ package org.springframework.modulith.events.jpa;
 import static org.assertj.core.api.Assertions.*;
 
 import example.ExampleApplication;
-import lombok.RequiredArgsConstructor;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -36,14 +35,17 @@ import org.springframework.test.context.TestConstructor.AutowireMode;
  */
 @SpringBootTest(classes = ExampleApplication.class)
 @TestConstructor(autowireMode = AutowireMode.ALL)
-@RequiredArgsConstructor
 class JpaEventPublicationConfigurationIntegrationTests {
 
 	private final ApplicationContext context;
 
-	@MockBean EventSerializer serializer;
+	@MockitoBean EventSerializer serializer;
 
-	@Test
+    JpaEventPublicationConfigurationIntegrationTests(ApplicationContext context) {
+        this.context = context;
+    }
+
+    @Test
 	void bootstrapsApplicationComponents() {
 
 		assertThat(context.getBean(EventPublicationRegistry.class)).isNotNull();

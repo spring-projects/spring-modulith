@@ -23,7 +23,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.util.Assert;
 
 /**
  * Initializes the DB schema used to store events
@@ -37,23 +36,15 @@ class DatabaseSchemaInitializer implements InitializingBean {
 
 	private final DataSource dataSource;
 	private final ResourceLoader resourceLoader;
-	private final DatabaseType databaseType;
 	private final JdbcOperations jdbcOperations;
-	private final JdbcConfigurationProperties properties;
+	private final JdbcRepositorySettings settings;
 
-	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, DatabaseType databaseType,
-			JdbcOperations jdbcOperations, JdbcConfigurationProperties properties) {
-
-		Assert.isTrue(properties.getSchemaInitialization().isEnabled(),
-				"Schema initialization disabled! Initializer should not have been registered!");
+	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, JdbcOperations jdbcOperations, JdbcRepositorySettings settings) {
 
 		this.dataSource = dataSource;
 		this.resourceLoader = resourceLoader;
-		this.databaseType = databaseType;
 		this.jdbcOperations = jdbcOperations;
-		this.properties = properties;
-
-		properties.verify(databaseType);
+		this.settings = settings;
 	}
 
 	/*
@@ -66,9 +57,11 @@ class DatabaseSchemaInitializer implements InitializingBean {
 		try (Connection connection = dataSource.getConnection()) {
 
 			var initialSchema = connection.getSchema();
-			var schemaName = properties.getSchema();
+			var schemaName = settings.getSchema();
+			var databaseType = settings.getDatabaseType();
+			var useSchema = schemaName != null && !schemaName.isEmpty();
 
-			if (schemaName != null && !schemaName.isEmpty()) { // A schema name has been specified.
+			if (useSchema) { // A schema name has been specified.
 
 				if (eventPublicationTableExists(schemaName)) {
 					return;
@@ -79,10 +72,13 @@ class DatabaseSchemaInitializer implements InitializingBean {
 			}
 
 			var locator = new DatabaseSchemaLocator(resourceLoader);
-			new ResourceDatabasePopulator(locator.getSchemaResource(databaseType)).execute(dataSource);
+
+			var populator = new ResourceDatabasePopulator();
+			locator.getSchemaResource(settings).forEach(populator::addScript);
+			populator.execute(dataSource);
 
 			// Return to the initial schema.
-			if (initialSchema != null) {
+			if (initialSchema != null && useSchema) {
 				jdbcOperations.execute(databaseType.getSetSchemaSql(initialSchema));
 			}
 		}

@@ -16,7 +16,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-ApplicationModules.of(Application::class).verify()
+ApplicationModules.of(Application::class.java).verify()
 ----
 ======
 The verification includes the following rules:
@@ -29,4 +29,4 @@ Dependencies into internals of xref:fundamentals.adoc#modules.advanced.open[Open
 If those are configured, dependencies to other application modules are rejected.
 See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Module Dependencies] and xref:fundamentals.adoc#modules.named-interfaces[Named Interfaces] for details.
 
-Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].
+Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design and architectural verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].

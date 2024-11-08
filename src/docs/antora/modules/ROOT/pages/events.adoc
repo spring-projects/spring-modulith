@@ -7,6 +7,7 @@ To keep application modules as decoupled as possible from each other, their prim
 This avoids the originating module to know about all potentially interested parties, which is a key aspect to enable application module integration testing (see xref:testing.adoc[Integration Testing Application Modules]).
 
 Often we will find application components defined like this:
+
 [tabs]
 ======
 Java::
@@ -124,6 +125,7 @@ class InventoryManagement {
 }
 ----
 ======
+
 This now effectively decouples the original transaction from the execution of the listener.
 While this avoids the expansion of the original business transaction, it also creates a risk: if the listener fails for whatever reason, the event publication is lost, unless each listener actually implements its own safety net.
 Even worse, that doesn't even fully work, as the system might fail before the method is even invoked.
@@ -204,7 +206,7 @@ image::event-publication-registry-start.png[]
 
 Each transactional event listener is wrapped into an aspect that marks that log entry as completed if the execution of the listener succeeds.
 In case the listener fails, the log entry stays untouched so that retry mechanisms can be deployed depending on the application's needs.
-By default, all incomplete event publications are resubmitted at application startup.
+Automatic re-publication of the events can be enabled via the xref:appendix.adoc#configuration-properties[`spring.modulith.events.republish-outstanding-events-on-restart`] property.
 
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
@@ -212,7 +214,9 @@ image::event-publication-registry-end.png[]
 [[publication-registry.starters]]
 === Spring Boot Event Registry Starters
 
-Using the transactional event publication log requires a combination of artifacts added to your application. To ease that task, Spring Modulith provides starter POMs that are centered around the <<publication-registry.publication-repositories, persistence technology>> to be used and default to the Jackson-based <<publication-registry.serialization, EventSerializer>> implementation. The following starters are available:
+Using the transactional event publication log requires a combination of artifacts added to your application.
+To ease that task, Spring Modulith provides starter POMs that are centered around the <<publication-registry.publication-repositories, persistence technology>> to be used and default to the Jackson-based <<publication-registry.serialization, EventSerializer>> implementation.
+The following starters are available:
 
 [%header,cols="1,3,6"]
 |===
@@ -228,7 +232,7 @@ Using the transactional event publication log requires a combination of artifact
 
 |MongoDB
 |`spring-modulith-starter-mongodb`
-|Using JDBC as persistence technology. Also enables MongoDB transactions and requires a replica set setup of the server to interact with. The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
+|Using MongoDB as persistence technology. Also enables MongoDB transactions and requires a replica set setup of the server to interact with. The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
 
 |Neo4j
 |`spring-modulith-starter-neo4j`
@@ -270,8 +274,26 @@ dependencies {
 
 This artifact contains two primary abstractions that are available to application code as Spring Beans:
 
-* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older that a given duration (for example, 1 minute).
+* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older than a given duration (for example, 1 minute).
 * `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
+
+[[publication-registry.completion]]
+=== Event Publication Completion
+
+Event publications are marked as completed when a transactional or `@ApplicationModuleListener` execution completes successfully.
+By default, the completion is registered by setting the completion date on an `EventPublication`.
+This means that completed publications will remain in the Event Publication Registry so that they can be inspected through the `CompletedEventPublications` interface as described xref:events.adoc#publication-registry.managing-publications[above].
+A consequence of this is that you'll need to put some code in place that will periodically purge old, completed ``EventPublication``s.
+Otherwise, the persistent abstraction of them, for example a relational database table, will grow unbounded and the interaction with the store creating and completing new ``EventPublication`` might slow down.
+
+Spring Modulith 1.3 introduces a configuration property `spring.modulith.events.completion-mode` to support two additional modes of completion.
+It defaults to `UPDATE` which is backed by the strategy described above.
+Alternatively, the completion mode can be set to `DELETE`, which alters the registry's persistence mechanisms to rather delete ``EventPublication``s on completion.
+This means that `CompletedEventPublications` will not return any publications anymore, but at the same time, you don't have to worry about purging the completed events from the persistence store manually anymore.
+
+The third option is the `ARCHIVE` mode, which copies the entry into an archive table, collection or node.
+For that archive entry, the completion date is set and the original entry is removed.
+Contrary to the `DELETE` mode, completed event publications are then still accessible via the `CompletedEventPublications` abstraction.
 
 [[publication-registry.publication-repositories]]
 === Event Publication Repositories
@@ -292,6 +314,7 @@ Spring Modulith provides a Jackson-based JSON implementation through the `spring
 
 [[publication-registry.customize-publication-date]]
 === Customizing the Event Publication Date
+
 By default, the Event Publication Registry will use the date returned by the `Clock.systemUTC()` as event publication date.
 If you want to customize this, register a bean of type clock with the application context:
 
@@ -354,6 +377,13 @@ When routing key is set, requires SQS queue to be configured as a FIFO queue.
 |Uses Spring Cloud AWS SNS support.
 The logical routing key will be used as SNS message group id.
 When routing key is set, requires SNS to be configured as a FIFO topic with content based deduplication enabled.
+
+|Spring Messaging
+|`spring-modulith-events-messaging`
+|Uses Spring's core `Message` and `MessageChannel` support.
+Resolves the target `MessageChannel` by its bean name given the `target` in the `Externalized` annotation.
+Forwards routing information as a header - called `springModulith_routingTarget` - to be processed in whatever way by downstream components, typically in a Spring Integration `IntegrationFlow`.
+
 |===
 
 [[externalization.fundamentals]]
@@ -378,7 +408,7 @@ By default, no routing key is used.
 === Annotation-based Event Externalization Configuration
 
 To define a custom routing key via the `@Externalized` annotations, a pattern of `$target::$key` can be used for the target/value attribute available in each of the particular annotations.
-The key can be a SpEL expression which will get the event instance configured as root object.
+Both the target and key can be a SpEL expression which will get the event instance configured as root object.
 
 .Defining a dynamic routing key via SpEL expression
 [tabs]
@@ -433,7 +463,6 @@ Kotlin::
 [[externalization.api]]
 === Programmatic Event Externalization Configuration
 
-
 The `spring-modulith-events-api` artifact contains `EventExternalizationConfiguration` that allows developers to customize all of the above mentioned steps.
 
 .Programmatically configuring event externalization
@@ -451,7 +480,7 @@ class ExternalizationConfiguration {
 
     return EventExternalizationConfiguration.externalizing()                 // <1>
       .select(EventExternalizationConfiguration.annotatedAsExternalized())   // <2>
-      .mapping(SomeEvent.class, it -> …)                                     // <3>
+      .mapping(SomeEvent.class, event -> …)                                  // <3>
       .routeKey(WithKeyProperty.class, WithKeyProperty::getKey)              // <4>
       .build();
   }
@@ -469,8 +498,8 @@ class ExternalizationConfiguration {
 
     EventExternalizationConfiguration.externalizing()                         // <1>
       .select(EventExternalizationConfiguration.annotatedAsExternalized())    // <2>
-      .mapping(SomeEvent::class, it -> …)                                     // <3>
-      .routeKey(WithKeyProperty::class, WithKeyProperty::getKey)              // <4>
+      .mapping(SomeEvent::class.java) { event -> … }                           // <3>
+      .routeKey(WithKeyProperty::class.java, WithKeyProperty::getKey)         // <4>
       .build()
   }
 }
@@ -527,7 +556,7 @@ class OrderIntegrationTests {
   fun someTestMethod(events: PublishedEvents events) {
 
     // …
-    var matchingMapped = events.ofType(OrderCompleted::class)
+    val matchingMapped = events.ofType(OrderCompleted::class.java)
       .matching(OrderCompleted::getOrderId, reference.getId())
 
     assertThat(matchingMapped).hasSize(1)
@@ -572,7 +601,7 @@ class OrderIntegrationTests {
 
     // …
     assertThat(events)
-      .contains(OrderCompleted::class)
+      .contains(OrderCompleted::class.java)
       .matching(OrderCompleted::getOrderId, reference.getId())
   }
 }

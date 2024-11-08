@@ -22,7 +22,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.modulith.test.TestUtils;
@@ -55,7 +55,7 @@ class ModuleBTest {
 	static class WithMocksTest {
 
 		@Autowired ApplicationContext context;
-		@MockBean ServiceComponentA serviceComponentA;
+		@MockitoBean ServiceComponentA serviceComponentA;
 
 		@Test
 		void bootstrapsModuleB() {

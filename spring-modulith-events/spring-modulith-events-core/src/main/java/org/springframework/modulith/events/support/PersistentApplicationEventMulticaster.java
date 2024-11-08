@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -68,7 +69,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private static final Method SHOULD_HANDLE = ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
 			"shouldHandle", ApplicationEvent.class);
 
-	static final String REPUBLISH_ON_RESTART = "spring.modulith.republish-outstanding-events-on-restart";
+	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
+	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
 	private final @NonNull Supplier<Environment> environment;
@@ -169,7 +171,12 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	@Override
 	public void afterSingletonsInstantiated() {
 
-		if (!Boolean.TRUE.equals(environment.get().getProperty(REPUBLISH_ON_RESTART, Boolean.class))) {
+		var env = environment.get();
+
+		Boolean republishOnRestart = Optional.ofNullable(env.getProperty(REPUBLISH_ON_RESTART, Boolean.class))
+				.orElseGet(() -> env.getProperty(REPUBLISH_ON_RESTART_LEGACY, Boolean.class));
+
+		if (!Boolean.TRUE.equals(republishOnRestart)) {
 			return;
 		}
 

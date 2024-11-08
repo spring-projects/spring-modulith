@@ -31,6 +31,7 @@ import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.core.util.CheckReturnValue;
 import org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
 import org.springframework.modulith.test.Scenario.When.EventResult;
@@ -53,6 +54,7 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @see ApplicationModuleTest
  */
+@CheckReturnValue
 public class Scenario {
 
 	private static final Predicate<Object> DEFAULT_ACCEPTANCE = it -> {
@@ -216,6 +218,7 @@ public class Scenario {
 		return this;
 	}
 
+	@CheckReturnValue
 	public class When<T> {
 
 		private final BiFunction<TransactionOperations, ApplicationEventPublisher, T> stimulus;
@@ -460,6 +463,7 @@ public class Scenario {
 			 * @param eventType must not be {@literal null}.
 			 * @return will never be {@literal null}.
 			 */
+			@CheckReturnValue
 			public <E> EventResult<E> andExpect(Class<E> eventType) {
 				return new EventResult<>(eventType, Function.identity(), result);
 			}
@@ -501,6 +505,7 @@ public class Scenario {
 			 * @param filter must not be {@literal null}.
 			 * @return will never be {@literal null}.
 			 */
+			@CheckReturnValue
 			public EventResult<E> matching(Predicate<? super E> filter) {
 
 				Assert.notNull(filter, "Filter must not be null!");
@@ -517,6 +522,7 @@ public class Scenario {
 			 * @param filter must not be {@literal null}.
 			 * @return will never be {@literal null}.
 			 */
+			@CheckReturnValue
 			public <S> EventResult<E> matchingMapped(Function<E, S> extractor, Predicate<? super S> filter) {
 				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, filter)), previousResult);
 			}
@@ -529,6 +535,7 @@ public class Scenario {
 			 * @param value can be {@literal null}.
 			 * @return will never be {@literal null}.
 			 */
+			@CheckReturnValue
 			public <S> EventResult<E> matchingMappedValue(Function<E, S> extractor, @Nullable S value) {
 				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, value)), previousResult);
 			}

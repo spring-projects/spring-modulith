@@ -16,8 +16,7 @@
 package org.springframework.modulith.events.mongodb;
 
 import static org.assertj.core.api.Assertions.*;
-
-import lombok.Value;
+import static org.junit.jupiter.api.Assumptions.*;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
@@ -33,146 +32,160 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.TestPropertySource;
 
 /**
  * @author Björn Kieling
  * @author Dmitry Belyaev
  * @author Oliver Drotbohm
  */
-@DataMongoTest
-@ContextConfiguration(classes = TestApplication.class)
 class MongoDbEventPublicationRepositoryTest {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
-	@Autowired MongoTemplate mongoTemplate;
+	@DataMongoTest
+	@ContextConfiguration(classes = TestApplication.class)
+	static abstract class TestBase {
 
-	MongoDbEventPublicationRepository repository;
+		@Autowired MongoTemplate mongoTemplate;
+		@Autowired Environment environment;
 
-	@BeforeEach
-	void setUp() {
-		repository = new MongoDbEventPublicationRepository(mongoTemplate);
-	}
+		MongoDbEventPublicationRepository repository;
+		CompletionMode completionMode;
+		String archiveCollection = MongoDbEventPublicationRepository.ARCHIVE_COLLECTION;
 
-	@AfterEach
-	void tearDown() {
-		mongoTemplate.remove(MongoDbEventPublication.class).all();
-	}
+		@BeforeEach
+		void setUp() {
+			this.completionMode = CompletionMode.from(environment);
+			this.repository = new MongoDbEventPublicationRepository(mongoTemplate, completionMode);
+		}
 
-	@Test // GH-4
-	void shouldPersistAndUpdateEventPublication() {
+		@AfterEach
+		void tearDown() {
+			mongoTemplate.remove(MongoDbEventPublication.class).all();
+			mongoTemplate.remove(MongoDbEventPublication.class).inCollection(archiveCollection).all();
+		}
 
-		var publication = createPublication(new TestEvent("abc"));
+		@Test // GH-4
+		void shouldPersistAndUpdateEventPublication() {
 
-		var eventPublications = repository.findIncompletePublications();
+			var publication = createPublication(new TestEvent("abc"));
 
-		assertThat(eventPublications).hasSize(1);
-		assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
-		assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
+			var eventPublications = repository.findIncompletePublications();
 
-		assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(new TestEvent("abc"), TARGET_IDENTIFIER))
-				.isPresent();
+			assertThat(eventPublications).hasSize(1);
+			assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
+			assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
 
-		// Complete publication
-		repository.markCompleted(publication, Instant.now());
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(new TestEvent("abc"), TARGET_IDENTIFIER))
+					.isPresent();
 
-		assertThat(repository.findIncompletePublications()).isEmpty();
-	}
+			// Complete publication
+			repository.markCompleted(publication, Instant.now());
 
-	@Test // GH-4
-	void shouldUpdateSingleEventPublication() {
+			assertThat(repository.findIncompletePublications()).isEmpty();
+		}
 
-		var first = createPublication(new TestEvent("id1"));
-		var second = createPublication(new TestEvent("id2"));
+		@Test // GH-4
+		void shouldUpdateSingleEventPublication() {
 
-		repository.markCompleted(second, Instant.now());
+			var first = createPublication(new TestEvent("id1"));
+			var second = createPublication(new TestEvent("id2"));
 
-		assertThat(repository.findIncompletePublications()).hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent).isEqualTo(first.getEvent());
-	}
+			repository.markCompleted(second, Instant.now());
 
-	@Test // GH-133
-	void returnsOldestIncompletePublicationsFirst() {
+			assertThat(repository.findIncompletePublications()).hasSize(1)
+					.element(0)
+					.extracting(TargetEventPublication::getEvent).isEqualTo(first.getEvent());
+		}
 
-		var now = LocalDateTime.now();
+		@Test // GH-133
+		void returnsOldestIncompletePublicationsFirst() {
 
-		savePublicationAt(now.withHour(3));
-		savePublicationAt(now.withHour(0));
-		savePublicationAt(now.withHour(1));
+			var now = LocalDateTime.now();
 
-		assertThat(repository.findIncompletePublications())
-				.isSortedAccordingTo(Comparator.comparing(TargetEventPublication::getPublicationDate));
-	}
+			savePublicationAt(now.withHour(3));
+			savePublicationAt(now.withHour(0));
+			savePublicationAt(now.withHour(1));
 
-	@Test // GH-294
-	void findsPublicationsOlderThanReference() throws Exception {
+			assertThat(repository.findIncompletePublications())
+					.isSortedAccordingTo(Comparator.comparing(TargetEventPublication::getPublicationDate));
+		}
 
-		var first = createPublication(new TestEvent("first"));
+		@Test // GH-294
+		void findsPublicationsOlderThanReference() throws Exception {
 
-		Thread.sleep(100);
+			var first = createPublication(new TestEvent("first"));
 
-		var now = Instant.now();
-		var second = createPublication(new TestEvent("second"));
+			Thread.sleep(100);
 
-		assertThat(repository.findIncompletePublications())
-				.extracting(TargetEventPublication::getIdentifier)
-				.containsExactly(first.getIdentifier(), second.getIdentifier());
+			var now = Instant.now();
+			var second = createPublication(new TestEvent("second"));
 
-		assertThat(repository.findIncompletePublicationsPublishedBefore(now))
-				.hasSize(1)
-				.element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
-	}
+			assertThat(repository.findIncompletePublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(first.getIdentifier(), second.getIdentifier());
 
-	@Test // GH-451
-	void findsCompletedPublications() {
+			assertThat(repository.findIncompletePublicationsPublishedBefore(now))
+					.hasSize(1)
+					.element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
+		}
 
-		var event = new TestEvent("first");
-		var publication = createPublication(event);
+		@Test // GH-451
+		void findsCompletedPublications() {
 
-		repository.markCompleted(publication, Instant.now());
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
 
-		assertThat(repository.findCompletedPublications())
-				.hasSize(1)
-				.element(0)
-				.extracting(TargetEventPublication::getEvent)
-				.isEqualTo(event);
-	}
+			repository.markCompleted(publication, Instant.now());
 
-	@Test // GH-258
-	void marksPublicationAsCompletedById() {
+			if (completionMode == CompletionMode.DELETE) {
 
-		var event = new TestEvent("first");
-		var publication = createPublication(event);
+				assertThat(repository.findCompletedPublications()).isEmpty();
 
-		repository.markCompleted(publication.getIdentifier(), Instant.now());
+			} else {
 
-		assertThat(repository.findCompletedPublications())
-				.extracting(TargetEventPublication::getIdentifier)
-				.containsExactly(publication.getIdentifier());
-	}
+				assertThat(repository.findCompletedPublications())
+						.hasSize(1)
+						.element(0)
+						.extracting(TargetEventPublication::getEvent)
+						.isEqualTo(event);
+			}
 
-	private TargetEventPublication createPublication(Object event) {
-		return createPublication(event, TARGET_IDENTIFIER);
-	}
+		}
 
-	private TargetEventPublication createPublication(Object event, PublicationTargetIdentifier id) {
-		return repository.create(TargetEventPublication.of(event, id));
-	}
+		@Test // GH-258
+		void marksPublicationAsCompletedById() {
 
-	private void savePublicationAt(LocalDateTime date) {
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
 
-		mongoTemplate.save(
-				new MongoDbEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", null));
-	}
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-	@Nested
-	class FindByEventAndTargetIdentifier {
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findCompletedPublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+
+			if (completionMode == CompletionMode.ARCHIVE) {
+				assertThat(mongoTemplate.findAll(MongoDbEventPublication.class, archiveCollection)).isNotEmpty();
+			}
+		}
 
 		@Test // GH-4
 		void shouldFindEventPublicationByEventAndTargetIdentifier() {
@@ -182,7 +195,7 @@ class MongoDbEventPublicationRepositoryTest {
 
 			var firstEvent = first.getEvent();
 
-			createPublication(firstEvent, PublicationTargetIdentifier.of("somethingDifferen"));
+			createPublication(firstEvent, PublicationTargetIdentifier.of("somethingDifferent"));
 
 			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(firstEvent, TARGET_IDENTIFIER);
 
@@ -229,10 +242,6 @@ class MongoDbEventPublicationRepositoryTest {
 			assertThat(it.getPublicationDate()) //
 					.isCloseTo(publication.getPublicationDate(), within(1, ChronoUnit.MILLIS)));
 		}
-	}
-
-	@Nested
-	class DeleteCompletedPublications {
 
 		@Test // GH-20
 		void shouldDeleteCompletedEvents() {
@@ -252,6 +261,8 @@ class MongoDbEventPublicationRepositoryTest {
 
 		@Test // GH-251
 		void shouldDeleteCompletedEventsBefore() {
+
+			assumeTrue(completionMode == CompletionMode.UPDATE);
 
 			var first = createPublication(new TestEvent("abc"));
 			var second = createPublication(new TestEvent("def"));
@@ -281,10 +292,32 @@ class MongoDbEventPublicationRepositoryTest {
 					.matches(it -> it.getIdentifier().equals(second.getIdentifier()))
 					.matches(it -> it.getEvent().equals(second.getEvent()));
 		}
+
+		private TargetEventPublication createPublication(Object event) {
+			return createPublication(event, TARGET_IDENTIFIER);
+		}
+
+		private TargetEventPublication createPublication(Object event, PublicationTargetIdentifier id) {
+			return repository.create(TargetEventPublication.of(event, id));
+		}
+
+		private void savePublicationAt(LocalDateTime date) {
+
+			mongoTemplate.save(
+					new MongoDbEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", null));
+		}
 	}
 
-	@Value
-	private static final class TestEvent {
-		String eventId;
-	}
+	@Nested
+	class WithUpdateCompletionTest extends TestBase {}
+
+	@Nested
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=DELETE")
+	class WithDeleteCompletionTest extends TestBase {}
+
+	@Nested
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=ARCHIVE")
+	class WithArchiveCompletionTest extends TestBase {}
+
+	private record TestEvent(String eventId) {}
 }

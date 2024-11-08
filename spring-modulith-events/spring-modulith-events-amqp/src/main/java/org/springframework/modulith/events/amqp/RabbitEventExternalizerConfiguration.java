@@ -62,8 +62,9 @@ class RabbitEventExternalizerConfiguration {
 		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
 
 			var routing = BrokerRouting.of(target, context);
+			var headers = configuration.getHeadersFor(payload);
 
-			operations.convertAndSend(routing.getTarget(), routing.getKey(payload), payload);
+			operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
 
 			return CompletableFuture.completedFuture(null);
 		});

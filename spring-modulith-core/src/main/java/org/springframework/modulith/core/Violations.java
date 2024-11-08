@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.core;
 
+import static java.util.stream.Collectors.*;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -49,13 +51,13 @@ public class Violations extends RuntimeException {
 	}
 
 	/**
-	 * A {@link Collector} to turn a {@link java.util.stream.Stream} of {@link RuntimeException}s into a
-	 * {@link Violations} instance.
+	 * A {@link Collector} to turn a {@link java.util.stream.Stream} of {@link String}s into a {@link Violations}
+	 * instance.
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static Collector<Violation, ?, Violations> toViolations() {
-		return Collectors.collectingAndThen(Collectors.toList(), Violations::new);
+	static Collector<String, ?, Violations> toViolations() {
+		return mapping(Violation::new, collectingAndThen(Collectors.toList(), Violations::new));
 	}
 
 	/*
@@ -110,42 +112,43 @@ public class Violations extends RuntimeException {
 	 */
 	Violations and(Violation violation) {
 
-		Assert.notNull(violation, "Exception must not be null!");
+		Assert.notNull(violation, "Violation must not be null!");
 
-		if (violations.isEmpty()) {
-			return new Violations(List.of(violation));
-		}
-
-		if (violations.contains(violation)) {
-			return this;
-		}
-
-		List<Violation> newExceptions = new ArrayList<>(violations.size() + 1);
-		newExceptions.addAll(violations);
-		newExceptions.add(violation);
-
-		return new Violations(newExceptions);
+		return and(new Violations(List.of(violation)));
 	}
 
-	Violations and(Violations other) {
+	Violations and(Violations that) {
 
-		if (violations.isEmpty()) {
-			return new Violations(other.violations);
-		}
+		Assert.notNull(that, "Violations must not be null!");
 
-		var newExceptions = new ArrayList<>(violations);
-
-		for (Violation candidate : other.violations) {
-			if (!violations.contains(candidate)) {
-				newExceptions.add(candidate);
-			}
-		}
-
-		return new Violations(newExceptions);
+		return hasViolations() || that.hasViolations()
+				? new Violations(unionByMessage(violations, that.violations))
+				: NONE;
 	}
 
 	Violations and(String violation) {
 		return and(new Violation(violation));
+	}
+
+	private List<Violation> unionByMessage(List<Violation> left, List<Violation> right) {
+
+		if (left.isEmpty()) {
+			return right;
+		}
+
+		if (right.isEmpty()) {
+			return left;
+		}
+
+		var result = new ArrayList<>(left);
+
+		var messages = left.stream().map(Violation::message).toList();
+
+		right.stream()
+				.filter(it -> !messages.contains(it.message()))
+				.forEach(result::add);
+
+		return result.size() == left.size() ? left : result;
 	}
 
 	static record Violation(String message) {}

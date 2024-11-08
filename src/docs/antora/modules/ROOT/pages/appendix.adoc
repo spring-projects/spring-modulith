@@ -18,6 +18,17 @@
 |The strategy to be applied to detect application modules.
 Can either be the class name of a custom implementation of `ApplicationModuleDetectionStrategy` or `direct-subpackages` (which is also the final fallback if nothing is configured) or `explicitly-annotated` to only select packages explicitly annotated with `@ApplicationModule` or jMolecules' `@Module`. See xref:fundamentals.adoc#customizing-modules[Customize Application Module Detection] for details.
 
+|`spring.modulith.events.completion-mode`
+|`update`
+a|How to mark an event publication as completed.
+The following values are supported:
+
+* `update` (default) -- Sets the completion date on the event publication entry.
+* `delete` -- Removes the event publication entry.
+Completed event publications are not available via `CompletedEventPublications`.
+* `archive` -- Removes the event publication entry from the primary database abstraction (table, collection or node) and creates one in a archive (a table, collection or node of same schema).
+For details, see xref:events.adoc#publication-registry.completion[Event Publication Completion].
+
 |`spring.modulith.events.externalization.enabled`
 |`true`
 |Whether to enable event externalization.
@@ -46,6 +57,11 @@ Can either be the class name of a custom implementation of `ApplicationModuleDet
 |`true`
 |Whether to enable JSON support for `RabbitTemplate`.
 
+|`spring.modulith.events.republish-outstanding-events-on-restart`
+|`false`
+|Whether to republish outstanding event publications on restarts of the application.
+Usually not recommended in multi-instance deployments as other instances might still be processing events.
+
 |`spring.modulith.moments.enableTimeMachine`
 |`false`
 |Whether to enable the xref:moments.adoc[`TimeMachine`].
@@ -64,7 +80,20 @@ Can either be the class name of a custom implementation of `ApplicationModuleDet
 
 |`spring.modulith.republish-outstanding-events-on-restart`
 |`false`
-|Whether to republish outstanding event publications on restarts of the application.
+|Deprecated as of 1.3. Prefer `spring.modulith.events.republish-outstanding-events-on-restart`.
+
+|`spring.modulith.test.file-modification-detector`
+|none
+|This can either be one of the predefined values `uncommitted-changes`, `reference-commit`, `default` or the fully-qualified class name of a `FileModificationDetector` that will be used to inspect which files of the projects have been changed.
+As the name suggests, `uncommitted-changes` will only consider changed files not already committed.
+`reference-commit` will consider all files changed since a given Git commit provided via `spring.modulith.test.reference-commit`, particularly useful CI environments in which that property could point to the commit hash of the last successful build.
+`default` detects all uncomitted changes and ones that have not been pushed to the current branch's tracking branch which is primarily useful for local development.
+
+|`spring.modulith.test.reference-commit`
+|none
+|The commit hash of to which to calculate the set of changed files.
+Usually propagated in CI environments to consider all changes since the last successful build.
+
 |===
 
 [appendix]
@@ -79,6 +108,7 @@ Can either be the class name of a custom implementation of `ApplicationModuleDet
 |`spring-modulith-starter-core`
 |`compile`
 a|* `spring-modulith-api`
+* `spring-modulith-apt`
 * `spring-modulith-moments`
 * `spring-modulith-core` (runtime)
 * `spring-modulith-runtime` (runtime)
@@ -133,6 +163,7 @@ a|* `spring-modulith-docs`
 |Module|Typical scope|Description
 |`spring-modulith-actuator`|`runtime`|A Spring Boot actuator to expose the application module structure via an actuator.
 |`spring-modulith-api`|`compile`|The abstractions to be used in your production code to customize Spring Modulith's default behavior.
+|`spring-modulith-apt`|`compile`|An annotation processor to extract Javadoc for inclusion in xref:documentation.adoc#application-module-canvas[Application Module Canvases].
 |`spring-modulith-core`|`runtime`|The core application module model and API.
 |`spring-modulith-docs`|`test`|The `Documenter` API to create Asciidoctor and PlantUML documentation from the module model.
 |`spring-modulith-events-amqp`|`runtime`|Event externalization support for AMQP.
@@ -143,11 +174,26 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-jms`|`runtime`|Event externalization support for JMS.
 |`spring-modulith-events-jpa`|`runtime`|A JPA-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-kafka`|`runtime`|Event externalization support for Kafka.
+|`spring-modulith-events-messaging`|`runtime`|Event externalization support into Spring Messaging ``MessageChannel``s.
 |`spring-modulith-events-mongodb`|`runtime`|A MongoDB-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-neo4j`|`runtime`|A Neo4j-based implementation of the `EventPublicationRegistry`.
+|`spring-modulith-junit`|`test`|Test execution optimizations based on the application module structure. Find more details xref:testing.adoc#change-aware-test-execution[here].
 |`spring-modulith-moments`|`compile`|The Passage of Time events implementation described xref:moments.adoc[here].
-|`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
 |`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
+|`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
+|`spring-modulith-test`|`test`|Integration testing support. Find more details xref:testing.adoc[here].
+|===
+
+[appendix]
+[[deprecated-modules]]
+== Deprecated modules
+
+.Deprecated modules table
+[cols="2,1,3", options="header, unbreakable"]
+|===
+|Module|Deprecated since|Description
+|`spring-modulith-events-aws-sns`|`1.3`|Please migrate to `io.awspring.cloud:spring-cloud-aws-modulith-events-sns`. See https://github.com/awspring/spring-cloud-aws/tree/main/spring-cloud-aws-sns[this link]
+|`spring-modulith-events-aws-sqs`|`1.3`|Please migrate to `io.awspring.cloud:spring-cloud-aws-modulith-events-sqs`. See https://github.com/awspring/spring-cloud-aws/tree/main/spring-cloud-aws-sqs[this link]
 |===
 
 [appendix]
@@ -171,6 +217,22 @@ include::{jdbc-schema-base}/schema-h2.sql[]
 [source, sql]
 ----
 include::{jdbc-schema-base}/schema-hsqldb.sql[]
+----
+
+[[schemas.mariadb]]
+=== MariaDB
+
+[source, sql]
+----
+include::{jdbc-schema-base}/schema-mariadb.sql[]
+----
+
+[[schemas.sqlserver]]
+=== Microsoft SQL Server
+
+[source, sql]
+----
+include::{jdbc-schema-base}/schema-sqlserver.sql[]
 ----
 
 [[schemas.mysql]]

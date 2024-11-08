@@ -52,6 +52,15 @@ public enum DependencyType {
 		public String format(FormatableType source, FormatableType target) {
 			return String.format("Component %s using %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
 		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.DependencyType#format(org.springframework.modulith.core.FormattableType, org.springframework.modulith.core.FormattableType)
+		 */
+		@Override
+		public String format(FormattableType source, FormattableType target) {
+			return String.format("Component %s using %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
+		}
 	},
 
 	/**
@@ -65,6 +74,16 @@ public enum DependencyType {
 		 */
 		@Override
 		public String format(FormatableType source, FormatableType target) {
+			return String.format("Entity %s depending on %s", source.getAbbreviatedFullName(),
+					target.getAbbreviatedFullName());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.DependencyType#format(org.springframework.modulith.core.FormattableType, org.springframework.modulith.core.FormattableType)
+		 */
+		@Override
+		public String format(FormattableType source, FormattableType target) {
 			return String.format("Entity %s depending on %s", source.getAbbreviatedFullName(),
 					target.getAbbreviatedFullName());
 		}
@@ -82,6 +101,16 @@ public enum DependencyType {
 		 */
 		@Override
 		public String format(FormatableType source, FormatableType target) {
+			return String.format("%s listening to events of type %s", source.getAbbreviatedFullName(),
+					target.getAbbreviatedFullName());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.DependencyType#format(org.springframework.modulith.core.FormattableType, org.springframework.modulith.core.FormattableType)
+		 */
+		@Override
+		public String format(FormattableType source, FormattableType target) {
 			return String.format("%s listening to events of type %s", source.getAbbreviatedFullName(),
 					target.getAbbreviatedFullName());
 		}
@@ -104,6 +133,15 @@ public enum DependencyType {
 		 */
 		@Override
 		public String format(FormatableType source, FormatableType target) {
+			return String.format("%s depending on %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.core.DependencyType#format(org.springframework.modulith.core.FormattableType, org.springframework.modulith.core.FormattableType)
+		 */
+		@Override
+		public String format(FormattableType source, FormattableType target) {
 			return String.format("%s depending on %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
 		}
 	};
@@ -137,7 +175,13 @@ public enum DependencyType {
 		return forParameter(dependency.getTargetClass());
 	}
 
+	/**
+	 * @deprecated since 1.3, prefer {@link #format(FormattableType, FormattableType)}.
+	 */
+	@Deprecated
 	public abstract String format(FormatableType source, FormatableType target);
+
+	public abstract String format(FormattableType source, FormattableType target);
 
 	/**
 	 * Returns all {@link DependencyType}s except the given ones.

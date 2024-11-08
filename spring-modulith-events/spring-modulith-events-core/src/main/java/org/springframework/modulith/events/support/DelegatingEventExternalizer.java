@@ -22,6 +22,7 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.util.Assert;
 
 /**
@@ -59,7 +60,7 @@ public class DelegatingEventExternalizer extends EventExternalizationSupport {
 	 * @see org.springframework.modulith.events.support.EventExternalizationSupport#externalize(java.lang.Object)
 	 */
 	@Override
-	@ApplicationModuleListener
+	@ApplicationModuleListener(propagation = Propagation.SUPPORTS)
 	public CompletableFuture<?> externalize(Object event) {
 		return super.externalize(event);
 	}

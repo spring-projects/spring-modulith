@@ -59,6 +59,11 @@ class SnsEventExternalizerConfiguration {
 
 		logger.debug("Registering domain event externalization to SNS…");
 
+		logger.warn("""
+				The module 'spring-modulith-events-aws-sns' is deprecated since the version 1.3 of Spring Modulith.
+				To continue using AWS SNS integration, migrate to 'io.awspring.cloud:spring-cloud-aws-modulith-events-sns'.
+				""");
+
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
@@ -73,7 +78,7 @@ class SnsEventExternalizerConfiguration {
 				builder.groupId(key);
 			}
 
-			operations.sendNotification(routing.getTarget(), builder.build());
+			operations.sendNotification(routing.getTarget(payload), builder.build());
 
 			return CompletableFuture.completedFuture(null);
 		});

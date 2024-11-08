@@ -24,20 +24,23 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependency;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType;
+import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.core.EventType;
-import org.springframework.modulith.core.FormatableType;
+import org.springframework.modulith.core.FormattableType;
 import org.springframework.modulith.core.Source;
 import org.springframework.modulith.core.SpringBean;
 import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
+import org.springframework.modulith.docs.util.BuildSystemUtils;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -49,7 +52,11 @@ import com.tngtech.archunit.core.domain.JavaModifier;
 class Asciidoctor {
 
 	private static String PLACEHOLDER = "¯\\_(ツ)_/¯";
-	private static final Pattern JAVADOC_CODE = Pattern.compile("\\{\\@(?>link|code|literal)\\s(.*)\\}");
+	private static final Pattern JAVADOC_CODE = Pattern.compile("\\{\\@(link|code|literal)\\s*(.*?)\\}");
+	private static final Logger LOG = LoggerFactory.getLogger(Asciidoctor.class);
+
+	private static final Optional<DocumentationSource> DOC_SOURCE = getSpringModulithDocsSource()
+			.or(() -> getSpringAutoRestDocsSource());
 
 	private final ApplicationModules modules;
 	private final String javaDocBase;
@@ -62,10 +69,7 @@ class Asciidoctor {
 
 		this.javaDocBase = javaDocBase;
 		this.modules = modules;
-		this.docSource = Optional.of("capital.scalable.restdocs.javadoc.JavadocReaderImpl")
-				.filter(it -> ClassUtils.isPresent(it, Asciidoctor.class.getClassLoader()))
-				.map(__ -> new SpringAutoRestDocsDocumentationSource())
-				.map(it -> new CodeReplacingDocumentationSource(it, this));
+		this.docSource = DOC_SOURCE.map(it -> new CodeReplacingDocumentationSource(it, this));
 	}
 
 	/**
@@ -113,7 +117,8 @@ class Asciidoctor {
 
 	public String toInlineCode(SpringBean bean) {
 
-		var base = toInlineCode(bean.toArchitecturallyEvidentType());
+		var type = bean.toArchitecturallyEvidentType();
+		var base = toInlineCode(type);
 		var interfaces = bean.getInterfacesWithinModule();
 
 		if (interfaces.isEmpty()) {
@@ -124,7 +129,14 @@ class Asciidoctor {
 				.map(this::toInlineCode) //
 				.collect(Collectors.joining(", "));
 
-		return String.format("%s (via %s)", interfacesAsString, base);
+		return "%s (via %s)".formatted(interfacesAsString, base);
+	}
+
+	private String withDocumentation(String base, JavaClass type) {
+
+		return docSource.flatMap(it -> it.getDocumentation(type))
+				.map(it -> base + " -- " + it)
+				.orElse(base);
 	}
 
 	public String renderSpringBeans(ApplicationModule module, CanvasOptions options) {
@@ -160,7 +172,7 @@ class Asciidoctor {
 		return builder.length() == 0 ? "None" : builder.toString();
 	}
 
-	public String renderEvents(ApplicationModule module) {
+	public String renderPublishedEvents(ApplicationModule module) {
 
 		var events = module.getPublishedEvents();
 
@@ -172,13 +184,17 @@ class Asciidoctor {
 
 		for (EventType eventType : events) {
 
+			var documentation = docSource.flatMap(it -> it.getDocumentation(eventType.getType()))
+					.map(" -- "::concat);
+
 			builder.append("* ")
 					.append(toInlineCode(eventType.getType()));
+			documentation.ifPresent(builder::append);
 
 			if (!eventType.hasSources()) {
 				builder.append("\n");
 			} else {
-				builder.append(" created by:\n");
+				builder.append((documentation.isPresent() ? " C" : " c") + "reated by:\n");
 			}
 
 			for (Source source : eventType.getSources()) {
@@ -190,6 +206,16 @@ class Asciidoctor {
 		}
 
 		return builder.toString();
+	}
+
+	public String renderEventsListenedTo(ApplicationModule module) {
+
+		return module.getSpringBeans().stream()
+				.map(SpringBean::toArchitecturallyEvidentType)
+				.filter(ArchitecturallyEvidentType::isEventListener)
+				.flatMap(ArchitecturallyEvidentType::getReferenceMethods)
+				.map(it -> renderReferenceMethod(it, 0))
+				.collect(Collectors.joining(System.lineSeparator()));
 	}
 
 	public String renderConfigurationProperties(List<ModuleProperty> properties) {
@@ -232,8 +258,9 @@ class Asciidoctor {
 	}
 
 	public String typesToBulletPoints(List<JavaClass> types) {
-		return toBulletPoints(types.stream() //
-				.map(this::toOptionalLink));
+
+		return toBulletPoints(types.stream()
+				.map(it -> withDocumentation(toOptionalLink(it), it)));
 	}
 
 	private String toBulletPoints(Stream<String> types) {
@@ -253,8 +280,8 @@ class Asciidoctor {
 	private String toOptionalLink(JavaClass source, Optional<String> methodSignature) {
 
 		var module = modules.getModuleByType(source).orElse(null);
-		var typeAndMethod = toCode(
-				toTypeAndMethod(FormatableType.of(source).getAbbreviatedFullName(module), methodSignature));
+		var formattable = FormattableType.of(source).getAbbreviatedFullName(module);
+		var typeAndMethod = toCode(toTypeAndMethod(formattable, methodSignature));
 
 		if (module == null
 				|| !source.getModifiers().contains(JavaModifier.PUBLIC)
@@ -279,6 +306,9 @@ class Asciidoctor {
 
 	private String toInlineCode(ArchitecturallyEvidentType type) {
 
+		var javaType = type.getType();
+		var code = toInlineCode(javaType);
+
 		if (type.isEventListener()) {
 
 			if (!docSource.isPresent()) {
@@ -286,29 +316,32 @@ class Asciidoctor {
 				var referenceTypes = type.getReferenceTypes();
 
 				return String.format("%s listening to %s", //
-						toInlineCode(type.getType()), //
+						toInlineCode(javaType), //
 						toInlineCode(referenceTypes));
 			}
 
-			String header = String.format("%s listening to:\n", toInlineCode(type.getType()));
+			String header = "%s listening to:\n".formatted(withDocumentation(code, javaType));
 
-			return header + type.getReferenceMethods().map(it -> {
-
-				var method = it.getMethod();
-				Assert.isTrue(method.getRawParameterTypes().size() > 0,
-						() -> String.format("Method %s must have at least one parameter!", method));
-
-				var parameterType = method.getRawParameterTypes().get(0);
-				var isAsync = it.isAsync() ? "(async) " : "";
-
-				return docSource.flatMap(source -> source.getDocumentation(method))
-						.map(doc -> String.format("** %s %s-- %s", toInlineCode(parameterType), isAsync, doc))
-						.orElseGet(() -> String.format("** %s %s", toInlineCode(parameterType), isAsync));
-
-			}).collect(Collectors.joining("\n"));
+			return header + type.getReferenceMethods().map(it -> renderReferenceMethod(it, 1))
+					.collect(Collectors.joining("\n"));
 		}
 
-		return toInlineCode(type.getType());
+		return withDocumentation(toInlineCode(type.getType()), type.getType());
+	}
+
+	private String renderReferenceMethod(ReferenceMethod it, int level) {
+
+		var method = it.getMethod();
+		Assert.isTrue(method.getRawParameterTypes().size() > 0,
+				() -> String.format("Method %s must have at least one parameter!", method));
+
+		var parameterType = method.getRawParameterTypes().get(0);
+		var isAsync = it.isAsync() ? "(async) " : "";
+		var indent = "*".repeat(level + 1);
+
+		return docSource.flatMap(source -> source.getDocumentation(method))
+				.map(doc -> String.format("%s %s %s-- %s", indent, toInlineCode(parameterType), isAsync, doc))
+				.orElseGet(() -> String.format("%s %s %s", indent, toInlineCode(parameterType), isAsync));
 	}
 
 	private String toInlineCode(Stream<JavaClass> types) {
@@ -345,7 +378,7 @@ class Asciidoctor {
 
 		while (matcher.find()) {
 
-			String type = matcher.group(1);
+			String type = matcher.group(2);
 
 			source = source.replace(matcher.group(), toInlineCode(type));
 		}
@@ -359,9 +392,15 @@ class Asciidoctor {
 	 */
 	public String renderBeanReferences(ApplicationModule module) {
 
-		var bullets = module.getDependencies(modules, DependencyType.USES_COMPONENT)
+		var bullets = module.getDirectDependencies(modules, DependencyType.USES_COMPONENT)
 				.uniqueStream(ApplicationModuleDependency::getTargetType)
-				.map(it -> "%s (in %s)".formatted(toInlineCode(it.getTargetType()), it.getTargetModule().getDisplayName()))
+				.map(it -> {
+
+					var targetType = it.getTargetType();
+					var result = "%s (in %s)".formatted(toInlineCode(targetType), it.getTargetModule().getDisplayName());
+
+					return withDocumentation(result, targetType);
+				})
 				.map(this::toBulletPoint)
 				.collect(Collectors.joining("\n"));
 
@@ -373,10 +412,33 @@ class Asciidoctor {
 	}
 
 	public String renderPlantUmlInclude(String componentsFilename) {
-		return "plantuml::" + componentsFilename + "[]" + System.lineSeparator();
+		return "plantuml::" + componentsFilename + "[,,format=svg]" + System.lineSeparator();
 	}
 
 	public String renderGeneralInclude(String componentsFilename) {
 		return "include::" + componentsFilename + "[]" + System.lineSeparator();
+	}
+
+	@SuppressWarnings("deprecation")
+	private static Optional<DocumentationSource> getSpringAutoRestDocsSource() {
+
+		return BuildSystemUtils.getTargetResource("generated-javadoc-json")
+				.map(__ -> SpringAutoRestDocsDocumentationSource.INSTANCE)
+				.map(it -> {
+					LOG.debug("Using Javadoc generated by Spring Auto RESTDocs found in generated-javadoc-json.");
+					LOG.warn(
+							"Javadoc metadata generated by Spring Auto RESTDocs is deprecated! Switch to spring-modulith-apt instead!");
+					return it;
+				});
+	}
+
+	private static Optional<DocumentationSource> getSpringModulithDocsSource() {
+
+		return SpringModulithDocumentationSource.getInstance()
+				.map(it -> {
+					LOG.debug("Using Javadoc extracted by Spring Modulith in {}.",
+							SpringModulithDocumentationSource.getMetadataLocation());
+					return it;
+				});
 	}
 }

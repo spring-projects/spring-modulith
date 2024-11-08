@@ -30,6 +30,7 @@ import org.springframework.util.StringUtils;
  */
 public class RoutingTarget {
 
+	private static final String EXPRESSION_PREFIX = "#{";
 	private final String target;
 	private final @Nullable String key;
 
@@ -43,8 +44,8 @@ public class RoutingTarget {
 
 		Assert.hasText(target, "Target must not be null or empty!");
 
-		this.target = target;
-		this.key = key;
+		this.target = target.trim();
+		this.key = key == null ? null : key.trim();
 	}
 
 	/**
@@ -58,8 +59,8 @@ public class RoutingTarget {
 		Assert.notNull(source, "Routing target source must not be null!");
 
 		var parts = source.split("::", 2);
-		var target = parts[0].isBlank() ? null : parts[0];
-		var key = parts.length == 2 ? parts[1] : null;
+		var target = parts[0].isBlank() ? null : parts[0].trim();
+		var key = parts.length == 2 ? parts[1].trim() : null;
 
 		return new ParsedRoutingTarget(target, key);
 	}
@@ -93,7 +94,7 @@ public class RoutingTarget {
 
 			Assert.hasText(target, "Target must not be null or empty!");
 
-			this.target = target;
+			this.target = target.trim();
 		}
 
 		/**
@@ -141,7 +142,17 @@ public class RoutingTarget {
 	 * @return whether the routing key is a SpEL expression.
 	 */
 	public boolean hasKeyExpression() {
-		return key != null && key.startsWith("#{");
+		return key != null && key.startsWith(EXPRESSION_PREFIX);
+	}
+
+	/**
+	 * Returns whether either the target or key is using a SpEL expression.
+	 *
+	 * @return whether the routing key is a SpEL expression.
+	 * @since 1.3
+	 */
+	public boolean hasExpression() {
+		return hasKeyExpression() || target.startsWith(EXPRESSION_PREFIX);
 	}
 
 	RoutingTarget withTarget(String target) {
@@ -174,7 +185,7 @@ public class RoutingTarget {
 	 */
 	@Override
 	public String toString() {
-		return target + "::" + (key == null ? "" : key);
+		return target + (key == null ? "" : "::" + key);
 	}
 
 	/*

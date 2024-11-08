@@ -19,8 +19,6 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
-import lombok.AllArgsConstructor;
-
 import java.util.List;
 import java.util.Map;
 
@@ -76,6 +74,18 @@ class PersistentApplicationEventMulticasterUnitTests {
 		verify(registry).processIncompletePublications(any(), any(), any());
 	}
 
+	@Test // GH-240, GH-251, GH-823
+	void triggersRepublicationIfLegacyConfigExplicitlyEnabled() {
+
+		var source = new MapPropertySource("test",
+				Map.of(PersistentApplicationEventMulticaster.REPUBLISH_ON_RESTART_LEGACY, "true"));
+		environment.getPropertySources().addFirst(source);
+
+		multicaster.afterSingletonsInstantiated();
+
+		verify(registry).processIncompletePublications(any(), any(), any());
+	}
+
 	@Test // GH-277
 	void honorsListenerCondition() throws Exception {
 
@@ -120,8 +130,11 @@ class PersistentApplicationEventMulticasterUnitTests {
 		void on(SampleEvent event) {}
 	}
 
-	@AllArgsConstructor
 	static class SampleEvent {
 		public boolean supported;
+
+		public SampleEvent(boolean supported) {
+			this.supported = supported;
+		}
 	}
 }

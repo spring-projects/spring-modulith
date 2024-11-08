@@ -28,7 +28,7 @@ import com.acme.myproject.moduleE.ServiceComponentE;
  * @author Oliver Drotbohm
  */
 @NonVerifyingModuleTest
-class ModuleDTest {
+public class ModuleDTest {
 
 	@Autowired ConfigurableApplicationContext context;
 

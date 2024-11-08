@@ -15,14 +15,17 @@
  */
 package org.springframework.modulith.events.kafka;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.kafka.KafkaAutoConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.PropertySource;
-import org.springframework.kafka.support.converter.JsonMessageConverter;
+import org.springframework.kafka.support.converter.ByteArrayJsonMessageConverter;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,15 +36,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @since 1.1
  */
 @AutoConfiguration
+@AutoConfigureBefore(KafkaAutoConfiguration.class)
 @ConditionalOnClass(ObjectMapper.class)
 @ConditionalOnProperty(name = "spring.modulith.events.kafka.enable-json", havingValue = "true", matchIfMissing = true)
 @PropertySource("classpath:kafka-json.properties")
 class KafkaJacksonConfiguration {
 
 	@Bean
-	@ConditionalOnBean(ObjectMapper.class)
-	@ConditionalOnMissingBean(JsonMessageConverter.class)
-	JsonMessageConverter jsonMessageConverter(ObjectMapper mapper) {
-		return new JsonMessageConverter(mapper);
+	@ConditionalOnMissingBean(RecordMessageConverter.class)
+	ByteArrayJsonMessageConverter jsonMessageConverter(ObjectProvider<ObjectMapper> mapper) {
+		return new ByteArrayJsonMessageConverter(mapper.getIfUnique(() -> new ObjectMapper()));
 	}
 }

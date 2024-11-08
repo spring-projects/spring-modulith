@@ -27,14 +27,13 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.Externalized;
-import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertyRegistrar;
 import org.springframework.transaction.annotation.Transactional;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.utility.DockerImageName;
@@ -56,16 +55,20 @@ class SqsEventPublicationIntegrationTests {
 	static class TestConfiguration {
 
 		@Bean
-		LocalStackContainer localStackContainer(@Qualifier("dynamicPropertyRegistry") DynamicPropertyRegistry registry) {
+		LocalStackContainer localStackContainer() {
+			return new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"));
+		}
 
-			var localstack = new LocalStackContainer(DockerImageName.parse("localstack/localstack:latest"));
+		@Bean
+		DynamicPropertyRegistrar localStackDynamicProperties(LocalStackContainer localstack) {
 
-			registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
-			registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
-			registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
-			registry.add("spring.cloud.aws.region.static", localstack::getRegion);
+			return registry -> {
 
-			return localstack;
+				registry.add("spring.cloud.aws.endpoint", localstack::getEndpoint);
+				registry.add("spring.cloud.aws.credentials.access-key", localstack::getAccessKey);
+				registry.add("spring.cloud.aws.credentials.secret-key", localstack::getSecretKey);
+				registry.add("spring.cloud.aws.region.static", localstack::getRegion);
+			};
 		}
 
 		@Bean

@@ -65,7 +65,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		return NamedInterfaces.of(NamedInterface.unnamed(basePackage, true))
 				.and(ofAnnotatedPackages(basePackage))
-				.and(ofAnnotatedTypes(basePackage));
+				.and(ofAnnotatedTypes(basePackage.getClasses()));
 	}
 
 	/**
@@ -106,7 +106,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		return NamedInterfaces.of(NamedInterface.unnamed(basePackage, false))
 				.and(ofAnnotatedPackages(basePackage))
-				.and(ofAnnotatedTypes(basePackage));
+				.and(ofAnnotatedTypes(basePackage.getClasses()));
 	}
 
 	/**
@@ -242,11 +242,11 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		return new NamedInterfaces(List.of(interfaces));
 	}
 
-	private static List<NamedInterface> ofAnnotatedTypes(JavaPackage basePackage) {
+	private static List<NamedInterface> ofAnnotatedTypes(Classes classes) {
 
 		var mappings = new LinkedMultiValueMap<String, JavaClass>();
 
-		basePackage.stream() //
+		classes.stream() //
 				.filter(it -> !JavaPackage.isPackageInfoType(it)) //
 				.forEach(it -> {
 

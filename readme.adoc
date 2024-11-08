@@ -12,21 +12,13 @@ It supports the link:{docs}#verification[verification] of such modular arrangeme
 +
 [source, xml]
 ----
-<!-- The Maven repository to pull the dependencies from -->
-<repositories>
-  <repository>
-    <id>spring-snapshots</id>
-    <url>https://repo.spring.io/snapshot</url>
-  </repository>
-</repositories>
-
 <!-- Include the BOM for simplified version management -->
 <dependencyManagement>
   <dependencies>
     <dependency>
       <groupId>org.springframework.modulith</groupId>
       <artifactId>spring-modulith-bom</artifactId>
-      <version>1.0.0-SNAPSHOT</version>
+      <version>1.2.4</version>
       <scope>import</scope>
       <type>pom</type>
     </dependency>

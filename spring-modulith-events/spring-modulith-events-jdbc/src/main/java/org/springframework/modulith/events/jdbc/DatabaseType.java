@@ -25,6 +25,7 @@ import org.springframework.util.Assert;
  * @author Björn Kieling
  * @author Oliver Drotbohm
  * @author Raed Ben Hamouda
+ * @author Cora Iberkleid
  */
 enum DatabaseType {
 
@@ -43,11 +44,70 @@ enum DatabaseType {
 		UUID databaseToUUID(Object id) {
 			return UUID.fromString(id.toString());
 		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
 	},
 
-	POSTGRES("postgresql", "PostgreSQL");
+	MARIADB("mariadb", "MariaDB") {
 
-	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name not supported on MySQL!";
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
+	},
+
+	POSTGRES("postgresql", "PostgreSQL"),
+
+	MSSQL("sqlserver", "Microsoft SQL Server") {
+
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
+	},
+
+	ORACLE("oracle", "Oracle") {
+
+		@Override
+		Object uuidToDatabase(UUID id) {
+			return id.toString();
+		}
+
+		@Override
+		UUID databaseToUUID(Object id) {
+			return UUID.fromString(id.toString());
+		}
+
+		@Override
+		boolean isSchemaSupported() {
+			return false;
+		}
+	};
+
+	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name is not supported!";
 
 	static DatabaseType from(String productName) {
 
@@ -79,13 +139,23 @@ enum DatabaseType {
 		return "/schema-" + value + ".sql";
 	}
 
+	String getArchiveSchemaResourceFilename() { return "/schema-" + value + "-archive.sql"; }
+
+	boolean isSchemaSupported() {
+		return true;
+	}
+
 	String getSetSchemaSql(String schema) {
+
+		if (!isSchemaSupported()) {
+			throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
+		}
 
 		return switch (this) {
 
-			case MYSQL -> throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
 			case H2, HSQLDB -> "SET SCHEMA " + schema;
 			case POSTGRES -> "SET search_path TO " + schema;
+			default -> throw new IllegalArgumentException(SCHEMA_NOT_SUPPORTED);
 		};
 	}
 }

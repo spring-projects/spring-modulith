@@ -50,7 +50,7 @@ interface ApplicationModuleInformation {
 
 		var lookup = AnnotationLookup.of(javaPackage.toSingle(), __ -> true);
 
-		return JMoleculesTypes.isPresent() && JMoleculesModule.supports(lookup)
+		return JMoleculesTypes.isModulePresent() && JMoleculesModule.supports(lookup)
 				? new JMoleculesModule(lookup)
 				: new SpringModulithModule(lookup);
 	}

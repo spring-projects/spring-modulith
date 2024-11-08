@@ -23,6 +23,7 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 class DefaultEventPublicationRegistryUnitTests {
 
 	@Mock EventPublicationRepository repository;
-	@Mock Clock clock;
 
 	@Test // GH-206
 	void usesCustomClockIfConfigured() {
@@ -47,9 +47,8 @@ class DefaultEventPublicationRegistryUnitTests {
 		when(repository.create(any())).then(returnsFirstArg());
 
 		var now = Instant.now();
-		var clock = Clock.fixed(now, ZoneId.systemDefault());
 
-		var registry = new DefaultEventPublicationRegistry(repository, clock);
+		var registry = createRegistry(now);
 
 		var identifier = PublicationTargetIdentifier.of("id");
 		var publications = registry.store(new Object(), Stream.of(identifier));
@@ -58,5 +57,41 @@ class DefaultEventPublicationRegistryUnitTests {
 			assertThat(it.getPublicationDate()).isEqualTo(now);
 			assertThat(it.getTargetIdentifier()).isEqualTo(identifier);
 		});
+	}
+
+	@Test // GH-819
+	void removesFailingResubmissionFromInProgressPublications() {
+
+		when(repository.create(any())).then(returnsFirstArg());
+
+		var registry = createRegistry(Instant.now());
+		var identifier = PublicationTargetIdentifier.of("id");
+
+		var failedPublications = registry.store(new Object(), Stream.of(identifier)).stream()
+				.peek(registry::markFailed)
+				.toList();
+
+		// Failed completions are not present in the in progress ones
+		assertThat(registry.getPublicationsInProgress()).isEmpty();
+
+		when(repository.findIncompletePublications()).thenReturn(failedPublications);
+
+		registry.processIncompletePublications(__ -> true, failingConsumer(), null);
+
+		// Failed re-submissions are not held in the in progress ones, either.
+		assertThat(registry.getPublicationsInProgress()).isEmpty();
+	}
+
+	private DefaultEventPublicationRegistry createRegistry(Instant instant) {
+
+		var clock = Clock.fixed(instant, ZoneId.systemDefault());
+
+		return new DefaultEventPublicationRegistry(repository, clock);
+	}
+
+	private Consumer<TargetEventPublication> failingConsumer() {
+		return __ -> {
+			throw new IllegalStateException();
+		};
 	}
 }

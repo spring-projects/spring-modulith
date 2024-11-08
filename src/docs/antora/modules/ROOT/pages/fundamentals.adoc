@@ -1,5 +1,6 @@
 [[fundamentals]]
 = Fundamentals
+:tabsize: 2
 :toc:
 :toclevels: 3
 
@@ -38,7 +39,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-var modules = ApplicationModules.of(Application::class)
+val modules = ApplicationModules.of(Application::class.java)
 ----
 ======
 The `modules` will contain an in-memory representation of the application module arrangement derived from the codebase.
@@ -61,7 +62,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-modules.forEach(println(it))
+modules.forEach { println(it) }
 ----
 ======
 .The console output of our application module arrangement
@@ -101,7 +102,7 @@ Kotlin::
 +
 [source, kotlin, role="secondary"]
 ----
-ApplicationModules.of(Application::class, JavaClass.Predicates.resideInAPackage("com.example.db")).verify()
+ApplicationModules.of(Application::class.java, JavaClass.Predicates.resideInAPackage("com.example.db")).verify()
 ----
 ======
 
@@ -169,8 +170,56 @@ Note how `SomethingOrderInternal` is a public type, likely because `OrderManagem
 This unfortunately means that it can also be referred to from other packages such as the `inventory` one.
 In this case, the Java compiler is not of much use to prevent these illegal references.
 
-[[modules.advanced.open]]
-==== Open Application Modules
+[[modules.nested]]
+=== Nested Application Modules
+
+As of version 1.3, Spring Modulith application modules can contain nested modules.
+This allows governing the internal structure in case a module contains parts to be logically separated in turn.
+To define nested application modules, explicitly annotate packages that are supposed to constitute with `@ApplicationModule`.
+
+[source, subs="macros, quotes"]
+----
+icon:cubes[] Example
+└─ icon:folder[] src/main/java
+   |
+   ├─ icon:cube[] example
+   |  └─ icon:plus-circle[role=green] Application.java
+   |
+   |  -> Inventory
+   |
+   ├─ icon:cube[] example.inventory
+   |  ├─ icon:plus-circle[role=green] InventoryManagement.java
+   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+   ├─ icon:cube[] example.inventory.internal
+   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+   |
+   |  -> Inventory > Nested
+   |
+   ├─ icon:cube[] example.inventory.nested
+   |  ├─ icon:coffee[] package-info.java // @ApplicationModule
+   |  └─ icon:plus-circle[role=orange] NestedApi.java
+   ├─ icon:cube[] example.inventory.nested.internal
+   |  └─ icon:minus-circle[role=red] NestedInternal.java
+   |
+   |  -> Order
+   |
+   └─ icon:cube[] example.order
+      ├─ icon:plus-circle[role=green] OrderManagement.java
+      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
+----
+
+In this example `inventory` is an application module as described xref:fundamentals.adoc#modules.simple[above].
+The `@ApplicationModule` annotation on the `nested` package caused that to become a nested application module in turn.
+In that arrangement, the following access rules apply:
+
+* The code in _Nested_ is only available from _Inventory_ or any types exposed by sibling application modules nested inside _Inventory_.
+* Any code in the _Nested_ module can access code in parent modules, even internal.
+I.e., both `NestedApi` and `NestedInternal` can access `inventory.internal.SomethingInventoryInternal`.
+* Code from nested modules can also access exposed types by top-level application modules.
+Any code in `nested` (or any sub-packages) can access `OrderManagement`.
+
+[[modules.open, modules.advanced.open]]
+=== Open Application Modules
 
 The arrangement described xref:fundamentals.adoc#modules.advanced[above] are considered closed as they only expose types to other modules that are actively selected for exposure.
 When applying Spring Modulith to legacy applications, hiding all types located in nested packages from other modules might be inadequate or require marking all those packages for exposure, too.
@@ -262,7 +311,7 @@ icon:cubes[] Example
    |  ├— icon:coffee[] package-info.java
    |  └─ icon:plus-circle[role=green] SomeSpiInterface.java
    └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
+      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
 ----
 
 .`package-info.java` in `example.order.spi`
@@ -345,6 +394,70 @@ package example.inventory
 ----
 ======
 
+[[customizing-modules-arrangement]]
+== Customizing the Application Modules Arrangement
+
+Spring Moduliths allows to configure some core aspects around the application module arrangement you create via the `@Modulithic` annotation to be used on the main Spring Boot application class.
+
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+package example;
+
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.modulith.Modulithic;
+
+@Modulithic
+@SpringBootApplication
+class MyApplication {
+
+  public static void main(String... args) {
+    SpringApplication.run(DemoApplication.class, args);
+  }
+}
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+package example
+
+import org.springframework.boot.autoconfigure.SpringBootApplication
+import org.springframework.boot.runApplication
+import org.springframework.modulith.Modulithic
+
+@Modulithic
+@SpringBootApplication
+class DemoApplication
+
+fun main(args: Array<String>) {
+  runApplication<DemoApplication>(*args)
+}
+----
+======
+
+The annotation exposes the following attributes to customize:
+
+[cols="1,3", options="header, unbreakable"]
+|===
+|Annotation attribute
+|Description
+
+|`systemName`
+|The human readable name of the application to be used in generated xref:documentation.adoc#documentation[documentation].
+
+|`sharedModules`
+|Declares the application modules with the given names as shared modules, which means that they will always be included in xref:testing.adoc#testing[application module integration tests].
+
+|`additionalPackages`
+|Instructs Spring Modulith to treat the configured packages as additional root application packages. In other words, application module detection will be triggered for those as well.
+
+|===
+
 [[customizing-modules]]
 === Customizing Module Detection
 
@@ -403,66 +516,43 @@ This class can now be registered as `spring.modulith.detection-strategy` as foll
 spring.modulith.detection-strategy=example.CustomApplicationModuleDetectionStrategy
 ----
 
-[[customizing-modules-arrangement]]
-== Customizing the Application Modules Arrangement
+[[contributing-application-modules]]
+=== Contributing Application Modules From Other Packages
 
-Spring Moduliths allows to configure some core aspects around the application module arrangement you create via the `@Modulithic` annotation to be used on the main Spring Boot application class.
+While `@Modulithic` allows defining `additionalPackages` to trigger application module detection for packages other than the one of the annotated class, its usage requires knowing about those in advance.
+As of version 1.3, Spring Modulith supports external contributions of application modules via the `ApplicationModuleSource` and `ApplicationModuleSourceFactory` abstractions.
+An implementation of the latter can be registered in a `spring.factories` file located in `META-INF`.
 
-[tabs]
-======
-Java::
-+
-[source, java, role="primary"]
+[source, text]
+----
+org.springframework.modulith.core.ApplicationModuleSourceFactory=example.CustomApplicationModuleSourceFactory
+----
+
+Such a factory can either return arbitrary package names to get an `ApplicationModuleDetectionStrategy` applied, or explicitly return packages to create modules for.
+
+[source, java]
 ----
 package example;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.modulith.Modulithic;
+public class CustomApplicationModuleSourceFactory implements ApplicationModuleSourceFactory {
 
-@Modulithic
-@SpringBootApplication
-class MyApplication {
+	@Override
+	public List<String> getRootPackages() {
+		return List.of("com.acme.toscan");
+	}
 
-  public static void main(String... args) {
-    SpringApplication.run(DemoApplication.class, args);
-  }
+	@Override
+	public ApplicationModuleDetectionStrategy getApplicationModuleDetectionStrategy() {
+		return ApplicationModuleDetectionStrategy.explicitlyAnnotated();
+	}
+
+	@Override
+	public List<String> getModuleBasePackages() {
+		return List.of("com.acme.module");
+	}
 }
 ----
-Kotlin::
-+
-[source, kotlin, role="secondary"]
-----
-package example
 
-import org.springframework.boot.autoconfigure.SpringBootApplication
-import org.springframework.boot.runApplication
-import org.springframework.modulith.Modulithic
+The above example would use `com.acme.toscan` to detect xref:fundamentals.adoc#customizing-modules[explicitly declared modules] within that and also create an application module from `com.acme.module`.
+The package names returned from these will subsequently be translated into ``ApplicationModuleSource``s via the corresponding `getApplicationModuleSource(…)` flavors exposed in `ApplicationModuleDetectionStrategy`.
 
-@Modulithic
-@SpringBootApplication
-class DemoApplication
-
-fun main(args: Array<String>) {
-  runApplication<DemoApplication>(*args)
-}
-----
-======
-
-The annotation exposes the following attributes to customize:
-
-[cols="1,3", options="header, unbreakable"]
-|===
-|Annotation attribute
-|Description
-
-|`systemName`
-|The human readable name of the application to be used in generated xref:documentation.adoc#documentation[documentation].
-
-|`sharedModules`
-|Declares the application modules with the given names as shared modules, which means that they will be always included in xref:testing.adoc#testing[application module integration tests].
-
-|`additionalPackages`
-|Instructs Spring Modulith to treat the configured packages as additional root application packages. In other words, application module detection will be triggered for those as well.
-
-|===

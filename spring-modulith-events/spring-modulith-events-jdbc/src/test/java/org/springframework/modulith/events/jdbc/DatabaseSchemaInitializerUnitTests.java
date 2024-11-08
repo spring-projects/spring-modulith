@@ -27,6 +27,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.jdbc.JdbcConfigurationProperties.SchemaInitialization;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * Unit tests for {@link DatabaseSchemaInitializer}.
@@ -44,11 +45,34 @@ class DatabaseSchemaInitializerUnitTests {
 	@ParameterizedTest
 	@ValueSource(strings = { "", "test" })
 	void rejectsExplicitSchemaNameForMySql(String schema) {
-		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema)));
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MYSQL));
 	}
 
-	private DatabaseSchemaInitializer createInitializer(JdbcConfigurationProperties properties) {
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, DatabaseType.MYSQL, jdbcTemplate, properties);
+	// GH-836
+	@ParameterizedTest
+	@ValueSource(strings = { "", "test" })
+	void rejectsExplicitSchemaNameForMariaDB(String schema) {
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MARIADB));
+	}
+
+	// GH-804
+	@ParameterizedTest
+	@ValueSource(strings = { "", "test" })
+	void rejectsExplicitSchemaNameForMSSql(String schema) {
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.MSSQL));
+	}
+
+	@ParameterizedTest
+	@ValueSource(strings = { "", "test" })
+	void rejectsExplicitSchemaNameForOracle(String schema) {
+		assertThatIllegalStateException().isThrownBy(() -> createInitializer(withSchema(schema), DatabaseType.ORACLE));
+	}
+
+	private DatabaseSchemaInitializer createInitializer(JdbcConfigurationProperties properties, DatabaseType type) {
+
+		var settings = new JdbcRepositorySettings(type, CompletionMode.UPDATE, properties.getSchema());
+
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
 	}
 
 	private static JdbcConfigurationProperties withSchema(String schema) {

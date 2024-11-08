@@ -117,6 +117,15 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.core.ModulithMetadata#getSharedModuleIdentifiers()
+	 */
+	@Override
+	public Stream<ApplicationModuleIdentifier> getSharedModuleIdentifiers() {
+		return getSharedModuleNames().map(ApplicationModuleIdentifier::of);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.model.ModulithMetadata#getSystemName()
 	 */
 	@Override
@@ -134,8 +143,14 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 	@Override
 	public List<String> getBasePackages() {
 
-		var result = new ArrayList<>(List.of(basePackage));
-		result.addAll(List.of(annotation.additionalPackages()));
+		var result = new ArrayList<String>();
+		result.add(basePackage);
+
+		for (var candidate : annotation.additionalPackages()) {
+			if (!result.contains(candidate)) {
+				result.add(candidate);
+			}
+		}
 
 		return result;
 	}

@@ -66,6 +66,14 @@ class ModulithMetadataUnitTest {
 				.withMessageContaining(SpringBootApplication.class.getSimpleName());
 	}
 
+	@Test // GH-797
+	void returnsUniqueBasePackages() {
+
+		var metadata = ModulithMetadata.of(AdditionalPackagesShadowing.class);
+
+		assertThat(metadata.getBasePackages()).containsExactly(getClass().getPackageName());
+	}
+
 	@Modulith(additionalPackages = "com.acme.foo", //
 			sharedModules = "shared.module", //
 			systemName = "systemName", //
@@ -82,4 +90,7 @@ class ModulithMetadataUnitTest {
 	static class SpringBootApplicationAnnotated {}
 
 	static class Unannotated {}
+
+	@Modulithic(additionalPackages = "org.springframework.modulith.core")
+	static class AdditionalPackagesShadowing {}
 }

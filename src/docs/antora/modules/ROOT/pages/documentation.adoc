@@ -39,7 +39,7 @@ Kotlin::
 [source, kotlin, role="secondary"]
 ----
 class DocumentationTests {
-    private val modules = ApplicationModules.of(Application::class)
+    private val modules = ApplicationModules.of(Application::class.java)
 
     @Test
     fun writeDocumentationSnippets() {
@@ -82,7 +82,7 @@ Rel_D(Modulith.Application.order, Modulith.Application.catalog, "depends on", $t
 SHOW_LEGEND()
 ....
 
-The second call will create additional diagrams that only include the individual module and the ones they directly depend on on the canvas.
+The second call will create additional diagrams that only include the individual module and the ones they directly depend on the canvas.
 
 .A subset of application modules and their relationships starting from the order module rendered as C4 component diagram
 [plantuml, c4-individual-modules, svg]
@@ -240,7 +240,7 @@ Kotlin::
 ----
 class DocumentationTests {
 
-  private val modules = ApplicationModules.of(Application::class)
+  private val modules = ApplicationModules.of(Application::class.java)
 
   @Test
   fun writeDocumentationSnippets() {
@@ -336,7 +336,7 @@ Kotlin::
 ----
 class DocumentationTests {
 
-  private val modules = ApplicationModules.of(Application::class)
+  private val modules = ApplicationModules.of(Application::class.java)
 
   @Test
   fun writeDocumentationSnippets() {

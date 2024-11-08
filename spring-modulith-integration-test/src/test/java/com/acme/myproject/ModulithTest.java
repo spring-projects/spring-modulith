@@ -37,7 +37,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
  * @author Oliver Drotbohm
  * @author Peter Gafert
  */
-class ModulithTest {
+public class ModulithTest {
 
 	static final DescribedPredicate<JavaClass> DEFAULT_EXCLUSIONS = Filters.withoutModules("cycleA", "cycleB", "invalid2",
 			"invalid3", "fieldinjected");
@@ -110,10 +110,10 @@ class ModulithTest {
 
 		assertThat(modules.getModuleByName("moduleD")).hasValueSatisfying(it -> {
 
-			assertThat(it.getDependencies(modules, DependencyType.DEFAULT))
+			assertThat(it.getDirectDependencies(modules, DependencyType.DEFAULT))
 					.matches(inner -> inner.containsModuleNamed("moduleC"));
 
-			assertThat(it.getDependencies(modules, DependencyType.USES_COMPONENT))
+			assertThat(it.getDirectDependencies(modules, DependencyType.USES_COMPONENT))
 					.matches(ApplicationModuleDependencies::isEmpty);
 		});
 	}

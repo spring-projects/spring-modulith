@@ -20,6 +20,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.HasName.Predicates.*;
 import static java.util.stream.Collectors.*;
+import static org.springframework.modulith.core.Violations.*;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -34,12 +35,10 @@ import org.jgrapht.Graph;
 import org.jgrapht.graph.DefaultDirectedGraph;
 import org.jgrapht.graph.DefaultEdge;
 import org.jgrapht.traverse.TopologicalOrderIterator;
-import org.jmolecules.archunit.JMoleculesDddRules;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
-import org.springframework.modulith.core.Violations.Violation;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -82,12 +81,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	private final ModulithMetadata metadata;
-	private final Map<String, ApplicationModule> modules;
+	private final Map<ApplicationModuleIdentifier, ApplicationModule> modules;
 	private final JavaClasses allClasses;
 	private final List<JavaPackage> rootPackages;
 	private final Supplier<List<ApplicationModule>> rootModules;
 	private final Set<ApplicationModule> sharedModules;
-	private final List<String> orderedNames;
+	private final List<ApplicationModuleIdentifier> orderedNames;
 
 	private boolean verified;
 
@@ -96,12 +95,11 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 *
 	 * @param metadata must not be {@literal null}.
 	 * @param ignored must not be {@literal null}.
-	 * @param useFullyQualifiedModuleNames can be {@literal null}.
 	 * @param option must not be {@literal null}.
 	 */
 	protected ApplicationModules(ModulithMetadata metadata,
-			DescribedPredicate<? super JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
-		this(metadata, metadata.getBasePackages(), ignored, useFullyQualifiedModuleNames, option);
+			DescribedPredicate<? super JavaClass> ignored, ImportOption option) {
+		this(metadata, metadata.getBasePackages(), ignored, metadata.useFullyQualifiedModuleNames(), option);
 	}
 
 	/**
@@ -113,8 +111,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param useFullyQualifiedModuleNames can be {@literal null}.
 	 * @param option must not be {@literal null}.
 	 * @deprecated since 1.2, for removal in 1.3. Use {@link ApplicationModules(ModulithMetadata, DescribedPredicate,
-	 *             boolean, ImportOption)} instead and set up {@link ModulithMetadata} to contain the packages you want to
-	 *             use.
+	 *             ImportOption)} instead and set up {@link ModulithMetadata} to contain the packages you want to use.
 	 */
 	@Deprecated(forRemoval = true)
 	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
@@ -128,8 +125,9 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		DescribedPredicate<? super JavaClass> excluded = DescribedPredicate.or(ignored, IS_AOT_TYPE, IS_SPRING_CGLIB_PROXY);
 
 		this.metadata = metadata;
-		this.allClasses = new ClassFileImporter() //
-				.withImportOption(option) //
+		var importer = new ClassFileImporter() //
+				.withImportOption(option);
+		this.allClasses = importer //
 				.importPackages(packages) //
 				.that(not(excluded));
 
@@ -138,13 +136,29 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Classes classes = Classes.of(allClasses);
 		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
-		this.modules = packages.stream() //
-				.map(it -> JavaPackage.of(classes, it))
-				.flatMap(strategy::getModuleBasePackages) //
-				.map(it -> new ApplicationModule(it, useFullyQualifiedModuleNames)) //
-				.collect(toMap(ApplicationModule::getName, Function.identity()));
+		var contributions = ApplicationModuleSourceContributions.of(
+				pkgs -> importer.importPackages(pkgs).that(not(excluded)), strategy, useFullyQualifiedModuleNames);
 
-		this.rootPackages = packages.stream() //
+		var directSources = packages.stream() //
+				.distinct()
+				.map(it -> JavaPackage.of(classes, it))
+				.flatMap(it -> ApplicationModuleSource.from(it, strategy, useFullyQualifiedModuleNames));
+
+		var sources = Stream.concat(directSources, contributions.getSources())
+				.distinct()
+				.collect(Collectors.toUnmodifiableSet());
+
+		this.modules = sources.stream() //
+				.map(it -> {
+
+					return new ApplicationModule(it,
+							JavaPackages.onlySubPackagesOf(it.getModuleBasePackage(),
+									sources.stream().map(ApplicationModuleSource::getModuleBasePackage).toList())); //
+				})
+				.collect(toMap(ApplicationModule::getIdentifier, Function.identity()));
+
+		this.rootPackages = Stream.concat(packages.stream(), contributions.getRootPackages()) //
+				.distinct()
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
 				.toList();
 
@@ -154,9 +168,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.sharedModules = Collections.emptySet();
 
-		this.orderedNames = JGRAPHT_PRESENT //
-				? TopologicalSorter.topologicallySortModules(this) //
-				: modules.values().stream().map(ApplicationModule::getName).toList();
+		Supplier<List<ApplicationModuleIdentifier>> fallback = () -> modules.values().stream()
+				.map(ApplicationModule::getIdentifier)
+				.sorted()
+				.toList();
+
+		this.orderedNames = Optional.ofNullable(JGRAPHT_PRESENT ? TopologicalSorter.topologicallySortModules(this) : null)
+				.orElseGet(fallback);
 	}
 
 	/**
@@ -170,12 +188,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param rootPackages must not be {@literal null}.
 	 * @param rootModules must not be {@literal null}.
 	 * @param sharedModules must not be {@literal null}.
-	 * @param orderedNames must not be {@literal null}.
+	 * @param orderedIdentifiers must not be {@literal null}.
 	 * @param verified
 	 */
-	private ApplicationModules(ModulithMetadata metadata, Map<String, ApplicationModule> modules, JavaClasses allClasses,
-			List<JavaPackage> rootPackages, Supplier<List<ApplicationModule>> rootModules,
-			Set<ApplicationModule> sharedModules, List<String> orderedNames, boolean verified) {
+	private ApplicationModules(ModulithMetadata metadata, Map<ApplicationModuleIdentifier, ApplicationModule> modules,
+			JavaClasses allClasses, List<JavaPackage> rootPackages, Supplier<List<ApplicationModule>> rootModules,
+			Set<ApplicationModule> sharedModules, List<ApplicationModuleIdentifier> orderedIdentifiers, boolean verified) {
 
 		Assert.notNull(metadata, "ModulithMetadata must not be null!");
 		Assert.notNull(modules, "Application modules must not be null!");
@@ -183,7 +201,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Assert.notNull(rootPackages, "Root JavaPackages must not be null!");
 		Assert.notNull(rootModules, "Root modules must not be null!");
 		Assert.notNull(sharedModules, "Shared ApplicationModules must not be null!");
-		Assert.notNull(orderedNames, "Ordered application module names must not be null!");
+		Assert.notNull(orderedIdentifiers, "Ordered application module identifiers must not be null!");
 
 		this.metadata = metadata;
 		this.modules = modules;
@@ -191,7 +209,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.rootPackages = rootPackages;
 		this.rootModules = rootModules;
 		this.sharedModules = sharedModules;
-		this.orderedNames = orderedNames;
+		this.orderedNames = orderedIdentifiers;
 		this.verified = verified;
 	}
 
@@ -352,7 +370,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		Assert.hasText(name, "Module name must not be null or empty!");
 
-		return Optional.ofNullable(modules.get(name));
+		return Optional.ofNullable(modules.get(ApplicationModuleIdentifier.of(name)));
 	}
 
 	/**
@@ -442,24 +460,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public Violations detectViolations() {
 
-		Violations violations = rootPackages.stream() //
+		var cycleViolations = rootPackages.stream() //
 				.map(this::assertNoCyclesFor) //
 				.flatMap(it -> it.getDetails().stream()) //
-				.map(Violation::new) //
-				.collect(Violations.toViolations());
+				.collect(toViolations());
 
-		if (JMoleculesTypes.areRulesPresent()) {
+		var jMoleculesViolations = JMoleculesTypes.getRules().stream()
+				.map(it -> it.evaluate(allClasses))
+				.map(EvaluationResult::getFailureReport)
+				.flatMap(it -> it.getDetails().stream())
+				.collect(toViolations());
 
-			EvaluationResult result = JMoleculesDddRules.all().evaluate(allClasses);
-
-			for (String message : result.getFailureReport().getDetails()) {
-				violations = violations.and(message);
-			}
-		}
-
-		return Stream.concat(rootModules.get().stream(), modules.values().stream()) //
+		var dependencyViolations = Stream.concat(rootModules.get().stream(), modules.values().stream()) //
 				.map(it -> it.detectDependencies(this)) //
-				.reduce(violations, Violations::and);
+				.reduce(NONE, Violations::and);
+
+		return cycleViolations.and(jMoleculesViolations).and(dependencyViolations);
 	}
 
 	/**
@@ -511,6 +527,30 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		};
 	}
 
+	/**
+	 * Returns the parent {@link ApplicationModule} if the given one has one.
+	 *
+	 * @param module must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public Optional<ApplicationModule> getParentOf(ApplicationModule module) {
+
+		Assert.notNull(module, "ApplicationModule must not be null!");
+
+		return module.getParentModule(this);
+	}
+
+	/**
+	 * Returns whether the given {@link ApplicationModule} has a parent one.
+	 *
+	 * @param module must not be {@literal null}.
+	 * @since 1.3
+	 */
+	public boolean hasParent(ApplicationModule module) {
+		return getParentOf(module).isPresent();
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
@@ -528,6 +568,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	public String toString() {
 
 		return this.stream()
+				.sorted()
 				.map(it -> it.toString(this))
 				.collect(Collectors.joining("\n"));
 	}
@@ -542,7 +583,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		var result = SlicesRuleDefinition.slices() //
 				.assignedFrom(new ApplicationModulesSliceAssignment())
 				.should().beFreeOfCycles() //
-				.evaluate(allClasses.that(resideInAPackage(rootPackage.getName().concat(".."))));
+				.evaluate(allClasses.that(resideInAPackage(rootPackage.asFilter())));
 
 		return result.getFailureReport();
 	}
@@ -560,7 +601,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.map(it -> Class.class.isInstance(it) ? Class.class.cast(it) : it.getClass())
 				.map(Class::getName)
 				.flatMap(this::getModuleByType)
-				.map(ApplicationModule::getName)
+				.map(ApplicationModule::getIdentifier)
 				.map(orderedNames::indexOf)
 				.orElse(null);
 	}
@@ -571,12 +612,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param moduleName must not be {@literal null}.
 	 * @return
 	 */
-	private ApplicationModule getRequiredModule(String moduleName) {
+	private ApplicationModule getRequiredModule(ApplicationModuleIdentifier identifier) {
 
-		var module = modules.get(moduleName);
+		var module = modules.get(identifier);
 
 		if (module == null) {
-			throw new IllegalArgumentException(String.format("Module %s does not exist!", moduleName));
+			throw new IllegalArgumentException(String.format("Module %s does not exist!", identifier));
 		}
 
 		return module;
@@ -605,10 +646,9 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return CACHE.computeIfAbsent(cacheKey, key -> {
 
 			var metadata = key.getMetadata();
-			var modules = new ApplicationModules(metadata, key.getIgnored(),
-					metadata.useFullyQualifiedModuleNames(), key.getOptions());
+			var modules = new ApplicationModules(metadata, key.getIgnored(), key.getOptions());
 
-			var sharedModules = metadata.getSharedModuleNames() //
+			var sharedModules = metadata.getSharedModuleIdentifiers() //
 					.map(modules::getRequiredModule) //
 					.collect(Collectors.toSet());
 
@@ -623,14 +663,11 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @return will never be {@literal null}.
 	 * @since 1.1
 	 */
-	private static ApplicationModule rootModuleFor(JavaPackage javaPackage) {
+	private static ApplicationModule rootModuleFor(JavaPackage pkg) {
 
-		return new ApplicationModule(javaPackage, true) {
+		var source = ApplicationModuleSource.from(pkg, "root:" + pkg.getName());
 
-			@Override
-			public String getName() {
-				return "root:" + super.getName();
-			}
+		return new ApplicationModule(source, JavaPackages.NONE) {
 
 			@Override
 			public boolean isRootModule() {
@@ -726,32 +763,35 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	private static class TopologicalSorter {
 
-		private static List<String> topologicallySortModules(ApplicationModules modules) {
+		@Nullable
+		private static List<ApplicationModuleIdentifier> topologicallySortModules(ApplicationModules modules) {
 
 			Graph<ApplicationModule, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
 
-			modules.modules.forEach((__, project) -> {
+			modules.modules.values()
+					.stream()
+					.sorted()
+					.forEach(project -> {
 
-				graph.addVertex(project);
+						graph.addVertex(project);
 
-				project.getDependencies(modules).stream() //
-						.map(ApplicationModuleDependency::getTargetModule) //
-						.forEach(dependency -> {
-							graph.addVertex(dependency);
-							graph.addEdge(project, dependency);
-						});
-			});
+						project.getDirectDependencies(modules).uniqueModules() //
+								.forEach(dependency -> {
+									graph.addVertex(dependency);
+									graph.addEdge(project, dependency);
+								});
+					});
 
-			var names = new ArrayList<String>();
+			var names = new ArrayList<ApplicationModuleIdentifier>();
 			var iterator = new TopologicalOrderIterator<>(graph);
 
 			try {
 
-				iterator.forEachRemaining(it -> names.add(0, it.getName()));
+				iterator.forEachRemaining(it -> names.add(0, it.getIdentifier()));
 				return names;
 
 			} catch (IllegalArgumentException o_O) {
-				return modules.modules.values().stream().map(ApplicationModule::getName).toList();
+				return null;
 			}
 		}
 	}
@@ -767,7 +807,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 			return getModuleByType(javaClass)
 					.filter(Predicate.not(ApplicationModule::isOpen))
-					.map(ApplicationModule::getName)
+					.map(ApplicationModule::getIdentifier)
+					.map(ApplicationModuleIdentifier::toString)
 					.map(SliceIdentifier::of)
 					.orElse(SliceIdentifier.ignore());
 		}

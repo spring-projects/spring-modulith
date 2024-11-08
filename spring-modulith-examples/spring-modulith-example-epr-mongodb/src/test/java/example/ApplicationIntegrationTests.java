@@ -23,6 +23,7 @@ import java.util.Collection;
 import org.bson.UuidRepresentation;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
@@ -47,6 +48,14 @@ import com.mongodb.client.MongoClients;
 @EnableScenarios
 @Testcontainers(disabledWithoutDocker = true)
 class ApplicationIntegrationTests {
+
+	public static void main(String[] args) {
+
+		SpringApplication.from(Application::main)
+				.with(MongoDbInfrastructureConfiguration.class)
+				.run(args)
+				.getApplicationContext();
+	}
 
 	@TestConfiguration
 	static class MongoDbInfrastructureConfiguration {

@@ -20,8 +20,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -216,9 +218,12 @@ public class DefaultEventPublicationRegistry
 
 					} catch (Exception o_O) {
 
-						if (LOGGER.isErrorEnabled()) {
-							LOGGER.error("Error republishing event publication " + it, o_O);
+						if (LOGGER.isInfoEnabled()) {
+							LOGGER.info("Error republishing event publication %s.".formatted(it), o_O);
 						}
+
+					} finally {
+						inProgress.unregister(it);
 					}
 				});
 	}
@@ -249,6 +254,30 @@ public class DefaultEventPublicationRegistry
 		}
 	}
 
+	/**
+	 * Returns all {@link PublicationsInProgress}.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	PublicationsInProgress getPublicationsInProgress() {
+		return inProgress;
+	}
+
+	/**
+	 * Marks the given {@link TargetEventPublication} as failed.
+	 *
+	 * @param publication must not be {@literal null}.
+	 * @see #markFailed(Object, PublicationTargetIdentifier)
+	 * @since 1.3
+	 */
+	void markFailed(TargetEventPublication publication) {
+
+		Assert.notNull(publication, "TargetEventPublication must not be null!");
+
+		markFailed(publication.getEvent(), publication.getTargetIdentifier());
+	}
+
 	private static String getConfirmationMessage(Collection<?> publications) {
 
 		var size = publications.size();
@@ -266,9 +295,9 @@ public class DefaultEventPublicationRegistry
 	 * @author Oliver Drotbohm
 	 * @since 1.3
 	 */
-	static class PublicationsInProgress {
+	static class PublicationsInProgress implements Iterable<TargetEventPublication> {
 
-		private final Set<TargetEventPublication> publications = new HashSet<>();
+		private final Set<TargetEventPublication> publications = ConcurrentHashMap.newKeySet();
 
 		/**
 		 * Registers the given {@link TargetEventPublication} as currently processed.
@@ -302,6 +331,18 @@ public class DefaultEventPublicationRegistry
 		}
 
 		/**
+		 * Unregisters the {@link TargetEventPublication}..
+		 *
+		 * @param publication must not be {@literal null}.
+		 */
+		void unregister(TargetEventPublication publication) {
+
+			Assert.notNull(publication, "TargetEventPublication must not be null!");
+
+			publications.remove(publication);
+		}
+
+		/**
 		 * Returns the {@link TargetEventPublication} associated with the given event and
 		 * {@link PublicationTargetIdentifier}.
 		 *
@@ -317,6 +358,15 @@ public class DefaultEventPublicationRegistry
 			return publications.stream()
 					.filter(it -> it.isAssociatedWith(event, identifier))
 					.findFirst();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Iterable#iterator()
+		 */
+		@Override
+		public Iterator<TargetEventPublication> iterator() {
+			return new HashSet<>(publications).iterator();
 		}
 	}
 }

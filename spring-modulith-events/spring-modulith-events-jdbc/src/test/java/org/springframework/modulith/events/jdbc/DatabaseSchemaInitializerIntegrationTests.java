@@ -26,13 +26,13 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -48,7 +48,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@ContextConfiguration(classes = TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
 	static class TestBase {
-		@MockBean EventSerializer serializer;
+		@MockitoBean EventSerializer serializer;
 	}
 
 	@Nested
@@ -73,7 +73,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=false")
 	class InitializationDisabledExplicitly extends TestBase {
 
-		@SpyBean JdbcOperations operations;
+		@MockitoSpyBean JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
 
 		@Test // GH-3
@@ -91,7 +91,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@JdbcTest
 	class InitializationDisabledByDefault extends TestBase {
 
-		@SpyBean JdbcOperations operations;
+		@MockitoSpyBean JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
 
 		@Test // GH-3
@@ -122,4 +122,16 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("mysql")
 	class MySQL extends WithInitEnabled {}
+
+	@Nested
+	@ActiveProfiles("mariadb")
+	class MariaDB extends WithInitEnabled {}
+
+	@Nested
+	@ActiveProfiles("mssql")
+	class MSSQL extends WithInitEnabled {}
+	
+	@Nested
+	@ActiveProfiles("oracle")
+	class Oracle extends WithInitEnabled {}
 }

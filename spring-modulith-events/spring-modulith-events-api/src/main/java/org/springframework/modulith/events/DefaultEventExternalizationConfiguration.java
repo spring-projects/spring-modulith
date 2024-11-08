@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events;
 
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -31,6 +32,7 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 	private final Predicate<Object> filter;
 	private final Function<Object, Object> mapper;
 	private final Function<Object, RoutingTarget> router;
+	private final Function<Object, Map<String, Object>> headers;
 
 	/**
 	 * Creates a new {@link DefaultEventExternalizationConfiguration}
@@ -38,9 +40,10 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 	 * @param filter must not be {@literal null}.
 	 * @param mapper must not be {@literal null}.
 	 * @param router must not be {@literal null}.
+	 * @param headers must not be {@literal null}.
 	 */
 	DefaultEventExternalizationConfiguration(Predicate<Object> filter, Function<Object, Object> mapper,
-			Function<Object, RoutingTarget> router) {
+			Function<Object, RoutingTarget> router, Function<Object, Map<String, Object>> headers) {
 
 		Assert.notNull(filter, "Filter must not be null!");
 		Assert.notNull(mapper, "Mapper must not be null!");
@@ -49,6 +52,7 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 		this.filter = filter;
 		this.mapper = mapper;
 		this.router = router;
+		this.headers = headers;
 	}
 
 	/**
@@ -94,5 +98,17 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 		Assert.notNull(event, "Event must not be null!");
 
 		return router.apply(event).verify();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventExternalizationConfiguration#getHeadersFor(java.lang.Object)
+	 */
+	@Override
+	public Map<String, Object> getHeadersFor(Object event) {
+
+		Assert.notNull(event, "Event must not be null!");
+
+		return headers.apply(event);
 	}
 }

@@ -19,15 +19,23 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.function.Predicate;
 
+import org.jmolecules.archunit.JMoleculesArchitectureRules;
+import org.jmolecules.archunit.JMoleculesDddRules;
+import org.jmolecules.ddd.annotation.Module;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.PackageInfo;
+import org.springframework.modulith.core.ApplicationModuleSource.ApplicationModuleSourceMetadata;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.lang.ArchRule;
 
 /**
  * @author Oliver Drotbohm
@@ -48,35 +56,94 @@ class Types {
 		private static final String BASE_PACKAGE = "org.jmolecules";
 		private static final String ANNOTATION_PACKAGE = BASE_PACKAGE + ".ddd.annotation";
 		private static final String AT_ENTITY = ANNOTATION_PACKAGE + ".Entity";
-		private static final String ARCHUNIT_RULES = BASE_PACKAGE + ".archunit.JMoleculesDddRules";
 		private static final String MODULE = ANNOTATION_PACKAGE + ".Module";
 
+		private static final String DDD_RULES = BASE_PACKAGE + ".archunit.JMoleculesDddRules";
+		private static final String ARCHITECTURE_RULES = BASE_PACKAGE + ".archunit.JMoleculesArchitectureRules";
+		private static final String HEXAGONAL = BASE_PACKAGE + ".architecture.hexagonal.Port";
+		private static final String LAYERED = BASE_PACKAGE + ".architecture.layered.InfrastructureLayer";
+		private static final String ONION = BASE_PACKAGE + ".architecture.onion.classical.InfrastructureRing";
+
 		private static final boolean PRESENT = ClassUtils.isPresent(AT_ENTITY, JMoleculesTypes.class.getClassLoader());
+		private static final boolean MODULE_PRESENT = ClassUtils.isPresent(MODULE, JMoleculesTypes.class.getClassLoader());
 
 		static final String AT_DOMAIN_EVENT_HANDLER = BASE_PACKAGE + ".event.annotation.DomainEventHandler";
 		static final String AT_DOMAIN_EVENT = BASE_PACKAGE + ".event.annotation.DomainEvent";
 		static final String DOMAIN_EVENT = BASE_PACKAGE + ".event.types.DomainEvent";
 
+		/**
+		 * Returns whether jMolecules is generally present.
+		 *
+		 * @see #isModulePresent()
+		 */
 		public static boolean isPresent() {
 			return PRESENT;
 		}
 
+		/**
+		 * Returns whether the jMolecules {@link Module} type is present. We need to guard for this explicitly as the Kotlin
+		 * variant of jMolecules DDD does not ship that type.
+		 */
+		public static boolean isModulePresent() {
+			return MODULE_PRESENT;
+		}
+
 		@Nullable
-		@SuppressWarnings("unchecked")
 		public static Class<? extends Annotation> getModuleAnnotationTypeIfPresent() {
+			return isModulePresent() ? Module.class : null;
+		}
 
-			try {
-				return isPresent()
-						? (Class<? extends Annotation>) ClassUtils.forName(MODULE, JMoleculesTypes.class.getClassLoader())
-						: null;
-			} catch (Exception o_O) {
-				return null;
+		/**
+		 * Returns an {@link ApplicationModuleSourceMetadata} for the {@link Module} annotation if present.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		@Nullable
+		public static ApplicationModuleSourceMetadata getIdentifierSource() {
+			return isModulePresent() ? ApplicationModuleSourceMetadata.forAnnotation(Module.class, Module::id) : null;
+		}
+
+		/**
+		 * Returns all architectural rules to enforce depending on the classpath arrangement.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public static Collection<ArchRule> getRules() {
+
+			var classLoader = JMoleculesTypes.class.getClassLoader();
+			var rules = new ArrayList<ArchRule>();
+
+			if (ClassUtils.isPresent(DDD_RULES, classLoader)) {
+				rules.add(JMoleculesDddRules.all());
 			}
-		}
 
-		public static boolean areRulesPresent() {
-			return ClassUtils.isPresent(ARCHUNIT_RULES, JMoleculesTypes.class.getClassLoader());
+			if (!ClassUtils.isPresent(ARCHITECTURE_RULES, classLoader)) {
+				return rules;
+			}
+
+			if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
+				rules.add(JMoleculesArchitectureRules.ensureHexagonal());
+			}
+
+			if (ClassUtils.isPresent(LAYERED, classLoader)) {
+				rules.add(JMoleculesArchitectureRules.ensureLayering());
+			}
+
+			if (ClassUtils.isPresent(ONION, classLoader)) {
+				rules.add(JMoleculesArchitectureRules.ensureOnionClassical());
+				rules.add(JMoleculesArchitectureRules.ensureOnionSimple());
+			}
+
+			return rules;
 		}
+	}
+
+	static class JavaTypes {
+
+		static Predicate<JavaClass> IS_CORE_JAVA_TYPE = it -> it.getName().startsWith("java.")
+				|| it.getName().startsWith("javax.");
+
+		static Predicate<JavaClass> IS_NOT_CORE_JAVA_TYPE = Predicate.not(IS_CORE_JAVA_TYPE);
 	}
 
 	static class JavaXTypes {

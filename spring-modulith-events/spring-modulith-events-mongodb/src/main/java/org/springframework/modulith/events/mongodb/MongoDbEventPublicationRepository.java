@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.mongodb;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
@@ -24,8 +25,12 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.bson.Document;
+import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Fields;
+import org.springframework.data.mongodb.core.aggregation.MergeOperation.WhenDocumentsMatch;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -33,6 +38,7 @@ import org.springframework.data.util.TypeInformation;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
@@ -51,21 +57,29 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	private static final String ID = "id";
 	private static final String LISTENER_ID = "listenerId";
 	private static final String PUBLICATION_DATE = "publicationDate";
-
 	private static final Sort DEFAULT_SORT = Sort.by(PUBLICATION_DATE).ascending();
 
+	static final String ARCHIVE_COLLECTION = "event_publication_archive";
+
 	private final MongoTemplate mongoTemplate;
+	private final CompletionMode completionMode;
+	private final String collection, archiveCollection;
 
 	/**
 	 * Creates a new {@link MongoDbEventPublicationRepository} for the given {@link MongoTemplate}.
 	 *
 	 * @param mongoTemplate must not be {@literal null}.
+	 * @param completionMode must not be {@literal null}.
 	 */
-	public MongoDbEventPublicationRepository(MongoTemplate mongoTemplate) {
+	public MongoDbEventPublicationRepository(MongoTemplate mongoTemplate, CompletionMode completionMode) {
 
 		Assert.notNull(mongoTemplate, "MongoTemplate must not be null!");
+		Assert.notNull(completionMode, "Completion mode must not be null!");
 
 		this.mongoTemplate = mongoTemplate;
+		this.completionMode = completionMode;
+		this.collection = "event_publication";
+		this.archiveCollection = completionMode == CompletionMode.ARCHIVE ? ARCHIVE_COLLECTION : collection;
 	}
 
 	/*
@@ -75,7 +89,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public TargetEventPublication create(TargetEventPublication publication) {
 
-		mongoTemplate.save(domainToDocument(publication));
+		mongoTemplate.save(domainToDocument(publication), collection);
 
 		return publication;
 	}
@@ -87,9 +101,22 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
+		var criteria = byEventAndListenerId(event, identifier);
+		var query = defaultQuery(criteria);
 		var update = Update.update(COMPLETION_DATE, completionDate);
 
-		mongoTemplate.findAndModify(byEventAndListenerId(event, identifier), update, MongoDbEventPublication.class);
+		if (completionMode == CompletionMode.DELETE) {
+
+			mongoTemplate.remove(query, MongoDbEventPublication.class, collection);
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			markCompleted(criteria, completionDate);
+
+		} else {
+
+			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
+		}
 	}
 
 	/*
@@ -99,9 +126,21 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
+		var criteria = where(ID).is(identifier).and(COMPLETION_DATE).isNull();
+		var query = query(criteria);
 		var update = Update.update(COMPLETION_DATE, completionDate);
 
-		mongoTemplate.findAndModify(query(where(ID).is(identifier)), update, MongoDbEventPublication.class);
+		if (completionMode == CompletionMode.DELETE) {
+
+			mongoTemplate.remove(query, MongoDbEventPublication.class, collection);
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			markCompleted(criteria, completionDate);
+
+		} else {
+			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
+		}
 	}
 
 	/*
@@ -133,7 +172,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	public Optional<TargetEventPublication> findIncompletePublicationsByEventAndTargetIdentifier(
 			Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		var results = readMapped(byEventAndListenerId(event, targetIdentifier));
+		var results = readMapped(defaultQuery(byEventAndListenerId(event, targetIdentifier)));
 
 		// if there are several events with exactly the same payload we return the oldest one first
 		return results.isEmpty() ? Optional.empty() : Optional.of(results.get(0));
@@ -145,7 +184,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
-		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)));
+		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)), archiveCollection);
 	}
 
 	/*
@@ -154,7 +193,9 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deletePublications(List<UUID> identifiers) {
-		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class);
+
+		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, collection);
+		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	/*
@@ -163,7 +204,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		mongoTemplate.remove(query(where(COMPLETION_DATE).ne(null)), MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where(COMPLETION_DATE).ne(null)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	/*
@@ -175,25 +216,31 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		mongoTemplate.remove(query(where(COMPLETION_DATE).lt(instant)), MongoDbEventPublication.class);
+		mongoTemplate.remove(query(where(COMPLETION_DATE).lt(instant)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	private List<TargetEventPublication> readMapped(Query query) {
+		return readMapped(query, collection);
+	}
+
+	private List<TargetEventPublication> readMapped(Query query, String collection) {
 
 		return mongoTemplate.query(MongoDbEventPublication.class)
+				.inCollection(collection)
 				.matching(query)
 				.stream()
 				.map(MongoDbEventPublicationRepository::documentToDomain)
 				.toList();
+
 	}
 
-	private Query byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
+	private Criteria byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
 
 		var eventAsMongoType = mongoTemplate.getConverter().convertToMongoType(event, TypeInformation.OBJECT);
 
-		return defaultQuery(where(EVENT).is(eventAsMongoType) //
+		return where(EVENT).is(eventAsMongoType) //
 				.and(LISTENER_ID).is(identifier.getValue())
-				.and(COMPLETION_DATE).isNull());
+				.and(COMPLETION_DATE).isNull();
 	}
 
 	private static MongoDbEventPublication domainToDocument(TargetEventPublication publication) {
@@ -211,6 +258,28 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	private static Query defaultQuery(Criteria criteria) {
 		return query(criteria).with(DEFAULT_SORT);
+	}
+
+	private void markCompleted(Criteria lookup, Instant now) {
+
+		var aggregation = newAggregation(MongoDbEventPublication.class,
+
+				match(lookup),
+
+				addFields()
+						.addFieldWithValue(COMPLETION_DATE, now)
+						.build(),
+
+				merge()
+						.intoCollection(archiveCollection)
+						.on(ID)
+						.whenMatched(WhenDocumentsMatch.keepExistingDocument())
+						.build());
+
+		mongoTemplate
+				.aggregate(aggregation, collection, Document.class)
+				.forEach(it -> mongoTemplate.remove(query(where(Fields.UNDERSCORE_ID).is(it.get(Fields.UNDERSCORE_ID))),
+						collection));
 	}
 
 	private static class MongoDbEventPublicationAdapter implements TargetEventPublication {
@@ -283,4 +352,6 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			return Objects.hash(publication);
 		}
 	}
+
+	record IdOnly(@Id UUID id) {}
 }

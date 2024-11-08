@@ -134,6 +134,15 @@ class SpringBootModulithMetadata implements ModulithMetadata {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.core.ModulithMetadata#getSharedModuleIdentifiers()
+	 */
+	@Override
+	public Stream<ApplicationModuleIdentifier> getSharedModuleIdentifiers() {
+		return Stream.empty();
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.model.ModulithMetadata#getSystemName()
 	 */
 	@Override

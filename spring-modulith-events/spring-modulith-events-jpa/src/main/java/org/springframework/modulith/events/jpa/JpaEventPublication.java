@@ -18,11 +18,14 @@ package org.springframework.modulith.events.jpa;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.MappedSuperclass;
 import jakarta.persistence.Table;
 
 import java.time.Instant;
+import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.util.Assert;
 
 /**
@@ -31,10 +34,10 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @author Dmitry Belyaev
  * @author Björn Kieling
+ * @author Cora Iberkleid
  */
-@Entity
-@Table(name = "EVENT_PUBLICATION")
-class JpaEventPublication {
+@MappedSuperclass
+abstract class JpaEventPublication {
 
 	final @Id @Column(length = 16) UUID id;
 	final Instant publicationDate;
@@ -53,7 +56,8 @@ class JpaEventPublication {
 	 * @param serializedEvent must not be {@literal null} or empty.
 	 * @param eventType must not be {@literal null}.
 	 */
-	JpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent, Class<?> eventType) {
+	private JpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
+			Class<?> eventType) {
 
 		Assert.notNull(id, "Identifier must not be null!");
 		Assert.notNull(publicationDate, "Publication date must not be null!");
@@ -68,7 +72,7 @@ class JpaEventPublication {
 		this.eventType = eventType;
 	}
 
-	JpaEventPublication() {
+	protected JpaEventPublication() {
 
 		this.id = null;
 		this.publicationDate = null;
@@ -77,9 +81,77 @@ class JpaEventPublication {
 		this.eventType = null;
 	}
 
-	JpaEventPublication markCompleted() {
+	static JpaEventPublication of(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
+			Class<?> eventType) {
+		return new DefaultJpaEventPublication(id, publicationDate, listenerId, serializedEvent, eventType);
+	}
 
-		this.completionDate = Instant.now();
-		return this;
+	static Class<? extends JpaEventPublication> getIncompleteType() {
+		return DefaultJpaEventPublication.class;
+	}
+
+	static Class<? extends JpaEventPublication> getCompletedType(CompletionMode mode) {
+		return mode == CompletionMode.ARCHIVE ? ArchivedJpaEventPublication.class : DefaultJpaEventPublication.class;
+	}
+
+	ArchivedJpaEventPublication archive(Instant instant) {
+
+		var result = new ArchivedJpaEventPublication(id, publicationDate, listenerId, serializedEvent, eventType);
+		result.completionDate = instant;
+
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+
+		if (obj == this) {
+			return true;
+		}
+
+		if (!(obj instanceof JpaEventPublication that)) {
+			return false;
+		}
+
+		return Objects.equals(this.id, that.id);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return id.hashCode();
+	}
+
+	@Entity(name = "DefaultJpaEventPublication")
+	@Table(name = "EVENT_PUBLICATION")
+	private static class DefaultJpaEventPublication extends JpaEventPublication {
+
+		private DefaultJpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
+				Class<?> eventType) {
+			super(id, publicationDate, listenerId, serializedEvent, eventType);
+		}
+
+		@SuppressWarnings("unused")
+		DefaultJpaEventPublication() {}
+	}
+
+	@Entity(name = "ArchivedJpaEventPublication")
+	@Table(name = "EVENT_PUBLICATION_ARCHIVE")
+	private static class ArchivedJpaEventPublication extends JpaEventPublication {
+
+		private ArchivedJpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
+				Class<?> eventType) {
+			super(id, publicationDate, listenerId, serializedEvent, eventType);
+		}
+
+		@SuppressWarnings("unused")
+		ArchivedJpaEventPublication() {}
 	}
 }

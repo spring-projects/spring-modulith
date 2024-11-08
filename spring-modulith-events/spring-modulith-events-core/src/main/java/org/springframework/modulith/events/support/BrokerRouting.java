@@ -25,14 +25,14 @@ import org.springframework.util.Assert;
 
 /**
  * A {@link BrokerRouting} supports {@link RoutingTarget} instances that contain values matching the format
- * {@code $target::$key} for which the key can actually be a SpEL expression.
+ * {@code $target::$key} for which both the target and key can be a SpEL expression.
  *
  * @author Oliver Drotbohm
  * @since 1.1
  */
 public class BrokerRouting {
 
-	private final RoutingTarget target;
+	protected final RoutingTarget target;
 
 	/**
 	 * Creates a new {@link BrokerRouting} for the given {@link RoutingTarget}.
@@ -54,16 +54,32 @@ public class BrokerRouting {
 	 * @return will never be {@literal null}.
 	 */
 	public static BrokerRouting of(RoutingTarget target, EvaluationContext context) {
-		return target.hasKeyExpression() ? new SpelBrokerRouting(target, context) : new BrokerRouting(target);
+
+		return target.hasExpression()
+				? new SpelBrokerRouting(target, context)
+				: new BrokerRouting(target);
 	}
 
 	/**
 	 * Returns the actual routing target.
 	 *
 	 * @return will never be {@literal null}.
+	 * @deprecated since 1.3, call {@link #getTarget(Object)} instead.
 	 */
+	@Deprecated
 	public String getTarget() {
 		return target.getTarget();
+	}
+
+	/**
+	 * Returns the actual routing target for the given event.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.3
+	 */
+	public String getTarget(Object event) {
+		return getTarget();
 	}
 
 	/**
@@ -89,7 +105,8 @@ public class BrokerRouting {
 		private static final SpelExpressionParser PARSER = new SpelExpressionParser();
 		private static final TemplateParserContext CONTEXT = new TemplateParserContext();
 
-		private final Expression expression;
+		private final Expression targetExpression;
+		private final @Nullable Expression keyExpression;
 		private final EvaluationContext context;
 
 		/**
@@ -103,13 +120,37 @@ public class BrokerRouting {
 
 			super(target);
 
-			var key = target.getKey();
-
-			Assert.notNull(target.getKey(), "Routing key must not be null!");
 			Assert.notNull(context, "EvaluationContext must not be null!");
 
-			this.expression = PARSER.parseExpression(key, CONTEXT);
+			this.keyExpression = target.getKey() == null ? null : PARSER.parseExpression(target.getKey(), CONTEXT);
+			this.targetExpression = PARSER.parseExpression(target.getTarget(), CONTEXT);
 			this.context = context;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.support.BrokerRouting#getTarget()
+		 */
+		@Override
+		public String getTarget() {
+			return getTarget(null);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.support.BrokerRouting#getTarget(java.lang.Object)
+		 */
+		@Override
+		public String getTarget(@Nullable Object event) {
+
+			var result = targetExpression.getValue(context, event);
+
+			if (result == null) {
+				throw new IllegalStateException(
+						"Evaluation of target expression %s must not result in null!".formatted(targetExpression));
+			}
+
+			return result.toString();
 		}
 
 		/*
@@ -119,6 +160,12 @@ public class BrokerRouting {
 		@Nullable
 		@Override
 		public String getKey(Object event) {
+
+			var expression = keyExpression;
+
+			if (expression == null) {
+				return target.getTarget();
+			}
 
 			var result = expression.getValue(context, event);
 
