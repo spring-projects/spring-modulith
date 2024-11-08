@@ -15,17 +15,21 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.tracing.BaggageInScope;
-import io.micrometer.tracing.Tracer;
-import io.micrometer.tracing.Tracer.SpanInScope;
-
 import java.util.HashMap;
 import java.util.Map;
 
+import io.micrometer.common.KeyValue;
+import io.micrometer.observation.Observation;
+import io.micrometer.observation.ObservationRegistry;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import org.springframework.context.event.EventListener;
+import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.lang.Nullable;
+import org.springframework.modulith.observability.ModulithObservations.LowKeys;
 import org.springframework.util.Assert;
 
 class ModuleEntryInterceptor implements MethodInterceptor {
@@ -34,28 +38,49 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	private static Map<String, ModuleEntryInterceptor> CACHE = new HashMap<>();
 	private static final String MODULE_KEY = ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY;
 
+	private static final ModulithObservationConvention DEFAULT = new DefaultModulithObservationConvention();
+
 	private final ObservedModule module;
-	private final Tracer tracer;
+	private final ObservationRegistry observationRegistry;
+	@Nullable private final ModulithObservationConvention customModulithObservationConvention;
 
 	/**
-	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule} and {@link Tracer}.
+	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule} and {@link ObservationRegistry}.
 	 *
-	 * @param module must not be {@literal null}.
-	 * @param tracer must not be {@literal null}.
+	 * @param module              must not be {@literal null}.
+	 * @param observationRegistry must not be {@literal null}.
 	 */
-	private ModuleEntryInterceptor(ObservedModule module, Tracer tracer) {
-
-		Assert.notNull(module, "ObservedModule must not be null!");
-		Assert.notNull(tracer, "Tracer must not be null!");
-
-		this.module = module;
-		this.tracer = tracer;
+	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry) {
+		this(module, observationRegistry, null);
 	}
 
-	public static ModuleEntryInterceptor of(ObservedModule module, Tracer tracer) {
+	/**
+	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule}, {@link ObservationRegistry}
+	 * and {@link ModulithObservationConvention}.
+	 *
+	 * @param module              must not be {@literal null}.
+	 * @param observationRegistry must not be {@literal null}.
+	 * @param custom              must not be {@literal null}.
+	 */
+	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry,
+			ModulithObservationConvention custom) {
+
+		Assert.notNull(module, "ObservedModule must not be null!");
+		Assert.notNull(observationRegistry, "Tracer must not be null!");
+
+		this.module = module; this.observationRegistry = observationRegistry;
+		this.customModulithObservationConvention = custom;
+	}
+
+	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry) {
+		return of(module, observationRegistry, null);
+	}
+
+	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
+			ModulithObservationConvention custom) {
 
 		return CACHE.computeIfAbsent(module.getName(), __ -> {
-			return new ModuleEntryInterceptor(module, tracer);
+			return new ModuleEntryInterceptor(module, observationRegistry, custom);
 		});
 	}
 
@@ -63,15 +88,19 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	 * (non-Javadoc)
 	 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
 	 */
-	@Override
-	public Object invoke(MethodInvocation invocation) throws Throwable {
+	@Override public Object invoke(MethodInvocation invocation) throws Throwable {
 
 		var moduleName = module.getName();
-		var currentSpan = tracer.currentSpan();
-		var currentBaggage = tracer.getBaggage(MODULE_KEY);
-		var currentModule = currentBaggage != null ? currentBaggage.get() : null;
+		var currentObservation = observationRegistry.getCurrentObservation();
+		String currentModule = null;
 
-		if (currentSpan != null && moduleName.equals(currentModule)) {
+		if (currentObservation != null) {
+			KeyValue moduleKey = currentObservation.getContextView().getLowCardinalityKeyValue(MODULE_KEY);
+			currentModule = moduleKey != null ? moduleKey.getValue() : null;
+		}
+
+		if (currentObservation != null && moduleName.equals(currentModule)) {
+			// Same module
 			return invocation.proceed();
 		}
 
@@ -79,21 +108,20 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
 
-		var span = tracer.spanBuilder()
-				.name(moduleName)
-				.tag("module.method", invokedMethod)
-				.tag(MODULE_KEY, moduleName)
-				.start();
+		boolean isEventListener = module.isEventListenerInvocation(invocation);
 
-		try (SpanInScope ws = tracer.withSpan(span);
-				BaggageInScope baggage = tracer.createBaggageInScope(MODULE_KEY, moduleName)) {
-
-			return invocation.proceed();
-
+		// TODO: Good name for metrics
+		ModulithContext modulithContext = new ModulithContext(module, invocation);
+		var observation = Observation.createNotStarted(customModulithObservationConvention, DEFAULT,
+				() -> modulithContext, observationRegistry); if (isEventListener) {
+			observation.lowCardinalityKeyValue(LowKeys.INVOCATION_TYPE.withValue("event-listener"));
+		} try (Observation.Scope scope = observation.openScope()) {
+			Object proceed = invocation.proceed(); observation.event(ModulithObservations.Events.EVENT_PUBLICATION_SUCCESS);
+			return proceed;
+		} catch (Exception ex) {
+			observation.error(ex); observation.event(ModulithObservations.Events.EVENT_PUBLICATION_FAILURE); throw ex;
 		} finally {
-
-			LOGGER.trace("Leaving {}", module.getDisplayName());
-			span.end();
+			LOGGER.trace("Leaving {}", module.getDisplayName()); observation.stop();
 		}
 	}
 }

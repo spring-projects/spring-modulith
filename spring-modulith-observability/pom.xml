@@ -13,7 +13,11 @@
 
 	<properties>
 		<module.name>org.springframework.modulith.observability</module.name>
-		<spring-cloud.version>2021.0.0</spring-cloud.version>
+
+		<micrometer-docs-generator.version>1.0.4</micrometer-docs-generator.version>
+		<micrometer-docs-generator.inputPath>${project.basedir}/src/main/java/</micrometer-docs-generator.inputPath>
+		<micrometer-docs-generator.inclusionPattern>.*</micrometer-docs-generator.inclusionPattern>
+		<micrometer-docs-generator.outputPath>${project.build.directory}/observation-documentation/</micrometer-docs-generator.outputPath>
 	</properties>
 
 	<dependencies>
@@ -79,6 +83,12 @@
 			<optional>true</optional>
 		</dependency>
 
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-api</artifactId>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- Testing -->
 
 		<dependency>
@@ -94,5 +104,40 @@
 		</dependency>
 
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>exec-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>generate-docs</id>
+						<phase>prepare-package</phase>
+						<goals>
+							<goal>java</goal>
+						</goals>
+						<configuration>
+							<mainClass>io.micrometer.docs.DocsGeneratorCommand</mainClass>
+							<includePluginDependencies>true</includePluginDependencies>
+							<arguments>
+								<argument>${micrometer-docs-generator.inputPath}</argument>
+								<argument>${micrometer-docs-generator.inclusionPattern}</argument>
+								<argument>${micrometer-docs-generator.outputPath}</argument>
+							</arguments>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>io.micrometer</groupId>
+						<artifactId>micrometer-docs-generator</artifactId>
+						<version>${micrometer-docs-generator.version}</version>
+						<type>jar</type>
+					</dependency>
+				</dependencies>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

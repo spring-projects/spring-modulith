@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
 
 import java.util.function.Supplier;
@@ -40,22 +41,22 @@ import org.springframework.util.Assert;
 public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<Tracer> tracer;
+	private final Supplier<ObservationRegistry> observationRegistry;
 
 	/**
 	 * Creates a new {@link SpringDataRestModuleTracingBeanPostProcessor} for the given {@link ApplicationModulesRuntime}
 	 * and {@link Tracer}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param tracer must not be {@literal null}.
+	 * @param observationRegistry must not be {@literal null}.
 	 */
-	public SpringDataRestModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer) {
+	public SpringDataRestModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistry) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(tracer, "Tracer must not be null!");
+		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
 
 		this.runtime = runtime;
-		this.tracer = tracer;
+		this.observationRegistry = observationRegistry;
 	}
 
 	/*
@@ -71,7 +72,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 			return bean;
 		}
 
-		Advice interceptor = new DataRestControllerInterceptor(runtime, tracer);
+		Advice interceptor = new DataRestControllerInterceptor(runtime, observationRegistry);
 		Advisor advisor = new DefaultPointcutAdvisor(interceptor);
 
 		return addAdvisor(bean, advisor, it -> it.setProxyTargetClass(true));
@@ -80,21 +81,21 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 	private static class DataRestControllerInterceptor implements MethodInterceptor {
 
 		private final Supplier<ApplicationModules> modules;
-		private final Supplier<Tracer> tracer;
+		private final Supplier<ObservationRegistry> observationRegistry;
 
 		/**
 		 * Creates a new {@link DataRestControllerInterceptor} for the given {@link ApplicationModules} and {@link Tracer}.
 		 *
 		 * @param modules must not be {@literal null}.
-		 * @param tracer must not be {@literal null}.
+		 * @param observationRegistry must not be {@literal null}.
 		 */
-		private DataRestControllerInterceptor(Supplier<ApplicationModules> modules, Supplier<Tracer> tracer) {
+		private DataRestControllerInterceptor(Supplier<ApplicationModules> modules, Supplier<ObservationRegistry> observationRegistry) {
 
 			Assert.notNull(modules, "ApplicationModules must not be null!");
-			Assert.notNull(tracer, "Tracer must not be null!");
+			Assert.notNull(observationRegistry, "Tracer must not be null!");
 
 			this.modules = modules;
-			this.tracer = tracer;
+			this.observationRegistry = observationRegistry;
 		}
 
 		/*
@@ -112,7 +113,7 @@ public class SpringDataRestModuleTracingBeanPostProcessor extends ModuleTracingS
 
 			var observed = new DefaultObservedModule(module);
 
-			return ModuleEntryInterceptor.of(observed, tracer.get()).invoke(invocation);
+			return ModuleEntryInterceptor.of(observed, observationRegistry.get()).invoke(invocation);
 		}
 
 		private ApplicationModule getModuleFrom(Object[] arguments) {

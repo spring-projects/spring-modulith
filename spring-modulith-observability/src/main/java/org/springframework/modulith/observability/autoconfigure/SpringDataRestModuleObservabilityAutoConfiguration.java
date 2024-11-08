@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
 
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,8 +35,8 @@ class SpringDataRestModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static SpringDataRestModuleTracingBeanPostProcessor springDataRestModuleTracingBeanPostProcessor(
-			ApplicationModulesRuntime runtime, ObjectProvider<Tracer> tracer) {
+			ApplicationModulesRuntime runtime, ObjectProvider<ObservationRegistry> observationRegistry) {
 
-		return new SpringDataRestModuleTracingBeanPostProcessor(runtime, () -> tracer.getObject());
+		return new SpringDataRestModuleTracingBeanPostProcessor(runtime, () -> observationRegistry.getObject());
 	}
 }

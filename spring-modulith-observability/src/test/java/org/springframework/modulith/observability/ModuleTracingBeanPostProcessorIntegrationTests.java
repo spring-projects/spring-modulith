@@ -20,6 +20,7 @@ import static org.mockito.Mockito.*;
 
 import example.ExampleApplication;
 import example.sample.SampleComponent;
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
 
 import org.junit.jupiter.api.Test;
@@ -70,7 +71,7 @@ class ModuleTracingBeanPostProcessorIntegrationTests {
 			var modulesRuntime = new ApplicationModulesRuntime(() -> TestApplicationModules.of(ExampleApplication.class),
 					runtime);
 
-			return new ModuleTracingBeanPostProcessor(modulesRuntime, () -> mock(Tracer.class), context.getBeanFactory());
+			return new ModuleTracingBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP, context.getBeanFactory());
 		}
 	}
 

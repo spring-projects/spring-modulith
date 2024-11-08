@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.observation.Observation.Event;
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
 
 import java.util.function.Supplier;
@@ -22,6 +24,7 @@ import java.util.function.Supplier;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.modulith.observability.ModulithObservations.Events;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -31,21 +34,21 @@ import org.springframework.util.Assert;
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<Tracer> tracer;
+	private final Supplier<ObservationRegistry> observationRegistry;
 
 	/**
 	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link Tracer}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param tracer must not be {@literal null}.
+	 * @param observationRegistrySupplier must not be {@literal null}.
 	 */
-	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer) {
+	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistrySupplier) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(tracer, "Tracer must not be null!");
+		Assert.notNull(observationRegistrySupplier, "Tracer must not be null!");
 
 		this.runtime = runtime;
-		this.tracer = tracer;
+		this.observationRegistry = observationRegistrySupplier;
 	}
 
 	/*
@@ -74,12 +77,12 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		var span = tracer.get().currentSpan();
+		var observation = observationRegistry.get().getCurrentObservation();
 
-		if (span == null) {
+		if (observation == null) {
 			return;
 		}
 
-		span.event("Published " + payloadType.getName());
+		observation.event(Event.of(Events.EVENT_PUBLICATION_SUCCESS.getName(), "Published " + payloadType.getName()));
 	}
 }

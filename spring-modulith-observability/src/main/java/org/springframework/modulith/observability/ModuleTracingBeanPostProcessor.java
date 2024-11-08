@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
 
 import java.lang.reflect.Method;
@@ -47,7 +48,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<Tracer> tracer;
+	private final Supplier<ObservationRegistry> observationRegistry;
 	private final Map<String, Advisor> advisors;
 	private final ConfigurableListableBeanFactory factory;
 
@@ -56,16 +57,16 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 	 * {@link Tracer}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param tracer must not be {@literal null}.
+	 * @param observationRegistry must not be {@literal null}.
 	 */
-	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<Tracer> tracer,
+	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistry,
 			ConfigurableListableBeanFactory factory) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(tracer, "Tracer must not be null!");
+		Assert.notNull(observationRegistry, "Tracer must not be null!");
 
 		this.runtime = runtime;
-		this.tracer = tracer;
+		this.observationRegistry = observationRegistry;
 		this.advisors = new HashMap<>();
 		this.factory = factory;
 	}
@@ -120,7 +121,7 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 	private Advisor getOrBuildAdvisor(ObservedModule module, ObservedModuleType type) {
 
 		return advisors.computeIfAbsent(module.getName(), __ -> {
-			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, tracer.get()));
+			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, observationRegistry.get()));
 		});
 	}
 

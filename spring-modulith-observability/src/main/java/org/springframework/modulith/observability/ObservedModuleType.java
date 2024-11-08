@@ -35,8 +35,9 @@ import org.springframework.util.ReflectionUtils;
  * Represents a type in an {@link ObservedModule}.
  *
  * @author Oliver Drotbohm
+ * @since 1.3
  */
-class ObservedModuleType {
+public class ObservedModuleType {
 
 	private static Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
 	private static Predicate<Method> IS_USER_METHOD = it -> !Modifier.isPrivate(it.getModifiers())
@@ -115,4 +116,5 @@ class ObservedModuleType {
 				.map(it -> !module.isObservedModule(it))
 				.orElse(true);
 	}
+
 }
