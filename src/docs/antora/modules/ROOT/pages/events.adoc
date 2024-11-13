@@ -211,6 +211,16 @@ Automatic re-publication of the events can be enabled via the xref:appendix.adoc
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
 
+[[publication-registry.event-lifecycle]]
+=== The Event Lifecycle
+
+Events can be in one of two states:
+
+* Incomplete
+* Complete
+
+Events remain incomplete until successfully delivered. That means an event can be incomplete because it has yet to be delivered to the respective listener, the listener is currently processing it, or a previous attempt to deliver it has failed, for example, because the listener has thrown an exception. There is currently no mechanism to detect which of those cases occurred and how many times.
+
 [[publication-registry.starters]]
 === Spring Boot Event Registry Starters
 
@@ -238,6 +248,8 @@ The following starters are available:
 |`spring-modulith-starter-neo4j`
 |Using Neo4j behind Spring Data Neo4j.
 |===
+
+None of the <<publication-registry.starters,built-in starters>> supports multiple concurrently running application instances. If you want to run multiple instances side-by-side, it is recommended to implement your own <<publication-registry.publication-repositories,event publication repository>> and either employ an appropriate synchronization mechanism (like database locks) or perform a https://en.wikipedia.org/wiki/Leader_election[leader election]. Special care is also required when <<publication-registry.managing-publications,managing event publications>>. For example, you have to prevent multiple instances from retrying the same incomplete event publication simultaneously if your application cannot deal with at-least-once event delivery.
 
 [[publication-registry.managing-publications]]
 === Managing Event Publications
@@ -276,6 +288,76 @@ This artifact contains two primary abstractions that are available to applicatio
 
 * `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older than a given duration (for example, 1 minute).
 * `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
+
+Typical usage looks as follows:
+
+.Event housekeeping
+[tabs]
+======
+Java::
++
+[source,java,role="primary"]
+----
+@Transactional
+@Service
+public class EventHousekeeping {
+
+  private final IncompleteEventPublications incompleteEventPublications;
+  private final CompletedEventPublications completedEventPublications;
+
+  @Autowired
+  public EventHousekeeping(
+    IncompleteEventPublications incompleteEventPublications,
+    CompletedEventPublications completedEventPublications
+  ) {
+    this.incompleteEventPublications = Objects.requireNonNull(incompleteEventPublications);
+    this.completedEventPublications = Objects.requireNonNull(completedEventPublications);
+  }
+
+  @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
+  public void retryIncompletePublicationsPeriodically() {
+    this.incompleteEventPublications.resubmitIncompletePublicationsOlderThan(Duration.ofMinutes(1));
+  }
+
+  @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS)
+  public void removeCompletedPublicationsPeriodically() {
+    this.completedEventPublications.deletePublicationsOlderThan(Duration.ofHours(1));
+  }
+}
+----
+Kotlin::
++
+[source,kotlin,role="secondary"]
+----
+@Transactional
+@Service
+class EventHousekeeping(
+  private val incompleteEventPublications: IncompleteEventPublications,
+  private val completedEventPublications: CompletedEventPublications
+) {
+
+  @Scheduled(fixedRate = 1, timeUnit = TimeUnit.MINUTES)
+  fun retryIncompletePublicationsPeriodically() {
+    incompleteEventPublications.resubmitIncompletePublicationsOlderThan(Duration.ofMinutes(1))
+  }
+
+  @Scheduled(fixedRate = 1, timeUnit = TimeUnit.HOURS)
+  fun removeCompletedPublicationsPeriodically() {
+    completedEventPublications.deletePublicationsOlderThan(Duration.ofHours(1))
+  }
+}
+----
+======
+
+Adjust the rate at which the scheduled methods are invoked depending on your application's needs. Add or remove methods as necessary, for example, to remove incomplete event publication after some time. You can also instruct Modulith to <<publication-registry.completion,automatically remove publications upon completion without additional code>>. That would make the method `removeCompletedPublicationsPeriodically()` obsolete.
+
+Special care is required when retrying incomplete event publications. As mentioned in <<publication-registry.event-lifecycle>>, it is currently impossible to discern why an event is incomplete:
+
+* It can be waiting for the first delivery attempt.
+* The respective event listener might currently process it.
+* One or more previous delivery attempts might have failed.
+
+Thus, event listeners must either be able to deal with at-least-once event delivery or appropriate synchronization techniques must be employed to ensure that the same event handler does not run concurrently. Furthermore, there must be enough time between successive retries for all event listeners to complete.
 
 [[publication-registry.completion]]
 === Event Publication Completion
