@@ -47,6 +47,8 @@
 		<spring-framework.version>6.2.0-RC3</spring-framework.version> <!-- For Javadoc links only -->
 		<spring-cloud-aws-bom.version>3.1.1</spring-cloud-aws-bom.version>
 		<testcontainers.version>1.17.6</testcontainers.version>
+		<!-- TODO: For snapshots -->
+		<micrometer-tracing.version>1.5.0-SNAPSHOT</micrometer-tracing.version>
 
 	</properties>
 
@@ -93,6 +95,14 @@ limitations under the License.
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-framework-bom</artifactId>
 				<version>${spring-framework.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<!-- TODO: For snapshots -->
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-tracing-bom</artifactId>
+				<version>${micrometer-tracing.version}</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

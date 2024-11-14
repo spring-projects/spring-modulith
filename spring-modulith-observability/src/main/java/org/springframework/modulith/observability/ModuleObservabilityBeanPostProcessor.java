@@ -34,6 +34,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.env.Environment;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -43,7 +44,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
+public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySupport implements BeanPostProcessor {
 
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
@@ -51,24 +52,26 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 	private final Supplier<ObservationRegistry> observationRegistry;
 	private final Map<String, Advisor> advisors;
 	private final ConfigurableListableBeanFactory factory;
+	private final Environment environment;
 
 	/**
-	 * Creates a new {@link ModuleTracingBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
+	 * Creates a new {@link ModuleObservabilityBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
 	 * {@link Tracer}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.
 	 */
-	public ModuleTracingBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistry,
-			ConfigurableListableBeanFactory factory) {
+	public ModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistry,
+			ConfigurableListableBeanFactory factory, Environment environment) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(observationRegistry, "Tracer must not be null!");
+		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
 
 		this.runtime = runtime;
 		this.observationRegistry = observationRegistry;
 		this.advisors = new HashMap<>();
 		this.factory = factory;
+		this.environment = environment;
 	}
 
 	/*
@@ -120,8 +123,8 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 
 	private Advisor getOrBuildAdvisor(ObservedModule module, ObservedModuleType type) {
 
-		return advisors.computeIfAbsent(module.getName(), __ -> {
-			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, observationRegistry.get()));
+		return advisors.computeIfAbsent(module.getIdentifier().toString(), __ -> {
+			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, observationRegistry.get(), environment));
 		});
 	}
 

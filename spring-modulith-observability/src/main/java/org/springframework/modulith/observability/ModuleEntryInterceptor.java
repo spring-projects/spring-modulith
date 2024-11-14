@@ -17,6 +17,7 @@ package org.springframework.modulith.observability;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
@@ -26,32 +27,34 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.springframework.context.event.EventListener;
-import org.springframework.core.annotation.AnnotationUtils;
+import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.observability.ModulithObservations.LowKeys;
 import org.springframework.util.Assert;
 
 class ModuleEntryInterceptor implements MethodInterceptor {
 
 	private static Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
-	private static Map<String, ModuleEntryInterceptor> CACHE = new HashMap<>();
-	private static final String MODULE_KEY = ModuleTracingBeanPostProcessor.MODULE_BAGGAGE_KEY;
+	private static Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new HashMap<>();
 
 	private static final ModulithObservationConvention DEFAULT = new DefaultModulithObservationConvention();
 
 	private final ObservedModule module;
 	private final ObservationRegistry observationRegistry;
-	@Nullable private final ModulithObservationConvention customModulithObservationConvention;
+	@Nullable
+	private final ModulithObservationConvention customModulithObservationConvention;
+	private final Environment environment;
 
 	/**
 	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule} and {@link ObservationRegistry}.
 	 *
 	 * @param module              must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.
+	 * @param environment         must not be {@literal null}.
 	 */
-	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry) {
-		this(module, observationRegistry, null);
+	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry, Environment environment) {
+		this(module, observationRegistry, null, environment);
 	}
 
 	/**
@@ -61,26 +64,29 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	 * @param module              must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.
 	 * @param custom              must not be {@literal null}.
+	 * @param environment         must not be {@literal null}.
 	 */
 	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry,
-			ModulithObservationConvention custom) {
+			ModulithObservationConvention custom, Environment environment) {
 
 		Assert.notNull(module, "ObservedModule must not be null!");
 		Assert.notNull(observationRegistry, "Tracer must not be null!");
 
 		this.module = module; this.observationRegistry = observationRegistry;
 		this.customModulithObservationConvention = custom;
-	}
-
-	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry) {
-		return of(module, observationRegistry, null);
+		this.environment = environment;
 	}
 
 	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
-			ModulithObservationConvention custom) {
+			Environment environment) {
+		return of(module, observationRegistry, null, environment);
+	}
 
-		return CACHE.computeIfAbsent(module.getName(), __ -> {
-			return new ModuleEntryInterceptor(module, observationRegistry, custom);
+	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
+			ModulithObservationConvention custom, Environment environment) {
+
+		return CACHE.computeIfAbsent(module.getIdentifier(), __ -> {
+			return new ModuleEntryInterceptor(module, observationRegistry, custom, environment);
 		});
 	}
 
@@ -88,18 +94,19 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	 * (non-Javadoc)
 	 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
 	 */
-	@Override public Object invoke(MethodInvocation invocation) throws Throwable {
+	@Override
+	public Object invoke(MethodInvocation invocation) throws Throwable {
 
-		var moduleName = module.getName();
+		var moduleIdentifier = module.getIdentifier();
 		var currentObservation = observationRegistry.getCurrentObservation();
 		String currentModule = null;
 
 		if (currentObservation != null) {
-			KeyValue moduleKey = currentObservation.getContextView().getLowCardinalityKeyValue(MODULE_KEY);
+			KeyValue moduleKey = currentObservation.getContextView().getLowCardinalityKeyValue(LowKeys.MODULE_KEY.asString());
 			currentModule = moduleKey != null ? moduleKey.getValue() : null;
 		}
 
-		if (currentObservation != null && moduleName.equals(currentModule)) {
+		if (currentObservation != null && Objects.equals(moduleIdentifier.toString(), currentModule)) {
 			// Same module
 			return invocation.proceed();
 		}
@@ -108,18 +115,18 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
 
-		boolean isEventListener = module.isEventListenerInvocation(invocation);
-
 		// TODO: Good name for metrics
-		ModulithContext modulithContext = new ModulithContext(module, invocation);
+		ModulithContext modulithContext = new ModulithContext(module, invocation, environment);
 		var observation = Observation.createNotStarted(customModulithObservationConvention, DEFAULT,
-				() -> modulithContext, observationRegistry); if (isEventListener) {
-			observation.lowCardinalityKeyValue(LowKeys.INVOCATION_TYPE.withValue("event-listener"));
-		} try (Observation.Scope scope = observation.openScope()) {
-			Object proceed = invocation.proceed(); observation.event(ModulithObservations.Events.EVENT_PUBLICATION_SUCCESS);
+				() -> modulithContext, observationRegistry);
+		try (Observation.Scope scope = observation.start().openScope()) {
+			Object proceed = invocation.proceed();
+			observation.event(ModulithObservations.Events.EVENT_PUBLICATION_SUCCESS);
 			return proceed;
 		} catch (Exception ex) {
-			observation.error(ex); observation.event(ModulithObservations.Events.EVENT_PUBLICATION_FAILURE); throw ex;
+			observation.error(ex);
+			observation.event(ModulithObservations.Events.EVENT_PUBLICATION_FAILURE);
+			throw ex;
 		} finally {
 			LOGGER.trace("Leaving {}", module.getDisplayName()); observation.stop();
 		}

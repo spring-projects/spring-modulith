@@ -24,10 +24,11 @@ import example.sample.SampleProperties;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
+import org.springframework.mock.env.MockEnvironment;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
- * Unit tests for {@link ModuleTracingBeanPostProcessor}.
+ * Unit tests for {@link ModuleObservabilityBeanPostProcessor}.
  *
  * @author Oliver Drotbohm
  */
@@ -43,7 +44,7 @@ class ModuleTracingBeanPostProcessorUnitTests {
 		doReturn(SampleProperties.class).when(mock).getUserClass(any(), any());
 		doReturn(true).when(mock).isApplicationClass(any());
 
-		var processor = new ModuleTracingBeanPostProcessor(mock, () -> null, beanFactory);
+		var processor = new ModuleObservabilityBeanPostProcessor(mock, () -> null, beanFactory, new MockEnvironment());
 
 		var bean = new SampleProperties();
 		var result = processor.postProcessAfterInitialization(bean, "properties");

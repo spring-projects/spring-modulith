@@ -16,12 +16,10 @@
 package org.springframework.modulith.observability;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import example.ExampleApplication;
 import example.sample.SampleComponent;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Tracer;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.Advisor;
@@ -30,14 +28,14 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor.ApplicationModuleObservingAdvisor;
+import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor.ApplicationModuleObservingAdvisor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.modulith.test.TestApplicationModules;
 import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 
 /**
- * Integration tests for {@link ModuleTracingBeanPostProcessor}.
+ * Integration tests for {@link ModuleObservabilityBeanPostProcessor}.
  *
  * @author Oliver Drotbohm
  */
@@ -64,14 +62,13 @@ class ModuleTracingBeanPostProcessorIntegrationTests {
 	@Configuration
 	static class ModuleTracingConfiguration {
 
-		@Bean
-		ModuleTracingBeanPostProcessor foo(ConfigurableApplicationContext context) {
+		@Bean ModuleObservabilityBeanPostProcessor foo(ConfigurableApplicationContext context) {
 
 			var runtime = ApplicationRuntime.of(context);
 			var modulesRuntime = new ApplicationModulesRuntime(() -> TestApplicationModules.of(ExampleApplication.class),
 					runtime);
 
-			return new ModuleTracingBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP, context.getBeanFactory());
+			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP, context.getBeanFactory(), context.getEnvironment());
 		}
 	}
 

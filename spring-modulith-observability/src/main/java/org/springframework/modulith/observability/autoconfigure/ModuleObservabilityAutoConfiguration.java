@@ -15,10 +15,15 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
+import io.micrometer.common.KeyValue;
+import io.micrometer.observation.ObservationFilter;
 import io.micrometer.observation.ObservationRegistry;
+import io.micrometer.tracing.Tracer;
+import io.micrometer.tracing.exporter.SpanFilter;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
 import org.springframework.boot.autoconfigure.thread.Threading;
@@ -26,9 +31,12 @@ import org.springframework.boot.task.SimpleAsyncTaskExecutorCustomizer;
 import org.springframework.boot.task.ThreadPoolTaskExecutorCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
+import org.springframework.modulith.observability.LocalServiceRenamingSpanFilter;
 import org.springframework.modulith.observability.ModuleEventListener;
-import org.springframework.modulith.observability.ModuleTracingBeanPostProcessor;
+import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor;
+import org.springframework.modulith.observability.ModulePassingObservationFilter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
@@ -39,9 +47,9 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 class ModuleObservabilityAutoConfiguration {
 
 	@Bean
-	static ModuleTracingBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
-			ObjectProvider<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory) {
-		return new ModuleTracingBeanPostProcessor(runtime, observationRegistry::getObject, factory);
+	static ModuleObservabilityBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
+			ObjectProvider<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory, Environment environment) {
+		return new ModuleObservabilityBeanPostProcessor(runtime, observationRegistry::getObject, factory, environment);
 	}
 
 	@Bean
@@ -61,5 +69,21 @@ class ModuleObservabilityAutoConfiguration {
 	@ConditionalOnThreading(Threading.PLATFORM)
 	ThreadPoolTaskExecutorCustomizer threadPoolTaskExecutorCustomizer() {
 		return executor -> executor.setTaskDecorator(new ContextPropagatingTaskDecorator());
+	}
+
+	@Bean
+	ObservationFilter modulePassingObservationFilter() {
+		return new ModulePassingObservationFilter();
+	}
+
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnClass(Tracer.class)
+	static class MicrometerTracingConfiguration {
+
+
+		@Bean
+		SpanFilter localSpanFilter() {
+			return new LocalServiceRenamingSpanFilter();
+		}
 	}
 }
