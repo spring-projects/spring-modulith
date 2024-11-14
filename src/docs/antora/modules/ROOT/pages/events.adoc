@@ -232,7 +232,7 @@ The following starters are available:
 
 |MongoDB
 |`spring-modulith-starter-mongodb`
-|Using MongoDB as persistence technology. Also enables MongoDB transactions and requires a replica set setup of the server to interact with. The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongobd.transaction-management.enabled` property to `false`.
+|Using MongoDB as persistence technology. Also enables MongoDB transactions and requires a replica set setup of the server to interact with. The transaction auto-configuration can be disabled by setting the `spring.modulith.events.mongodb.transaction-management.enabled` property to `false`.
 
 |Neo4j
 |`spring-modulith-starter-neo4j`
