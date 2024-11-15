@@ -20,15 +20,21 @@ import java.util.function.Consumer;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
+import org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator;
+import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanClassLoaderAware;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 
 /**
  * @author Oliver Drotbohm
  */
-class ModuleTracingSupport implements BeanClassLoaderAware {
+class ModuleTracingSupport implements BeanClassLoaderAware, BeanFactoryAware {
 
 	private ClassLoader classLoader;
+	private @Nullable AbstractAutoProxyCreator creator;
 
 	/*
 	 * (non-Javadoc)
@@ -37,6 +43,15 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 	@Override
 	public void setBeanClassLoader(ClassLoader classLoader) {
 		this.classLoader = classLoader;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.BeanFactoryAware#setBeanFactory(org.springframework.beans.factory.BeanFactory)
+	 */
+	@Override
+	public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
+		this.creator = beanFactory.getBeanProvider(AbstractAutoProxyCreator.class).getIfAvailable();
 	}
 
 	protected final Object addAdvisor(Object bean, Advisor advisor) {
@@ -53,7 +68,12 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 
 		} else {
 
-			ProxyFactory factory = new ProxyFactory(bean);
+			var factory = new ProxyFactory(bean);
+
+			if (creator != null) {
+				factory.copyFrom(creator);
+			}
+
 			customizer.accept(factory);
 			factory.addAdvisor(advisor);
 
@@ -63,7 +83,7 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 
 	private static int asyncAdvisorIndex(Advised advised) {
 
-		Advisor[] advisors = advised.getAdvisors();
+		var advisors = advised.getAdvisors();
 
 		for (int i = 0; i < advised.getAdvisorCount(); i++) {
 
