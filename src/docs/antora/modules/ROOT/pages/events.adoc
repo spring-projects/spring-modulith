@@ -393,9 +393,9 @@ The event externalization performs three steps on each application event publish
 
 1. _Determining whether the event is supposed to be externalized_ -- We refer to this as "`event selection`".
 By default, only event types located within a Spring Boot auto-configuration package and annotated with one of the supported `@Externalized` annotations are selected for externalization.
-2. _Mapping the event (optional)_ -- By default, the event is serialized to JSON using the Jackson `ObjectMapper` present in the application and published as is.
-The mapping step allows developers to either customize the representation or even completely replace the original event with a representation suitable for external parties.
-Note that the mapping step precedes the actual serialization of the to be published object.
+2. _Preparing the message (optional)_ -- By default, the event is serialized as is by the corresponding broker infrastructure.
+An optional mapping step allows developers to customize or even completely replace the original event with a payload suitable for external parties.
+For Kafka and AMQP, developers can also add headers to the message to be published.
 3. _Determining a routing target_ -- Message broker clients need a logical target to publish the message to.
 The target usually identifies physical infrastructure (a topic, exchange, or queue depending on the broker) and is often statically derived from the event type.
 Unless defined in the `@Externalized` annotation specifically, Spring Modulith uses the application-local type name as target.
@@ -481,7 +481,8 @@ class ExternalizationConfiguration {
     return EventExternalizationConfiguration.externalizing()                 // <1>
       .select(EventExternalizationConfiguration.annotatedAsExternalized())   // <2>
       .mapping(SomeEvent.class, event -> …)                                  // <3>
-      .routeKey(WithKeyProperty.class, WithKeyProperty::getKey)              // <4>
+      .headers(event -> …)                                                   // <4>
+      .routeKey(WithKeyProperty.class, WithKeyProperty::getKey)              // <5>
       .build();
   }
 }
@@ -498,8 +499,9 @@ class ExternalizationConfiguration {
 
     EventExternalizationConfiguration.externalizing()                         // <1>
       .select(EventExternalizationConfiguration.annotatedAsExternalized())    // <2>
-      .mapping(SomeEvent::class.java) { event -> … }                           // <3>
-      .routeKey(WithKeyProperty::class.java, WithKeyProperty::getKey)         // <4>
+      .mapping(SomeEvent::class.java) { event -> … }                          // <3>
+      .headers() { event -> … }                                               // <4>
+      .routeKey(WithKeyProperty::class.java, WithKeyProperty::getKey)         // <5>
       .build()
   }
 }
@@ -513,7 +515,8 @@ Convenience methods to easily select events by type, by packages, packages and a
 Also, a shortcut to define selection and routing in one step.
 <3> We define a mapping step for `SomeEvent` instances.
 Note that the routing will still be determined by the original event instance, unless you additionally call `….routeMapped()` on the router.
-<4> We finally determine a routing key by defining a method handle to extract a value of the event instance.
+<4> We add custom headers to the message to be sent out either generally as shown or specific to a certain payload type.
+<5> We finally determine a routing key by defining a method handle to extract a value of the event instance.
 Alternatively, a full `RoutingKey` can be produced for individual events by using the general `route(…)` method on the `Router` instance returned from the previous call.
 
 [[testing]]
