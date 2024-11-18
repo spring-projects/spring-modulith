@@ -20,6 +20,7 @@ import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import java.lang.annotation.Annotation;
 
 import org.springframework.lang.Nullable;
+import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
 import com.tngtech.archunit.base.DescribedPredicate;
@@ -29,13 +30,24 @@ import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates;
 
 /**
+ * Utility to deal with a variety of types.
+ *
  * @author Oliver Drotbohm
  */
-class Types {
+public class Types {
 
+	/**
+	 * Loads the class with the given name if present on the classpath.
+	 *
+	 * @param <T> the type to be loaded
+	 * @param name the fully-qualified name of the type to be loaded, must not be {@literal null} or empty.
+	 * @return can be {@literal null}.
+	 */
 	@Nullable
 	@SuppressWarnings("unchecked")
-	static <T> Class<T> loadIfPresent(String name) {
+	public static <T> Class<T> loadIfPresent(String name) {
+
+		Assert.hasText(name, "Name must not be null or empty!");
 
 		ClassLoader loader = Types.class.getClassLoader();
 
