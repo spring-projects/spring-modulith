@@ -15,9 +15,10 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.Observation.Event;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Tracer;
 
 import java.util.function.Supplier;
 
@@ -35,20 +36,24 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<ObservationRegistry> observationRegistry;
+	private final Supplier<MeterRegistry> meterRegistry;
 
 	/**
-	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link Tracer}.
+	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link ObservationRegistry} and {@link MeterRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistrySupplier must not be {@literal null}.
 	 */
-	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistrySupplier) {
+	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistrySupplier,
+			Supplier<MeterRegistry> meterRegistrySupplier) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(observationRegistrySupplier, "Tracer must not be null!");
+		Assert.notNull(observationRegistrySupplier, "ObservationRegistry must not be null!");
+		Assert.notNull(meterRegistrySupplier, "MeterRegistry must not be null!");
 
 		this.runtime = runtime;
 		this.observationRegistry = observationRegistrySupplier;
+		this.meterRegistry = meterRegistrySupplier;
 	}
 
 	/*
@@ -75,6 +80,14 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 
 		if (moduleByType == null) {
 			return;
+		}
+
+		MeterRegistry registry = meterRegistry.get();
+		if (registry != null) {
+			Counter.builder(ModulithMetrics.EVENTS.getName()) //
+					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name(), event.getClass().getSimpleName()) //
+					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name(), moduleByType.getDisplayName()) //
+					.register(registry).increment();
 		}
 
 		var observation = observationRegistry.get().getCurrentObservation();

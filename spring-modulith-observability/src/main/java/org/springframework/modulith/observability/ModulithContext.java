@@ -9,7 +9,7 @@ import org.springframework.core.env.Environment;
  * A {@link Observation.Context} for Modulithic applications.
  *
  * @author Marcin Grzejsczak
- * @since 1.3
+ * @since 1.4
  */
 public class ModulithContext extends Observation.Context {
 

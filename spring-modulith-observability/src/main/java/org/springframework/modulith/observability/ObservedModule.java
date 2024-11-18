@@ -30,7 +30,7 @@ import org.springframework.modulith.core.ArchitecturallyEvidentType;
  * Information about observed module.
  *
  * @author Oliver Drotbohm
- * @since 1.3
+ * @since 1.4
  */
 public interface ObservedModule {
 
@@ -90,7 +90,7 @@ public interface ObservedModule {
 	 * method invocation on a Spring bean.
 	 *
 	 * @param invocation must not be {@literal null}.
-	 * @since 1.3
+	 * @since 1.4
 	 */
 	boolean isEventListenerInvocation(MethodInvocation invocation);
 }

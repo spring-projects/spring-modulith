@@ -11,7 +11,7 @@ import org.springframework.modulith.observability.ModulithObservations.LowKeys;
  * Default implementation of {@link ModulithObservationConvention}.
  *
  * @author Marcin Grzejszczak
- * @since 1.3
+ * @since 1.4
  */
 public class DefaultModulithObservationConvention implements ModulithObservationConvention {
 

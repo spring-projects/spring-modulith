@@ -16,7 +16,6 @@
 package org.springframework.modulith.observability;
 
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Tracer;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
@@ -56,7 +55,7 @@ public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySup
 
 	/**
 	 * Creates a new {@link ModuleObservabilityBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
-	 * {@link Tracer}.
+	 * {@link ObservationRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.

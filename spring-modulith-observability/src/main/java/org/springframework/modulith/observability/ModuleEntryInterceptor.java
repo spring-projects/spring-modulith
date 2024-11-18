@@ -70,9 +70,10 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 			ModulithObservationConvention custom, Environment environment) {
 
 		Assert.notNull(module, "ObservedModule must not be null!");
-		Assert.notNull(observationRegistry, "Tracer must not be null!");
+		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
 
-		this.module = module; this.observationRegistry = observationRegistry;
+		this.module = module;
+		this.observationRegistry = observationRegistry;
 		this.customModulithObservationConvention = custom;
 		this.environment = environment;
 	}
@@ -115,7 +116,6 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
 
-		// TODO: Good name for metrics
 		ModulithContext modulithContext = new ModulithContext(module, invocation, environment);
 		var observation = Observation.createNotStarted(customModulithObservationConvention, DEFAULT,
 				() -> modulithContext, observationRegistry);

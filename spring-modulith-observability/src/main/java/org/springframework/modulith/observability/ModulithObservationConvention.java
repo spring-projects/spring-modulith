@@ -7,7 +7,7 @@ import io.micrometer.observation.ObservationConvention;
  * {@link ObservationConvention} for {@link ModulithContext}.
  *
  * @author Marcin Grzejszczak
- * @since 1.3
+ * @since 1.4
  */
 public interface ModulithObservationConvention extends ObservationConvention<ModulithContext> {
 

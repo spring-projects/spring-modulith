@@ -18,9 +18,9 @@ package org.springframework.modulith.observability.autoconfigure;
 import brave.handler.MutableSpan;
 import brave.handler.SpanHandler;
 import brave.propagation.TraceContext;
+import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationFilter;
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Tracer;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -54,8 +54,8 @@ class ModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static ModuleEventListener tracingModuleEventListener(ApplicationModulesRuntime runtime,
-			ObjectProvider<ObservationRegistry> observationRegistry) {
-		return new ModuleEventListener(runtime, observationRegistry::getObject);
+			ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<MeterRegistry> meterRegistry) {
+		return new ModuleEventListener(runtime, observationRegistry::getObject, meterRegistry::getObject);
 	}
 
 	// TODO: Have a custom thread pool for modulith

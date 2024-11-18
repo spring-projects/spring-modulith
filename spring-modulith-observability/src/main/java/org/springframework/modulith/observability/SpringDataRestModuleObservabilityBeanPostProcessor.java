@@ -16,7 +16,6 @@
 package org.springframework.modulith.observability;
 
 import io.micrometer.observation.ObservationRegistry;
-import io.micrometer.tracing.Tracer;
 
 import java.util.function.Supplier;
 
@@ -47,7 +46,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 
 	/**
 	 * Creates a new {@link SpringDataRestModuleObservabilityBeanPostProcessor} for the given {@link ApplicationModulesRuntime}
-	 * and {@link Tracer}.
+	 * and {@link ObservationRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.

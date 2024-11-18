@@ -35,7 +35,7 @@ import org.springframework.util.ReflectionUtils;
  * Represents a type in an {@link ObservedModule}.
  *
  * @author Oliver Drotbohm
- * @since 1.3
+ * @since 1.4
  */
 public class ObservedModuleType {
 

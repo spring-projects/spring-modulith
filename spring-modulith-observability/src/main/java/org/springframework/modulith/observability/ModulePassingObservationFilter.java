@@ -23,7 +23,7 @@ import io.micrometer.observation.ObservationFilter;
  * to child.
  * 
  * @author Marcin Grzejszczak
- * @since 1.3
+ * @since 1.4
  */
 public class ModulePassingObservationFilter implements ObservationFilter {
 
