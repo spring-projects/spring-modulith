@@ -31,6 +31,8 @@ import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMet
 import org.springframework.util.Assert;
 import org.springframework.util.ReflectionUtils;
 
+import com.tngtech.archunit.core.domain.JavaClass;
+
 /**
  * Represents a type in an {@link ObservedModule}.
  *
@@ -38,9 +40,10 @@ import org.springframework.util.ReflectionUtils;
  */
 class ObservedModuleType {
 
-	private static Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
-	private static Predicate<Method> IS_USER_METHOD = it -> !Modifier.isPrivate(it.getModifiers())
+	private static final Collection<Class<?>> IGNORED_TYPES = List.of(Advised.class, TargetClassAware.class);
+	private static final Predicate<Method> IS_USER_METHOD = it -> !Modifier.isPrivate(it.getModifiers())
 			&& !(ReflectionUtils.isObjectMethod(it) || IGNORED_TYPES.contains(it.getDeclaringClass()));
+	private static final String MESSAGE_MAPPING_ANNOTATION = "org.springframework.messaging.handler.annotation.MessageMapping";
 
 	private final ApplicationModules modules;
 	private final ObservedModule module;
@@ -75,18 +78,19 @@ class ObservedModuleType {
 	/**
 	 * Returns whether the type should be observed at all. Can be skipped for types not exposed by the module unless they
 	 * listen to events of other modules.
-	 *
-	 * @return
 	 */
 	public boolean shouldBeObserved() {
 
-		if (type.getType().isMetaAnnotatedWith(Configuration.class)) {
+		var javaType = type.getType();
+
+		if (javaType.isMetaAnnotatedWith(Configuration.class)) {
 			return false;
 		}
 
 		return type.isController()
 				|| listensToOtherModulesEvents()
-				|| module.exposes(type.getType());
+				|| module.exposes(javaType)
+				|| hasMethodWithMessageMappingAnnotation(javaType);
 	}
 
 	/**
@@ -114,5 +118,20 @@ class ObservedModuleType {
 				.findFirst()
 				.map(it -> !module.isObservedModule(it))
 				.orElse(true);
+	}
+
+	/**
+	 * Returns whether the given type contains a method (meta-)annotated with {@code MessageMapping}.
+	 *
+	 * @param type must not be {@literal null}.
+	 */
+	private static boolean hasMethodWithMessageMappingAnnotation(JavaClass type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return MESSAGE_MAPPING_ANNOTATION != null
+				&& type.getMethods()
+						.stream()
+						.anyMatch(it -> it.isMetaAnnotatedWith(MESSAGE_MAPPING_ANNOTATION));
 	}
 }
