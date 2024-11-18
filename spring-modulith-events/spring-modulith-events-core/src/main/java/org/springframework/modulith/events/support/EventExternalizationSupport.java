@@ -36,7 +36,7 @@ import org.springframework.util.Assert;
  */
 abstract class EventExternalizationSupport implements ConditionalEventListener {
 
-	private static final Logger logger = LoggerFactory.getLogger(EventExternalizationSupport.class.getClass());
+	private static final Logger logger = LoggerFactory.getLogger(EventExternalizationSupport.class);
 
 	private final EventExternalizationConfiguration configuration;
 
