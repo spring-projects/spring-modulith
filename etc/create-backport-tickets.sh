@@ -1,5 +1,5 @@
 #!/bin/bash
-# Format $ticketNumer $targetVersion[]
+# Format $ticketNumber $targetVersion[]
 
 sourceGh="GH-$1"
 branch=$(git branch --show-current)
@@ -41,7 +41,7 @@ do
 
 	# Update commit message to refer to new ticket
 	echo "Adapt commit message from $sourceGh to $targetGh"
-	git commit --amend -m "$message"
+	git commit --amend -m "$message\n\nFixes GH-$number."
 done
 
 # Return to original branch
