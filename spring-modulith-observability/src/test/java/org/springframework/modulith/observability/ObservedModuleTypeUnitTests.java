@@ -25,6 +25,7 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType;
+import org.springframework.modulith.core.Types;
 import org.springframework.modulith.test.TestApplicationModules;
 import org.springframework.util.ReflectionUtils;
 
@@ -68,5 +69,16 @@ class ObservedModuleTypeUnitTests {
 		var observedType = new ObservedModuleType(modules, new DefaultObservedModule(module), type);
 
 		assertThat(observedType.shouldBeObserved()).isFalse();
+	}
+
+	@Test // GH-936
+	void exposesMessageListenerMethodsForObservation() {
+
+		var type = Types.loadIfPresent("example.sample.SampleMessageListener");
+
+		var architecturallyEvidentType = module.getArchitecturallyEvidentType(type);
+		var moduleType = new ObservedModuleType(modules, new DefaultObservedModule(module), architecturallyEvidentType);
+
+		assertThat(moduleType.shouldBeObserved()).isTrue();
 	}
 }
