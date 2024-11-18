@@ -15,11 +15,12 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
-import io.micrometer.common.KeyValue;
+import brave.handler.MutableSpan;
+import brave.handler.SpanHandler;
+import brave.propagation.TraceContext;
 import io.micrometer.observation.ObservationFilter;
 import io.micrometer.observation.ObservationRegistry;
 import io.micrometer.tracing.Tracer;
-import io.micrometer.tracing.exporter.SpanFilter;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
@@ -33,7 +34,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
-import org.springframework.modulith.observability.LocalServiceRenamingSpanFilter;
 import org.springframework.modulith.observability.ModuleEventListener;
 import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor;
 import org.springframework.modulith.observability.ModulePassingObservationFilter;
@@ -77,13 +77,25 @@ class ModuleObservabilityAutoConfiguration {
 	}
 
 	@Configuration(proxyBeanMethods = false)
-	@ConditionalOnClass(Tracer.class)
-	static class MicrometerTracingConfiguration {
-
+	@ConditionalOnClass(SpanHandler.class)
+	static class BraveConfiguration {
+		/**
+		 * Corresponds to {@link ModulithObservations.LowKeys#MODULE_KEY}
+		 */
+		private static final String MODULE_KEY_TAG_NAME = "module.key";
 
 		@Bean
-		SpanFilter localSpanFilter() {
-			return new LocalServiceRenamingSpanFilter();
+		SpanHandler localServiceNameRenamingSpanHandler() {
+			return new SpanHandler() {
+				@Override public boolean end(TraceContext context, MutableSpan span, Cause cause) {
+					String tag = span.tag(MODULE_KEY_TAG_NAME);
+					if (tag != null) {
+						span.localServiceName(tag);
+					}
+					return super.end(context, span, cause);
+				}
+			};
 		}
 	}
+
 }

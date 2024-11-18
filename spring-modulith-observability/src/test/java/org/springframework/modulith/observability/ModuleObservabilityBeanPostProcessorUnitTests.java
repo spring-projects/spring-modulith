@@ -32,7 +32,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
  *
  * @author Oliver Drotbohm
  */
-class ModuleTracingBeanPostProcessorUnitTests {
+class ModuleObservabilityBeanPostProcessorUnitTests {
 
 	@Test // GH-498
 	void doesNotProxyConfiguationProperties() {

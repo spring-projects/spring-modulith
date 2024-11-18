@@ -39,13 +39,13 @@ import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
  *
  * @author Oliver Drotbohm
  */
-class ModuleTracingBeanPostProcessorIntegrationTests {
+class ModuleObservabilityBeanPostProcessorIntegrationTests {
 
 	@Test
 	void decoratesExposedComponentsWithTracingInterceptor() {
 
 		SampleComponent bean = SpringApplication
-				.run(new Class<?>[] { ExampleApplication.class, ModuleTracingConfiguration.class }, new String[] {})
+				.run(new Class<?>[] { ExampleApplication.class, ModuleObservabilityConfiguration.class }, new String[] {})
 				.getBean(SampleComponent.class);
 
 		assertThat(bean).isInstanceOfSatisfying(Advised.class, it -> {
@@ -60,7 +60,7 @@ class ModuleTracingBeanPostProcessorIntegrationTests {
 	}
 
 	@Configuration
-	static class ModuleTracingConfiguration {
+	static class ModuleObservabilityConfiguration {
 
 		@Bean ModuleObservabilityBeanPostProcessor foo(ConfigurableApplicationContext context) {
 
