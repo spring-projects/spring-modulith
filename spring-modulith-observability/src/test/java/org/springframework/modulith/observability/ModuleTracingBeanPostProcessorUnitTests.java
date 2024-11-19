@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 import example.sample.SampleProperties;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
@@ -49,5 +50,16 @@ class ModuleTracingBeanPostProcessorUnitTests {
 		var result = processor.postProcessAfterInitialization(bean, "properties");
 
 		assertThat(result).isSameAs(bean);
+	}
+
+	@Test // GH-936
+	void processorIsRegisteredBefore() {
+
+		var rabbitProcessor = new RabbitListenerAnnotationBeanPostProcessor();
+		var tracingProcessor = new ModuleTracingBeanPostProcessor(mock(ApplicationModulesRuntime.class), () -> null,
+				new DefaultListableBeanFactory());
+
+		assertThat(rabbitProcessor.getOrder()).isGreaterThan(tracingProcessor.getOrder());
+
 	}
 }

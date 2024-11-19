@@ -33,6 +33,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.core.Ordered;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -42,7 +43,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor {
+public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport implements BeanPostProcessor, Ordered {
 
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
@@ -68,6 +69,15 @@ public class ModuleTracingBeanPostProcessor extends ModuleTracingSupport impleme
 		this.tracer = tracer;
 		this.advisors = new HashMap<>();
 		this.factory = factory;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.core.Ordered#getOrder()
+	 */
+	@Override
+	public int getOrder() {
+		return Ordered.LOWEST_PRECEDENCE - 50;
 	}
 
 	/*
