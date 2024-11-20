@@ -85,8 +85,8 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 		MeterRegistry registry = meterRegistry.get();
 		if (registry != null) {
 			Counter.builder(ModulithMetrics.EVENTS.getName()) //
-					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name(), event.getClass().getSimpleName()) //
-					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name(), moduleByType.getDisplayName()) //
+					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), event.getClass().getSimpleName()) //
+					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
 					.register(registry).increment();
 		}
 
