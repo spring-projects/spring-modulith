@@ -26,13 +26,13 @@
 		<dependency>
 			<groupId>com.structurizr</groupId>
 			<artifactId>structurizr-core</artifactId>
-			<version>1.29.0</version>
+			<version>${structurizr.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>com.structurizr</groupId>
 			<artifactId>structurizr-export</artifactId>
-			<version>1.19.0</version>
+			<version>${structurizr.version}</version>
 		</dependency>
 
 		<dependency>
