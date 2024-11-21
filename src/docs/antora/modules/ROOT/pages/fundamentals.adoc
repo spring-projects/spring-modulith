@@ -416,7 +416,7 @@ import org.springframework.modulith.Modulithic;
 class MyApplication {
 
   public static void main(String... args) {
-    SpringApplication.run(DemoApplication.class, args);
+    SpringApplication.run(MyApplication.class, args);
   }
 }
 ----
@@ -432,10 +432,10 @@ import org.springframework.modulith.Modulithic
 
 @Modulithic
 @SpringBootApplication
-class DemoApplication
+class MyApplication
 
 fun main(args: Array<String>) {
-  runApplication<DemoApplication>(*args)
+  runApplication<MyApplication>(*args)
 }
 ----
 ======
