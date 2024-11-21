@@ -6,6 +6,20 @@
 			"description": "Whether to configure defaults for the async processing termination, namely to wait for task completion for 2 seconds. See TaskExecutionProperties for details.",
 			"defaultValue": "true"
 		},
+
+		{
+			"name": "spring.modulith.events.republish-outstanding-events-on-restart.lock-timeout",
+			"type": "java.lang.Long",
+			"description": "How long to wait to try to acquire the shared Spring Integration Lock before attempting to proces incomplete event publications on startup",
+			"defaultValue": "true"
+		},
+
+		{
+			"name": "spring.modulith.events.republish-outstanding-events-on-restart.lock-name",
+			"type"  : "java.lang.String",
+			"description" : "the name of the shared Spring Integration Lock to acquire before attempting to process incomplete event publications on startup"
+		},
+		
 		{
 			"name": "spring.modulith.republish-outstanding-events-on-restart",
 			"type": "java.lang.Boolean",
