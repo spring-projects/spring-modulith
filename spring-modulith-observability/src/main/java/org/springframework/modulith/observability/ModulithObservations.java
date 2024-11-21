@@ -1,8 +1,24 @@
+/*
+ * Copyright 2024 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.modulith.observability;
 
 import io.micrometer.common.docs.KeyName;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.Context;
+import io.micrometer.observation.Observation.Event;
 import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.docs.ObservationDocumentation;
 
@@ -12,19 +28,40 @@ enum ModulithObservations implements ObservationDocumentation {
 	 * Observation related to entering a module.
 	 */
 	MODULE_ENTRY {
-		@Override public Class<? extends ObservationConvention<? extends Context>> getDefaultConvention() {
+
+		/*
+		 * (non-Javadoc)
+		 * @see io.micrometer.observation.docs.ObservationDocumentation#getDefaultConvention()
+		 */
+		@Override
+		public Class<? extends ObservationConvention<? extends Context>> getDefaultConvention() {
 			return DefaultModulithObservationConvention.class;
 		}
 
-		@Override public KeyName[] getLowCardinalityKeyNames() {
+		/*
+		 * (non-Javadoc)
+		 * @see io.micrometer.observation.docs.ObservationDocumentation#getLowCardinalityKeyNames()
+		 */
+		@Override
+		public KeyName[] getLowCardinalityKeyNames() {
 			return LowKeys.values();
 		}
 
-		@Override public KeyName[] getHighCardinalityKeyNames() {
+		/*
+		 * (non-Javadoc)
+		 * @see io.micrometer.observation.docs.ObservationDocumentation#getHighCardinalityKeyNames()
+		 */
+		@Override
+		public KeyName[] getHighCardinalityKeyNames() {
 			return HighKeys.values();
 		}
 
-		@Override public Observation.Event[] getEvents() {
+		/*
+		 * (non-Javadoc)
+		 * @see io.micrometer.observation.docs.ObservationDocumentation#getEvents()
+		 */
+		@Override
+		public Observation.Event[] getEvents() {
 			return Events.values();
 		}
 	};
@@ -35,7 +72,13 @@ enum ModulithObservations implements ObservationDocumentation {
 		 * Name of the module.
 		 */
 		MODULE_KEY {
-			@Override public String asString() {
+
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.common.docs.KeyName#asString()
+			 */
+			@Override
+			public String asString() {
 				return "module.key";
 			}
 		},
@@ -44,7 +87,13 @@ enum ModulithObservations implements ObservationDocumentation {
 		 * Type of invocation (e.g. event listener).
 		 */
 		INVOCATION_TYPE {
-			@Override public String asString() {
+
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.common.docs.KeyName#asString()
+			 */
+			@Override
+			public String asString() {
 				return "module.invocation-type";
 			}
 		}
@@ -55,23 +104,35 @@ enum ModulithObservations implements ObservationDocumentation {
 		 * Method executed on a module.
 		 */
 		MODULE_METHOD {
-			@Override public String asString() {
+			@Override
+			public String asString() {
 				return "module.method";
 			}
 		}
 	}
 
-	enum Events implements Observation.Event {
+	enum Events implements Event {
 
 		/**
 		 * Published when an event is sent successfully.
 		 */
 		EVENT_PUBLICATION_SUCCESS {
-			@Override public String getName() {
+
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.observation.Observation.Event#getName()
+			 */
+			@Override
+			public String getName() {
 				return "event.publication.success";
 			}
 
-			@Override public String getContextualName() {
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.observation.Observation.Event#getContextualName()
+			 */
+			@Override
+			public String getContextualName() {
 				return getName();
 			}
 		},
@@ -80,11 +141,22 @@ enum ModulithObservations implements ObservationDocumentation {
 		 * Published when an event is sent with a failure.
 		 */
 		EVENT_PUBLICATION_FAILURE {
-			@Override public String getName() {
+
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.observation.Observation.Event#getName()
+			 */
+			@Override
+			public String getName() {
 				return "event.publication.failure";
 			}
 
-			@Override public String getContextualName() {
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.observation.Observation.Event#getContextualName()
+			 */
+			@Override
+			public String getContextualName() {
 				return getName();
 			}
 		}

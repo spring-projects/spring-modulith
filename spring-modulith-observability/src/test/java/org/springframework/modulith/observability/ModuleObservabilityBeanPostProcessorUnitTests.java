@@ -32,6 +32,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
  * Unit tests for {@link ModuleObservabilityBeanPostProcessor}.
  *
  * @author Oliver Drotbohm
+ * @author Marcin Grzejszczak
  */
 class ModuleObservabilityBeanPostProcessorUnitTests {
 

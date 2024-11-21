@@ -38,13 +38,14 @@ import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
  * Integration tests for {@link ModuleObservabilityBeanPostProcessor}.
  *
  * @author Oliver Drotbohm
+ * @author Marcin Grzejszczak
  */
 class ModuleObservabilityBeanPostProcessorIntegrationTests {
 
 	@Test
 	void decoratesExposedComponentsWithTracingInterceptor() {
 
-		SampleComponent bean = SpringApplication
+		var bean = SpringApplication
 				.run(new Class<?>[] { ExampleApplication.class, ModuleObservabilityConfiguration.class }, new String[] {})
 				.getBean(SampleComponent.class);
 
@@ -62,13 +63,15 @@ class ModuleObservabilityBeanPostProcessorIntegrationTests {
 	@Configuration
 	static class ModuleObservabilityConfiguration {
 
-		@Bean ModuleObservabilityBeanPostProcessor foo(ConfigurableApplicationContext context) {
+		@Bean
+		ModuleObservabilityBeanPostProcessor foo(ConfigurableApplicationContext context) {
 
 			var runtime = ApplicationRuntime.of(context);
 			var modulesRuntime = new ApplicationModulesRuntime(() -> TestApplicationModules.of(ExampleApplication.class),
 					runtime);
 
-			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP, context.getBeanFactory(), context.getEnvironment());
+			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP,
+					context.getBeanFactory(), context.getEnvironment());
 		}
 	}
 

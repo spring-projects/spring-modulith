@@ -39,13 +39,15 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	private final Supplier<MeterRegistry> meterRegistry;
 
 	/**
-	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and {@link ObservationRegistry} and {@link MeterRegistry}.
+	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and
+	 * {@link ObservationRegistry} and {@link MeterRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistrySupplier must not be {@literal null}.
+	 * @param meterRegistrySupplier must not be {@literal null}.
 	 */
-	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<ObservationRegistry> observationRegistrySupplier,
-			Supplier<MeterRegistry> meterRegistrySupplier) {
+	public ModuleEventListener(ApplicationModulesRuntime runtime,
+			Supplier<ObservationRegistry> observationRegistrySupplier, Supplier<MeterRegistry> meterRegistrySupplier) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
 		Assert.notNull(observationRegistrySupplier, "ObservationRegistry must not be null!");
@@ -82,8 +84,10 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		MeterRegistry registry = meterRegistry.get();
+		var registry = meterRegistry.get();
+
 		if (registry != null) {
+
 			Counter.builder(ModulithMetrics.EVENTS.getName()) //
 					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), event.getClass().getSimpleName()) //
 					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //

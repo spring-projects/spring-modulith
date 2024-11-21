@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 the original author or authors.
+ * Copyright 2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,46 @@
 package org.springframework.modulith.observability;
 
 import io.micrometer.observation.Observation;
+import io.micrometer.observation.Observation.ContextView;
 import io.micrometer.observation.ObservationFilter;
 
 /**
- * Ensures that {@link ModulithObservations.LowKeys#MODULE_KEY} gets propagated from parent
- * to child.
- * 
+ * Ensures that {@link ModulithObservations.LowKeys#MODULE_KEY} gets propagated from parent to child.
+ *
  * @author Marcin Grzejszczak
+ * @author Oliver Drotbohm
  * @since 1.4
  */
 public class ModulePassingObservationFilter implements ObservationFilter {
 
-	@Override 
+	/*
+	 * (non-Javadoc)
+	 * @see io.micrometer.observation.ObservationFilter#map(io.micrometer.observation.Observation.Context)
+	 */
+	@Override
 	public Observation.Context map(Observation.Context context) {
+
 		if (isModuleKeyValueAbsentInCurrent(context) && isModuleKeyValuePresentInParent(context)) {
-			return context.addLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.withValue(context.getParentObservation().getContextView().getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.asString()).getValue()));
+
+			var moduleKey = ModulithObservations.LowKeys.MODULE_KEY;
+
+			return context.addLowCardinalityKeyValue(moduleKey.withValue(context.getParentObservation().getContextView()
+					.getLowCardinalityKeyValue(moduleKey.asString()).getValue()));
 		}
+
 		return context;
 	}
 
-	private static boolean isModuleKeyValueAbsentInCurrent(Observation.ContextView context) {
+	private static boolean isModuleKeyValueAbsentInCurrent(ContextView context) {
 		return context.getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.asString()) == null;
 	}
 
-	private static boolean isModuleKeyValuePresentInParent(Observation.ContextView context) {
-		return context.getParentObservation() != null && context.getParentObservation().getContextView().getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.asString()) != null;
+	private static boolean isModuleKeyValuePresentInParent(ContextView context) {
+
+		var parentObservation = context.getParentObservation();
+
+		return parentObservation != null
+				&& parentObservation.getContextView()
+						.getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.asString()) != null;
 	}
 }

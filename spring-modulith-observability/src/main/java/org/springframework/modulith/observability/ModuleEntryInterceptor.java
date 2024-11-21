@@ -15,8 +15,8 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.common.KeyValue;
 import io.micrometer.observation.Observation;
+import io.micrometer.observation.Observation.Scope;
 import io.micrometer.observation.ObservationRegistry;
 
 import java.util.HashMap;
@@ -33,16 +33,22 @@ import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.observability.ModulithObservations.LowKeys;
 import org.springframework.util.Assert;
 
+/**
+ * {@link MethodInterceptor} to create {@link Observation}s.
+ *
+ * @author Marcin Grzejszczak
+ * @author Oliver Drotbohm
+ */
 class ModuleEntryInterceptor implements MethodInterceptor {
 
-	private static Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
 	private static Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new HashMap<>();
 
 	private static final ModulithObservationConvention DEFAULT = new DefaultModulithObservationConvention();
 
 	private final ObservedModule module;
 	private final ObservationRegistry observationRegistry;
-	@Nullable private final ModulithObservationConvention customModulithObservationConvention;
+	private final @Nullable ModulithObservationConvention customModulithObservationConvention;
 	private final Environment environment;
 
 	/**
@@ -103,7 +109,8 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 		String currentModule = null;
 
 		if (currentObservation != null) {
-			KeyValue moduleKey = currentObservation.getContextView().getLowCardinalityKeyValue(LowKeys.MODULE_KEY.asString());
+
+			var moduleKey = currentObservation.getContextView().getLowCardinalityKeyValue(LowKeys.MODULE_KEY.asString());
 			currentModule = moduleKey != null ? moduleKey.getValue() : null;
 		}
 
@@ -116,18 +123,26 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
 
-		ModulithContext modulithContext = new ModulithContext(module, invocation, environment);
+		var modulithContext = new ModulithContext(module, invocation, environment);
 		var observation = Observation.createNotStarted(customModulithObservationConvention, DEFAULT,
 				() -> modulithContext, observationRegistry);
-		try (Observation.Scope scope = observation.start().openScope()) {
-			Object proceed = invocation.proceed();
+
+		try (Scope scope = observation.start().openScope()) {
+
+			var proceed = invocation.proceed();
 			observation.event(ModulithObservations.Events.EVENT_PUBLICATION_SUCCESS);
+
 			return proceed;
+
 		} catch (Exception ex) {
+
 			observation.error(ex);
 			observation.event(ModulithObservations.Events.EVENT_PUBLICATION_FAILURE);
+
 			throw ex;
+
 		} finally {
+
 			LOGGER.trace("Leaving {}", module.getDisplayName());
 			observation.stop();
 		}
