@@ -54,7 +54,7 @@ import org.springframework.util.ReflectionUtils;
  * application restart or via a schedule.
  * <p>
  * Republication is handled in {@link #afterSingletonsInstantiated()} inspecting the {@link EventPublicationRegistry}
- * for incomplete publications and
+ * for incomplete publications.
  *
  * @author Oliver Drotbohm
  * @see CompletionRegisteringAdvisor
