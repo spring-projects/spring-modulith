@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2024 the original author or authors.
+ * Copyright 2024 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,22 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.jpa;
+package org.springframework.modulith.events.jpa.archiving;
 
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackage;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
-import org.springframework.modulith.events.jpa.updating.DefaultJpaEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
- * Auto-configuration for JPA based event publication. Registers this class' package as auto-configuration package, so
- * that it gets picked up for entity scanning by default.
+ * Auto-configuration adding the current package as auto-configuration package for {@link ArchivedJpaEventPublication}
+ * to be included in the JPA setup.
  *
  * @author Oliver Drotbohm
+ * @since 1.3.1
  */
+@ConditionalOnProperty(name = CompletionMode.PROPERTY, havingValue = "archive")
 @AutoConfiguration
 @AutoConfigureBefore({ HibernateJpaAutoConfiguration.class, EventPublicationAutoConfiguration.class })
-@AutoConfigurationPackage(basePackageClasses = DefaultJpaEventPublication.class)
-class JpaEventPublicationAutoConfiguration extends JpaEventPublicationConfiguration {}
+@AutoConfigurationPackage
+class ArchivingAutoConfiguration {}

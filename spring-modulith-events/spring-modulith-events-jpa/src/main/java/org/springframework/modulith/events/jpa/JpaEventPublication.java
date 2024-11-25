@@ -16,15 +16,15 @@
 package org.springframework.modulith.events.jpa;
 
 import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
-import jakarta.persistence.Table;
 
 import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.springframework.modulith.events.jpa.archiving.ArchivedJpaEventPublication;
+import org.springframework.modulith.events.jpa.updating.DefaultJpaEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.util.Assert;
 
@@ -37,7 +37,7 @@ import org.springframework.util.Assert;
  * @author Cora Iberkleid
  */
 @MappedSuperclass
-abstract class JpaEventPublication {
+public abstract class JpaEventPublication {
 
 	final @Id @Column(length = 16) UUID id;
 	final Instant publicationDate;
@@ -45,7 +45,7 @@ abstract class JpaEventPublication {
 	final String serializedEvent;
 	final Class<?> eventType;
 
-	Instant completionDate;
+	protected Instant completionDate;
 
 	/**
 	 * Creates a new {@link JpaEventPublication} for the given publication date, listener id, serialized event and event
@@ -56,7 +56,7 @@ abstract class JpaEventPublication {
 	 * @param serializedEvent must not be {@literal null} or empty.
 	 * @param eventType must not be {@literal null}.
 	 */
-	private JpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
+	protected JpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
 			Class<?> eventType) {
 
 		Assert.notNull(id, "Identifier must not be null!");
@@ -127,31 +127,5 @@ abstract class JpaEventPublication {
 	@Override
 	public int hashCode() {
 		return id.hashCode();
-	}
-
-	@Entity(name = "DefaultJpaEventPublication")
-	@Table(name = "EVENT_PUBLICATION")
-	private static class DefaultJpaEventPublication extends JpaEventPublication {
-
-		private DefaultJpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
-				Class<?> eventType) {
-			super(id, publicationDate, listenerId, serializedEvent, eventType);
-		}
-
-		@SuppressWarnings("unused")
-		DefaultJpaEventPublication() {}
-	}
-
-	@Entity(name = "ArchivedJpaEventPublication")
-	@Table(name = "EVENT_PUBLICATION_ARCHIVE")
-	private static class ArchivedJpaEventPublication extends JpaEventPublication {
-
-		private ArchivedJpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
-				Class<?> eventType) {
-			super(id, publicationDate, listenerId, serializedEvent, eventType);
-		}
-
-		@SuppressWarnings("unused")
-		ArchivedJpaEventPublication() {}
 	}
 }

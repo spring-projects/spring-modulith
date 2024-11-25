@@ -16,42 +16,49 @@
 package org.springframework.modulith.events.jpa;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import example.ExampleApplication;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.events.core.EventSerializer;
-import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestConstructor;
-import org.springframework.test.context.TestConstructor.AutowireMode;
+import org.springframework.modulith.events.jpa.archiving.ArchivedJpaEventPublication;
+import org.springframework.modulith.events.jpa.updating.DefaultJpaEventPublication;
+import org.springframework.modulith.events.support.CompletionMode;
 
 /**
  * @author Oliver Drotbohm
  */
-@SpringBootTest
-@ContextConfiguration(classes = ExampleApplication.class)
-@TestConstructor(autowireMode = AutowireMode.ALL)
 class JpaEventPublicationAutoConfigurationIntegrationTests {
 
-	private final BeanFactory factory;
+	String examplePackage = ExampleApplication.class.getPackageName();
+	String eventPublicationPackage = DefaultJpaEventPublication.class.getPackageName();
+	String archivingPackage = ArchivedJpaEventPublication.class.getPackageName();
 
-	@MockitoBean EventSerializer serializer;
-
-    JpaEventPublicationAutoConfigurationIntegrationTests(BeanFactory factory) {
-        this.factory = factory;
-    }
-
-    @Test // GH-10
+	@Test // GH-10
 	void registersJpaEventPublicationPackageForAutoConfiguration() {
+		assertAutoConfigurationPackages(null, examplePackage, eventPublicationPackage);
+	}
 
-		var examplePackage = ExampleApplication.class.getPackageName();
-		var eventPublicationPackage = JpaEventPublication.class.getPackageName();
+	@Test // GH-964
+	void registersArchivingJpaEventPublicationPackageForAutoConfiguration() {
+		assertAutoConfigurationPackages("ARCHIVE", examplePackage, eventPublicationPackage, archivingPackage);
+	}
 
-		assertThat(AutoConfigurationPackages.get(factory))
-				.containsExactlyInAnyOrder(examplePackage, eventPublicationPackage);
+	private void assertAutoConfigurationPackages(String propertyValue, String... packages) {
+
+		var runner = new ApplicationContextRunner();
+
+		if (propertyValue != null) {
+			runner = runner.withPropertyValues(CompletionMode.PROPERTY + "=" + propertyValue);
+		}
+
+		runner.withBean(EventSerializer.class, () -> mock(EventSerializer.class))
+				.withUserConfiguration(ExampleApplication.class)
+				.run(context -> {
+					assertThat(AutoConfigurationPackages.get(context)).containsExactlyInAnyOrder(packages);
+				});
 	}
 }
