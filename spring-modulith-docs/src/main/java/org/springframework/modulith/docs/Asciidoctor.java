@@ -15,13 +15,13 @@
  */
 package org.springframework.modulith.docs;
 
+import static java.util.stream.Collectors.*;
 import static org.springframework.util.ClassUtils.*;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -131,7 +131,7 @@ class Asciidoctor {
 
 		var interfacesAsString = interfaces.stream() //
 				.map(this::toInlineCode) //
-				.collect(Collectors.joining(", "));
+				.collect(joining(", "));
 
 		return "%s (via %s)".formatted(interfacesAsString, base);
 	}
@@ -159,7 +159,8 @@ class Asciidoctor {
 			}
 
 			if (builder.length() != 0) {
-				builder.append("\n\n");
+				builder.append(System.lineSeparator());
+				builder.append(System.lineSeparator());
 			}
 
 			builder.append("_").append(grouping.getName()).append("_");
@@ -168,7 +169,8 @@ class Asciidoctor {
 				builder.append(" -- ").append(grouping.getDescription());
 			}
 
-			builder.append("\n\n");
+			builder.append(System.lineSeparator());
+			builder.append(System.lineSeparator());
 			builder.append(toBulletPoints(beans));
 
 		});
@@ -196,16 +198,17 @@ class Asciidoctor {
 			documentation.ifPresent(builder::append);
 
 			if (!eventType.hasSources()) {
-				builder.append("\n");
+				builder.append(System.lineSeparator());
 			} else {
-				builder.append((documentation.isPresent() ? " C" : " c") + "reated by:\n");
+				builder.append((documentation.isPresent() ? " C" : " c") + "reated by:");
+				builder.append(System.lineSeparator());
 			}
 
 			for (Source source : eventType.getSources()) {
 
 				builder.append("** ")
 						.append(toInlineCode(source.toString(module)))
-						.append("\n");
+						.append(System.lineSeparator());
 			}
 		}
 
@@ -219,7 +222,7 @@ class Asciidoctor {
 				.filter(ArchitecturallyEvidentType::isEventListener)
 				.flatMap(ArchitecturallyEvidentType::getReferenceMethods)
 				.map(it -> renderReferenceMethod(it, 0))
-				.collect(Collectors.joining(System.lineSeparator()));
+				.collect(joining(System.lineSeparator()));
 	}
 
 	public String renderConfigurationProperties(List<ModuleProperty> properties) {
@@ -268,9 +271,7 @@ class Asciidoctor {
 	}
 
 	private String toBulletPoints(Stream<String> types) {
-
-		return types//
-				.collect(Collectors.joining("\n* ", "* ", ""));
+		return types.collect(joining(System.lineSeparator() + "* ", "* ", ""));
 	}
 
 	public String toBulletPoint(String source) {
@@ -319,15 +320,16 @@ class Asciidoctor {
 
 				var referenceTypes = type.getReferenceTypes();
 
-				return String.format("%s listening to %s", //
+				return "%s listening to %s".formatted( //
 						toInlineCode(javaType), //
 						toInlineCode(referenceTypes));
 			}
 
-			String header = "%s listening to:\n".formatted(withDocumentation(code, javaType));
+			String header = "%s listening to:".formatted(withDocumentation(code, javaType) + System.lineSeparator());
 
-			return header + type.getReferenceMethods().map(it -> renderReferenceMethod(it, 1))
-					.collect(Collectors.joining("\n"));
+			return header + type.getReferenceMethods()
+					.map(it -> renderReferenceMethod(it, 1))
+					.collect(joining(System.lineSeparator()));
 		}
 
 		return withDocumentation(toInlineCode(type.getType()), type.getType());
@@ -337,25 +339,23 @@ class Asciidoctor {
 
 		var method = it.getMethod();
 		Assert.isTrue(method.getRawParameterTypes().size() > 0,
-				() -> String.format("Method %s must have at least one parameter!", method));
+				() -> "Method %s must have at least one parameter!".formatted(method));
 
 		var parameterType = method.getRawParameterTypes().get(0);
 		var isAsync = it.isAsync() ? "(async) " : "";
 		var indent = "*".repeat(level + 1);
 
 		return docSource.flatMap(source -> source.getDocumentation(method))
-				.map(doc -> String.format("%s %s %s-- %s", indent, toInlineCode(parameterType), isAsync, doc))
-				.orElseGet(() -> String.format("%s %s %s", indent, toInlineCode(parameterType), isAsync));
+				.map(doc -> "%s %s %s-- %s".formatted(indent, toInlineCode(parameterType), isAsync, doc))
+				.orElseGet(() -> "%s %s %s".formatted(indent, toInlineCode(parameterType), isAsync));
 	}
 
 	private String toInlineCode(Stream<JavaClass> types) {
-
-		return types.map(this::toInlineCode) //
-				.collect(Collectors.joining(", "));
+		return types.map(this::toInlineCode).collect(joining(", "));
 	}
 
 	private static String toLink(String source, String href) {
-		return String.format("link:%s[%s]", href, source);
+		return "link:%s[%s]".formatted(href, source);
 	}
 
 	private static String toCode(String source) {
@@ -363,17 +363,19 @@ class Asciidoctor {
 	}
 
 	public static String startTable(String tableSpec) {
-		return String.format("[%s]\n|===\n", tableSpec);
+
+		return new StringBuilder()
+				.append("[").append(tableSpec).append("]")
+				.append(System.lineSeparator()).append("|===").append(System.lineSeparator())
+				.toString();
 	}
 
 	public static String startOrEndTable() {
-		return "|===\n";
+		return "|===" + System.lineSeparator();
 	}
 
 	public static String writeTableRow(String... columns) {
-
-		return Stream.of(columns) //
-				.collect(Collectors.joining("\n|", "|", "\n"));
+		return Stream.of(columns).collect(joining(System.lineSeparator() + "|", "|", System.lineSeparator()));
 	}
 
 	public String toAsciidoctor(String source) {
@@ -406,7 +408,7 @@ class Asciidoctor {
 					return withDocumentation(result, targetType);
 				})
 				.map(this::toBulletPoint)
-				.collect(Collectors.joining("\n"));
+				.collect(joining(System.lineSeparator()));
 
 		return bullets.isBlank() ? "None" : bullets;
 	}
