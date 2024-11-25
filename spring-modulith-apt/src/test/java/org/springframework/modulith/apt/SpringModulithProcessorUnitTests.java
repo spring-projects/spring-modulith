@@ -63,6 +63,14 @@ class SpringModulithProcessorUnitTests {
 		assertThat(comment).isNotBlank().doesNotContain("\n");
 	}
 
+	@Test // GH-962
+	void extractsJavadocFromMethodWithClassNestedInInterfaceAsParameter() {
+
+		assertThatNoException().isThrownBy(() -> {
+			assertSucceded(getSourceFile("SampleInterface"));
+		});
+	}
+
 	private static DoCustomAssertions assertSucceded(String source) {
 
 		return assertSourceProcessed(source)
