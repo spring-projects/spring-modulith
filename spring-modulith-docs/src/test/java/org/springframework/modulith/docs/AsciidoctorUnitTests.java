@@ -29,7 +29,8 @@ import com.tngtech.archunit.core.importer.ClassFileImporter;
  */
 class AsciidoctorUnitTests {
 
-	Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(ApplicationModules.of("org.springframework.modulith"), "{javadoc}");
+	Asciidoctor asciidoctor = Asciidoctor.withJavadocBase(ApplicationModules.of("org.springframework.modulith"),
+			"{javadoc}");
 
 	@Test
 	void formatsInlineCode() {
@@ -64,8 +65,14 @@ class AsciidoctorUnitTests {
 
 		ConfigurationProperties metadata = new ConfigurationProperties();
 
-		assertThat(metadata).containsExactly(new ConfigurationProperties.ConfigurationProperty("org.springframework.modulith.sample.test",
-				"Some test property of type {@link java.lang.Boolean}.", "java.lang.Boolean",
-				"com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties", "false"));
+		assertThat(metadata)
+				.containsExactly(new ConfigurationProperties.ConfigurationProperty("org.springframework.modulith.sample.test",
+						"Some test property of type {@link java.lang.Boolean}.", "java.lang.Boolean",
+						"com.acme.myproject.stereotypes.Stereotypes$SomeConfigurationProperties", "false"));
+	}
+
+	@Test // GH-965
+	void rendersLocalMethodReferencesCorrectly() {
+		assertThat(asciidoctor.toInlineCode("#someMethod()")).isEqualTo("`someMethod()`");
 	}
 }

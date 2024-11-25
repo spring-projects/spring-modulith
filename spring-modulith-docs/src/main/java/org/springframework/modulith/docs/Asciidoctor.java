@@ -105,10 +105,14 @@ class Asciidoctor {
 		var type = parts[0];
 		var methodSignature = parts.length == 2 ? Optional.of(parts[1]) : Optional.<String> empty();
 
+		if (type.isBlank()) {
+			return methodSignature.map(Asciidoctor::toCode).orElse(source);
+		}
+
 		return modules.getModuleByType(type)
 				.flatMap(it -> it.getType(type))
 				.map(it -> toOptionalLink(it, methodSignature))
-				.orElseGet(() -> String.format("`%s`", type));
+				.orElseGet(() -> toCode(type));
 	}
 
 	public String toInlineCode(JavaClass type) {
@@ -270,7 +274,7 @@ class Asciidoctor {
 	}
 
 	public String toBulletPoint(String source) {
-		return String.format("* %s", source);
+		return "* ".concat(source);
 	}
 
 	private String toOptionalLink(JavaClass source) {
@@ -355,7 +359,7 @@ class Asciidoctor {
 	}
 
 	private static String toCode(String source) {
-		return String.format("`%s`", source);
+		return wrap(source, "`");
 	}
 
 	public static String startTable(String tableSpec) {
@@ -440,5 +444,9 @@ class Asciidoctor {
 							SpringModulithDocumentationSource.getMetadataLocation());
 					return it;
 				});
+	}
+
+	private static final String wrap(String source, String chars) {
+		return chars + source + chars;
 	}
 }
