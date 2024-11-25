@@ -26,7 +26,7 @@ import javax.lang.model.type.TypeMirror;
  * <a href="https://github.com/toolisticon/aptk">here</a>. Tweaks {@link #getOuterType()} to include
  * {@link ElementKind#INTERFACE} in the outer class lookup to fix the issue reported
  * <a href="https://github.com/toolisticon/aptk/issues/163">here</a>.</em> <br />
- * Wraps a TypeElement to provide some convenience * functionality
+ * Wraps a TypeElement to provide some convenience functionality
  */
 public class TypeElementWrapper extends ElementWrapper<TypeElement> {
 
