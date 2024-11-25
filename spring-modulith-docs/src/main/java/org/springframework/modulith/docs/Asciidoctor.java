@@ -53,6 +53,7 @@ class Asciidoctor {
 
 	private static String PLACEHOLDER = "¯\\_(ツ)_/¯";
 	private static final Pattern JAVADOC_CODE = Pattern.compile("\\{\\@(link|code|literal)\\s*(.*?)\\}");
+	private static final Pattern LINE_BREAKS = Pattern.compile("\\<\\s*br\\s*\\>");
 	private static final Logger LOG = LoggerFactory.getLogger(Asciidoctor.class);
 
 	private static final Optional<DocumentationSource> DOC_SOURCE = getSpringModulithDocsSource()
@@ -190,6 +191,10 @@ class Asciidoctor {
 
 		for (EventType eventType : events) {
 
+			if (!module.isExposed(eventType.getType())) {
+				continue;
+			}
+
 			var documentation = docSource.flatMap(it -> it.getDocumentation(eventType.getType()))
 					.map(" -- "::concat);
 
@@ -310,28 +315,6 @@ class Asciidoctor {
 	}
 
 	private String toInlineCode(ArchitecturallyEvidentType type) {
-
-		var javaType = type.getType();
-		var code = toInlineCode(javaType);
-
-		if (type.isEventListener()) {
-
-			if (!docSource.isPresent()) {
-
-				var referenceTypes = type.getReferenceTypes();
-
-				return "%s listening to %s".formatted( //
-						toInlineCode(javaType), //
-						toInlineCode(referenceTypes));
-			}
-
-			String header = "%s listening to:".formatted(withDocumentation(code, javaType) + System.lineSeparator());
-
-			return header + type.getReferenceMethods()
-					.map(it -> renderReferenceMethod(it, 1))
-					.collect(joining(System.lineSeparator()));
-		}
-
 		return withDocumentation(toInlineCode(type.getType()), type.getType());
 	}
 
@@ -342,6 +325,15 @@ class Asciidoctor {
 				() -> "Method %s must have at least one parameter!".formatted(method));
 
 		var parameterType = method.getRawParameterTypes().get(0);
+
+		var typeExposed = modules.getModuleByType(parameterType)
+				.map(module -> module.isExposed(parameterType))
+				.orElse(true);
+
+		if (!typeExposed) {
+			return "";
+		}
+
 		var isAsync = it.isAsync() ? "(async) " : "";
 		var indent = "*".repeat(level + 1);
 
@@ -388,6 +380,11 @@ class Asciidoctor {
 
 			source = source.replace(matcher.group(), toInlineCode(type));
 		}
+
+		source = source.replaceAll("<p>\\s*", System.lineSeparator() + "+" + System.lineSeparator());
+		source = source.replace("</p>", "");
+
+		source = LINE_BREAKS.matcher(source).replaceAll(System.lineSeparator());
 
 		return source;
 	}
