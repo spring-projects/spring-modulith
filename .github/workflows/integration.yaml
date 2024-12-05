@@ -12,7 +12,6 @@ jobs:
         version:
         - '3.1.12'
         - '3.2.12'
-        - '3.2.13-SNAPSHOT'
         - '3.3.7-SNAPSHOT'
         - '3.4.0'
         - '3.4.1-SNAPSHOT'
