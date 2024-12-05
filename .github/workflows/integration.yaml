@@ -15,6 +15,9 @@ jobs:
         - '3.3.7-SNAPSHOT'
         - '3.4.0'
         - '3.4.1-SNAPSHOT'
+        jmolcecules:
+        - '2023.2.1'
+        - '2025.0.0-RC2'
     name: Build against Boot ${{ matrix.version }}
     runs-on: ubuntu-latest
 
@@ -38,4 +41,4 @@ jobs:
       run: |
         cd spring-modulith-examples
         ../mvnw -B versions:update-parent -DskipResolution=true -DparentVersion=${{ matrix.version }}
-        ../mvnw -B clean verify -Pwith-preview-repos -Dspring-boot.version=${{ matrix.version }}
+        ../mvnw -B clean verify -Pwith-preview-repos -Dspring-boot.version=${{ matrix.version }} -Djmolecules.version=${{ matrix.jmolecules }}
