@@ -8,6 +8,7 @@ on:
 jobs:
   integration:
     strategy:
+      fail-fast: false
       matrix:
         version:
         - '3.1.12'
