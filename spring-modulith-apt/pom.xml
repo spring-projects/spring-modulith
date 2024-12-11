@@ -95,8 +95,19 @@
 							<artifactSet>
 								<includes>
 									<include>io.toolisticon.aptk:*</include>
+									<include>org.springframework.modulith:spring-modulith-docs</include>
 								</includes>
 							</artifactSet>
+
+							<filters>
+								<filter>
+									<artifact>org.springframework.modulith:spring-modulith-docs</artifact>
+									<includes>
+										<include>org/springframework/modulith/docs/metadata/*.class</include>
+										<include>org/springframework/modulith/docs/util/*.class</include>
+									</includes>
+								</filter>
+							</filters>
 
 							<relocations>
 								<relocation>
