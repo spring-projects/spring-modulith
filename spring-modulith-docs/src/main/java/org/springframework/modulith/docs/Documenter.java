@@ -34,6 +34,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import com.structurizr.export.plantuml.AbstractPlantUMLExporter;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
@@ -553,6 +554,7 @@ public class Documenter {
 			case C4:
 
 				var c4PlantUmlExporter = new C4PlantUMLExporter();
+				addSkinParamsFromOptions(c4PlantUmlExporter, options);
 				var diagram = c4PlantUmlExporter.export(view);
 
 				return diagram.getDefinition();
@@ -561,9 +563,16 @@ public class Documenter {
 			default:
 
 				var plantUmlExporter = new CustomizedPlantUmlExporter();
+				addSkinParamsFromOptions(plantUmlExporter, options);
 				plantUmlExporter.addSkinParam("componentStyle", "uml1");
 
 				return plantUmlExporter.export(view).getDefinition();
+		}
+	}
+
+	private void addSkinParamsFromOptions(AbstractPlantUMLExporter exporter, DiagramOptions options) {
+		for (var skinParamEntry : options.skinParams.entrySet()) {
+			exporter.addSkinParam(skinParamEntry.getKey(), skinParamEntry.getValue());
 		}
 	}
 
@@ -667,6 +676,7 @@ public class Documenter {
 		private final Function<ApplicationModule, String> defaultDisplayName;
 		private final DiagramStyle style;
 		private final ElementsWithoutRelationships elementsWithoutRelationships;
+		private final Map<String, String> skinParams;
 
 		/**
 		 * @param dependencyTypes must not be {@literal null}.
@@ -679,13 +689,15 @@ public class Documenter {
 		 * @param defaultDisplayName must not be {@literal null}.
 		 * @param style must not be {@literal null}.
 		 * @param elementsWithoutRelationships must not be {@literal null}.
+		 * @param skinParams must not be {@literal null}.
 		 */
 		DiagramOptions(Set<DependencyType> dependencyTypes, DependencyDepth dependencyDepth,
 				Predicate<ApplicationModule> exclusions, Predicate<Component> componentFilter,
 				Predicate<ApplicationModule> targetOnly, @Nullable String targetFileName,
 				Function<ApplicationModule, Optional<String>> colorSelector,
 				Function<ApplicationModule, String> defaultDisplayName, DiagramStyle style,
-				ElementsWithoutRelationships elementsWithoutRelationships) {
+				ElementsWithoutRelationships elementsWithoutRelationships,
+				Map<String, String> skinParams) {
 
 			Assert.notNull(dependencyTypes, "Dependency types must not be null!");
 			Assert.notNull(dependencyDepth, "Dependency depth must not be null!");
@@ -696,6 +708,7 @@ public class Documenter {
 			Assert.notNull(defaultDisplayName, "Default display name must not be null!");
 			Assert.notNull(style, "DiagramStyle must not be null!");
 			Assert.notNull(elementsWithoutRelationships, "ElementsWithoutRelationships must not be null!");
+			Assert.notNull(skinParams, "SkinParams must not be null!");
 
 			this.dependencyTypes = dependencyTypes;
 			this.dependencyDepth = dependencyDepth;
@@ -707,6 +720,7 @@ public class Documenter {
 			this.defaultDisplayName = defaultDisplayName;
 			this.style = style;
 			this.elementsWithoutRelationships = elementsWithoutRelationships;
+			this.skinParams = skinParams;
 		}
 
 		/**
@@ -714,7 +728,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withDependencyDepth(DependencyDepth dependencyDepth) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -722,7 +736,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withExclusions(Predicate<ApplicationModule> exclusions) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -730,7 +744,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withComponentFilter(Predicate<Component> componentFilter) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -740,7 +754,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withTargetOnly(Predicate<ApplicationModule> targetOnly) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -752,7 +766,7 @@ public class Documenter {
 			Assert.isTrue(targetFileName.contains("%s"), () -> INVALID_FILE_NAME_PATTERN.formatted(targetFileName));
 
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -760,7 +774,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withColorSelector(Function<ApplicationModule, Optional<String>> colorSelector) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -769,7 +783,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withDefaultDisplayName(Function<ApplicationModule, String> defaultDisplayName) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -777,7 +791,7 @@ public class Documenter {
 		 */
 		public DiagramOptions withStyle(DiagramStyle style) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -790,7 +804,18 @@ public class Documenter {
 		 */
 		public DiagramOptions withElementsWithoutRelationships(ElementsWithoutRelationships elementsWithoutRelationships) {
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
+		}
+
+		/**
+		 * Configuration setting to add arbitrary skin parameters to the created diagrams.
+		 *
+		 * Applies to both the UML and C4 {@link DiagramStyle styles}.
+		 */
+		public DiagramOptions withSkinParam(String name, String value) {
+			skinParams.put(name, value);
+			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		/**
@@ -803,7 +828,7 @@ public class Documenter {
 		public static DiagramOptions defaults() {
 			return new DiagramOptions(ALL_TYPES, DependencyDepth.IMMEDIATE, it -> false, it -> true, it -> false, null,
 					__ -> Optional.empty(), it -> it.getDisplayName(), DiagramStyle.C4,
-					ElementsWithoutRelationships.HIDDEN);
+					ElementsWithoutRelationships.HIDDEN, new LinkedHashMap<>());
 		}
 
 		/**
@@ -820,7 +845,7 @@ public class Documenter {
 
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
 					targetFileName,
-					colorSelector, defaultDisplayName, style, elementsWithoutRelationships);
+					colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
 		}
 
 		private Optional<String> getTargetFileName() {
