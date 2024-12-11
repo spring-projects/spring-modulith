@@ -35,7 +35,6 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import com.structurizr.export.plantuml.AbstractPlantUMLExporter;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependency;
@@ -51,6 +50,7 @@ import org.springframework.util.MultiValueMap;
 
 import com.structurizr.Workspace;
 import com.structurizr.export.IndentingWriter;
+import com.structurizr.export.plantuml.AbstractPlantUMLExporter;
 import com.structurizr.export.plantuml.C4PlantUMLExporter;
 import com.structurizr.export.plantuml.StructurizrPlantUMLExporter;
 import com.structurizr.model.Component;
@@ -72,6 +72,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
  *
  * @author Oliver Drotbohm
  * @author Cora Iberkleid
+ * @author Alexander Miller
  */
 public class Documenter {
 
@@ -575,16 +576,10 @@ public class Documenter {
 			default:
 
 				var plantUmlExporter = new CustomizedPlantUmlExporter();
-				addSkinParamsFromOptions(plantUmlExporter, options);
 				plantUmlExporter.addSkinParam("componentStyle", "uml1");
+				addSkinParamsFromOptions(plantUmlExporter, options);
 
 				return plantUmlExporter.export(view).getDefinition();
-		}
-	}
-
-	private void addSkinParamsFromOptions(AbstractPlantUMLExporter exporter, DiagramOptions options) {
-		for (var skinParamEntry : options.skinParams.entrySet()) {
-			exporter.addSkinParam(skinParamEntry.getKey(), skinParamEntry.getValue());
 		}
 	}
 
@@ -623,6 +618,10 @@ public class Documenter {
 		} catch (IOException o_O) {
 			throw new RuntimeException(o_O);
 		}
+	}
+
+	private void addSkinParamsFromOptions(AbstractPlantUMLExporter exporter, DiagramOptions options) {
+		options.skinParams.forEach(exporter::addSkinParam);
 	}
 
 	private static Component applyBackgroundColor(ApplicationModule module,
@@ -733,7 +732,7 @@ public class Documenter {
 			Assert.notNull(defaultDisplayName, "Default display name must not be null!");
 			Assert.notNull(style, "DiagramStyle must not be null!");
 			Assert.notNull(elementsWithoutRelationships, "ElementsWithoutRelationships must not be null!");
-			Assert.notNull(skinParams, "SkinParams must not be null!");
+			Assert.notNull(skinParams, "Skin parameters must not be null!");
 
 			this.dependencyTypes = dependencyTypes;
 			this.dependencyDepth = dependencyDepth;
@@ -833,14 +832,23 @@ public class Documenter {
 		}
 
 		/**
-		 * Configuration setting to add arbitrary skin parameters to the created diagrams.
+		 * Configuration setting to add arbitrary skin parameters to the created diagrams. Applies to both the UML and C4
+		 * {@link DiagramStyle styles}.
 		 *
-		 * Applies to both the UML and C4 {@link DiagramStyle styles}.
+		 * @param name must not be {@literal null} or empty.
+		 * @param value can be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 1.2.7, 1.3.1
 		 */
-		public DiagramOptions withSkinParam(String name, String value) {
-			skinParams.put(name, value);
+		public DiagramOptions withSkinParam(String name, @Nullable String value) {
+
+			Assert.hasText(name, "Name must not be null or empty!");
+
+			var newSkinParams = new LinkedHashMap<>(skinParams);
+			newSkinParams.put(name, value);
+
 			return new DiagramOptions(dependencyTypes, dependencyDepth, exclusions, componentFilter, targetOnly,
-					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, skinParams);
+					targetFileName, colorSelector, defaultDisplayName, style, elementsWithoutRelationships, newSkinParams);
 		}
 
 		/**
