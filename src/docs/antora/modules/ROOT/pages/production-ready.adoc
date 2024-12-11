@@ -1,6 +1,8 @@
 [[production-ready]]
 = Production-ready Features
 
+NOTE: If you are applying customizations to the application module detection described xref:fundamentals.adoc#customizing-modules[here], you need to move those into your production sources, unless already present there, to make sure that those are considered by the features described here.
+
 Spring Modulith provides support to expose architectural information about your system as a Spring Boot actuator endpoint as well as observing the interaction between application modules by capturing metrics and traces.
 As  a production-ready application is likely to require both, the most convenient way to activate those features is to use the Spring Modulith Insight starter as follows:
 
