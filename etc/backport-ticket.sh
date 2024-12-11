@@ -44,7 +44,7 @@ done
 echo -e "\nChecking the state of the current branch"
 
 isDefaultBranch || _exit 1 "Current branch is not the default branch"
-isCleanBranch || _exit 1 "Current branch is not clean"
+# isCleanBranch || _exit 1 "Current branch is not clean"
 # To repair, run: git cherry-pick --abort &>/dev/null; git fetch origin && git reset --hard origin/$(git symbolic-ref --short HEAD) && git clean -fd; git checkout main
 
 sourceGh=$(getGHCode "$number")
@@ -77,7 +77,7 @@ do
 	echo -e "\nChecking out target branch"
 
 	git checkout $targetBranch
-	isCleanBranch || _exit 1 "Current branch is not clean"
+	# isCleanBranch || _exit 1 "Current branch is not clean"
     # To repair, run: git cherry-pick --abort &>/dev/null; git fetch origin && git reset --hard origin/$(git symbolic-ref --short HEAD) && git clean -fd; git checkout main
 
   targetGh=""
