@@ -4,6 +4,8 @@
 The functionality described in previous chapters have all used the application module arrangement in either testing scenarios for verification and documentation purposes or were general support functionality that help to loosely couple modules but did not work with the application module structure directly.
 In this section we are going to describe Spring Modulith's support for module initialization at application runtime.
 
+NOTE: If you are applying customizations to the application module detection described xref:fundamentals.adoc#customizing-modules[here], you need to move those into your production sources, unless already present there, to make sure that those are considered by the features described here.
+
 [[setup]]
 == Setting up Runtime Support for Application Modules
 
