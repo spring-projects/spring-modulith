@@ -516,6 +516,30 @@ This class can now be registered as `spring.modulith.detection-strategy` as foll
 spring.modulith.detection-strategy=example.CustomApplicationModuleDetectionStrategy
 ----
 
+If you are implementing the `ApplicationModuleDetectionStrategy` interface to customize the verification and documentation of modules, include the customization and its registration in your application's test sources. However, if the customization is intended for runtime components that require access to the module structure—potentially in relation to xref:runtime.adoc#spring-modulith-runtime-support[Spring Modulith runtime support] or xref:production-ready.adoc#production-ready-features[production-ready features] (e.g., actuator and observability support)—you must explicitly declare the following as a compile-time dependency:
+
+[tabs]
+======
+Maven::
++
+[source, xml, role="primary"]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>spring-modulith-core</artifactId>
+</dependency>
+----
+Gradle::
++
+[source, groovy, role="secondary"]
+----
+dependencies {
+  implementation 'org.springframework.modulith:spring-modulith-core'
+}
+----
+======
+
+
 [[contributing-application-modules]]
 === Contributing Application Modules From Other Packages
 
