@@ -41,7 +41,7 @@ do
 
 	# Update commit message to refer to new ticket
 	echo "Adapt commit message from $sourceGh to $targetGh"
-	git commit --amend -m "$message\n\nFixes GH-$number."
+	git commit --amend -m "$message"
 done
 
 # Return to original branch
