@@ -17,13 +17,13 @@ In a Spring Boot application, an application module is a unit of functionality t
 * Internal implementation components that are not supposed to be accessed by other modules.
 * References to API exposed by other modules in the form of Spring bean dependencies, application events listened to and configuration properties exposed, usually referred to as _required interface_.
 
-Spring Moduliths provides different ways of expressing modules within Spring Boot applications, primarily differing in the level of complexity involved in the overall arrangement.
+Spring Modulith provides different ways of expressing modules within Spring Boot applications, primarily differing in the level of complexity involved in the overall arrangement.
 This allows developers to start simple and naturally move to more sophisticated means as and if needed.
 
 [[modules.application-modules]]
 === The `ApplicationModules` Type
 
-Spring Moduliths allows to inspect a codebase to derive an application module model based on the given arrangement and optional configuration.
+Spring Modulith allows to inspect a codebase to derive an application module model based on the given arrangement and optional configuration.
 The `spring-modulith-core` artifact contains `ApplicationModules` that can be pointed to a Spring Boot application class:
 
 .Creating an application module model
@@ -397,7 +397,7 @@ package example.inventory
 [[customizing-modules-arrangement]]
 == Customizing the Application Modules Arrangement
 
-Spring Moduliths allows to configure some core aspects around the application module arrangement you create via the `@Modulithic` annotation to be used on the main Spring Boot application class.
+Spring Modulith allows to configure some core aspects around the application module arrangement you create via the `@Modulithic` annotation to be used on the main Spring Boot application class.
 
 [tabs]
 ======
@@ -462,7 +462,7 @@ The annotation exposes the following attributes to customize:
 === Customizing Module Detection
 
 By default, application modules will be expected to be located in direct sub-packages of the package the Spring Boot application class resides in.
-An alternative detection strategy can be activated to only consider package explicitly annotated, either via Spring Modulith's `@ApplicationModule` or jMolecules `@Module` annotation.
+An alternative detection strategy can be activated to only consider packages explicitly annotated, either via Spring Modulith's `@ApplicationModule` or jMolecules `@Module` annotation.
 That strategy can be activated by configuring the `spring.modulith.detection-strategy` to `explicitly-annotated`.
 
 .Switching the application module detection strategy to only consider annotated packages
@@ -471,7 +471,7 @@ That strategy can be activated by configuring the `spring.modulith.detection-str
 spring.modulith.detection-strategy=explicitly-annotated
 ----
 
-If the neither default application module detection strategy nor the manually annotated one does not work for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
+If neither the default application module detection strategy nor the manually annotated one works for your application, the detection of the modules can be customized by providing an implementation of `ApplicationModuleDetectionStrategy`.
 That interface exposes a single method `Stream<JavaPackage> getModuleBasePackages(JavaPackage)` and will be called with the package the Spring Boot application class resides in.
 You can then inspect the packages residing within that and select the ones to be considered application module base packages based on a naming convention or the like.
 
