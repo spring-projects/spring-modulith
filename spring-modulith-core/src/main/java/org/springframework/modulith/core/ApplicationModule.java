@@ -40,7 +40,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.modulith.core.Types.JavaTypes;
 import org.springframework.modulith.core.Types.SpringTypes;
-import org.springframework.modulith.core.Violations.Violation;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;

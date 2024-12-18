@@ -20,6 +20,7 @@ import static java.util.stream.Collectors.*;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
@@ -57,7 +58,7 @@ public class Violations extends RuntimeException {
 	 * @return will never be {@literal null}.
 	 */
 	static Collector<String, ?, Violations> toViolations() {
-		return mapping(Violation::new, collectingAndThen(Collectors.toList(), Violations::new));
+		return mapping(Violation::new, newViolations());
 	}
 
 	/*
@@ -68,7 +69,7 @@ public class Violations extends RuntimeException {
 	public String getMessage() {
 
 		return violations.stream() //
-				.map(Violation::message) //
+				.map(Violation::getMessage) //
 				.collect(Collectors.joining("\n- ", "- ", ""));
 	}
 
@@ -81,7 +82,7 @@ public class Violations extends RuntimeException {
 	public List<String> getMessages() {
 
 		return violations.stream() //
-				.map(Violation::message)
+				.map(Violation::getMessage)
 				.toList();
 	}
 
@@ -102,6 +103,21 @@ public class Violations extends RuntimeException {
 		if (hasViolations()) {
 			throw this;
 		}
+	}
+
+	/**
+	 * Returns {@link Violations} that match the given {@link Predicate}.
+	 *
+	 * @param filter must not be {@literal null}.
+	 * @return
+	 */
+	public Violations filter(Predicate<Violation> filter) {
+
+		Assert.notNull(filter, "Filter must not be null!");
+
+		return violations.stream()
+				.filter(filter)
+				.collect(newViolations());
 	}
 
 	/**
@@ -142,14 +158,16 @@ public class Violations extends RuntimeException {
 
 		var result = new ArrayList<>(left);
 
-		var messages = left.stream().map(Violation::message).toList();
+		var messages = left.stream().map(Violation::getMessage).toList();
 
 		right.stream()
-				.filter(it -> !messages.contains(it.message()))
+				.filter(it -> !messages.contains(it.message))
 				.forEach(result::add);
 
 		return result.size() == left.size() ? left : result;
 	}
 
-	static record Violation(String message) {}
+	private static Collector<Violation, ?, Violations> newViolations() {
+		return collectingAndThen(Collectors.toList(), Violations::new);
+	}
 }
