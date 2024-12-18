@@ -51,4 +51,14 @@ class ViolationsUnitTests {
 		assertThat(violations.getMessages())
 				.containsExactlyInAnyOrder("First", "Second", "Third");
 	}
+
+	@Test // GH-995
+	void allowsFilteringViolations() {
+
+		var violations = Violations.NONE.and("First").and("Second")
+				.filter(it -> it.hasMessageContaining("Sec"));
+
+		assertThat(violations.getMessages())
+				.containsExactly("Second");
+	}
 }
