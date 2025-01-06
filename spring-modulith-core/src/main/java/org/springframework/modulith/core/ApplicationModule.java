@@ -358,9 +358,22 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * module's named interfaces.
 	 *
 	 * @param type must not be {@literal null}.
-	 * @return
 	 */
 	public boolean isExposed(JavaClass type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return namedInterfaces.stream().anyMatch(it -> it.contains(type));
+	}
+
+	/**
+	 * Returns whether the given {@link JavaClass} is exposed by the current module, i.e. whether it's part of any of the
+	 * module's named interfaces.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @since 1.2.8, 1.3.2
+	 */
+	public boolean isExposed(Class<?> type) {
 
 		Assert.notNull(type, "Type must not be null!");
 

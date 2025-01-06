@@ -18,6 +18,7 @@ package org.springframework.modulith.docs;
 import static java.util.stream.Collectors.*;
 import static org.springframework.util.ClassUtils.*;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
@@ -321,16 +322,13 @@ class Asciidoctor {
 	private String renderReferenceMethod(ReferenceMethod it, int level) {
 
 		var method = it.getMethod();
-		Assert.isTrue(method.getRawParameterTypes().size() > 0,
-				() -> "Method %s must have at least one parameter!".formatted(method));
+		var exposedReferenceTypes = it.getReferenceTypes().stream()
+				.filter(type -> modules.getModuleByType(type)
+						.map(module -> module.isExposed(type))
+						.orElse(true))
+				.toList();
 
-		var parameterType = method.getRawParameterTypes().get(0);
-
-		var typeExposed = modules.getModuleByType(parameterType)
-				.map(module -> module.isExposed(parameterType))
-				.orElse(true);
-
-		if (!typeExposed) {
+		if (exposedReferenceTypes.isEmpty()) {
 			return "";
 		}
 
@@ -338,12 +336,16 @@ class Asciidoctor {
 		var indent = "*".repeat(level + 1);
 
 		return docSource.flatMap(source -> source.getDocumentation(method))
-				.map(doc -> "%s %s %s-- %s".formatted(indent, toInlineCode(parameterType), isAsync, doc))
-				.orElseGet(() -> "%s %s %s".formatted(indent, toInlineCode(parameterType), isAsync));
+				.map(doc -> "%s %s %s-- %s".formatted(indent, toInlineCode(exposedReferenceTypes), isAsync, doc))
+				.orElseGet(() -> "%s %s %s".formatted(indent, toInlineCode(exposedReferenceTypes), isAsync));
 	}
 
-	private String toInlineCode(Stream<JavaClass> types) {
-		return types.map(this::toInlineCode).collect(joining(", "));
+	private String toInlineCode(Collection<Class<?>> types) {
+
+		return types.stream()
+				.map(Class::getName)
+				.map(this::toInlineCode)
+				.collect(joining(", "));
 	}
 
 	private static String toLink(String source, String href) {

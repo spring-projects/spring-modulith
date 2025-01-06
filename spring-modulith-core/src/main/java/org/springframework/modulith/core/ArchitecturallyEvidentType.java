@@ -31,6 +31,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.data.repository.core.RepositoryMetadata;
 import org.springframework.data.repository.core.support.AbstractRepositoryMetadata;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
@@ -153,8 +154,10 @@ public abstract class ArchitecturallyEvidentType {
 	 * Returns other types that are interesting in the context of the current {@link ArchitecturallyEvidentType}. For
 	 * example, for an event listener this might be the event types the particular listener is interested in.
 	 *
-	 * @return
+	 * @return will never be {@literal null}.
+	 * @deprecated since 1.3.2, no replacement.
 	 */
+	@Deprecated(forRemoval = true)
 	public Stream<JavaClass> getReferenceTypes() {
 		return Stream.empty();
 	}
@@ -651,6 +654,38 @@ public abstract class ArchitecturallyEvidentType {
 			return Optional.ofNullable(method.getAnnotationOfType(SpringTypes.AT_TX_EVENT_LISTENER))
 					.map(it -> it.get("phase"))
 					.map(Object::toString);
+		}
+
+		/**
+		 * Returns all types referred to. Usually parameter types or types the method is interested in declared in
+		 * annotations.
+		 *
+		 * @return will never be {@literal null}.
+		 * @since 1.2.8, 1.3.2
+		 */
+		public Collection<Class<?>> getReferenceTypes() {
+
+			var parameterTypes = method.getRawParameterTypes();
+
+			if (!parameterTypes.isEmpty()) {
+				return parameterTypes.stream()
+						.<Class<?>> map(JavaClass::reflect)
+						.toList();
+			}
+
+			var attributes = AnnotatedElementUtils.getMergedAnnotationAttributes(method.reflect(),
+					SpringTypes.AT_EVENT_LISTENER, false, false);
+
+			return List.of(attributes.getClassArray("classes"));
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#toString()
+		 */
+		@Override
+		public String toString() {
+			return method.toString();
 		}
 	}
 }
