@@ -37,6 +37,7 @@ import org.springframework.data.repository.reactive.ReactiveCrudRepository;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.SpringAwareArchitecturallyEvidentType;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.SpringDataAwareArchitecturallyEvidentType;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.event.TransactionalEventListener;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 
@@ -196,6 +197,23 @@ class ArchitecturallyEvidentTypeUnitTest {
 		assertThat(ArchitecturallyEvidentType.of(type, classes).isRepository()).isTrue();
 	}
 
+	@Test
+	void detectsAnnotatedReferenceType() {
+
+		var type = classes.getRequiredClass(SomeEventListener.class);
+
+		var methods = ArchitecturallyEvidentType.of(type, classes).getReferenceMethods();
+
+		var annotatedMethod = methods.filter(it -> it.getMethod().getName().startsWith("annotated"));
+
+		assertThat(annotatedMethod).allSatisfy(it -> {
+
+			assertThat(it.getReferenceTypes())
+					.extracting(Class::getName)
+					.contains(String.class.getName());
+		});
+	}
+
 	private Iterator<ArchitecturallyEvidentType> getTypesFor(Class<?>... types) {
 
 		return Stream.of(types) //
@@ -266,6 +284,12 @@ class ArchitecturallyEvidentTypeUnitTest {
 
 		@EventListener
 		void onOther(Object event) {}
+
+		@EventListener(classes = String.class)
+		void annotatedOn() {}
+
+		@TransactionalEventListener(classes = String.class)
+		void annotatedTxOn() {}
 	}
 
 	class ImplementingEventListener implements ApplicationListener<ApplicationReadyEvent> {
