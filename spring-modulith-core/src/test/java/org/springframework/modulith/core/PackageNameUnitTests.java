@@ -55,4 +55,21 @@ class PackageNameUnitTests {
 		assertThat(comAcme.contains(comAcmeA)).isTrue();
 		assertThat(comAcmeA.contains(comAcme)).isFalse();
 	}
+
+	@Test
+	void findsMatchingSegments() {
+
+		var source = new PackageName("com.acme.foo");
+
+		assertThat(source.nameContainsOrMatches("acme")).isTrue();
+		assertThat(source.nameContainsOrMatches("*me")).isTrue();
+		assertThat(source.nameContainsOrMatches("ac*")).isTrue();
+		assertThat(source.nameContainsOrMatches("*m.acme.foo")).isTrue();
+		assertThat(source.nameContainsOrMatches("*m.acme.?oo")).isTrue();
+		assertThat(source.nameContainsOrMatches("*m.ac*")).isTrue();
+		assertThat(source.nameContainsOrMatches("*m.*.fo*")).isTrue();
+
+		assertThat(source.nameContainsOrMatches("cm")).isFalse();
+
+	}
 }

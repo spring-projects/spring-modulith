@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -195,6 +196,23 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 				.filter(Predicate.not(name::hasName))
 				.distinct() //
 				.map(it -> of(classes, it));
+	}
+
+	/**
+	 * Returns all sub-packages that match the given {@link BiPredicate} for the canidate package and its trailing name
+	 * relative to the current one.
+	 *
+	 * @param filter must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @see #getTrailingName(JavaPackage)
+	 * @since 1.4
+	 */
+	public Stream<JavaPackage> getSubPackagesMatching(BiPredicate<JavaPackage, String> filter) {
+
+		Assert.notNull(filter, "Filter must not be null!");
+
+		return getSubPackages().stream()
+				.filter(it -> filter.test(it, this.getTrailingName(it)));
 	}
 
 	/**

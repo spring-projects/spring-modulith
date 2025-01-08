@@ -98,6 +98,38 @@ class NamedInterfacesUnitTests {
 				.containsExactlyInAnyOrder("spi", "kpi");
 	}
 
+	@Test
+	void createsNamedInterfacesFromBuilder() {
+
+		JavaPackage pkg = TestUtils.getPackage(RootType.class);
+
+		var result = NamedInterfaces.builder(pkg)
+				.excluding("internal")
+				.matching("nested")
+				.build();
+
+		assertThat(result).hasSize(2)
+				.extracting(NamedInterface::getName)
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "nested");
+	}
+
+	@Test
+	void createsNamedInterfacesFromRecursiveBuilder() {
+
+		JavaPackage pkg = TestUtils.getPackage(RootType.class);
+
+		var result = NamedInterfaces.builder(pkg)
+				.excluding("internal")
+				.matching("nested", "internal")
+				.recursive()
+				.build();
+
+		assertThat(result).hasSize(6)
+				.extracting(NamedInterface::getName)
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "nested", "nested.a", "nested.b", "nested.b.first",
+						"nested.b.second");
+	}
+
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {
 
 		var classNames = Arrays.stream(types).map(Class::getName).toArray(String[]::new);

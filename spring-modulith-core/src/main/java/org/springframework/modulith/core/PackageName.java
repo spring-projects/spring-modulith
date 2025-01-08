@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.core;
 
+import java.util.stream.Stream;
+
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -160,6 +162,27 @@ class PackageName implements Comparable<PackageName> {
 
 	boolean isEmpty() {
 		return length() == 0;
+	}
+
+	/**
+	 * Returns whether the package name contains a segment with the given candidate or matches the given expression
+	 * entirely. The latter is tested for if the expression contains a dot, indicating a multi-package match is requested.
+	 * Expressions generally support single character ({@literal ?}) and multi-character ({@literal *}) wildcards.
+	 *
+	 * @param candidate must not be {@literal null} or empty.
+	 * @since 1.4
+	 */
+	boolean nameContainsOrMatches(String candidate) {
+
+		Assert.hasText(candidate, "Expression must not be null or empty!");
+
+		var regex = candidate.replace(".", "\\.")
+				.replace("*", ".*")
+				.replace("?", ".");
+
+		return candidate.contains(".")
+				? name.matches(regex)
+				: Stream.of(segments).anyMatch(it -> it.matches(regex));
 	}
 
 	/*

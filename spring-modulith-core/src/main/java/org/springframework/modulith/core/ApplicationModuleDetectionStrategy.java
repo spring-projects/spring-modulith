@@ -29,13 +29,30 @@ import org.springframework.modulith.core.Types.JMoleculesTypes;
 public interface ApplicationModuleDetectionStrategy {
 
 	/**
-	 * Given the {@link JavaPackage} that Moduliths was initialized with, return the base packages for all modules in the
-	 * system.
+	 * Given the {@link JavaPackage} that Spring Modulith was initialized with, return the base packages that are supposed
+	 * to be considered base packages for {@link ApplicationModule}s.
 	 *
-	 * @param basePackage will never be {@literal null}.
+	 * @param rootPackage will never be {@literal null}.
 	 * @return must not be {@literal null}.
 	 */
-	Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage);
+	Stream<JavaPackage> getModuleBasePackages(JavaPackage rootPackage);
+
+	/**
+	 * Optionally customize the detection of {@link NamedInterfaces} for a module with the given base package and the
+	 * pre-obtained {@link ApplicationModuleInformation}. Defaults to
+	 * {@link NamedInterfaces#of(JavaPackage, ApplicationModuleInformation)}. {@link NamedInterfaces} exposes a
+	 * {@link NamedInterfaces.Builder} API to define the selection of packages to be considered named interfaces.
+	 *
+	 * @param basePackage will never be {@literal null}.
+	 * @param information will never be {@literal null}.
+	 * @return must not be {@literal null}.
+	 * @see NamedInterfaces#of(JavaPackage, ApplicationModuleInformation)
+	 * @see NamedInterfaces#builder(JavaPackage)
+	 * @since 1.4
+	 */
+	default NamedInterfaces detectNamedInterfaces(JavaPackage basePackage, ApplicationModuleInformation information) {
+		return NamedInterfaces.of(basePackage, information);
+	}
 
 	/**
 	 * A {@link ApplicationModuleDetectionStrategy} that considers all direct sub-packages of the Moduliths base package

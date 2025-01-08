@@ -394,6 +394,8 @@ package example.inventory
 ----
 ======
 
+If you require more generic control about the named interfaces of an application module, check out xref:fundamentals.adoc#customizing-named-interfaces[the customization section]. 
+
 [[customizing-modules-arrangement]]
 == Customizing the Application Modules Arrangement
 
@@ -580,4 +582,62 @@ public class CustomApplicationModuleSourceFactory implements ApplicationModuleSo
 
 The above example would use `com.acme.toscan` to detect xref:fundamentals.adoc#customizing-modules[explicitly declared modules] within that and also create an application module from `com.acme.module`.
 The package names returned from these will subsequently be translated into ``ApplicationModuleSource``s via the corresponding `getApplicationModuleSource(…)` flavors exposed in `ApplicationModuleDetectionStrategy`.
+
+[[customizing-named-interfaces]]
+=== Customizing Named Interface detection
+
+If you would like to programatically describe the named interfaces of an application module, register an `ApplicationModuleDetectionStrategy` as described xref:fundamentals.adoc#customizing-modules[here] and use the `detectNamedInterfaces(JavaPackage, ApplicationModuleInformation)` to implement a custom discovery algorithm.
+
+.Customizing the named interface detection using a custom `ApplicationModuleDetectionStrategy`
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+package example;
+
+class CustomApplicationModuleDetectionStrategy implements ApplicationModuleDetectionStrategy {
+
+	@Override
+	public Stream<JavaPackage> getModuleBasePackages(JavaPackage basePackage) {
+		// Your module detection goes here
+	}
+
+	@Override
+	NamedInterfaces detectNamedInterfaces(JavaPackage basePackage, ApplicationModuleInformation information) {
+		return NamedInterfaces.builder()
+				.recursive()
+				.matching("api")
+				.build();
+	}
+}
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+package example
+
+class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrategy {
+
+	override fun getModuleBasePackages(basePackage: JavaPackage): Stream<JavaPackage> {
+		// Your module detection goes here
+	}
+
+	override fun detectNamedInterfaces(basePackage: JavaPackage, information: ApplicationModuleInformation): NamedInterfaces {
+		return NamedInterfaces.builder()
+				.recursive()
+				.matching("api")
+				.build()
+	}
+}
+----
+======
+
+In the `detectNamedInterfaces(…)` implementation shown above, we build up a `NamedInterfaces` instance for all packages named `api` underneath the given application module's base package.
+The `Builder` API exposes additional methods to select packages as named interfaces or explicitly exclude them from that.
+Note, that the builder will always include the unnamed named interface containing all public methods located in the application module's base package as that interface is required for application modules.
+
+For a more manual setup of a `NamedInterfaces`, be sure to check out its factory methods and the ones exposed by `NamedInterface`.
 

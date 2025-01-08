@@ -45,19 +45,25 @@ public class ApplicationModuleSource {
 
 	private final JavaPackage moduleBasePackage;
 	private final ApplicationModuleIdentifier identifier;
+	private final Function<ApplicationModuleInformation, NamedInterfaces> namedInterfacesFactory;
 
 	/**
 	 * Creates a new {@link ApplicationModuleSource} for the given module base package and module name.
 	 *
 	 * @param moduleBasePackage must not be {@literal null}.
 	 * @param moduleName must not be {@literal null} or empty.
+	 * @param namedInterfacesFactory must not be {@literal null}.
 	 */
-	private ApplicationModuleSource(JavaPackage moduleBasePackage, ApplicationModuleIdentifier identifier) {
+	private ApplicationModuleSource(JavaPackage moduleBasePackage, ApplicationModuleIdentifier identifier,
+			Function<ApplicationModuleInformation, NamedInterfaces> namedInterfacesFactory) {
 
 		Assert.notNull(moduleBasePackage, "JavaPackage must not be null!");
+		Assert.notNull(identifier, "ApplicationModuleIdentifier must not be null!");
+		Assert.notNull(namedInterfacesFactory, "NamedInterfaces factory must not be null!");
 
 		this.moduleBasePackage = moduleBasePackage;
 		this.identifier = identifier;
+		this.namedInterfacesFactory = namedInterfacesFactory;
 	}
 
 	/**
@@ -83,7 +89,7 @@ public class ApplicationModuleSource {
 							.orElseGet(() -> ApplicationModuleIdentifier.of(
 									fullyQualifiedModuleNames ? it.getName() : rootPackage.getTrailingName(it)));
 
-					return new ApplicationModuleSource(it, id);
+					return new ApplicationModuleSource(it, id, (info) -> strategy.detectNamedInterfaces(it, info));
 				});
 	}
 
@@ -95,7 +101,8 @@ public class ApplicationModuleSource {
 	 * @return will never be {@literal null}.
 	 */
 	static ApplicationModuleSource from(JavaPackage pkg, String identifier) {
-		return new ApplicationModuleSource(pkg, ApplicationModuleIdentifier.of(identifier));
+		return new ApplicationModuleSource(pkg, ApplicationModuleIdentifier.of(identifier),
+				(info) -> NamedInterfaces.of(pkg, info));
 	}
 
 	/**
@@ -114,6 +121,20 @@ public class ApplicationModuleSource {
 	 */
 	public ApplicationModuleIdentifier getIdentifier() {
 		return identifier;
+	}
+
+	/**
+	 * Returns all {@link NamedInterfaces} for the given {@link ApplicationModuleInformation}.
+	 *
+	 * @param information must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public NamedInterfaces getNamedInterfaces(ApplicationModuleInformation information) {
+
+		Assert.notNull(information, "ApplicationModuleInformation must not be null!");
+
+		return namedInterfacesFactory.apply(information);
 	}
 
 	/*

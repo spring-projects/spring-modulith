@@ -69,8 +69,9 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 *
 	 * @param javaPackage must not be {@literal null}.
 	 * @return will never be {@literal null}.
+	 * @since 1.4 (previously package protected)
 	 */
-	static List<NamedInterface> of(JavaPackage javaPackage) {
+	public static List<NamedInterface> of(JavaPackage javaPackage) {
 
 		var basePackage = javaPackage.toSingle();
 		var names = basePackage.findAnnotation(org.springframework.modulith.NamedInterface.class) //
@@ -91,9 +92,33 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 * @param name must not be {@literal null} or empty.
 	 * @param classes must not be {@literal null}.
 	 * @return will never be {@literal null}.
+	 * @since 1.4 (previously package protected)
 	 */
-	static NamedInterface of(String name, Classes classes) {
+	public static NamedInterface of(String name, Classes classes) {
 		return new NamedInterface(name, classes);
+	}
+
+	/**
+	 * Returns the unnamed interface for the given package, excluding any sub-packages by convention.
+	 *
+	 * @param javaPackage must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public static NamedInterface unnamed(JavaPackage javaPackage) {
+		return unnamed(javaPackage, true);
+	}
+
+	/**
+	 * Returns an unnamed interface for the given package applying open module semantics, i.e. including all sub-packages
+	 * of the given one.
+	 *
+	 * @param javaPackage must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public static NamedInterface open(JavaPackage javaPackage) {
+		return unnamed(javaPackage, false);
 	}
 
 	/**
@@ -102,7 +127,9 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 * @param javaPackage must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	static NamedInterface unnamed(JavaPackage javaPackage, boolean flatten) {
+	private static NamedInterface unnamed(JavaPackage javaPackage, boolean flatten) {
+
+		Assert.notNull(javaPackage, "Java package must not be null!");
 
 		var basePackageClasses = (flatten ? javaPackage.toSingle() : javaPackage).getExposedClasses();
 
