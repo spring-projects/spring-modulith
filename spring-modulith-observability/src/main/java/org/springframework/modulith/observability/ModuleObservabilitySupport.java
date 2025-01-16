@@ -22,7 +22,6 @@ import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.lang.Nullable;
@@ -31,19 +30,9 @@ import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 /**
  * @author Oliver Drotbohm
  */
-class ModuleObservabilitySupport implements BeanClassLoaderAware, BeanFactoryAware {
+class ModuleObservabilitySupport implements BeanFactoryAware {
 
-	private ClassLoader classLoader;
 	private @Nullable AbstractAutoProxyCreator creator;
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.beans.factory.BeanClassLoaderAware#setBeanClassLoader(java.lang.ClassLoader)
-	 */
-	@Override
-	public void setBeanClassLoader(ClassLoader classLoader) {
-		this.classLoader = classLoader;
-	}
 
 	/*
 	 * (non-Javadoc)
@@ -77,7 +66,7 @@ class ModuleObservabilitySupport implements BeanClassLoaderAware, BeanFactoryAwa
 			customizer.accept(factory);
 			factory.addAdvisor(advisor);
 
-			return factory.getProxy(classLoader);
+			return factory.getProxy(bean.getClass().getClassLoader());
 		}
 	}
 
