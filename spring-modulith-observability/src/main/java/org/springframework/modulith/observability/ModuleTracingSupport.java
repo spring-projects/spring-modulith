@@ -20,24 +20,12 @@ import java.util.function.Consumer;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
-import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 
 /**
  * @author Oliver Drotbohm
  */
-class ModuleTracingSupport implements BeanClassLoaderAware {
-
-	private ClassLoader classLoader;
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.beans.factory.BeanClassLoaderAware#setBeanClassLoader(java.lang.ClassLoader)
-	 */
-	@Override
-	public void setBeanClassLoader(ClassLoader classLoader) {
-		this.classLoader = classLoader;
-	}
+class ModuleTracingSupport {
 
 	protected final Object addAdvisor(Object bean, Advisor advisor) {
 		return addAdvisor(bean, advisor, __ -> {});
@@ -57,7 +45,7 @@ class ModuleTracingSupport implements BeanClassLoaderAware {
 			customizer.accept(factory);
 			factory.addAdvisor(advisor);
 
-			return factory.getProxy(classLoader);
+			return factory.getProxy(bean.getClass().getClassLoader());
 		}
 	}
 
