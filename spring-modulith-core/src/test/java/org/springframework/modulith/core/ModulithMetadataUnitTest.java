@@ -74,6 +74,14 @@ class ModulithMetadataUnitTest {
 		assertThat(metadata.getBasePackages()).containsExactly(getClass().getPackageName());
 	}
 
+	@Test // GH-1015
+	void considersModulithicOnPackageLookup() {
+
+		var metadata = ModulithMetadata.of("empty");
+
+		assertThat(metadata.getSystemName()).hasValue("customSystemName");
+	}
+
 	@Modulith(additionalPackages = "com.acme.foo", //
 			sharedModules = "shared.module", //
 			systemName = "systemName", //

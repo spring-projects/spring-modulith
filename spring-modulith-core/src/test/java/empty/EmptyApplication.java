@@ -20,5 +20,5 @@ import org.springframework.modulith.Modulithic;
 /**
  * @author Oliver Drotbohm
  */
-@Modulithic
+@Modulithic(systemName = "customSystemName")
 public class EmptyApplication {}

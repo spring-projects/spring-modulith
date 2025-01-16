@@ -18,12 +18,17 @@ package org.springframework.modulith.core;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Supplier;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.modulith.Modulith;
 import org.springframework.modulith.Modulithic;
 import org.springframework.modulith.core.Types.SpringTypes;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * Core metadata about the modulithic application.
@@ -56,13 +61,26 @@ public interface ModulithMetadata {
 	}
 
 	/**
-	 * Creates a new {@link ModulithMetadata} instance for the given package.
+	 * Creates a new {@link ModulithMetadata} instance for the given package. Inspects the package for classes annotated
+	 * with {@link Modulithic} to pick up additional configuration.
 	 *
 	 * @param javaPackage must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 */
 	public static ModulithMetadata of(String javaPackage) {
-		return SpringBootModulithMetadata.of(javaPackage);
+
+		var provider = new ClassPathScanningCandidateComponentProvider(false);
+		provider.addIncludeFilter(new AnnotationTypeFilter(Modulithic.class));
+
+		Set<BeanDefinition> candidates = provider.findCandidateComponents(javaPackage);
+
+		if (candidates.size() != 1) {
+			return SpringBootModulithMetadata.of(javaPackage);
+		}
+
+		var className = candidates.iterator().next().getBeanClassName();
+
+		return of(ClassUtils.resolveClassName(className, ModulithMetadata.class.getClassLoader()));
 	}
 
 	/**
