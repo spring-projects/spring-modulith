@@ -32,35 +32,38 @@ import org.springframework.modulith.Modulithic;
 class ModulithMetadataUnitTest {
 
 	@Test
-	public void inspectsModulithAnnotation() throws Exception {
+	void inspectsModulithAnnotation() throws Exception {
 
 		Stream.of(ModulithAnnotated.class, ModuliticAnnotated.class) //
 				.map(ModulithMetadata::of) //
 				.forEach(it -> {
 
 					assertThat(it.getBasePackages()).containsExactly("org.springframework.modulith.core", "com.acme.foo");
-					assertThat(it.getSharedModuleNames()).containsExactly("shared.module");
+					assertThat(it.getSharedModuleIdentifiers())
+							.extracting(ApplicationModuleIdentifier::toString)
+							.containsExactly("shared.module");
 					assertThat(it.getSystemName()).hasValue("systemName");
 					assertThat(it.useFullyQualifiedModuleNames()).isTrue();
 				});
 	}
 
 	@Test
-	public void usesDefaultsIfModulithAnnotationsAreMissing() {
+	void usesDefaultsIfModulithAnnotationsAreMissing() {
 
 		ModulithMetadata metadata = ModulithMetadata.of(SpringBootApplicationAnnotated.class);
 
 		assertThat(metadata.getBasePackages()).contains("org.springframework.modulith.core");
-		assertThat(metadata.getSharedModuleNames()).isEmpty();
+		assertThat(metadata.getSharedModuleIdentifiers()).isEmpty();
 		assertThat(metadata.getSystemName()).hasValue(SpringBootApplicationAnnotated.class.getSimpleName());
 		assertThat(metadata.useFullyQualifiedModuleNames()).isFalse();
 	}
 
 	@Test
-	public void rejectsTypeNotAnnotatedWithEitherModulithAnnotationOrSpringBootApplication() {
+	void rejectsTypeNotAnnotatedWithEitherModulithAnnotationOrSpringBootApplication() {
 
 		assertThatExceptionOfType(IllegalArgumentException.class) //
 				.isThrownBy(() -> ModulithMetadata.of(Unannotated.class)) //
+				.withMessageContaining(Unannotated.class.getSimpleName()) //
 				.withMessageContaining(Modulith.class.getSimpleName()) //
 				.withMessageContaining(Modulithic.class.getSimpleName()) //
 				.withMessageContaining(SpringBootApplication.class.getSimpleName());
