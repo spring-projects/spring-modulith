@@ -32,7 +32,7 @@ import org.springframework.modulith.Modulithic;
 class ModulithMetadataUnitTest {
 
 	@Test
-	public void inspectsModulithAnnotation() throws Exception {
+	void inspectsModulithAnnotation() throws Exception {
 
 		Stream.of(ModulithAnnotated.class, ModuliticAnnotated.class) //
 				.map(ModulithMetadata::of) //
@@ -46,7 +46,7 @@ class ModulithMetadataUnitTest {
 	}
 
 	@Test
-	public void usesDefaultsIfModulithAnnotationsAreMissing() {
+	void usesDefaultsIfModulithAnnotationsAreMissing() {
 
 		ModulithMetadata metadata = ModulithMetadata.of(SpringBootApplicationAnnotated.class);
 
@@ -57,10 +57,11 @@ class ModulithMetadataUnitTest {
 	}
 
 	@Test
-	public void rejectsTypeNotAnnotatedWithEitherModulithAnnotationOrSpringBootApplication() {
+	void rejectsTypeNotAnnotatedWithEitherModulithAnnotationOrSpringBootApplication() {
 
 		assertThatExceptionOfType(IllegalArgumentException.class) //
 				.isThrownBy(() -> ModulithMetadata.of(Unannotated.class)) //
+				.withMessageContaining(Unannotated.class.getSimpleName()) //
 				.withMessageContaining(Modulith.class.getSimpleName()) //
 				.withMessageContaining(Modulithic.class.getSimpleName()) //
 				.withMessageContaining(SpringBootApplication.class.getSimpleName());

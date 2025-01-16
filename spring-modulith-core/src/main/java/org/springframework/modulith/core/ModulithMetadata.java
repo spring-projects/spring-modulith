@@ -17,7 +17,6 @@ package org.springframework.modulith.core;
 
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.springframework.modulith.Modulith;
@@ -33,26 +32,24 @@ import org.springframework.util.Assert;
 public interface ModulithMetadata {
 
 	static final String ANNOTATION_MISSING = "Modules can only be retrieved from a root type, but %s is not annotated with either @%s, @%s or @%s!";
+	static final String WITH_ANNOTATIONS = ANNOTATION_MISSING.formatted("%s", Modulith.class.getSimpleName(),
+			Modulithic.class.getSimpleName(), SpringTypes.AT_SPRING_BOOT_APPLICATION);
 
 	/**
 	 * Creates a new {@link ModulithMetadata} for the given annotated type. Expects the type either be annotated with
 	 * {@link Modulith}, {@link Modulithic} or {@link org.springframework.boot.autoconfigure.SpringBootApplication}.
 	 *
 	 * @param annotated must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
 	 * @throws IllegalArgumentException in case none of the above mentioned annotations is present on the given type.
 	 */
 	public static ModulithMetadata of(Class<?> annotated) {
 
 		Assert.notNull(annotated, "Annotated type must not be null!");
 
-		Supplier<IllegalArgumentException> exception = () -> new IllegalArgumentException(
-				String.format(ANNOTATION_MISSING, annotated.getSimpleName(), Modulith.class.getSimpleName(),
-						Modulithic.class.getSimpleName(), SpringTypes.AT_SPRING_BOOT_APPLICATION));
-
-		Supplier<ModulithMetadata> withDefaults = () -> SpringBootModulithMetadata.of(annotated).orElseThrow(exception);
-
-		return AnnotationModulithMetadata.of(annotated).orElseGet(withDefaults);
+		return AnnotationModulithMetadata.of(annotated)
+				.or(() -> SpringBootModulithMetadata.of(annotated))
+				.orElseThrow(() -> new IllegalArgumentException(WITH_ANNOTATIONS.formatted(annotated.getSimpleName())));
 	}
 
 	/**
