@@ -44,7 +44,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>3.4.1</spring-boot.version>
-		<spring-framework.version>6.2.1</spring-framework.version> <!-- For Javadoc links only -->
+		<spring-framework.version>6.2.2</spring-framework.version> <!-- For Javadoc links only -->
 		<spring-cloud-aws-bom.version>3.1.1</spring-cloud-aws-bom.version>
 		<testcontainers.version>1.17.6</testcontainers.version>
 
