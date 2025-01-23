@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-events</artifactId>
-		<version>1.2.8-SNAPSHOT</version>
+		<version>1.2.8</version>
 	</parent>
 
 	<name>Spring Modulith - Events - AWS SQS support</name>
