@@ -30,7 +30,7 @@ jobs:
       env:
           SONATYPE_USER: ${{ secrets.OSSRH_S01_TOKEN_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.OSSRH_S01_TOKEN_PASSWORD }}
-          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+          MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
       run: |
         ./mvnw -B clean install -DskipTests
