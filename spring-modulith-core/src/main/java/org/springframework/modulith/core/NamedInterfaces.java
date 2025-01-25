@@ -456,7 +456,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 			return it -> {
 
-				var trailingName = new PackageName(basePackage.getTrailingName(it));
+				var trailingName = PackageName.of(basePackage.getTrailingName(it));
 
 				return names.stream().anyMatch(trailingName::nameContainsOrMatches);
 			};

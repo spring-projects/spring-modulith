@@ -15,8 +15,13 @@
  */
 package org.springframework.modulith.core;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -29,6 +34,8 @@ import org.springframework.util.ClassUtils;
  */
 class PackageName implements Comparable<PackageName> {
 
+	private static final Map<String, PackageName> PACKAGE_NAMES = new HashMap<>();
+
 	private final String name;
 	private final String[] segments;
 
@@ -37,12 +44,23 @@ class PackageName implements Comparable<PackageName> {
 	 *
 	 * @param name must not be {@literal null}.
 	 */
-	public PackageName(String name) {
+	private PackageName(String name) {
+		this(name, name.split("\\."));
+	}
+
+	/**
+	 * Creates a new {@link PackageName} with the given name and segments.
+	 *
+	 * @param name must not be {@literal null}.
+	 * @param segments must not be {@literal null}.
+	 */
+	private PackageName(String name, String[] segments) {
 
 		Assert.notNull(name, "Name must not be null!");
+		Assert.notNull(segments, "Segments must not be null!");
 
 		this.name = name;
-		this.segments = name.split("\\.");
+		this.segments = segments;
 	}
 
 	/**
@@ -51,11 +69,41 @@ class PackageName implements Comparable<PackageName> {
 	 * @param fullyQualifiedName must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 */
-	public static PackageName ofType(String fullyQualifiedName) {
+	static PackageName ofType(String fullyQualifiedName) {
 
 		Assert.notNull(fullyQualifiedName, "Type name must not be null!");
 
-		return new PackageName(ClassUtils.getPackageName(fullyQualifiedName));
+		return PackageName.of(ClassUtils.getPackageName(fullyQualifiedName));
+	}
+
+	/**
+	 * Returns the {@link PackageName} with the given name.
+	 *
+	 * @param name must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	static PackageName of(String name) {
+
+		Assert.notNull(name, "Name must not be null!");
+
+		return PACKAGE_NAMES.computeIfAbsent(name, PackageName::new);
+	}
+
+	/**
+	 * Returns the {@link PackageName} for the given segments.
+	 *
+	 * @param segments must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	static PackageName of(String[] segments) {
+
+		Assert.notNull(segments, "Segments must not be null!");
+
+		var name = Stream.of(segments).collect(Collectors.joining("."));
+
+		return PACKAGE_NAMES.computeIfAbsent(name, it -> new PackageName(name, segments));
 	}
 
 	/**
@@ -134,6 +182,10 @@ class PackageName implements Comparable<PackageName> {
 		return reference.name.startsWith(name + ".");
 	}
 
+	boolean isDirectParentOf(PackageName reference) {
+		return this.equals(getParent());
+	}
+
 	/**
 	 * Returns whether the package name contains the given one, i.e. if the given one either is the current one or a
 	 * sub-package of it.
@@ -206,6 +258,48 @@ class PackageName implements Comparable<PackageName> {
 		}
 
 		return segments.length - o.segments.length;
+	}
+
+	/**
+	 * Returns the names of sub-packages of the current one until the given reference {@link PackageName}.
+	 *
+	 * @param reference must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	Stream<PackageName> expandUntil(PackageName reference) {
+
+		Assert.notNull(reference, "Reference must not be null!");
+
+		if (!reference.isSubPackageOf(this) || !reference.hasParent()) {
+			return Stream.empty();
+		}
+
+		if (isDirectParentOf(reference)) {
+			return Stream.of(reference);
+		}
+
+		return Stream.concat(expandUntil(reference.getParent()), Stream.of(reference));
+	}
+
+	/**
+	 * Returns whether the current {@link PackageName} has a parent.
+	 *
+	 * @since 1.4
+	 */
+	boolean hasParent() {
+		return segments.length > 1;
+	}
+
+	/**
+	 * Returns the parent {@link PackageName}.
+	 *
+	 * @return can be {@literal null}.
+	 * @since 1.4
+	 */
+	@Nullable
+	PackageName getParent() {
+		return PackageName.of(Arrays.copyOf(segments, segments.length - 1));
 	}
 
 	/*
