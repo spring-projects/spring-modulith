@@ -116,4 +116,16 @@ class JavaPackageUnitTests {
 		assertThat(first.equals(second)).isTrue();
 		assertThat(second.equals(first)).isTrue();
 	}
+
+	@Test // GH-1039
+	void detectsIntermediateSubPackages() {
+
+		var packages = TestUtils.getPackage("with").getSubPackages();
+
+		assertThat(packages)
+				.extracting(JavaPackage::getName)
+				.containsExactly("with.many",
+						"with.many.intermediate",
+						"with.many.intermediate.packages");
+	}
 }

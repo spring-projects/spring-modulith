@@ -59,6 +59,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	private final PackageName name;
 	private final Classes classes, packageClasses;
 	private final Supplier<Set<JavaPackage>> directSubPackages;
+	private final Supplier<JavaPackages> subPackages;
 
 	/**
 	 * Creates a new {@link JavaPackage} for the given {@link Classes}, name and whether to include all sub-packages.
@@ -75,13 +76,13 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 		this.packageClasses = classes
 				.that(resideInAPackage(name.asFilter(includeSubPackages)));
 		this.name = name;
-		this.directSubPackages = SingletonSupplier.of(() -> packageClasses.stream() //
-				.map(it -> it.getPackageName()) //
-				.filter(Predicate.not(name::hasName)) //
-				.map(it -> extractDirectSubPackage(it)) //
-				.distinct() //
-				.map(it -> of(classes, it)) //
-				.collect(Collectors.toSet()));
+
+		this.directSubPackages = () -> detectSubPackages()
+				.filter(this::isDirectParentOf)
+				.collect(Collectors.toUnmodifiableSet());
+
+		this.subPackages = SingletonSupplier.of(() -> detectSubPackages()
+				.collect(collectingAndThen(toUnmodifiableList(), JavaPackages::new)));
 	}
 
 	/**
@@ -92,7 +93,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 * @return
 	 */
 	public static JavaPackage of(Classes classes, String name) {
-		return new JavaPackage(classes, new PackageName(name), true);
+		return new JavaPackage(classes, PackageName.of(name), true);
 	}
 
 	/**
@@ -333,13 +334,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 * @since 1.3
 	 */
 	JavaPackages getSubPackages() {
-
-		return packageClasses.stream() //
-				.map(JavaClass::getPackageName)
-				.filter(Predicate.not(name::hasName))
-				.distinct()
-				.map(it -> new JavaPackage(classes, new PackageName(it), true))
-				.collect(collectingAndThen(toUnmodifiableList(), JavaPackages::new));
+		return subPackages.get();
 	}
 
 	/**
@@ -390,6 +385,21 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 				});
 	}
 
+	/**
+	 * Returns whether the current {@link JavaPackage} is the direct parent of the given one.
+	 *
+	 * @param reference must not be {@literal null}.
+	 * @since 1.4
+	 */
+	boolean isDirectParentOf(JavaPackage reference) {
+
+		Assert.notNull(reference, "Reference JavaPackage must not be null!");
+
+		var name = reference.getPackageName();
+
+		return name.hasParent() && this.getPackageName().equals(name.getParent());
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see com.tngtech.archunit.base.HasDescription#getDescription()
@@ -397,6 +407,17 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	@Override
 	public String getDescription() {
 		return classes.getDescription();
+	}
+
+	private Stream<JavaPackage> detectSubPackages() {
+
+		return packageClasses.stream() //
+				.map(JavaClass::getPackageName)
+				.filter(Predicate.not(name::hasName))
+				.map(PackageName::of)
+				.flatMap(name::expandUntil)
+				.distinct()
+				.map(it -> new JavaPackage(classes, it, true));
 	}
 
 	/*
@@ -459,24 +480,6 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	@Override
 	public int hashCode() {
 		return Objects.hash(classes, directSubPackages.get(), name, packageClasses);
-	}
-
-	/**
-	 * Extract the direct sub-package name of the given candidate.
-	 *
-	 * @param candidate
-	 * @return will never be {@literal null}.
-	 */
-	private String extractDirectSubPackage(String candidate) {
-
-		if (candidate.length() <= name.length()) {
-			return candidate;
-		}
-
-		int subSubPackageIndex = candidate.indexOf('.', name.length() + 1);
-		int endIndex = subSubPackageIndex == -1 ? candidate.length() : subSubPackageIndex;
-
-		return candidate.substring(0, endIndex);
 	}
 
 	static Comparator<JavaPackage> reverse() {

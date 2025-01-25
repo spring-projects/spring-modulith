@@ -85,8 +85,20 @@ public class TestUtils {
 				.that(resideInAPackage(packageType.getPackage().getName() + "..")));
 	}
 
+	public static Classes getClasses(String packageName) {
+
+		Assert.hasText(packageName, "Package name must not be null or empty!");
+
+		return Classes.of(new ClassFileImporter()
+				.importPackages(packageName));
+	}
+
 	public static JavaPackage getPackage(Class<?> packageType) {
 		return JavaPackage.of(TestUtils.getClasses(packageType), packageType.getPackageName());
+	}
+
+	public static JavaPackage getPackage(String name) {
+		return JavaPackage.of(getClasses(name), name);
 	}
 
 	public static ApplicationModule getApplicationModule(String packageName) {
@@ -95,18 +107,6 @@ public class TestUtils {
 		var source = ApplicationModuleSource.from(pkg, pkg.getLocalName());
 
 		return new ApplicationModule(source);
-	}
-
-	private static JavaPackage getPackage(String name) {
-		return JavaPackage.of(getClasses(name), name);
-	}
-
-	private static Classes getClasses(String packageName) {
-
-		Assert.hasText(packageName, "Package name must not be null or empty!");
-
-		return Classes.of(new ClassFileImporter()
-				.importPackages(packageName));
 	}
 
 	private static ApplicationModules of(ModulithMetadata metadata, DescribedPredicate<JavaClass> ignores) {

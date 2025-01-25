@@ -31,12 +31,12 @@ class PackageNameUnitTests {
 	@Test // GH-578
 	void sortsPackagesByNameAndDepth() {
 
-		var comAcme = new PackageName("com.acme");
-		var comAcmeA = new PackageName("com.acme.a");
-		var comAcmeAFirst = new PackageName("com.acme.a.first");
-		var comAcmeAFirstOne = new PackageName("com.acme.a.first.one");
-		var comAcmeASecond = new PackageName("com.acme.a.second");
-		var comAcmeB = new PackageName("com.acme.b");
+		var comAcme = PackageName.of("com.acme");
+		var comAcmeA = PackageName.of("com.acme.a");
+		var comAcmeAFirst = PackageName.of("com.acme.a.first");
+		var comAcmeAFirstOne = PackageName.of("com.acme.a.first.one");
+		var comAcmeASecond = PackageName.of("com.acme.a.second");
+		var comAcmeB = PackageName.of("com.acme.b");
 
 		assertThat(List.of(comAcmeAFirstOne, comAcmeB, comAcmeASecond, comAcmeAFirst, comAcme, comAcmeA)
 				.stream()
@@ -48,8 +48,8 @@ class PackageNameUnitTests {
 	@Test // GH-802
 	void caculatesNestingCorrectly() {
 
-		var comAcme = new PackageName("com.acme");
-		var comAcmeA = new PackageName("com.acme.a");
+		var comAcme = PackageName.of("com.acme");
+		var comAcmeA = PackageName.of("com.acme.a");
 
 		assertThat(comAcme.contains(comAcme)).isTrue();
 		assertThat(comAcme.contains(comAcmeA)).isTrue();
