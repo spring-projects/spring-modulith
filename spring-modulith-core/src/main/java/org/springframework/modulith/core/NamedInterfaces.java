@@ -267,6 +267,18 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.anyMatch(NamedInterface::isNamed);
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+
+		return namedInterfaces.stream()
+				.map(NamedInterface::toString)
+				.collect(Collectors.joining(System.lineSeparator()));
+	}
+
 	private static NamedInterfaces of(NamedInterface interfaces) {
 		return new NamedInterfaces(List.of(interfaces));
 	}
@@ -315,7 +327,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		 * @param basePackage must not be {@literal null}.
 		 */
 		private Builder(JavaPackage basePackage) {
-			this(basePackage, false, __ -> false, __ -> false);
+			this(basePackage, false, __ -> false, __ -> true);
 		}
 
 		private Builder(JavaPackage basePackage, boolean recursive,

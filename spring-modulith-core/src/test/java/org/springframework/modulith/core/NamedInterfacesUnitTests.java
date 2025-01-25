@@ -130,6 +130,18 @@ class NamedInterfacesUnitTests {
 						"nested.b.second");
 	}
 
+	@Test // GH-1040
+	void doesNotExcludeAnyPackagesByDefault() {
+
+		var pkg = TestUtils.getPackage(RootType.class);
+
+		var interfaces = NamedInterfaces.builder(pkg)
+				.including(__ -> true)
+				.build();
+
+		assertThat(interfaces).hasSizeGreaterThan(1);
+	}
+
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {
 
 		var classNames = Arrays.stream(types).map(Class::getName).toArray(String[]::new);
