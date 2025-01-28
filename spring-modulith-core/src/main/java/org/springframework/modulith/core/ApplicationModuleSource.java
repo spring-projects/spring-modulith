@@ -79,7 +79,7 @@ public class ApplicationModuleSource {
 				.flatMap(ANNOTATION_IDENTIFIER_SOURCE::withNestedPackages)
 				.map(it -> {
 
-					var id = ANNOTATION_IDENTIFIER_SOURCE.lookupIdentifier(it)
+					var id = ANNOTATION_IDENTIFIER_SOURCE.lookupIdentifier(it.toSingle())
 							.orElseGet(() -> ApplicationModuleIdentifier.of(
 									fullyQualifiedModuleNames ? it.getName() : rootPackage.getTrailingName(it)));
 
