@@ -42,4 +42,18 @@ class ApplicationModuleSourceUnitTests {
 				.extracting(ApplicationModuleIdentifier::toString)
 				.contains("ninvalid", "customId", "invalid", "ni", "ni.nested.b.first", "secondCustomized", "ni.nested");
 	}
+
+	@Test // GH-1042
+	void doesNotPickUpIdFromNestedPackages() {
+
+		var pkg = TestUtils.getPackage("reproducers.gh1042");
+
+		var sources = ApplicationModuleSource.from(pkg, ApplicationModuleDetectionStrategy.directSubPackage(), false);
+
+		assertThat(sources)
+				.extracting(ApplicationModuleSource::getIdentifier)
+				.extracting(ApplicationModuleIdentifier::toString)
+				.contains("module", // picked from package name not from annotation in nested package
+						"gh-1042-nested"); // from annotation in nested package
+	}
 }
