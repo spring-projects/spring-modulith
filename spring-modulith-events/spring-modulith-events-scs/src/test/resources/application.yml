@@ -1,0 +1,27 @@
+spring.main.banner-mode: OFF
+spring.modulith.events.jdbc.schema-initialization.enabled: true
+spring.modulith.events.externalization.enabled: true
+
+logging:
+  level:
+    root: WARN
+    io.zenwave360: DEBUG
+    org.springframework.jdbc: DEBUG
+    org.springframework.modulith: TRACE
+
+spring.datasource.url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+spring.datasource.driverClassName: org.h2.Driver
+spring.datasource.username: sa
+spring.datasource.password: password
+spring.h2.console.enabled: true
+spring.sql.init.platform: h2
+
+spring:
+  cloud:
+    stream:
+      bindings:
+        customers-json-out-0:
+          destination: customers-json-topic
+        customers-avro-out-0:
+          destination: customers-avro-topic
+          content-type: application/*+avro
