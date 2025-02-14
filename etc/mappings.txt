@@ -1,0 +1,2 @@
+jmolecules-bom=jMolecules
+spring-framework=Spring Framework
