@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.Nullable;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
@@ -111,9 +112,9 @@ class DefaultObservedModule implements ObservedModule {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.observability.ObservedModule#getInterceptionConfiguration(java.lang.Class, org.springframework.modulith.model.Modules)
+	 * @see org.springframework.modulith.observability.support.ObservedModule#getObservedModuleType(java.lang.Class, org.springframework.modulith.core.ApplicationModules)
 	 */
-	public ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules) {
+	public @Nullable ObservedModuleType getObservedModuleType(Class<?> type, ApplicationModules modules) {
 
 		Assert.notNull(type, "Type must not be null!");
 		Assert.notNull(modules, "ApplicationModules must not be null!");
@@ -161,7 +162,7 @@ class DefaultObservedModule implements ObservedModule {
 		var advised = (Advised) ((ProxyMethodInvocation) invocation).getProxy();
 		var targetClass = advised.getTargetClass();
 
-		if (module.contains(targetClass)) {
+		if (targetClass != null && module.contains(targetClass)) {
 			return AopUtils.getMostSpecificMethod(method, targetClass);
 		}
 

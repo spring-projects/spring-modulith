@@ -24,6 +24,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.IntStream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -383,7 +384,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		private final JpaEventPublication publication;
 		private final EventSerializer serializer;
-		private Object deserializedEvent;
+		private @Nullable Object deserializedEvent;
 
 		/**
 		 * Creates a new {@link JpaEventPublicationAdapter} for the given {@link JpaEventPublication} and

@@ -36,7 +36,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.modulith.core.Types.JavaTypes;
 import org.springframework.modulith.core.Types.SpringTypes;
@@ -427,7 +427,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		var candidatePackageName = PackageName.ofType(candidate);
 
-		return (candidatePackageName.isEmpty() || basePackage.getPackageName().contains(candidatePackageName))
+		return (PackageName.isDefault(candidatePackageName) || basePackage.getPackageName().contains(candidatePackageName))
 				&& getType(candidate).isPresent();
 	}
 

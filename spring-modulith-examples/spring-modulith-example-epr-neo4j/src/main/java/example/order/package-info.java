@@ -4,5 +4,5 @@
  *
  * @see example.ModularityTests
  */
-@org.springframework.lang.NonNullApi
+@org.jspecify.annotations.NullMarked
 package example.order;

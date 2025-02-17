@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.json.BasicJsonParser;
 import org.springframework.core.io.Resource;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.docs.metadata.MethodMetadata;
 import org.springframework.modulith.docs.metadata.TypeMetadata;
 import org.springframework.modulith.docs.util.BuildSystemUtils;
@@ -134,28 +134,39 @@ class SpringModulithDocumentationSource implements DocumentationSource {
 	@SuppressWarnings("unchecked")
 	private static TypeMetadata typeMetadata(Map<String, Object> source) {
 
-		var methods = source.containsKey("methods")
-				? ((List<Map<String, Object>>) source.get("methods")).stream()
-						.map(SpringModulithDocumentationSource::methodMetadata)
-						.toList()
+		var sourceMethods = (List<Map<String, Object>>) source.get("methods");
+
+		var methods = sourceMethods != null
+				? sourceMethods.stream().map(SpringModulithDocumentationSource::methodMetadata).toList()
 				: Collections.<MethodMetadata> emptyList();
 
-		return new TypeMetadata(
-				source.get("name").toString(),
-				getString(source, "comment"),
-				methods);
+		var name = source.get("name");
+
+		if (name == null) {
+			throw new IllegalArgumentException("Source map does not contain a name entry! %s".formatted(source));
+		}
+
+		return new TypeMetadata(name.toString(), getString(source, "comment"), methods);
 	}
 
 	private static MethodMetadata methodMetadata(Map<String, Object> source) {
 
-		return new MethodMetadata(
-				source.get("name").toString(),
-				source.get("signature").toString(),
-				getString(source, "comment"));
+		var name = source.get("name");
+
+		if (name == null) {
+			throw new IllegalArgumentException("No name found in source map! %s".formatted(source));
+		}
+
+		var signature = source.get("signature");
+
+		if (signature == null) {
+			throw new IllegalArgumentException("No signature found in source map! %s".formatted(source));
+		}
+
+		return new MethodMetadata(name.toString(), signature.toString(), getString(source, "comment"));
 	}
 
-	@Nullable
-	private static String getString(Map<String, Object> source, String key) {
+	private static @Nullable String getString(Map<String, Object> source, String key) {
 
 		Object result = source.get(key);
 

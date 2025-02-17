@@ -75,7 +75,12 @@ public interface ModulithMetadata {
 			return SpringBootModulithMetadata.of(javaPackage);
 		}
 
-		var className = candidates.iterator().next().getBeanClassName();
+		var definition = candidates.iterator().next();
+		var className = definition.getBeanClassName();
+
+		if (className == null) {
+			throw new IllegalStateException("No bean class name found on BeanDefinition %s!".formatted(definition));
+		}
 
 		return of(ClassUtils.resolveClassName(className, ModulithMetadata.class.getClassLoader()));
 	}

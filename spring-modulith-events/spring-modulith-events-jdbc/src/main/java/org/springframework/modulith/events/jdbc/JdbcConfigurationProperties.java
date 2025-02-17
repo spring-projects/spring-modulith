@@ -15,10 +15,10 @@
  */
 package org.springframework.modulith.events.jdbc;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.bind.ConstructorBinding;
 import org.springframework.boot.context.properties.bind.DefaultValue;
-import org.springframework.lang.Nullable;
 
 /**
  * Configuration properties for JDBC.
@@ -30,7 +30,7 @@ import org.springframework.lang.Nullable;
 class JdbcConfigurationProperties {
 
 	private final SchemaInitialization schemaInitialization;
-	private final String schema;
+	private final @Nullable String schema;
 
 	/**
 	 * Creates a new {@link JdbcConfigurationProperties} instance.
@@ -57,8 +57,7 @@ class JdbcConfigurationProperties {
 	 *
 	 * @return can be {@literal null}.
 	 */
-	@Nullable
-	public String getSchema() {
+	public @Nullable String getSchema() {
 		return schema;
 	}
 

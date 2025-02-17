@@ -22,6 +22,8 @@ import java.util.function.Supplier;
 import org.aopalliance.aop.Advice;
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aop.MethodMatcher;
@@ -31,7 +33,6 @@ import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.transaction.event.TransactionPhase;
@@ -160,7 +161,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 		 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
 		 */
 		@Override
-		public Object invoke(MethodInvocation invocation) throws Throwable {
+		public @Nullable Object invoke(MethodInvocation invocation) throws Throwable {
 
 			Object result = null;
 			var method = invocation.getMethod();
@@ -232,9 +233,8 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			registry.get().markFailed(event, identifier);
 		}
 
-		@SuppressWarnings("null")
 		private static String lookupListenerId(Method method) {
-			return new TransactionalApplicationListenerMethodAdapter(null, method.getDeclaringClass(), method)
+			return new TransactionalApplicationListenerMethodAdapter("¯\\_(ツ)_/¯", method.getDeclaringClass(), method)
 					.getListenerId();
 		}
 	}

@@ -25,10 +25,10 @@ import java.util.Objects;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.observability.support.ModulithObservations.LowKeys;
 import org.springframework.util.Assert;
@@ -69,11 +69,11 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	 *
 	 * @param module must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.
-	 * @param custom must not be {@literal null}.
+	 * @param custom can be {@literal null}.
 	 * @param environment must not be {@literal null}.
 	 */
 	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry,
-			ModulithObservationConvention custom, Environment environment) {
+			@Nullable ModulithObservationConvention custom, Environment environment) {
 
 		Assert.notNull(module, "ObservedModule must not be null!");
 		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
@@ -90,7 +90,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	}
 
 	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
-			ModulithObservationConvention custom, Environment environment) {
+			@Nullable ModulithObservationConvention custom, Environment environment) {
 
 		return CACHE.computeIfAbsent(module.getIdentifier(), __ -> {
 			return new ModuleEntryInterceptor(module, observationRegistry, custom, environment);
@@ -102,7 +102,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
 	 */
 	@Override
-	public Object invoke(MethodInvocation invocation) throws Throwable {
+	public @Nullable Object invoke(MethodInvocation invocation) throws Throwable {
 
 		var moduleIdentifier = module.getIdentifier();
 		var currentObservation = observationRegistry.getCurrentObservation();

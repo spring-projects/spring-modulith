@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.kafka;
 
+import org.jspecify.annotations.NullUnmarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -53,6 +54,7 @@ class KafkaEventExternalizerConfiguration {
 	private static final Logger logger = LoggerFactory.getLogger(KafkaEventExternalizerConfiguration.class);
 
 	@Bean
+	@NullUnmarked
 	DelegatingEventExternalizer kafkaEventExternalizer(EventExternalizationConfiguration configuration,
 			KafkaOperations<Object, Object> operations, BeanFactory factory) {
 

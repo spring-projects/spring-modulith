@@ -29,11 +29,11 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.jdbc.core.JdbcOperations;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -150,7 +150,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, COMPLETION_DATE)
 			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, ?
 			 	FROM %s
-			 	WHERE ID = ? 
+			 	WHERE ID = ?
 			 	  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID)
 			""";
 
@@ -161,7 +161,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			 	FROM %s
 			 	WHERE LISTENER_ID = ?
 				  AND SERIALIZED_EVENT = ?
-				  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID) 
+				  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID)
 			""";
 
 	private static final int DELETE_BATCH_SIZE = 100;
@@ -170,7 +170,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	private final EventSerializer serializer;
 	private final JdbcRepositorySettings settings;
 
-	private ClassLoader classLoader;
+	private @Nullable ClassLoader classLoader;
 
 	private final String sqlStatementInsert,
 			sqlStatementFindCompleted,
@@ -222,8 +222,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		this.sqlStatementDeleteById = SQL_STATEMENT_DELETE_BY_ID.formatted(table);
 		this.sqlStatementDeleteCompleted = SQL_STATEMENT_DELETE_COMPLETED.formatted(completedTable);
 		this.sqlStatementDeleteCompletedBefore = SQL_STATEMENT_DELETE_COMPLETED_BEFORE.formatted(completedTable);
-		this.sqlStatementCopyToArchive = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable, table, completedTable);
-		this.sqlStatementCopyToArchiveByEventAndListenerId = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID.formatted(completedTable, table, completedTable);
+		this.sqlStatementCopyToArchive = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable, table,
+				completedTable);
+		this.sqlStatementCopyToArchiveByEventAndListenerId = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID
+				.formatted(completedTable, table, completedTable);
 	}
 
 	/*
@@ -342,9 +344,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 	@Override
 	@Transactional(readOnly = true)
-	@SuppressWarnings("null")
 	public List<TargetEventPublication> findIncompletePublications() {
-		return operations.query(sqlStatementFindUncompleted, this::resultSetToPublications);
+
+		var result = operations.query(sqlStatementFindUncompleted, this::resultSetToPublications);
+
+		return result == null ? Collections.emptyList() : result;
 	}
 
 	/*
@@ -428,8 +432,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 * @return can be {@literal null}.
 	 * @throws SQLException
 	 */
-	@Nullable
-	private TargetEventPublication resultSetToPublication(ResultSet rs) throws SQLException {
+	private @Nullable TargetEventPublication resultSetToPublication(ResultSet rs) throws SQLException {
 
 		var id = getUuidFromResultSet(rs);
 		var eventClass = loadClass(id, rs.getString("EVENT_TYPE"));
@@ -456,8 +459,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		return settings.getDatabaseType().databaseToUUID(rs.getObject("ID"));
 	}
 
-	@Nullable
-	private Class<?> loadClass(UUID id, String className) {
+	private @Nullable Class<?> loadClass(UUID id, String className) {
 
 		try {
 			return ClassUtils.forName(className, classLoader);

@@ -20,7 +20,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * SPI to allow build units contribute additional {@link ApplicationModuleSource}s in the form of either declaring them

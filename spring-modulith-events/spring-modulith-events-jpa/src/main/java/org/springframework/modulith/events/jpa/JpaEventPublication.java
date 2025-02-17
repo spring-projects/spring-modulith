@@ -23,6 +23,8 @@ import java.time.Instant;
 import java.util.Objects;
 import java.util.UUID;
 
+import org.jspecify.annotations.NullUnmarked;
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.events.jpa.archiving.ArchivedJpaEventPublication;
 import org.springframework.modulith.events.jpa.updating.DefaultJpaEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
@@ -45,7 +47,7 @@ public abstract class JpaEventPublication {
 	final String serializedEvent;
 	final Class<?> eventType;
 
-	protected Instant completionDate;
+	protected @Nullable Instant completionDate;
 
 	/**
 	 * Creates a new {@link JpaEventPublication} for the given publication date, listener id, serialized event and event
@@ -72,6 +74,7 @@ public abstract class JpaEventPublication {
 		this.eventType = eventType;
 	}
 
+	@NullUnmarked
 	protected JpaEventPublication() {
 
 		this.id = null;

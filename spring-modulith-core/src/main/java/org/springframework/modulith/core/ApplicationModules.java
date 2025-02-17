@@ -32,9 +32,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -61,7 +61,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final Map<CacheKey, ApplicationModules> CACHE = new ConcurrentHashMap<>();
 
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
-	private static final DescribedPredicate<CanBeAnnotated> IS_GENERATED;
+	private static final @Nullable DescribedPredicate<CanBeAnnotated> IS_GENERATED;
 	private static final DescribedPredicate<HasName> IS_SPRING_CGLIB_PROXY = nameContaining("$$SpringCGLIB$$");
 
 	static {
@@ -624,9 +624,9 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * {@literal null} or its type does not reside in any module.
 	 *
 	 * @param object can be {@literal null}.
-	 * @return
+	 * @return can be {@literal null}.
 	 */
-	private Integer getModuleIndexFor(@Nullable Object object) {
+	private @Nullable Integer getModuleIndexFor(@Nullable Object object) {
 
 		return Optional.ofNullable(object)
 				.map(it -> Class.class.isInstance(it) ? Class.class.cast(it) : it.getClass())
@@ -778,7 +778,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(@Nullable Object obj) {
 
 			if (obj == this) {
 				return true;

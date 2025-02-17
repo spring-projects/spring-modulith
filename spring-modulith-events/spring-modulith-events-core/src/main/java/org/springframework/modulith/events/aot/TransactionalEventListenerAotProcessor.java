@@ -17,6 +17,7 @@ package org.springframework.modulith.events.aot;
 
 import java.util.Arrays;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.aot.hint.MemberCategory;
@@ -43,7 +44,7 @@ public class TransactionalEventListenerAotProcessor implements BeanRegistrationA
 	 * @see org.springframework.beans.factory.aot.BeanRegistrationAotProcessor#processAheadOfTime(org.springframework.beans.factory.support.RegisteredBean)
 	 */
 	@Override
-	public BeanRegistrationAotContribution processAheadOfTime(RegisteredBean registeredBean) {
+	public @Nullable BeanRegistrationAotContribution processAheadOfTime(RegisteredBean registeredBean) {
 
 		Class<?> type = registeredBean.getBeanType().resolve(Object.class);
 

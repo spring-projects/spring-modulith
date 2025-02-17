@@ -20,10 +20,10 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.junit.TestExecutionCondition.ConditionContext;
 
 /**

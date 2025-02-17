@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -172,7 +173,7 @@ public class ApplicationModuleDependencies {
 	 * @param name must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 */
-	public ApplicationModule getModuleByType(String name) {
+	public @Nullable ApplicationModule getModuleByType(String name) {
 
 		Assert.hasText(name, "Name must not be null or empty!");
 

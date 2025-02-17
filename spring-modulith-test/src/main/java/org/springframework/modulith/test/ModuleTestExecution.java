@@ -109,15 +109,21 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		return () -> {
 
 			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
-			var packageName = type.getPackage().getName();
+
+			if (annotation == null) {
+				throw new IllegalStateException(
+						"%s not found on %s!".formatted(ApplicationModuleTest.class.getName(), type.getName()));
+			}
+
+			var packageName = PackageName.ofType(type).toString();
 			var modules = BOOTSTRAP.of(findSpringBootApplicationByClasses(annotation, type));
 			var moduleName = annotation.module();
 
 			var module = StringUtils.hasText(moduleName)
 					? modules.getModuleByName(moduleName).orElseThrow( //
-							() -> new IllegalStateException(String.format("Unable to find module %s!", moduleName)))
+							() -> new IllegalStateException("Unable to find module %s!".formatted(moduleName)))
 					: modules.getModuleForPackage(packageName).orElseThrow( //
-							() -> new IllegalStateException(String.format("Package %s is not part of any module!", packageName)));
+							() -> new IllegalStateException("Package %s is not part of any module!".formatted(packageName)));
 
 			return EXECUTIONS.computeIfAbsent(new Key(module.getBasePackage().getName(), annotation),
 					it -> new ModuleTestExecution(annotation, modules, module));

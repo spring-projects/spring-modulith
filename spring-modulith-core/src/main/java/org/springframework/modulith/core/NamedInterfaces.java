@@ -298,6 +298,10 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 					var annotation = AnnotatedElementUtils.getMergedAnnotation(it.reflect(),
 							org.springframework.modulith.NamedInterface.class);
 
+					if (annotation == null) {
+						throw new IllegalStateException("No @NamedInterface annotation found!");
+					}
+
 					NamedInterface.getDefaultedNames(annotation, it.getPackageName())
 							.forEach(name -> mappings.add(name, it));
 				});

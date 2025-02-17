@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.runtime;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationContext;
 import org.springframework.util.Assert;
 
@@ -44,6 +45,7 @@ public interface ApplicationRuntime {
 	 *
 	 * @return will never be {@literal null}.
 	 */
+	@Nullable
 	String getId();
 
 	/**

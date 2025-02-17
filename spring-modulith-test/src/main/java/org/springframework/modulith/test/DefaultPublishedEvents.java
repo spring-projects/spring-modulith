@@ -26,6 +26,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
@@ -145,7 +146,7 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matching(java.util.function.Function, java.lang.Object)
 		 */
 		@Override
-		public <S> TypedPublishedEvents<T> matching(Function<T, S> mapper, S value) {
+		public <S> TypedPublishedEvents<T> matching(Function<T, S> mapper, @Nullable S value) {
 			return matching(mapper, (Predicate<S>) it -> Objects.equals(it, value));
 		}
 

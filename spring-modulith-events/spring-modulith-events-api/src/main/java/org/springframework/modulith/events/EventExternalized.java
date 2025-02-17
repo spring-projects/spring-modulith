@@ -17,9 +17,10 @@ package org.springframework.modulith.events;
 
 import java.util.Objects;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.ResolvableTypeProvider;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -103,7 +104,7 @@ public class EventExternalized<S, T> implements ResolvableTypeProvider {
 	 *
 	 * @return can be {@literal null}.
 	 */
-	public T getBrokerResult() {
+	public @Nullable T getBrokerResult() {
 		return brokerResult;
 	}
 
@@ -112,7 +113,7 @@ public class EventExternalized<S, T> implements ResolvableTypeProvider {
 	 * @see org.springframework.core.ResolvableTypeProvider#getResolvableType()
 	 */
 	@Override
-	public ResolvableType getResolvableType() {
+	public @NonNull ResolvableType getResolvableType() {
 		return type;
 	}
 

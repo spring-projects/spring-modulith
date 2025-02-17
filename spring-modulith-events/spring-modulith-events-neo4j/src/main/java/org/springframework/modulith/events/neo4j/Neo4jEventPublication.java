@@ -18,7 +18,7 @@ package org.springframework.modulith.events.neo4j;
 import java.time.Instant;
 import java.util.UUID;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * The event publication entity definition.

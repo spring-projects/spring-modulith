@@ -18,6 +18,10 @@
 
 	<dependencies>
 		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+		</dependency>
+		<dependency>
 			<groupId>org.eclipse.jgit</groupId>
 			<artifactId>org.eclipse.jgit</artifactId>
 			<version>${jgit.version}</version>
@@ -50,6 +54,5 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
 
 </project>

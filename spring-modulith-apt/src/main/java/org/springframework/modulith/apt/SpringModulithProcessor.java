@@ -19,6 +19,7 @@ import io.toolisticon.aptk.tools.ElementUtils;
 import io.toolisticon.aptk.tools.wrapper.ElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.ExecutableElementWrapper;
 import io.toolisticon.aptk.tools.wrapper.TypeElementWrapper;
+import org.jspecify.annotations.Nullable;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -50,7 +51,6 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.StandardLocation;
 
 import org.springframework.boot.json.JsonWriter;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.docs.metadata.MethodMetadata;
 import org.springframework.modulith.docs.metadata.TypeMetadata;
 import org.springframework.modulith.docs.util.BuildSystemUtils;

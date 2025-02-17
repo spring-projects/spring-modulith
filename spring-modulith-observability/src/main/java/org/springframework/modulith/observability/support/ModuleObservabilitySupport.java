@@ -17,6 +17,7 @@ package org.springframework.modulith.observability.support;
 
 import java.util.function.Consumer;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
@@ -24,7 +25,6 @@ import org.springframework.aop.framework.autoproxy.AbstractAutoProxyCreator;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
-import org.springframework.lang.Nullable;
 import org.springframework.scheduling.annotation.AsyncAnnotationAdvisor;
 
 /**

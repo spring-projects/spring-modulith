@@ -19,6 +19,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.util.Arrays;
 
+import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -37,7 +38,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
-import org.springframework.lang.NonNull;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRegistry;

@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.events.aot;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.aot.hint.ExecutableMode;
 import org.springframework.aot.hint.RuntimeHints;
 import org.springframework.aot.hint.RuntimeHintsRegistrar;
@@ -32,7 +33,7 @@ public class ApplicationListenerMethodAdapterRuntimeHints implements RuntimeHint
 	 * @see org.springframework.aot.hint.RuntimeHintsRegistrar#registerHints(org.springframework.aot.hint.RuntimeHints, java.lang.ClassLoader)
 	 */
 	@Override
-	public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
+	public void registerHints(RuntimeHints hints, @Nullable ClassLoader classLoader) {
 
 		var reflection = hints.reflection();
 

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.domain.DomainEvents;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.ReflectionUtils.MethodCallback;
@@ -67,7 +68,7 @@ public class AggregateTestUtils {
 	 */
 	private static class DomainEventsMethodFinder implements MethodCallback {
 
-		Method method;
+		@Nullable Method method;
 
 		/*
 		 * (non-Javadoc)

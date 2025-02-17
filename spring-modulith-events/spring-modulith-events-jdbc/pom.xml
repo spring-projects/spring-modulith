@@ -30,6 +30,11 @@
 	<dependencies>
 
 		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>spring-modulith-events-core</artifactId>
 			<version>${project.version}</version>
@@ -50,7 +55,6 @@
 			<artifactId>spring-boot-configuration-processor</artifactId>
 			<optional>true</optional>
 		</dependency>
-
 
 		<!-- Testing -->
 

@@ -1,5 +1,5 @@
 /**
  * Core, internal abstractions of Spring Modulith.
  */
-@org.springframework.lang.NonNullApi
+@org.jspecify.annotations.NullMarked
 package org.springframework.modulith.core;

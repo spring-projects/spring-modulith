@@ -18,6 +18,7 @@ package org.springframework.modulith.observability.support;
 import io.micrometer.observation.Observation.Context;
 
 import org.aopalliance.intercept.MethodInvocation;
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
 
@@ -32,7 +33,7 @@ public class ModulithContext extends Context {
 
 	private final ObservedModule module;
 	private final MethodInvocation invocation;
-	private final String applicationName;
+	private final @Nullable String applicationName;
 
 	/**
 	 * Creates a new {@link ModulithContext} for the given {@link ObservedModule}, {@link MethodInvocation} and
@@ -61,7 +62,7 @@ public class ModulithContext extends Context {
 		return invocation;
 	}
 
-	public String getApplicationName() {
+	public @Nullable String getApplicationName() {
 		return applicationName;
 	}
 }

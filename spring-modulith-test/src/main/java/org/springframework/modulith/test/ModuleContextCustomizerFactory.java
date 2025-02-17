@@ -23,6 +23,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -50,7 +51,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	 * @see org.springframework.test.context.ContextCustomizerFactory#createContextCustomizer(java.lang.Class, java.util.List)
 	 */
 	@Override
-	public ContextCustomizer createContextCustomizer(Class<?> testClass,
+	public @Nullable ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
 		var moduleTest = TestContextAnnotationUtils.findAnnotationDescriptor(testClass, ApplicationModuleTest.class);
@@ -239,6 +240,11 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			for (String name : registry.getBeanDefinitionNames()) {
 
 				var type = factory.getType(name, false);
+
+				if (type == null) {
+					continue;
+				}
+
 				var module = modules.getModuleByType(type)
 						.filter(Predicate.not(ApplicationModule::isRootModule));
 

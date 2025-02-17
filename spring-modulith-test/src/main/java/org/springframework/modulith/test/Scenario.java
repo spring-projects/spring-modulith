@@ -30,9 +30,9 @@ import java.util.function.Supplier;
 
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.CheckReturnValue;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
 import org.springframework.transaction.TransactionDefinition;
@@ -96,7 +96,13 @@ public class Scenario {
 		var definition = new DefaultTransactionDefinition(transactionTemplate);
 		definition.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
 
-		this.transactionOperations = new TransactionTemplate(transactionTemplate.getTransactionManager(), definition);
+		var transactionManager = transactionTemplate.getTransactionManager();
+
+		if (transactionManager == null) {
+			throw new IllegalStateException("No transaction manager found on TransactionTemplate!");
+		}
+
+		this.transactionOperations = new TransactionTemplate(transactionManager, definition);
 		this.publisher = publisher;
 		this.events = events;
 		this.defaultCustomizer = Function.identity();
@@ -498,7 +504,7 @@ public class Scenario {
 
 			private final Class<E> type;
 			private final Function<TypedPublishedEvents<E>, TypedPublishedEvents<E>> filter;
-			private final ExecutionResult<?, T> previousResult;
+			private final @Nullable ExecutionResult<?, T> previousResult;
 
 			/**
 			 * Creates a new {@link EventResult} for the given type and filter.
@@ -508,7 +514,7 @@ public class Scenario {
 			 * @param previousResult a potentially previously calculated result.
 			 */
 			EventResult(Class<E> type, Function<TypedPublishedEvents<E>, TypedPublishedEvents<E>> filtered,
-					ExecutionResult<?, T> previousResult) {
+					@Nullable ExecutionResult<?, T> previousResult) {
 
 				Assert.notNull(type, "Event type must not be null!");
 

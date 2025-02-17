@@ -37,10 +37,12 @@
 
 		<archunit.version>1.4.0</archunit.version>
 		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
+		<errorprone.version>2.36.0</errorprone.version>
 		<flapdoodle-mongodb.version>4.16.1</flapdoodle-mongodb.version>
 		<jgit.version>7.0.0.202409031743-r</jgit.version>
 		<jgrapht.version>1.5.2</jgrapht.version>
 		<jmolecules-bom.version>2023.3.1</jmolecules-bom.version>
+		<nullaway.version>0.12.7</nullaway.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>4.0.0-SNAPSHOT</spring-boot.version>
@@ -428,6 +430,54 @@ limitations under the License.
 						<filtering>true</filtering>
 					</resource>
 				</resources>
+			</build>
+		</profile>
+
+		<profile>
+			<id>nullaway</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<showWarnings>true</showWarnings>
+							
+						</configuration>
+						<executions>
+							<execution>
+								<id>default-compile</id>
+								<phase>none</phase>
+							</execution>
+							<execution>
+								<id>java-compile</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>compile</goal>
+								</goals>
+								<configuration>
+									<annotationProcessorPaths>
+										<path>
+											<groupId>com.google.errorprone</groupId>
+											<artifactId>error_prone_core</artifactId>
+											<version>${errorprone.version}</version>
+										</path>
+										<path>
+											<groupId>com.uber.nullaway</groupId>
+											<artifactId>nullaway</artifactId>
+											<version>${nullaway.version}</version>
+										</path>
+									</annotationProcessorPaths>
+									<compilerArgs>
+										<arg>-XDcompilePolicy=simple</arg>
+										<arg>--should-stop=ifError=FLOW</arg>
+										<arg>-Xplugin:ErrorProne -XepDisableAllChecks -Xep:NullAway:ERROR -XepOpt:NullAway:OnlyNullMarked=true -XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract</arg>
+									</compilerArgs>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
 			</build>
 		</profile>
 

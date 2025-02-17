@@ -25,6 +25,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.events.RoutingTarget.ParsedRoutingTarget;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
@@ -45,7 +46,7 @@ class AnnotationTargetLookup implements Supplier<Optional<ParsedRoutingTarget>> 
 
 	private static Map<Class<?>, AnnotationTargetLookup> LOOKUPS = new ConcurrentReferenceHashMap<>(25);
 	private static final String JMOLECULES_EXTERNALIZED = "org.jmolecules.event.annotation.Externalized";
-	private static final Class<? extends Annotation> JMOLECULES_ANNOTATION = loadJMoleculesExternalizedIfPresent();
+	private static final @Nullable Class<? extends Annotation> JMOLECULES_ANNOTATION = loadJMoleculesExternalizedIfPresent();
 
 	private final Class<?> type;
 	private final Supplier<Optional<ParsedRoutingTarget>> lookup;
@@ -159,7 +160,7 @@ class AnnotationTargetLookup implements Supplier<Optional<ParsedRoutingTarget>> 
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Class<? extends Annotation> loadJMoleculesExternalizedIfPresent() {
+	private static @Nullable Class<? extends Annotation> loadJMoleculesExternalizedIfPresent() {
 
 		var classLoader = DefaultEventExternalizationConfiguration.class.getClassLoader();
 

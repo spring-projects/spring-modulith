@@ -18,10 +18,11 @@ package org.springframework.modulith.core;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -33,6 +34,8 @@ import org.springframework.util.ClassUtils;
  * @since 1.4, previously package private since 1.2
  */
 public class PackageName implements Comparable<PackageName> {
+
+	public static final String DEFAULT = "<<default>>";
 
 	private static final Map<String, PackageName> PACKAGE_NAMES = new HashMap<>();
 
@@ -78,6 +81,20 @@ public class PackageName implements Comparable<PackageName> {
 	}
 
 	/**
+	 * Creates a new {@link PackageName} for the given fully-qualified type name.
+	 *
+	 * @param fullyQualifiedName must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 * @since 2.0
+	 */
+	public static PackageName ofType(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return PackageName.of(ClassUtils.getPackageName(type));
+	}
+
+	/**
 	 * Returns the {@link PackageName} with the given name.
 	 *
 	 * @param name must not be {@literal null}.
@@ -88,7 +105,9 @@ public class PackageName implements Comparable<PackageName> {
 
 		Assert.notNull(name, "Name must not be null!");
 
-		return PACKAGE_NAMES.computeIfAbsent(name, PackageName::new);
+		var defaulted = name.isBlank() ? DEFAULT : name;
+
+		return PACKAGE_NAMES.computeIfAbsent(defaulted, PackageName::new);
 	}
 
 	/**
@@ -105,6 +124,16 @@ public class PackageName implements Comparable<PackageName> {
 		var name = Stream.of(segments).collect(Collectors.joining("."));
 
 		return PACKAGE_NAMES.computeIfAbsent(name, it -> new PackageName(name, segments));
+	}
+
+	/**
+	 * Returns whether the given {@link PackageName} is the default package name (logically an empty string).
+	 *
+	 * @param name must not be {@literal null}.
+	 * @since 2.0
+	 */
+	static boolean isDefault(PackageName name) {
+		return name.hasName(DEFAULT);
 	}
 
 	/**
@@ -281,7 +310,9 @@ public class PackageName implements Comparable<PackageName> {
 			return Stream.of(reference);
 		}
 
-		return Stream.concat(expandUntil(reference.getParent()), Stream.of(reference));
+		var parent = Objects.requireNonNull(reference.getParent());
+
+		return Stream.concat(expandUntil(parent), Stream.of(reference));
 	}
 
 	/**
@@ -318,7 +349,7 @@ public class PackageName implements Comparable<PackageName> {
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
-	public boolean equals(Object obj) {
+	public boolean equals(@Nullable Object obj) {
 
 		if (obj == this) {
 			return true;

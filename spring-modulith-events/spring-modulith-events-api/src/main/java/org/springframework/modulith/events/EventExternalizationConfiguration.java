@@ -28,8 +28,8 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.RoutingTarget.ParsedRoutingTarget;
 import org.springframework.modulith.events.RoutingTarget.RoutingTargetBuilder;
 import org.springframework.util.Assert;
@@ -359,7 +359,16 @@ public interface EventExternalizationConfiguration {
 		}
 
 		private static <T extends Annotation> T findAnnotation(Object event, Class<T> annotationType) {
-			return findMergedAnnotation(event.getClass(), annotationType);
+
+			var type = event.getClass();
+			var result = findMergedAnnotation(type, annotationType);
+
+			if (result == null) {
+				throw new IllegalStateException(
+						"Couldn't find annotation %s on type %s!".formatted(annotationType, type));
+			}
+
+			return result;
 		}
 	}
 

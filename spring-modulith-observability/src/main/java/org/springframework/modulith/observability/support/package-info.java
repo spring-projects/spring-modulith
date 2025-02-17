@@ -1,5 +1,5 @@
 /**
  * Support for application module observability.
  */
-@org.springframework.lang.NonNullApi
+@org.jspecify.annotations.NullMarked
 package org.springframework.modulith.observability.support;

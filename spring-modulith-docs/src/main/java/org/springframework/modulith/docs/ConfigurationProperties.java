@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.docs.ConfigurationProperties.ConfigurationProperty;
 import org.springframework.util.Assert;
@@ -124,7 +124,6 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 	static record ConfigurationProperty(String name, @Nullable String description, String type, String sourceType,
 			@Nullable String defaultValue) {
 
-		@SuppressWarnings("null")
 		static Stream<ConfigurationProperty> of(Map<String, Object> source) {
 
 			String sourceType = getAsString(source, "sourceType");
@@ -133,9 +132,9 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 				return Stream.empty();
 			}
 
-			ConfigurationProperty property = new ConfigurationProperty(getAsString(source, "name"),
+			ConfigurationProperty property = new ConfigurationProperty(getRequiredAsString(source, "name"),
 					getAsString(source, "description"),
-					getAsString(source, "type"),
+					getRequiredAsString(source, "type"),
 					sourceType,
 					getAsString(source, "defaultValue"));
 
@@ -144,6 +143,15 @@ class ConfigurationProperties implements Iterable<ConfigurationProperty> {
 
 		boolean hasSourceType() {
 			return StringUtils.hasText(sourceType);
+		}
+
+		private static String getRequiredAsString(Map<String, Object> source, String key) {
+
+			var value = getAsString(source, key);
+
+			Assert.notNull(value, "No value found for key %s in %s!".formatted(key, source));
+
+			return value;
 		}
 
 		private static @Nullable String getAsString(Map<String, Object> source, String key) {

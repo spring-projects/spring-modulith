@@ -17,7 +17,7 @@ package org.springframework.modulith.docs.metadata;
 
 import java.util.List;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 
 /**
  * Metadata about a Java type.

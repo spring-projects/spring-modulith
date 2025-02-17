@@ -37,6 +37,7 @@ import org.springframework.modulith.test.ScenarioCustomizerIntegrationTests.Test
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
 /**
@@ -53,7 +54,10 @@ class ScenarioCustomizerIntegrationTests {
 
 		@Bean
 		TransactionTemplate transactionTemplate() {
-			return mock(TransactionTemplate.class);
+
+			var txManager = mock(PlatformTransactionManager.class);
+
+			return new TransactionTemplate(txManager);
 		}
 
 		@Bean

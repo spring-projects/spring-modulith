@@ -18,9 +18,9 @@ package org.springframework.modulith.events.mongodb;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.PersistenceCreator;
 import org.springframework.data.mongodb.core.mapping.Document;
-import org.springframework.lang.Nullable;
 import org.springframework.util.Assert;
 
 /**
@@ -85,7 +85,6 @@ class MongoDbEventPublication {
 	MongoDbEventPublication markCompleted(Instant instant) {
 
 		Assert.notNull(instant, "Instant must not be null!");
-
 		this.completionDate = instant;
 		return this;
 	}

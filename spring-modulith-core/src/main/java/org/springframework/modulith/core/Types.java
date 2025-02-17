@@ -26,7 +26,7 @@ import java.util.function.Predicate;
 import org.jmolecules.archunit.JMoleculesArchitectureRules;
 import org.jmolecules.archunit.JMoleculesDddRules;
 import org.jmolecules.ddd.annotation.Module;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.PackageInfo;
 import org.springframework.modulith.core.ApplicationModuleSource.ApplicationModuleSourceMetadata;
 import org.springframework.util.Assert;
@@ -82,7 +82,7 @@ public class Types {
 		static final String AT_DOMAIN_EVENT = BASE_PACKAGE + ".event.annotation.DomainEvent";
 		static final String DOMAIN_EVENT = BASE_PACKAGE + ".event.types.DomainEvent";
 
-		private static Collection<ArchRule> RULES;
+		private static @Nullable Collection<ArchRule> RULES;
 
 		/**
 		 * Returns whether jMolecules is generally present.
@@ -123,34 +123,38 @@ public class Types {
 		 */
 		public static Collection<ArchRule> getRules() {
 
-			if (RULES == null) {
+			var rules = RULES;
+
+			if (rules == null) {
 
 				var classLoader = JMoleculesTypes.class.getClassLoader();
-				RULES = new ArrayList<ArchRule>();
+				rules = new ArrayList<ArchRule>();
 
 				if (ClassUtils.isPresent(DDD_RULES, classLoader)) {
-					RULES.add(JMoleculesDddRules.all());
+					rules.add(JMoleculesDddRules.all());
 				}
 
 				if (!ClassUtils.isPresent(ARCHITECTURE_RULES, classLoader)) {
-					return RULES;
+					return rules;
 				}
 
 				if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
-					RULES.add(JMoleculesArchitectureRules.ensureHexagonal());
+					rules.add(JMoleculesArchitectureRules.ensureHexagonal());
 				}
 
 				if (ClassUtils.isPresent(LAYERED, classLoader)) {
-					RULES.add(JMoleculesArchitectureRules.ensureLayering());
+					rules.add(JMoleculesArchitectureRules.ensureLayering());
 				}
 
 				if (ClassUtils.isPresent(ONION, classLoader)) {
-					RULES.add(JMoleculesArchitectureRules.ensureOnionClassical());
-					RULES.add(JMoleculesArchitectureRules.ensureOnionSimple());
+					rules.add(JMoleculesArchitectureRules.ensureOnionClassical());
+					rules.add(JMoleculesArchitectureRules.ensureOnionSimple());
 				}
+
+				RULES = rules;
 			}
 
-			return RULES;
+			return rules;
 		}
 	}
 

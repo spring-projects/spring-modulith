@@ -18,8 +18,10 @@ package org.springframework.modulith.runtime;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationContext;
@@ -37,8 +39,8 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	private static final Map<String, Boolean> APPLICATION_CLASSES = new ConcurrentHashMap<>();
 
 	private final ApplicationContext context;
-	private Class<?> mainApplicationClass;
-	private List<String> resolvedAutoConfigurationPackages;
+	private @Nullable Class<?> mainApplicationClass;
+	private @Nullable List<String> resolvedAutoConfigurationPackages;
 
 	/**
 	 * Creates a new {@link SpringBootApplicationRuntime} for the given {@link ApplicationContext}.
@@ -57,7 +59,7 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 	 * @see org.springframework.modulith.observability.ApplicationRuntime#getId()
 	 */
 	@Override
-	public String getId() {
+	public @Nullable String getId() {
 		return context.getId();
 	}
 
@@ -92,7 +94,7 @@ class SpringBootApplicationRuntime implements ApplicationRuntime {
 				? context.getType(beanName)
 				: bean.getClass();
 
-		return ClassUtils.getUserClass(beanType);
+		return ClassUtils.getUserClass(Objects.requireNonNull(beanType));
 	}
 
 	/*

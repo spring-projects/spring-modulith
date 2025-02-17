@@ -23,6 +23,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -35,7 +36,6 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncPropertiesDefaulter;

@@ -17,6 +17,7 @@ package org.springframework.modulith.test;
 
 import java.util.function.Function;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
@@ -35,8 +36,8 @@ import org.springframework.util.Assert;
  */
 class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCallback {
 
-	private ThreadBoundApplicationListenerAdapter listener;
 	private final Function<ExtensionContext, ApplicationContext> lookup;
+	private @Nullable ThreadBoundApplicationListenerAdapter listener;
 
 	PublishedEventsParameterResolver() {
 		this(ctx -> SpringExtension.getApplicationContext(ctx));
@@ -74,7 +75,10 @@ class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCa
 		var publishedEvents = PublishedEventsFactory.createPublishedEvents();
 
 		initializeListener(extensionContext);
-		listener.registerDelegate(publishedEvents);
+
+		if (listener != null) {
+			listener.registerDelegate(publishedEvents);
+		}
 
 		return publishedEvents;
 	}

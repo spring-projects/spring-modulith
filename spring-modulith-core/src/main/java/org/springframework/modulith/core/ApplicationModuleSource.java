@@ -21,6 +21,7 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.ApplicationModule;
 import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.util.Assert;
@@ -240,7 +241,7 @@ public class ApplicationModuleSource {
 		 * @param delegates must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 */
-		private static ApplicationModuleSourceMetadata delegating(ApplicationModuleSourceMetadata... delegates) {
+		private static ApplicationModuleSourceMetadata delegating(@Nullable ApplicationModuleSourceMetadata... delegates) {
 
 			return new ApplicationModuleSourceMetadata() {
 

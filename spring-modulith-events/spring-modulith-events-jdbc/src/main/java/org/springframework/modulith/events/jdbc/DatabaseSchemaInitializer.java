@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.jdbc;
 
 import java.sql.Connection;
+import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -39,7 +40,8 @@ class DatabaseSchemaInitializer implements InitializingBean {
 	private final JdbcOperations jdbcOperations;
 	private final JdbcRepositorySettings settings;
 
-	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, JdbcOperations jdbcOperations, JdbcRepositorySettings settings) {
+	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, JdbcOperations jdbcOperations,
+			JdbcRepositorySettings settings) {
 
 		this.dataSource = dataSource;
 		this.resourceLoader = resourceLoader;
@@ -63,7 +65,7 @@ class DatabaseSchemaInitializer implements InitializingBean {
 
 			if (useSchema) { // A schema name has been specified.
 
-				if (eventPublicationTableExists(schemaName)) {
+				if (eventPublicationTableExists(Objects.requireNonNull(schemaName))) {
 					return;
 				}
 

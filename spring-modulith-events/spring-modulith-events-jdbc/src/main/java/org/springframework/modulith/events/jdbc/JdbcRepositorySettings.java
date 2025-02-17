@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.util.Assert;
 
@@ -29,7 +29,7 @@ import org.springframework.util.Assert;
 public class JdbcRepositorySettings {
 
 	private final DatabaseType databaseType;
-	private final String schema;
+	private final @Nullable String schema;
 	private final CompletionMode completionMode;
 
 	/**
@@ -67,8 +67,7 @@ public class JdbcRepositorySettings {
 	 *
 	 * @return can be {@literal null}.
 	 */
-	@Nullable
-	public String getSchema() {
+	public @Nullable String getSchema() {
 		return schema;
 	}
 
@@ -82,10 +81,14 @@ public class JdbcRepositorySettings {
 	/**
 	 * Returns whether we use the archiving completion mode.
 	 */
-	public boolean isArchiveCompletion() { return completionMode == CompletionMode.ARCHIVE; }
+	public boolean isArchiveCompletion() {
+		return completionMode == CompletionMode.ARCHIVE;
+	}
 
 	/**
 	 * Returns whether we use the updating completion mode.
 	 */
-	public boolean isUpdateCompletion() { return completionMode == CompletionMode.UPDATE; }
+	public boolean isUpdateCompletion() {
+		return completionMode == CompletionMode.UPDATE;
+	}
 }

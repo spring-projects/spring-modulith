@@ -80,4 +80,12 @@ class ApplicationModulesUnitTests {
 						it -> assertThat(it).contains("Invalid", "'invalid'", "'ni.nested.b.first'"),
 						it -> assertThat(it).contains("Invalid", "'ni'", "'ni.nested.b.first'"));
 	}
+
+	@Test // GH-1192
+	void findsTypeBySimpleName() {
+
+		assertThat(modules.getModuleByName("ni")).hasValueSatisfying(it -> {
+			assertThat(it.contains("RootType")).isTrue();
+		});
+	}
 }

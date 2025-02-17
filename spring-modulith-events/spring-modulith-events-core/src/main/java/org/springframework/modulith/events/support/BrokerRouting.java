@@ -15,11 +15,11 @@
  */
 package org.springframework.modulith.events.support;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.Expression;
 import org.springframework.expression.common.TemplateParserContext;
 import org.springframework.expression.spel.standard.SpelExpressionParser;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.util.Assert;
 

@@ -17,6 +17,11 @@
 	<dependencies>
 
 		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+		</dependency>
+
+		<dependency>
 			<groupId>org.jmolecules</groupId>
 			<artifactId>jmolecules-events</artifactId>
 		</dependency>

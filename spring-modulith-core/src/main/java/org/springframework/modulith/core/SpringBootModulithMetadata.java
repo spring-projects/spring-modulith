@@ -21,8 +21,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.lang.NonNull;
 import org.springframework.modulith.core.Types.SpringTypes;
 import org.springframework.util.Assert;
 
@@ -34,20 +34,21 @@ import org.springframework.util.Assert;
  */
 class SpringBootModulithMetadata implements ModulithMetadata {
 
-	private static final Class<? extends Annotation> AT_SPRING_BOOT_APPLICATION = Types
+	private static final @Nullable Class<? extends Annotation> AT_SPRING_BOOT_APPLICATION = Types
 			.loadIfPresent(SpringTypes.AT_SPRING_BOOT_APPLICATION);
 
-	private final @NonNull Object source;
-	private final String systemName, basePackage;
+	private final Object source;
+	private final String basePackage;
+	private final @Nullable String systemName;
 
 	/**
 	 * Creates a new {@link SpringBootModulithMetadata} for the given source.
 	 *
 	 * @param source must not be {@literal null}.
-	 * @param systemName can be {@literal null}.
 	 * @param basePackage must not be {@literal null}.
+	 * @param systemName can be {@literal null}.
 	 */
-	private SpringBootModulithMetadata(Object source, String systemName, String basePackage) {
+	private SpringBootModulithMetadata(Object source, String basePackage, @Nullable String systemName) {
 
 		Assert.notNull(source, "Source must not be null!");
 		Assert.notNull(basePackage, "Base package must not be null!");
@@ -71,7 +72,7 @@ class SpringBootModulithMetadata implements ModulithMetadata {
 
 		return Optional.ofNullable(AT_SPRING_BOOT_APPLICATION) //
 				.filter(it -> AnnotatedElementUtils.hasAnnotation(annotated, it)) //
-				.map(__ -> new SpringBootModulithMetadata(annotated, annotated.getSimpleName(), annotated.getPackageName()));
+				.map(__ -> new SpringBootModulithMetadata(annotated, annotated.getPackageName(), annotated.getSimpleName()));
 	}
 
 	/**
@@ -84,7 +85,7 @@ class SpringBootModulithMetadata implements ModulithMetadata {
 
 		Assert.hasText(javaPackage, "Package name must not be null or empty!");
 
-		return new SpringBootModulithMetadata(javaPackage, null, javaPackage);
+		return new SpringBootModulithMetadata(javaPackage, javaPackage, null);
 	}
 
 	/*

@@ -21,7 +21,7 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 
 import org.assertj.core.api.AbstractAssert;
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents;
 import org.springframework.util.Assert;
 

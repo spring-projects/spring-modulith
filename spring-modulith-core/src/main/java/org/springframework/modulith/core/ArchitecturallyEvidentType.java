@@ -20,6 +20,7 @@ import static org.springframework.modulith.core.Types.JavaXTypes.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -676,7 +677,9 @@ public abstract class ArchitecturallyEvidentType {
 			var attributes = AnnotatedElementUtils.getMergedAnnotationAttributes(method.reflect(),
 					SpringTypes.AT_EVENT_LISTENER, false, false);
 
-			return List.of(attributes.getClassArray("classes"));
+			return attributes == null
+					? Collections.emptyList()
+					: List.of(attributes.getClassArray("classes"));
 		}
 
 		/*

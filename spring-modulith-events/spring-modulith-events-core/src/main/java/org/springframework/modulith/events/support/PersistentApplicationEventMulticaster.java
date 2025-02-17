@@ -19,12 +19,15 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.NonNull;
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.SmartInitializingSingleton;
@@ -36,8 +39,6 @@ import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
-import org.springframework.lang.NonNull;
-import org.springframework.lang.Nullable;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.core.ConditionalEventListener;
@@ -64,10 +65,12 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		implements IncompleteEventPublications, SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
-	private static final Method LEGACY_SHOULD_HANDLE = ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
-			"shouldHandle", ApplicationEvent.class, Object[].class);
-	private static final Method SHOULD_HANDLE = ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
-			"shouldHandle", ApplicationEvent.class);
+	private static final Method LEGACY_SHOULD_HANDLE = Objects
+			.requireNonNull(ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
+					"shouldHandle", ApplicationEvent.class, Object[].class));
+	private static final Method SHOULD_HANDLE = Objects
+			.requireNonNull(ReflectionUtils.findMethod(ApplicationListenerMethodAdapter.class,
+					"shouldHandle", ApplicationEvent.class));
 
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
 	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
@@ -251,16 +254,19 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 * @param payload the actual payload, must not be {@literal null}.
 	 * @return whether the event should be handled by the given candidate.
 	 */
-	@SuppressWarnings("null")
 	private static boolean invokeShouldHandle(ApplicationListener<?> candidate, ApplicationEvent event, Object payload) {
 
 		if (!(candidate instanceof ApplicationListenerMethodAdapter listener)) {
 			return true;
 		}
 
-		return SHOULD_HANDLE != null
-				? listener.shouldHandle(event)
-				: (boolean) ReflectionUtils.invokeMethod(LEGACY_SHOULD_HANDLE, candidate, event, new Object[] { payload });
+		if (SHOULD_HANDLE != null) {
+			return listener.shouldHandle(event);
+		}
+
+		var result = ReflectionUtils.invokeMethod(LEGACY_SHOULD_HANDLE, candidate, event, new Object[] { payload });
+
+		return result == null ? false : (boolean) result;
 	}
 
 	/**

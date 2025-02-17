@@ -17,7 +17,7 @@ package org.springframework.modulith.events;
 
 import java.util.Objects;
 
-import org.springframework.lang.Nullable;
+import org.jspecify.annotations.Nullable;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
@@ -238,14 +238,14 @@ public class RoutingTarget {
 		/**
 		 * @return the target
 		 */
-		public String getTarget() {
+		public @Nullable String getTarget() {
 			return target;
 		}
 
 		/**
 		 * @return the key
 		 */
-		public String getKey() {
+		public @Nullable String getKey() {
 			return key;
 		}
 
