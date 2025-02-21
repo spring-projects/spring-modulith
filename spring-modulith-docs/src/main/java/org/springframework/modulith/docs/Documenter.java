@@ -20,10 +20,12 @@ import static org.springframework.modulith.docs.Asciidoctor.*;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.annotation.Annotation;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.BiConsumer;
@@ -40,8 +42,10 @@ import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyDepth;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.core.SpringBean;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.docs.Groupings.JMoleculesGroupings;
 import org.springframework.modulith.docs.Groupings.SpringGroupings;
+import org.springframework.modulith.docs.util.BuildSystemUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -195,7 +199,8 @@ public class Documenter {
 		return writeModulesAsPlantUml(diagramOptions)
 				.writeIndividualModulesAsPlantUml(diagramOptions)
 				.writeModuleCanvases(canvasOptions)
-				.writeAggregatingDocument(diagramOptions, canvasOptions);
+				.writeAggregatingDocument(diagramOptions, canvasOptions)
+				.writeModuleMetadata();
 	}
 
 	/**
@@ -386,6 +391,30 @@ public class Documenter {
 
 			options.outputFolder.writeToFile(filename, toModuleCanvas(module, canvasOptions));
 		});
+
+		return this;
+	}
+
+	/**
+	 * Writes application module metadata to the build folder for inclusion at runtime.
+	 *
+	 * @return will never be {@literal null}.
+	 * @see ApplicationModulesExporter
+	 * @since 1.4
+	 */
+	public Documenter writeModuleMetadata() {
+
+		var content = new ApplicationModulesExporter(modules).toFullJson();
+		var path = Path.of(BuildSystemUtils.getResourceTarget(), ApplicationModulesExporter.DEFAULT_LOCATION);
+
+		try {
+
+			Files.createDirectories(path.getParent());
+			Files.writeString(path, content, StandardOpenOption.CREATE);
+
+		} catch (IOException o_O) {
+			throw new UncheckedIOException(o_O);
+		}
 
 		return this;
 	}

@@ -62,6 +62,16 @@ public class BuildSystemUtils {
 		return isMaven() ? "target/test-classes" : "build/classes/java/test";
 	}
 
+	/**
+	 * Returns the path to the target folder for resources.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public static String getResourceTarget() {
+		return isMaven() ? "target/classes" : "build/resources/main";
+	}
+
 	private static String getTargetFolder() {
 		return isMaven() ? "target" : "build";
 	}
