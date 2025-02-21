@@ -82,6 +82,24 @@ class DefaultEventPublicationRegistryUnitTests {
 		assertThat(registry.getPublicationsInProgress()).isEmpty();
 	}
 
+	@Test // GH-1056
+	void obtainsCorrectInProgressPublicationForIdenticalEvents() {
+
+		var inProgress = createRegistry(Instant.now()).getPublicationsInProgress();
+
+		var identifier = PublicationTargetIdentifier.of("id");
+
+		var firstEvent = new SampleEvent("Foo");
+		var secondEvent = new SampleEvent("Foo");
+
+		var first = inProgress.register(TargetEventPublication.of(firstEvent, identifier));
+		var second = inProgress.register(TargetEventPublication.of(secondEvent, identifier));
+
+		assertThat(inProgress.getPublication(firstEvent, identifier)).containsSame(first);
+		assertThat(inProgress.getPublication(secondEvent, identifier)).containsSame(second);
+
+	}
+
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {
 
 		var clock = Clock.fixed(instant, ZoneId.systemDefault());
@@ -94,4 +112,6 @@ class DefaultEventPublicationRegistryUnitTests {
 			throw new IllegalStateException();
 		};
 	}
+
+	record SampleEvent(String payload) {}
 }

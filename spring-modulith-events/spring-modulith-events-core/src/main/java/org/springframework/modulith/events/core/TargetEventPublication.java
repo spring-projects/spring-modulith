@@ -75,7 +75,7 @@ public interface TargetEventPublication extends Completable, org.springframework
 	}
 
 	/**
-	 * Returns whether the {@link TargetEventPublication} is associated with the given event and
+	 * Returns whether the {@link TargetEventPublication} is associated with the given event instance and
 	 * {@link PublicationTargetIdentifier}.
 	 *
 	 * @param event must not be {@literal null}.
@@ -87,6 +87,6 @@ public interface TargetEventPublication extends Completable, org.springframework
 		Assert.notNull(event, "Event must not be null!");
 		Assert.notNull(identifier, "PublicationTargetIdentifier must not be null!");
 
-		return isIdentifiedBy(identifier) && getEvent().equals(event);
+		return isIdentifiedBy(identifier) && getEvent() == event;
 	}
 }

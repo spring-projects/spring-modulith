@@ -51,4 +51,19 @@ class TargetEventPublicationUnitTests {
 		assertThat(publication.isCompleted()).isFalse();
 		assertThat(publication.getCompletionDate()).isNotPresent();
 	}
+
+	@Test // GH-1056
+	void isOnlyAssociatedWithTheVerySameEventInstance() {
+
+		var first = new SampleEvent("Foo");
+		var second = new SampleEvent("Foo");
+
+		var identifier = PublicationTargetIdentifier.of("id");
+		var publication = TargetEventPublication.of(first, identifier);
+
+		assertThat(publication.isAssociatedWith(first, identifier)).isTrue();
+		assertThat(publication.isAssociatedWith(second, identifier)).isFalse();
+	}
+
+	record SampleEvent(String payload) {}
 }
