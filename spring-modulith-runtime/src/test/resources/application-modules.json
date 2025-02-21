@@ -1,0 +1,8 @@
+{
+	"a" : {
+		"initializers" : [ "org.springframework.modulith.runtime.autoconfigure.PrecomputedApplicationModuleInitializerInvokerUnitTests$FirstApplicationModuleInitializer" ]
+	},
+	"b" : {
+		"initializers" : [ "org.springframework.modulith.runtime.autoconfigure.PrecomputedApplicationModuleInitializerInvokerUnitTests$SecondApplicationModuleInitializer" ]
+	}
+}

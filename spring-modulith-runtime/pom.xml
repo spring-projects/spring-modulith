@@ -33,6 +33,16 @@
 			<artifactId>jgrapht-core</artifactId>
 			<version>1.4.0</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.jayway.jsonpath</groupId>
+			<artifactId>json-path</artifactId>
+		</dependency>
+		
+		<dependency>
+			<groupId>net.minidev</groupId>
+			<artifactId>json-smart</artifactId>
+		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -60,5 +70,46 @@
 		</dependency>
 
 	</dependencies>
+	
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+
+							<artifactSet>
+								<includes>
+									<include>com.jayway.jsonpath:*</include>
+									<include>net.minidev:*</include>
+								</includes>
+							</artifactSet>
+
+							<relocations>
+								<relocation>
+									<pattern>com.jayway.jsonpath</pattern>
+									<shadedPattern>org.springframework.modulith.runtime.jsonpath</shadedPattern>
+								</relocation>
+								<relocation>
+									<pattern>net.minidev</pattern>
+									<shadedPattern>org.springframework.modulith.runtime.minidev</shadedPattern>
+								</relocation>
+							</relocations>
+
+							<dependencyReducedPomLocation>${project.build.directory}/dependency-reduced-pom.xml</dependencyReducedPomLocation>
+							<minimizeJar>true</minimizeJar>
+
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>

@@ -17,8 +17,8 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -28,7 +28,9 @@ import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
@@ -36,10 +38,9 @@ import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
-import org.springframework.modulith.core.FormattableType;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
-import org.springframework.util.Assert;
 import org.springframework.util.function.ThrowingSupplier;
 
 /**
@@ -51,10 +52,10 @@ import org.springframework.util.function.ThrowingSupplier;
 @AutoConfiguration
 class SpringModulithRuntimeAutoConfiguration {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithRuntimeAutoConfiguration.class);
 	private static final AsyncTaskExecutor EXECUTOR = new SimpleAsyncTaskExecutor();
 
 	@Bean
+	@Lazy
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean(ApplicationRuntime.class)
 	static ApplicationRuntime modulithsApplicationRuntime(ApplicationContext context) {
@@ -62,6 +63,7 @@ class SpringModulithRuntimeAutoConfiguration {
 	}
 
 	@Bean
+	@Lazy
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean
 	static ApplicationModulesRuntime modulesRuntime(ApplicationRuntime runtime) {
@@ -77,64 +79,20 @@ class SpringModulithRuntimeAutoConfiguration {
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(ApplicationModuleInitializer.class)
 	static ApplicationListener<ApplicationStartedEvent> applicationModuleInitializingListener(
-			ObjectProvider<ApplicationModulesRuntime> runtime,
-			ObjectProvider<ApplicationModuleInitializer> initializers) {
-
-		return event -> {
-
-			var modules = runtime.getObject().get();
-
-			initializers.stream() //
-					.sorted(modules.getComparator()) //
-					.map(it -> LOGGER.isDebugEnabled() ? new LoggingApplicationModuleInitializerAdapter(it, modules) : it)
-					.forEach(ApplicationModuleInitializer::initialize);
-		};
+			ApplicationModuleInitializerInvoker invoker, ObjectProvider<ApplicationModuleInitializer> initializers) {
+		return __ -> invoker.invokeInitializers(initializers.stream());
 	}
 
-	private static class LoggingApplicationModuleInitializerAdapter implements ApplicationModuleInitializer {
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnBean(ApplicationModuleInitializer.class)
+	static ApplicationModuleInitializerInvoker applicationModuleInitializerInvoker(
+			@Value("classpath:" + ApplicationModulesExporter.DEFAULT_LOCATION) Resource metadata,
+			ObjectProvider<ApplicationModulesRuntime> runtime) {
 
-		private static final Logger LOGGER = LoggerFactory.getLogger(LoggingApplicationModuleInitializerAdapter.class);
-
-		private final ApplicationModuleInitializer delegate;
-		private final ApplicationModules modules;
-
-		/**
-		 * Creates a new {@link LoggingApplicationModuleInitializerAdapter} for the given
-		 * {@link ApplicationModuleInitializer} and {@link ApplicationModule}.
-		 *
-		 * @param delegate must not be {@literal null}.
-		 * @param modules must not be {@literal null}.
-		 */
-		public LoggingApplicationModuleInitializerAdapter(ApplicationModuleInitializer delegate,
-				ApplicationModules modules) {
-
-			Assert.notNull(delegate, "ApplicationModuleInitializer must not be null!");
-			Assert.notNull(modules, "ApplicationModules must not be null!");
-
-			this.delegate = delegate;
-			this.modules = modules;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.ApplicationModuleInitializer#initialize()
-		 */
-		@Override
-		public void initialize() {
-
-			var listenerType = AopUtils.getTargetClass(delegate);
-			var formattable = FormattableType.of(listenerType);
-
-			var formattedListenerType = modules.getModuleByType(listenerType)
-					.map(formattable::getAbbreviatedFullName)
-					.orElseGet(formattable::getAbbreviatedFullName);
-
-			LOGGER.debug("Initializing {}.", formattedListenerType);
-
-			delegate.initialize();
-
-			LOGGER.debug("Initializing {} done.", formattedListenerType);
-		}
+		return metadata.exists()
+				? new PrecomputedApplicationModuleInitializerInvoker(metadata)
+				: new DefaultApplicationModuleInitializerInvoker(runtime.getIfAvailable());
 	}
 
 	private static class ApplicationModulesBootstrap {
@@ -165,7 +123,7 @@ class SpringModulithRuntimeAutoConfiguration {
 
 				LOGGER.debug("Detected {} application modules: {}", //
 						numberOfModules, //
-						result.stream().map(ApplicationModule::getName).toList());
+						result.stream().map(ApplicationModule::getIdentifier).toList());
 			}
 
 			return result;
