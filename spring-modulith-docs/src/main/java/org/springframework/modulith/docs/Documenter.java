@@ -250,8 +250,8 @@ public class Documenter {
 
 			// Get diagram file name, e.g. module-inventory.puml
 			var fileNamePattern = diagramOptions.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
-			var filename = fileNamePattern.formatted(it.getName());
-			var canvasFilename = canvasOptions.getTargetFileName(it.getName());
+			var filename = fileNamePattern.formatted(it.getIdentifier());
+			var canvasFilename = canvasOptions.getTargetFileName(it.getIdentifier().toString());
 			var content = new StringBuilder();
 
 			content.append(folder.contains(filename) ? asciidoctor.renderPlantUmlInclude(filename) : "")
@@ -361,7 +361,7 @@ public class Documenter {
 
 		var fileNamePattern = options.getTargetFileName().orElse(DEFAULT_MODULE_COMPONENTS_FILE);
 
-		return writeViewAsPlantUml(view, fileNamePattern.formatted(module.getName()), options);
+		return writeViewAsPlantUml(view, fileNamePattern.formatted(module.getIdentifier()), options);
 	}
 
 	/**
@@ -387,7 +387,7 @@ public class Documenter {
 
 		modules.forEach(module -> {
 
-			var filename = canvasOptions.getTargetFileName(module.getName());
+			var filename = canvasOptions.getTargetFileName(module.getIdentifier().toString());
 
 			options.outputFolder.writeToFile(filename, toModuleCanvas(module, canvasOptions));
 		});
@@ -617,7 +617,7 @@ public class Documenter {
 
 	private ComponentView createComponentView(DiagramOptions options, @Nullable ApplicationModule module) {
 
-		String prefix = module == null ? "modules-" : module.getName();
+		String prefix = module == null ? "modules-" : module.getIdentifier().toString();
 
 		return workspace.getViews() //
 				.createComponentView(container, prefix + options.toString(), "");
@@ -648,7 +648,7 @@ public class Documenter {
 		// Apply custom color if configured
 		selector.apply(module).ifPresent(color -> {
 
-			var tag = module.getName() + "-" + color;
+			var tag = module.getIdentifier() + "-" + color;
 			component.addTags(tag);
 
 			// Add or update background color
