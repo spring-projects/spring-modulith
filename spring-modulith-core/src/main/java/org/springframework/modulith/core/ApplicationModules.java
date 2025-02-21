@@ -23,6 +23,7 @@ import static java.util.stream.Collectors.*;
 import static org.springframework.modulith.core.Violations.*;
 
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -31,10 +32,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
-import org.jgrapht.Graph;
-import org.jgrapht.graph.DefaultDirectedGraph;
-import org.jgrapht.graph.DefaultEdge;
-import org.jgrapht.traverse.TopologicalOrderIterator;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
@@ -44,10 +41,8 @@ import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
 
 import com.tngtech.archunit.base.DescribedPredicate;
-import com.tngtech.archunit.core.domain.JavaAnnotation;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
-import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.HasName;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
@@ -67,19 +62,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	private static final Map<CacheKey, ApplicationModules> CACHE = new ConcurrentHashMap<>();
 
 	private static final ImportOption IMPORT_OPTION = new ImportOption.DoNotIncludeTests();
-	private static final boolean JGRAPHT_PRESENT = ClassUtils.isPresent("org.jgrapht.Graph",
-			ApplicationModules.class.getClassLoader());
-	private static final DescribedPredicate<CanBeAnnotated> IS_AOT_TYPE, IS_GENERATED;
+	private static final DescribedPredicate<CanBeAnnotated> IS_GENERATED;
 	private static final DescribedPredicate<HasName> IS_SPRING_CGLIB_PROXY = nameContaining("$$SpringCGLIB$$");
 
 	static {
-
-		IS_AOT_TYPE = ClassUtils.isPresent("org.springframework.aot.generate.Generated",
+		IS_GENERATED = ClassUtils.isPresent("org.springframework.aot.generate.Generated",
 				ApplicationModules.class.getClassLoader()) ? getAtGenerated() : DescribedPredicate.alwaysFalse();
-
-		IS_GENERATED = annotatedWith(JavaClass.Predicates.simpleName("Generated")
-				.onResultOf(JavaType::toErasure)
-				.onResultOf(JavaAnnotation::getType));
 	}
 
 	@Nullable
@@ -129,7 +117,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Assert.notNull(ignored, "Ignores must not be null!");
 		Assert.notNull(option, "ImportOptions must not be null!");
 
-		DescribedPredicate<? super JavaClass> excluded = DescribedPredicate.or(ignored, IS_AOT_TYPE, IS_SPRING_CGLIB_PROXY);
+		DescribedPredicate<? super JavaClass> excluded = DescribedPredicate.or(ignored, IS_GENERATED,
+				IS_SPRING_CGLIB_PROXY);
 
 		this.metadata = metadata;
 		var importer = new ClassFileImporter() //
@@ -174,14 +163,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.toList());
 
 		this.sharedModules = Collections.emptySet();
-
-		Supplier<List<ApplicationModuleIdentifier>> fallback = () -> modules.values().stream()
-				.map(ApplicationModule::getIdentifier)
-				.sorted()
-				.toList();
-
-		this.orderedNames = Optional.ofNullable(JGRAPHT_PRESENT ? TopologicalSorter.topologicallySortModules(this) : null)
-				.orElseGet(fallback);
+		this.orderedNames = topologicallyOrderIdentifiers(this);
 	}
 
 	/**
@@ -564,7 +546,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	@Override
 	public Iterator<ApplicationModule> iterator() {
-		return orderedNames.stream().map(this::getRequiredModule).iterator();
+
+		return orderedNames != null
+				? orderedNames.stream().map(this::getRequiredModule).iterator()
+				: modules.values().iterator();
 	}
 
 	/*
@@ -683,6 +668,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		};
 	}
 
+	/**
+	 * Returns all {@link ApplicationModuleIdentifier} topologically sorted.
+	 *
+	 * @param modules must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	private static final List<ApplicationModuleIdentifier> topologicallyOrderIdentifiers(ApplicationModules modules) {
+
+		Supplier<List<ApplicationModuleIdentifier>> fallback = () -> modules.stream()
+				.map(ApplicationModule::getIdentifier)
+				.sorted()
+				.toList();
+
+		return Optional.ofNullable(ModuleSorter.sortTopologically(modules)).orElseGet(fallback);
+	}
+
 	public static class Filters {
 
 		public static DescribedPredicate<JavaClass> withoutModules(String... names) {
@@ -763,43 +764,73 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		}
 	}
 
-	/**
-	 * Dedicated class to be able to only optionally depend on the JGraphT library.
-	 *
-	 * @author Oliver Drotbohm
-	 */
-	private static class TopologicalSorter {
+	private static class ModuleSorter {
 
-		@Nullable
-		private static List<ApplicationModuleIdentifier> topologicallySortModules(ApplicationModules modules) {
+		/**
+		 * Returns a topologically sorted list of {@link ApplicationModuleIdentifier} for the given
+		 * {@link ApplicationModules} or {@literal null} in case we detect a dependency cycle.
+		 *
+		 * @param modules must not be {@literal null}.
+		 * @return can be {@literal null}.
+		 */
+		public static @Nullable List<ApplicationModuleIdentifier> sortTopologically(ApplicationModules modules) {
 
-			Graph<ApplicationModule, DefaultEdge> graph = new DefaultDirectedGraph<>(DefaultEdge.class);
+			var visited = new HashSet<ApplicationModule>();
+			var inProgress = new HashSet<ApplicationModule>();
+			var levelMap = new TreeMap<Integer, Set<ApplicationModuleIdentifier>>();
 
-			modules.modules.values()
-					.stream()
-					.sorted()
-					.forEach(project -> {
+			boolean cycleDetected = modules.stream()
+					.filter(module -> !visited.contains(module))
+					.anyMatch(module -> visit(module, modules, visited, inProgress, 0, levelMap));
 
-						graph.addVertex(project);
-
-						project.getDirectDependencies(modules).uniqueModules() //
-								.forEach(dependency -> {
-									graph.addVertex(dependency);
-									graph.addEdge(project, dependency);
-								});
-					});
-
-			var names = new ArrayList<ApplicationModuleIdentifier>();
-			var iterator = new TopologicalOrderIterator<>(graph);
-
-			try {
-
-				iterator.forEachRemaining(it -> names.add(0, it.getIdentifier()));
-				return names;
-
-			} catch (IllegalArgumentException o_O) {
+			if (cycleDetected) {
 				return null;
 			}
+
+			return levelMap.values().stream().flatMap(Set::stream).toList();
+		}
+
+		private static boolean visit(ApplicationModule module, ApplicationModules modules, Set<ApplicationModule> visited,
+				Set<ApplicationModule> inProgress, int level, Map<Integer, Set<ApplicationModuleIdentifier>> levelMap) {
+
+			if (inProgress.contains(module)) {
+				return true;
+			}
+
+			if (visited.contains(module)) {
+				return false;
+			}
+
+			inProgress.add(module);
+
+			var cycleDetected = module.getDirectDependencies(modules).uniqueModules()
+					.anyMatch(dependency -> visit(dependency, modules, visited, inProgress, level + 1, levelMap));
+
+			if (cycleDetected) {
+				return true;
+			}
+
+			inProgress.remove(module);
+			visited.add(module);
+
+			int maxDependencyLevel = module.getDirectDependencies(modules).uniqueModules()
+					.mapToInt(it -> findLevelForClosestDependency(it, levelMap))
+					.max()
+					.orElse(-1);
+
+			levelMap.computeIfAbsent(maxDependencyLevel + 1, __ -> new TreeSet<>()).add(module.getIdentifier());
+
+			return false;
+		}
+
+		private static int findLevelForClosestDependency(ApplicationModule module,
+				Map<Integer, Set<ApplicationModuleIdentifier>> levelMap) {
+
+			return levelMap.entrySet().stream()
+					.filter(it -> it.getValue().contains(module.getIdentifier()))
+					.mapToInt(Entry::getKey)
+					.findFirst()
+					.orElse(-1);
 		}
 	}
 
