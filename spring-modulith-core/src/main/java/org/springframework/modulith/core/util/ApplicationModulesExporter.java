@@ -50,6 +50,8 @@ import com.tngtech.archunit.core.domain.JavaClass;
  */
 public class ApplicationModulesExporter {
 
+	public static final String DEFAULT_LOCATION = "META-INF/spring-modulith/application-modules.json";
+
 	private static final Function<NamedInterface, Stream<String>> TO_EXPOSED_TYPES = it -> it.asJavaClasses()
 			.map(JavaClass::getName);
 	private static final Function<Set<DependencyType>, Set<DependencyType>> REMOVE_DEFAULT_DEPENDENCY_TYPE_IF_OTHERS_PRESENT = it -> {

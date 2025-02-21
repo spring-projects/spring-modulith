@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.modulith.actuator.ApplicationModulesEndpoint;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.function.ThrowingSupplier;
 
@@ -36,7 +37,7 @@ import org.springframework.util.function.ThrowingSupplier;
 @AutoConfiguration
 class ApplicationModulesEndpointConfiguration {
 
-	static final String FILE_LOCATION = "META-INF/spring-modulith/application-modules.json";
+	private static final String FILE_LOCATION = ApplicationModulesExporter.DEFAULT_LOCATION;
 
 	private static final Resource PRECOMPUTED = new ClassPathResource(FILE_LOCATION);
 	private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesEndpointConfiguration.class);
