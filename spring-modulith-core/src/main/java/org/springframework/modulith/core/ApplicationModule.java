@@ -302,6 +302,23 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
+	 * Returns all {@link SpringBean}s assignable to the given type.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public List<SpringBean> getSpringBeans(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return getSpringBeansInternal().stream() //
+				.map(it -> SpringBean.of(it, this)) //
+				.filter(it -> it.isAssignableTo(type))
+				.toList();
+	}
+
+	/**
 	 * Returns the {@link ArchitecturallyEvidentType} for the given type.
 	 *
 	 * @param type must not be {@literal null}.

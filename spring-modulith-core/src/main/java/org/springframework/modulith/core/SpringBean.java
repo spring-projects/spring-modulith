@@ -106,6 +106,19 @@ public class SpringBean {
 		return ArchitecturallyEvidentType.of(type, module.getSpringBeansInternal());
 	}
 
+	/**
+	 * Returns whether the bean is assignable to the given type.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @since 1.4
+	 */
+	public boolean isAssignableTo(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return this.type.isAssignableTo(type);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#equals(java.lang.Object)

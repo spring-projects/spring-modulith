@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModules;
 
 import com.acme.myproject.Application;
+import com.acme.myproject.moduleA.ServiceComponentA;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 
@@ -60,5 +61,14 @@ class ApplicationModulesExporterUnitTests {
 		assertThatNoException().isThrownBy(() -> {
 			new ObjectMapper().readTree(EXPORTER.toJson());
 		});
+	}
+
+	@Test // GH-1062
+	void fullRenderingListsInitializers() {
+
+		var exported = EXPORTER.toFullJson();
+
+		assertThat((List<String>) JsonPath.compile("$..initializers[*]").read(exported))
+				.containsExactly(ServiceComponentA.class.getName());
 	}
 }

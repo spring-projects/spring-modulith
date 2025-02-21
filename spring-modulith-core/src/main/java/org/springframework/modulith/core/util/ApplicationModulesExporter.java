@@ -30,6 +30,7 @@ import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependency;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
@@ -37,6 +38,7 @@ import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.DependencyType;
 import org.springframework.modulith.core.NamedInterface;
 import org.springframework.modulith.core.NamedInterfaces;
+import org.springframework.modulith.core.SpringBean;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -137,6 +139,10 @@ public class ApplicationModulesExporter {
 
 		if (details.equals(Details.FULL)) {
 			json.put("namedInterfaces", toNamedInterfaces(module.getNamedInterfaces()));
+			json.put("initializers", module.getSpringBeans(ApplicationModuleInitializer.class).stream()
+					.map(SpringBean::getType)
+					.map(JavaClass::getName)
+					.toList());
 		}
 
 		json.put("dependencies", module.getDirectDependencies(modules).stream() //

@@ -16,13 +16,14 @@
 package com.acme.myproject.moduleA;
 
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.stereotype.Component;
 
 /**
  * @author Oliver Drotbohm
  */
 @Component
-public class ServiceComponentA {
+public class ServiceComponentA implements ApplicationModuleInitializer {
 
 	private final ApplicationEventPublisher publisher;
 
@@ -33,4 +34,7 @@ public class ServiceComponentA {
 	public void fireEvent() {
 		publisher.publishEvent(new SomeEventA("Message"));
 	}
+
+	@Override
+	public void initialize() {}
 }
