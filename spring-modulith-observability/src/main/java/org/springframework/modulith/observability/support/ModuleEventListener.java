@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.observability.support;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
@@ -25,7 +25,7 @@ import java.util.function.Supplier;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
-import org.springframework.modulith.observability.ModulithObservations.Events;
+import org.springframework.modulith.observability.support.ModulithObservations.Events;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -37,6 +37,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<ObservationRegistry> observationRegistry;
 	private final Supplier<MeterRegistry> meterRegistry;
+	private final CrossModuleEventCounterFactory factory;
 
 	/**
 	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and
@@ -45,17 +46,21 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistrySupplier must not be {@literal null}.
 	 * @param meterRegistrySupplier must not be {@literal null}.
+	 * @param configurer must not be {@literal null}.
 	 */
 	public ModuleEventListener(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistrySupplier, Supplier<MeterRegistry> meterRegistrySupplier) {
+			Supplier<ObservationRegistry> observationRegistrySupplier, Supplier<MeterRegistry> meterRegistrySupplier,
+			CrossModuleEventCounterFactory counterFactory) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
 		Assert.notNull(observationRegistrySupplier, "ObservationRegistry must not be null!");
 		Assert.notNull(meterRegistrySupplier, "MeterRegistry must not be null!");
+		Assert.notNull(counterFactory, "ModulithEventCounterFactory must not be null!");
 
 		this.runtime = runtime;
 		this.observationRegistry = observationRegistrySupplier;
 		this.meterRegistry = meterRegistrySupplier;
+		this.factory = counterFactory;
 	}
 
 	/*
@@ -89,9 +94,11 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 		if (registry != null) {
 
 			Counter.builder(ModulithMetrics.EVENTS.getName()) //
-					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), event.getClass().getSimpleName()) //
+					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), payloadType.getSimpleName()) //
 					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
 					.register(registry).increment();
+
+			factory.createCounterBuilder(event).register(registry).increment();
 		}
 
 		var observation = observationRegistry.get().getCurrentObservation();

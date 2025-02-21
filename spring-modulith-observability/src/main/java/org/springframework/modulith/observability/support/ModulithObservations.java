@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.observability.support;
 
 import io.micrometer.common.docs.KeyName;
 import io.micrometer.observation.Observation;
@@ -133,7 +133,7 @@ enum ModulithObservations implements ObservationDocumentation {
 			 */
 			@Override
 			public String getContextualName() {
-				return getName();
+				return "event.publication.success";
 			}
 		},
 
@@ -157,7 +157,7 @@ enum ModulithObservations implements ObservationDocumentation {
 			 */
 			@Override
 			public String getContextualName() {
-				return getName();
+				return "event.publication.failure";
 			}
 		}
 	}

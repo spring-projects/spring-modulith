@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.observability.support;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
@@ -26,6 +26,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPo
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**

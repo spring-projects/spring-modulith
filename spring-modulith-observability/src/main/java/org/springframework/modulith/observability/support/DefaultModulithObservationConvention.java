@@ -13,12 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.observability.support;
 
 import io.micrometer.common.KeyValues;
 
-import org.springframework.modulith.observability.ModulithObservations.HighKeys;
-import org.springframework.modulith.observability.ModulithObservations.LowKeys;
+import org.springframework.modulith.observability.support.ModulithObservations.HighKeys;
+import org.springframework.modulith.observability.support.ModulithObservations.LowKeys;
 
 /**
  * Default implementation of {@link ModulithObservationConvention}.

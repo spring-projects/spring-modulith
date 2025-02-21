@@ -22,7 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.observability.ModuleEventListener;
+import org.springframework.modulith.observability.support.ModuleEventListener;
 
 /**
  * @author Oliver Drotbohm

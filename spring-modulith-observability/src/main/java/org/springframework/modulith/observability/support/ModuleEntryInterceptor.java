@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.observability.support;
 
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.Scope;
@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
-import org.springframework.modulith.observability.ModulithObservations.LowKeys;
+import org.springframework.modulith.observability.support.ModulithObservations.LowKeys;
 import org.springframework.util.Assert;
 
 /**

@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 the original author or authors.
+ * Copyright 2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,18 @@
  */
 package org.springframework.modulith.observability;
 
-import io.micrometer.observation.Observation.Context;
-import io.micrometer.observation.ObservationConvention;
-
 /**
- * {@link ObservationConvention} for {@link ModulithContext}.
+ * Allows customizing the metrics creation, in particular the counters created for cross-application-module events.
  *
- * @author Marcin Grzejszczak
+ * @author Oliver Drotbohm
  * @since 1.4
  */
-public interface ModulithObservationConvention extends ObservationConvention<ModulithContext> {
+public interface ModulithEventMetricsCustomizer {
 
-	/*
-	 * (non-Javadoc)
-	 * @see io.micrometer.observation.ObservationConvention#supportsContext(io.micrometer.observation.Observation.Context)
+	/**
+	 * Customize the given {@link ModulithEventMetrics}.
+	 *
+	 * @param metrics will never be {@literal null}.
 	 */
-	@Override
-	default boolean supportsContext(Context context) {
-		return context instanceof ModulithContext;
-	}
+	void customize(ModulithEventMetrics metrics);
 }

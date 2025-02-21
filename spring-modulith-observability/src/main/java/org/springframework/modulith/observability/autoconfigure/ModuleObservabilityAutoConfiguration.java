@@ -30,10 +30,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
-import org.springframework.modulith.observability.LocalServiceRenamingSpanFilter;
-import org.springframework.modulith.observability.ModuleEventListener;
-import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor;
-import org.springframework.modulith.observability.ModulePassingObservationFilter;
+import org.springframework.modulith.observability.ModulithEventMetricsCustomizer;
+import org.springframework.modulith.observability.support.CrossModuleEventCounterFactory;
+import org.springframework.modulith.observability.support.LocalServiceRenamingSpanFilter;
+import org.springframework.modulith.observability.support.ModuleEventListener;
+import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
+import org.springframework.modulith.observability.support.ModulePassingObservationFilter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
@@ -45,14 +47,16 @@ class ModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static ModuleObservabilityBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
-			ObjectProvider<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory, Environment environment) {
+			ObjectProvider<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory,
+			Environment environment) {
 		return new ModuleObservabilityBeanPostProcessor(runtime, observationRegistry::getObject, factory, environment);
 	}
 
 	@Bean
 	static ModuleEventListener tracingModuleEventListener(ApplicationModulesRuntime runtime,
-			ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<MeterRegistry> meterRegistry) {
-		return new ModuleEventListener(runtime, observationRegistry::getObject, meterRegistry::getObject);
+			ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<MeterRegistry> meterRegistry,
+			CrossModuleEventCounterFactory configurer) {
+		return new ModuleEventListener(runtime, observationRegistry::getObject, meterRegistry::getObject, configurer);
 	}
 
 	// TODO: Have a custom thread pool for modulith
@@ -78,4 +82,13 @@ class ModuleObservabilityAutoConfiguration {
 		return new LocalServiceRenamingSpanFilter();
 	}
 
+	@Bean
+	CrossModuleEventCounterFactory modulithEventCounterFactory(ObjectProvider<ModulithEventMetricsCustomizer> customizer) {
+
+		var factory = new CrossModuleEventCounterFactory();
+
+		customizer.stream().forEach(it -> it.customize(factory));
+
+		return factory;
+	}
 }

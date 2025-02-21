@@ -23,7 +23,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.data.rest.webmvc.RepositoryController;
-import org.springframework.modulith.observability.SpringDataRestModuleObservabilityBeanPostProcessor;
+import org.springframework.modulith.observability.support.SpringDataRestModuleObservabilityBeanPostProcessor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**

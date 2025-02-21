@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability;
+package org.springframework.modulith.observability.support;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -28,7 +28,8 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.observability.ModuleObservabilityBeanPostProcessor.ApplicationModuleObservingAdvisor;
+import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
+import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor.ApplicationModuleObservingAdvisor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.modulith.test.TestApplicationModules;
