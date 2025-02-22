@@ -24,6 +24,7 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.Test;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.modulith.ApplicationModuleInitializer;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 
 /**
  * @author Oliver Drotbohm
@@ -33,8 +34,10 @@ class PrecomputedApplicationModuleInitializerInvokerUnitTests {
 	@Test
 	void ordersInitializersBasedOnPrecomputedMetadata() throws IOException {
 
-		var resource = new ClassPathResource("application-modules.json");
-		var invoker = new PrecomputedApplicationModuleInitializerInvoker(resource);
+		var resource = new ClassPathResource(ApplicationModulesExporter.DEFAULT_LOCATION);
+		var metadata = ApplicationModuleMetadata.of(resource);
+
+		var invoker = new PrecomputedApplicationModuleInitializerInvoker(metadata);
 
 		var second = new SecondApplicationModuleInitializer();
 		var first = new FirstApplicationModuleInitializer();

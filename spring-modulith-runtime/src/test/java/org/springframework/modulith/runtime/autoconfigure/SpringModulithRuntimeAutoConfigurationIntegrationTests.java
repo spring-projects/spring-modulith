@@ -18,6 +18,9 @@ package org.springframework.modulith.runtime.autoconfigure;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import example.moduleA.ModuleAType;
+
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -34,7 +37,11 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.modulith.ApplicationModuleInitializer;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
+import org.springframework.modulith.core.ApplicationModuleIdentifiers;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 
@@ -51,12 +58,19 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 	@SpringBootApplication
 	static class SampleApp {}
 
+	InitializationTracker tracker = new InitializationTracker();
+
+	ApplicationContextRunner runner = new ApplicationContextRunner()
+			.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
+			.withBean(InitializationTracker.class, () -> tracker);
+
+	ClassLoader withoutMetadata = new FilteredClassLoader(
+			new ClassPathResource(ApplicationModulesExporter.DEFAULT_LOCATION));
+
 	@Test // GH-87
 	void bootstrapRegistersRuntimeInstances() {
 
-		new ApplicationContextRunner()
-				.withUserConfiguration(SampleApp.class)
-				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
+		runner.withUserConfiguration(SampleApp.class)
 				.run(context -> {
 					assertThat(context.getBean(ApplicationRuntime.class)).isNotNull();
 					assertThat(context.getBean(ApplicationModulesRuntime.class)).isNotNull();
@@ -66,9 +80,7 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 	@Test // GH-160
 	void missingArchUnitRuntimeDependencyEscalatesOnContextStartup() {
 
-		new ApplicationContextRunner()
-				.withUserConfiguration(SampleApp.class)
-				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
+		runner.withUserConfiguration(SampleApp.class)
 				.withClassLoader(new FilteredClassLoader(ClassFileImporter.class))
 				.run(context -> {
 					assertThat(context).hasFailed();
@@ -79,29 +91,72 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 	}
 
 	@Test // GH-375
-	void registersInitializingListenerIfInitializersPresent() {
+	void registersIntializerInvokerIfInitializersPresent() {
 
-		var tracker = new InitializationTracker();
+		var unlisted = new ModuleAType();
+		var listed = new SampleInitializer();
 
-		var beanName = "applicationModuleInitializingListener";
-		var runner = new ApplicationContextRunner()
-				.withConfiguration(AutoConfigurations.of(SpringModulithRuntimeAutoConfiguration.class))
-				.withBean(InitializationTracker.class, () -> tracker);
+		var runner = this.runner.withUserConfiguration(SampleApp.class)
+				.withBean(ModuleAType.class, () -> unlisted)
+				.withBean(SampleInitializer.class, () -> listed);
 
-		// No initializer -> no listener
 		runner.run(context -> {
 
-			assertThat(context).doesNotHaveBean(beanName);
+			assertThat(context).hasSingleBean(PrecomputedApplicationModuleInitializerInvoker.class);
+
+			context.publishEvent(mock(ApplicationStartedEvent.class));
+
+			// Initializer invoked
+			assertThat(unlisted.initialized).isNotNull();
+			assertThat(listed.initialized).isNotNull();
+			assertThat(listed.initialized).isBefore(unlisted.initialized);
+
 			tracker.assertBeanNotInitialized(ApplicationModulesRuntime.class);
 		});
 
-		// Initializer -> listener
-		runner.withBean(ApplicationModuleInitializer.class, () -> () -> {})
-				.withBean(DummyApplication.class)
+		runner.withClassLoader(withoutMetadata)
 				.run(context -> {
 
+					assertThat(context).hasSingleBean(DefaultApplicationModuleInitializerInvoker.class);
+
 					context.publishEvent(mock(ApplicationStartedEvent.class));
-					assertThat(context).hasBean(beanName);
+
+					tracker.assertBeanInitialized(ApplicationModulesRuntime.class);
+				});
+	}
+
+	@Test // GH-375
+	void doesNotRegisterIntializerInvokerIfInitializersPresent() {
+
+		runner.run(context -> {
+
+			assertThat(context).doesNotHaveBean(ApplicationModuleInitializerInvoker.class);
+
+			tracker.assertBeanNotInitialized(ApplicationModulesRuntime.class);
+		});
+	}
+
+	@Test // GH-1066
+	void registersApplicationModuleIdentifiersWithoutInstantiatingApplicationModulesIfMetadataPresent() {
+
+		runner.run(context -> {
+
+			tracker.assertBeanNotInitialized(ApplicationModulesRuntime.class);
+			assertThat(context).hasSingleBean(ApplicationModuleIdentifiers.class);
+
+			assertThat(context.getBean(ApplicationModuleIdentifiers.class))
+					.extracting(ApplicationModuleIdentifier::toString)
+					.containsExactly("a", "b", "c");
+		});
+
+		runner.withUserConfiguration(SampleApp.class)
+				.withClassLoader(withoutMetadata)
+				.run(context -> {
+
+					tracker.assertBeanInitialized(ApplicationModulesRuntime.class);
+					assertThat(context).hasSingleBean(ApplicationModuleIdentifiers.class);
+
+					assertThat(context.getBean(ApplicationModuleIdentifiers.class)).isEmpty();
 				});
 	}
 
@@ -144,6 +199,13 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 		}
 	}
 
-	@SpringBootApplication
-	static class DummyApplication {}
+	static class SampleInitializer implements ApplicationModuleInitializer {
+
+		LocalDateTime initialized;
+
+		@Override
+		public void initialize() {
+			this.initialized = LocalDateTime.now();
+		}
+	}
 }

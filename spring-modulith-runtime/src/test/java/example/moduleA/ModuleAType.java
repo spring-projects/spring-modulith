@@ -15,7 +15,19 @@
  */
 package example.moduleA;
 
+import java.time.LocalDateTime;
+
+import org.springframework.modulith.ApplicationModuleInitializer;
+
 /**
  * @author Oliver Drotbohm
  */
-public class ModuleAType {}
+public class ModuleAType implements ApplicationModuleInitializer {
+
+	public LocalDateTime initialized;
+
+	@Override
+	public void initialize() {
+		this.initialized = LocalDateTime.now();
+	}
+}

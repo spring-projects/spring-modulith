@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import org.springframework.modulith.ApplicationModuleInitializer;
@@ -26,12 +25,12 @@ import org.springframework.modulith.core.ApplicationModules;
  */
 class DefaultApplicationModuleInitializerInvoker implements ApplicationModuleInitializerInvoker {
 
-	private final Supplier<ApplicationModules> modules;
+	private final ApplicationModules modules;
 
 	/**
 	 * @param modules
 	 */
-	DefaultApplicationModuleInitializerInvoker(Supplier<ApplicationModules> modules) {
+	DefaultApplicationModuleInitializerInvoker(ApplicationModules modules) {
 		this.modules = modules;
 	}
 
@@ -42,8 +41,6 @@ class DefaultApplicationModuleInitializerInvoker implements ApplicationModuleIni
 	 */
 	@Override
 	public void invokeInitializers(Stream<ApplicationModuleInitializer> initializers) {
-
-		var modules = this.modules.get();
 
 		initializers
 				.sorted(modules.getComparator()) //

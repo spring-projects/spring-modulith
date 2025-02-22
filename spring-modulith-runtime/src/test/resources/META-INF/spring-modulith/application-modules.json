@@ -4,5 +4,8 @@
 	},
 	"b" : {
 		"initializers" : [ "org.springframework.modulith.runtime.autoconfigure.PrecomputedApplicationModuleInitializerInvokerUnitTests$SecondApplicationModuleInitializer" ]
+	},
+	"c" : {
+		"initializers" : [ "org.springframework.modulith.runtime.autoconfigure.SpringModulithRuntimeAutoConfigurationIntegrationTests$SampleInitializer" ]
 	}
 }

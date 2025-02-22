@@ -17,7 +17,6 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import org.springframework.boot.diagnostics.AbstractFailureAnalyzer;
 import org.springframework.boot.diagnostics.FailureAnalysis;
-import org.springframework.boot.diagnostics.FailureAnalyzer;
 
 /**
  * {@link FailureAnalyzer} for {@link MissingRuntimeDependency}.

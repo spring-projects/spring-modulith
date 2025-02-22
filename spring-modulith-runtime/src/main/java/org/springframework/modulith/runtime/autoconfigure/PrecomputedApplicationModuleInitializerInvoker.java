@@ -15,35 +15,24 @@
  */
 package org.springframework.modulith.runtime.autoconfigure;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.core.io.Resource;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.util.Assert;
 
-import com.jayway.jsonpath.JsonPath;
-
 class PrecomputedApplicationModuleInitializerInvoker implements ApplicationModuleInitializerInvoker {
 
-	private List<String> plan;
+	private final List<String> initializerTypeNames;
 
-	public PrecomputedApplicationModuleInitializerInvoker(Resource metadata) {
+	public PrecomputedApplicationModuleInitializerInvoker(ApplicationModuleMetadata metadata) {
 
-		Assert.isTrue(metadata.exists(), () -> "Resource %s does not exist!".formatted(metadata.getDescription()));
+		Assert.isTrue(metadata.isPresent(), "ApplicationModuleMetadata not present!");
 
-		try (var stream = metadata.getInputStream()) {
-
-			this.plan = JsonPath.parse(stream).<List<String>> read("$..initializers[*]");
-
-		} catch (IOException e) {
-			throw new UncheckedIOException(e);
-		}
+		this.initializerTypeNames = metadata.getInitializerTypeNames();
 	}
 
 	/*
@@ -56,11 +45,17 @@ class PrecomputedApplicationModuleInitializerInvoker implements ApplicationModul
 		var map = initializers
 				.collect(Collectors.toMap(it -> it.getClass().getName(), Function.identity()));
 
-		plan.stream()
-				.map(map::get)
+		triggerInitialization(initializerTypeNames.stream()
+				.map(map::remove)
 				.map(Optional::ofNullable)
-				.flatMap(Optional::stream)
-				.map(LoggingApplicationModuleInitializerAdapter::of)
+				.flatMap(Optional::stream));
+
+		triggerInitialization(map.values().stream());
+	}
+
+	private void triggerInitialization(Stream<ApplicationModuleInitializer> initializers) {
+
+		initializers.map(LoggingApplicationModuleInitializerAdapter::of)
 				.forEach(ApplicationModuleInitializer::initialize);
 	}
 }

@@ -52,7 +52,7 @@ class LoggingApplicationModuleInitializerAdapter implements ApplicationModuleIni
 	public static ApplicationModuleInitializer of(ApplicationModuleInitializer initializer,
 			ApplicationModules modules) {
 
-		if (!LoggerFactory.getLogger(initializer.getClass()).isDebugEnabled()) {
+		if (!LOGGER.isDebugEnabled()) {
 			return initializer;
 		}
 
@@ -68,7 +68,7 @@ class LoggingApplicationModuleInitializerAdapter implements ApplicationModuleIni
 
 	public static ApplicationModuleInitializer of(ApplicationModuleInitializer initializer) {
 
-		if (!LoggerFactory.getLogger(initializer.getClass()).isDebugEnabled()) {
+		if (!LOGGER.isDebugEnabled()) {
 			return initializer;
 		}
 

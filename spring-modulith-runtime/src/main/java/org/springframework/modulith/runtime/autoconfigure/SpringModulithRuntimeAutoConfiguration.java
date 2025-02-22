@@ -36,6 +36,7 @@ import org.springframework.core.task.AsyncTaskExecutor;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.util.ApplicationModulesExporter;
@@ -83,16 +84,39 @@ class SpringModulithRuntimeAutoConfiguration {
 		return __ -> invoker.invokeInitializers(initializers.stream());
 	}
 
+	/**
+	 * {@link ApplicationModuleMetadata} obtained from the Spring Modulith metadata located at
+	 * {@value ApplicationModulesExporter#DEFAULT_LOCATION}.
+	 *
+	 * @param metadata will never be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	static ApplicationModuleMetadata applicationModuleMetadata(
+			@Value("classpath:" + ApplicationModulesExporter.DEFAULT_LOCATION) Resource metadata) {
+		return ApplicationModuleMetadata.of(metadata);
+	}
+
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(ApplicationModuleInitializer.class)
-	static ApplicationModuleInitializerInvoker applicationModuleInitializerInvoker(
-			@Value("classpath:" + ApplicationModulesExporter.DEFAULT_LOCATION) Resource metadata,
+	static ApplicationModuleInitializerInvoker applicationModuleInitializerInvoker(ApplicationModuleMetadata metadata,
 			ObjectProvider<ApplicationModulesRuntime> runtime) {
 
-		return metadata.exists()
+		return metadata.isPresent()
 				? new PrecomputedApplicationModuleInitializerInvoker(metadata)
-				: new DefaultApplicationModuleInitializerInvoker(runtime.getIfAvailable());
+				: new DefaultApplicationModuleInitializerInvoker(runtime.getObject().get());
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	ApplicationModuleIdentifiers applicationModuleIdentifiers(ApplicationModuleMetadata metadata,
+			ObjectProvider<ApplicationModulesRuntime> runtime) {
+
+		return metadata.isPresent()
+				? ApplicationModuleIdentifiers.of(metadata.getIdentifiers())
+				: ApplicationModuleIdentifiers.of(runtime.getObject().get());
 	}
 
 	private static class ApplicationModulesBootstrap {
