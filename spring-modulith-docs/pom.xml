@@ -27,6 +27,12 @@
 			<groupId>com.structurizr</groupId>
 			<artifactId>structurizr-core</artifactId>
 			<version>${structurizr.version}</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 		<dependency>
