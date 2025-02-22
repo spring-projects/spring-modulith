@@ -46,7 +46,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistrySupplier must not be {@literal null}.
 	 * @param meterRegistrySupplier must not be {@literal null}.
-	 * @param configurer must not be {@literal null}.
+	 * @param counterFactory must not be {@literal null}.
 	 */
 	public ModuleEventListener(ApplicationModulesRuntime runtime,
 			Supplier<ObservationRegistry> observationRegistrySupplier, Supplier<MeterRegistry> meterRegistrySupplier,

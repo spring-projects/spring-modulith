@@ -30,8 +30,8 @@ import org.springframework.util.Assert;
 
 /**
  * A factory to create {@link Builder} instances for {@link Counter}s eventually. Target for dependency injection via
- * the {@link ModulithEventMetricsCustomizer} interface to allow users to augment the counters with additional
- * information.
+ * the {@link org.springframework.modulith.observability.ModulithEventMetricsCustomizer} interface to allow users to
+ * augment the counters with additional information.
  *
  * @author Oliver Drotbohm
  * @author Marcin Grzejszczak
