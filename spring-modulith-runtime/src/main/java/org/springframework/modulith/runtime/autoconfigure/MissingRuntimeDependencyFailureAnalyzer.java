@@ -19,7 +19,7 @@ import org.springframework.boot.diagnostics.AbstractFailureAnalyzer;
 import org.springframework.boot.diagnostics.FailureAnalysis;
 
 /**
- * {@link FailureAnalyzer} for {@link MissingRuntimeDependency}.
+ * {@link org.springframework.boot.diagnostics.FailureAnalyzer} for {@link MissingRuntimeDependency}.
  *
  * @author Michael Weirauch
  * @author Oliver Drotbohm

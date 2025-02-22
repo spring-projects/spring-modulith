@@ -25,7 +25,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
  * Renders the application module description JSON into a resource named
- * {@value ApplicationModulesEndpointConfiguration#FILE_LOCATION}.
+ * {@value ApplicationModulesExporter#DEFAULT_LOCATION}.
  *
  * @author Oliver Drotbohm
  * @since 1.4
