@@ -94,7 +94,7 @@ public class CrossModuleEventCounterFactory implements ModulithEventMetrics {
 
 		private static final BiConsumer<Object, Builder> NO_OP = (event, builder) -> {};
 		private static final Function<Object, Builder> DEFAULT_FACTORY = event -> Counter
-				.builder(event.getClass().getName());
+				.builder(event.getClass().getSimpleName());
 
 		public static final ModulithMetricsCustomizer DEFAULT = new ModulithMetricsCustomizer(Object.class, NO_OP);
 

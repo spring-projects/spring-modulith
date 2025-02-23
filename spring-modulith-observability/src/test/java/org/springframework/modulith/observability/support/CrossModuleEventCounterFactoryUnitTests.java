@@ -25,7 +25,6 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.observability.support.CrossModuleEventCounterFactory;
 
 /**
  * Unit tests for {@link CrossModuleEventCounterFactory}.
@@ -43,7 +42,7 @@ class CrossModuleEventCounterFactoryUnitTests {
 		factory.customize(SampleEvent.class, (__, builder) -> builder.tag("key", "value"));
 
 		assertCounter(new SampleEvent(), it -> {
-			assertThat(it.getName()).isEqualTo(SampleEvent.class.getName());
+			assertThat(it.getName()).isEqualTo(SampleEvent.class.getSimpleName());
 			assertThat(it.getTag("key")).isNotNull();
 		});
 	}
