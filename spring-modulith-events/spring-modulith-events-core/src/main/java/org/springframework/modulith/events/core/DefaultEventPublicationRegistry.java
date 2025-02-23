@@ -218,12 +218,11 @@ public class DefaultEventPublicationRegistry
 
 					} catch (Exception o_O) {
 
+						inProgress.unregister(it);
+
 						if (LOGGER.isInfoEnabled()) {
 							LOGGER.info("Error republishing event publication %s.".formatted(it), o_O);
 						}
-
-					} finally {
-						inProgress.unregister(it);
 					}
 				});
 	}
