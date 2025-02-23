@@ -16,11 +16,7 @@
 package org.springframework.modulith.observability.support;
 
 import io.micrometer.core.instrument.Counter;
-import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.Observation.Event;
-import io.micrometer.observation.ObservationRegistry;
-
-import java.util.function.Supplier;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -35,8 +31,7 @@ import org.springframework.util.Assert;
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<ObservationRegistry> observationRegistry;
-	private final Supplier<MeterRegistry> meterRegistry;
+	private final ObservationContext context;
 	private final CrossModuleEventCounterFactory factory;
 
 	/**
@@ -44,22 +39,18 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	 * {@link ObservationRegistry} and {@link MeterRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param observationRegistrySupplier must not be {@literal null}.
-	 * @param meterRegistrySupplier must not be {@literal null}.
+	 * @param context must not be {@literal null}.
 	 * @param counterFactory must not be {@literal null}.
 	 */
-	public ModuleEventListener(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistrySupplier, Supplier<MeterRegistry> meterRegistrySupplier,
+	public ModuleEventListener(ApplicationModulesRuntime runtime, ObservationContext context,
 			CrossModuleEventCounterFactory counterFactory) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(observationRegistrySupplier, "ObservationRegistry must not be null!");
-		Assert.notNull(meterRegistrySupplier, "MeterRegistry must not be null!");
+		Assert.notNull(context, "ObservationContext must not be null!");
 		Assert.notNull(counterFactory, "ModulithEventCounterFactory must not be null!");
 
 		this.runtime = runtime;
-		this.observationRegistry = observationRegistrySupplier;
-		this.meterRegistry = meterRegistrySupplier;
+		this.context = context;
 		this.factory = counterFactory;
 	}
 
@@ -89,7 +80,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		var registry = meterRegistry.get();
+		var registry = context.getMeterRegistry();
 
 		if (registry != null) {
 
@@ -98,10 +89,10 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
 					.register(registry).increment();
 
-			factory.createCounterBuilder(event).register(registry).increment();
+			factory.createCounterBuilder(object).register(registry).increment();
 		}
 
-		var observation = observationRegistry.get().getCurrentObservation();
+		var observation = context.getObservationRegistry().getCurrentObservation();
 
 		if (observation == null) {
 			return;

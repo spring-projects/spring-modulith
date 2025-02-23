@@ -28,7 +28,7 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @since 1.4
  */
-public class ModulithContext extends Context {
+class ModulithContext extends Context {
 
 	private final ObservedModule module;
 	private final MethodInvocation invocation;

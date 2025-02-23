@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.observability.support;
 
-import io.micrometer.observation.ObservationRegistry;
-
 import java.util.function.Supplier;
 
 import org.aopalliance.intercept.MethodInterceptor;
@@ -25,7 +23,6 @@ import org.springframework.aop.support.DefaultPointcutAdvisor;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.env.Environment;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
 import org.springframework.lang.Nullable;
@@ -42,26 +39,24 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 		implements BeanPostProcessor {
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<ObservationRegistry> observationRegistry;
-	private final Environment environment;
+	private final ObservationContext context;
 
 	/**
 	 * Creates a new {@link SpringDataRestModuleObservabilityBeanPostProcessor} for the given
-	 * {@link ApplicationModulesRuntime} and {@link ObservationRegistry}.
+	 * {@link ApplicationModulesRuntime} and {@link ObservationContext}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.
 	 * @param environment must not be {@literal null}.
 	 */
 	public SpringDataRestModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistry, Environment environment) {
+			ObservationContext context) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+		Assert.notNull(context, "ObservationRegistry must not be null!");
 
 		this.runtime = runtime;
-		this.observationRegistry = observationRegistry;
-		this.environment = environment;
+		this.context = context;
 	}
 
 	/*
@@ -77,7 +72,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 			return bean;
 		}
 
-		var interceptor = new DataRestControllerInterceptor(runtime, observationRegistry, environment);
+		var interceptor = new DataRestControllerInterceptor(runtime, context);
 		var advisor = new DefaultPointcutAdvisor(interceptor);
 
 		return addAdvisor(bean, advisor, it -> it.setProxyTargetClass(true));
@@ -86,27 +81,22 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 	private static class DataRestControllerInterceptor implements MethodInterceptor {
 
 		private final Supplier<ApplicationModules> modules;
-		private final Supplier<ObservationRegistry> observationRegistry;
-		private final Environment environment;
+		private final ObservationContext context;
 
 		/**
-		 * Creates a new {@link DataRestControllerInterceptor} for the given {@link ApplicationModules} and {@link Tracer}.
+		 * Creates a new {@link DataRestControllerInterceptor} for the given {@link ApplicationModules} and
+		 * {@link ObservationContext}.
 		 *
 		 * @param modules must not be {@literal null}.
-		 * @param observationRegistry must not be {@literal null}.
-		 * @param environment must not be {@literal null}.
+		 * @param context must not be {@literal null}.
 		 */
-		private DataRestControllerInterceptor(Supplier<ApplicationModules> modules,
-				Supplier<ObservationRegistry> observationRegistry,
-				Environment environment) {
+		private DataRestControllerInterceptor(Supplier<ApplicationModules> modules, ObservationContext context) {
 
 			Assert.notNull(modules, "ApplicationModules must not be null!");
-			Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
-			Assert.notNull(environment, "Environment must not be null!");
+			Assert.notNull(context, "ObservationContext must not be null!");
 
 			this.modules = modules;
-			this.observationRegistry = observationRegistry;
-			this.environment = environment;
+			this.context = context;
 		}
 
 		/*
@@ -124,7 +114,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 
 			var observed = new DefaultObservedModule(module);
 
-			return ModuleEntryInterceptor.of(observed, observationRegistry.get(), environment).invoke(invocation);
+			return ModuleEntryInterceptor.of(observed, context).invoke(invocation);
 		}
 
 		@Nullable

@@ -15,14 +15,11 @@
  */
 package org.springframework.modulith.observability.autoconfigure;
 
-import io.micrometer.observation.ObservationRegistry;
-
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.springframework.data.rest.webmvc.RepositoryController;
+import org.springframework.modulith.observability.support.ObservationContext;
 import org.springframework.modulith.observability.support.SpringDataRestModuleObservabilityBeanPostProcessor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
@@ -35,8 +32,7 @@ class SpringDataRestModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static SpringDataRestModuleObservabilityBeanPostProcessor springDataRestModuleTracingBeanPostProcessor(
-			ApplicationModulesRuntime runtime, ObjectProvider<ObservationRegistry> observationRegistry, Environment environment) {
-
-		return new SpringDataRestModuleObservabilityBeanPostProcessor(runtime, () -> observationRegistry.getObject(), environment);
+			ApplicationModulesRuntime runtime, ObservationContext context) {
+		return new SpringDataRestModuleObservabilityBeanPostProcessor(runtime, context);
 	}
 }

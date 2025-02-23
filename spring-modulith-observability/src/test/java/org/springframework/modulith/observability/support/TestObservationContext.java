@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 the original author or authors.
+ * Copyright 2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,23 +15,19 @@
  */
 package org.springframework.modulith.observability.support;
 
-import io.micrometer.observation.Observation.Context;
-import io.micrometer.observation.ObservationConvention;
+import io.micrometer.observation.ObservationRegistry;
+
+import org.springframework.mock.env.MockEnvironment;
 
 /**
- * {@link ObservationConvention} for {@link ModulithContext}.
+ * A simple {@link ObservationContext} extension for testing purposes
  *
- * @author Marcin Grzejszczak
+ * @author Oliver Drotbohm
  * @since 1.4
  */
-interface ModulithObservationConvention extends ObservationConvention<ModulithContext> {
+class TestObservationContext extends ObservationContext {
 
-	/*
-	 * (non-Javadoc)
-	 * @see io.micrometer.observation.ObservationConvention#supportsContext(io.micrometer.observation.Observation.Context)
-	 */
-	@Override
-	default boolean supportsContext(Context context) {
-		return context instanceof ModulithContext;
+	TestObservationContext() {
+		super(() -> ObservationRegistry.NOOP, () -> null, new MockEnvironment());
 	}
 }

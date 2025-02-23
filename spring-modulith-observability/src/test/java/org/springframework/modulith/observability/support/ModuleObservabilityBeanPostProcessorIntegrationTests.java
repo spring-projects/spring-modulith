@@ -19,7 +19,6 @@ import static org.assertj.core.api.Assertions.*;
 
 import example.ExampleApplication;
 import example.sample.SampleComponent;
-import io.micrometer.observation.ObservationRegistry;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.Advisor;
@@ -28,7 +27,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
 import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor.ApplicationModuleObservingAdvisor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
@@ -71,8 +69,8 @@ class ModuleObservabilityBeanPostProcessorIntegrationTests {
 			var modulesRuntime = new ApplicationModulesRuntime(() -> TestApplicationModules.of(ExampleApplication.class),
 					runtime);
 
-			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP,
-					context.getBeanFactory(), context.getEnvironment());
+			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, new TestObservationContext(),
+					context.getBeanFactory());
 		}
 	}
 

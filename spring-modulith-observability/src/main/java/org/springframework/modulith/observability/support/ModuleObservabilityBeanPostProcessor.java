@@ -15,13 +15,10 @@
  */
 package org.springframework.modulith.observability.support;
 
-import io.micrometer.observation.ObservationRegistry;
-
 import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Supplier;
 
 import org.springframework.aop.Advisor;
 import org.springframework.aop.framework.Advised;
@@ -34,7 +31,6 @@ import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.Ordered;
-import org.springframework.core.env.Environment;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -50,34 +46,29 @@ public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySup
 	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<ObservationRegistry> observationRegistry;
+	private final ObservationContext context;
 	private final Map<String, Advisor> advisors;
 	private final ConfigurableListableBeanFactory factory;
-	private final Environment environment;
 
 	/**
 	 * Creates a new {@link ModuleObservabilityBeanPostProcessor} for the given {@link ApplicationModulesRuntime} and
-	 * {@link ObservationRegistry}.
+	 * {@link ObservationContext}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param observationRegistry must not be {@literal null}.
+	 * @param context must not be {@literal null}.
 	 * @param factory must not be {@literal null}.
-	 * @param environment must not be {@literal null}.
 	 */
-	public ModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory,
-			Environment environment) {
+	public ModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime, ObservationContext context,
+			ConfigurableListableBeanFactory factory) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+		Assert.notNull(context, "ObservationRegistry must not be null!");
 		Assert.notNull(factory, "BeanFactory must not be null!");
-		Assert.notNull(environment, "Environment must not be null!");
 
 		this.runtime = runtime;
-		this.observationRegistry = observationRegistry;
+		this.context = context;
 		this.advisors = new HashMap<>();
 		this.factory = factory;
-		this.environment = environment;
 	}
 
 	/*
@@ -141,8 +132,7 @@ public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySup
 	private Advisor getOrBuildAdvisor(ObservedModule module, ObservedModuleType type) {
 
 		return advisors.computeIfAbsent(module.getIdentifier().toString(), __ -> {
-			return new ApplicationModuleObservingAdvisor(type,
-					ModuleEntryInterceptor.of(module, observationRegistry.get(), environment));
+			return new ApplicationModuleObservingAdvisor(type, ModuleEntryInterceptor.of(module, context));
 		});
 	}
 
