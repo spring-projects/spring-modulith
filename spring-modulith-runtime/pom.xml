@@ -12,7 +12,6 @@
 
 	<properties>
 		<module.name>org.springframework.modulith.runtime</module.name>
-		<spring-framework.version>6.2.2</spring-framework.version>
 	</properties>
 
 	<dependencies>
