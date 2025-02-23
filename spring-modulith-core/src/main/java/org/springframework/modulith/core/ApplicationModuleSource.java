@@ -199,7 +199,7 @@ public class ApplicationModuleSource {
 				@Override
 				public Optional<ApplicationModuleIdentifier> lookupIdentifier(JavaPackage pkg) {
 
-					return pkg.getAnnotation(annotation)
+					return pkg.findAnnotation(annotation)
 							.map(extractor)
 							.filter(StringUtils::hasText)
 							.map(ApplicationModuleIdentifier::of);
