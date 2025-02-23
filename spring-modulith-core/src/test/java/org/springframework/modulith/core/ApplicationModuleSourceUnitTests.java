@@ -56,4 +56,17 @@ class ApplicationModuleSourceUnitTests {
 				.contains("module", // picked from package name not from annotation in nested package
 						"gh-1042-nested"); // from annotation in nested package
 	}
+
+	@Test // GH-1052
+	void detectsApplicationModuleMetadataOnAnnotatedType() {
+
+		var pkg = TestUtils.getPackage("reproducers");
+
+		var sources = ApplicationModuleSource.from(pkg, root -> root.getSubPackage("gh1052").stream(), false);
+
+		assertThat(sources).hasSize(1)
+				.extracting(ApplicationModuleSource::getIdentifier)
+				.extracting(ApplicationModuleIdentifier::toString)
+				.containsExactly("on-marker-type");
+	}
 }

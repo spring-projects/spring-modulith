@@ -271,8 +271,9 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 */
 	public <A extends Annotation> Optional<A> getAnnotation(Class<A> annotationType) {
 
-		return packageClasses.that(have(simpleName(PACKAGE_INFO_NAME)) //
-				.and(are(metaAnnotatedWith(annotationType)))) //
+		var isPackageInfo = have(simpleName(PACKAGE_INFO_NAME)).or(are(metaAnnotatedWith(PackageInfo.class)));
+
+		return packageClasses.that(isPackageInfo.and(are(metaAnnotatedWith(annotationType)))) //
 				.toOptional() //
 				.map(it -> it.reflect())
 				.map(it -> AnnotatedElementUtils.getMergedAnnotation(it, annotationType));
@@ -384,23 +385,22 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 */
 	public <A extends Annotation> Optional<A> findAnnotation(Class<A> annotationType) {
 
-		return getAnnotation(annotationType)
-				.or(() -> {
+		var isPackageInfo = have(simpleName(PACKAGE_INFO_NAME)).or(are(metaAnnotatedWith(PackageInfo.class)));
 
-					var annotatedTypes = toSingle().packageClasses
-							.that(are(metaAnnotatedWith(PackageInfo.class).and(are(metaAnnotatedWith(annotationType)))))
-							.stream()
-							.map(it -> it.getAnnotationOfType(annotationType))
-							.toList();
+		var annotatedTypes = toSingle().packageClasses
+				.that(isPackageInfo.and(are(metaAnnotatedWith(annotationType))))
+				.stream()
+				.map(JavaClass::reflect)
+				.map(it -> AnnotatedElementUtils.findMergedAnnotation(it, annotationType))
+				.toList();
 
-					if (annotatedTypes.size() > 1) {
+		if (annotatedTypes.size() > 1) {
 
-						throw new IllegalStateException(MULTIPLE_TYPES_ANNOTATED_WITH.formatted(name,
-								FormattableType.of(annotationType).getAbbreviatedFullName(), annotatedTypes));
-					}
+			throw new IllegalStateException(MULTIPLE_TYPES_ANNOTATED_WITH.formatted(name,
+					FormattableType.of(annotationType).getAbbreviatedFullName(), annotatedTypes));
+		}
 
-					return annotatedTypes.isEmpty() ? Optional.empty() : Optional.of(annotatedTypes.get(0));
-				});
+		return annotatedTypes.isEmpty() ? Optional.empty() : Optional.of(annotatedTypes.get(0));
 	}
 
 	/**

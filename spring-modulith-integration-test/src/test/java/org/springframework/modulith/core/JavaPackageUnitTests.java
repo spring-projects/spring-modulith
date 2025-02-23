@@ -53,7 +53,7 @@ class JavaPackageUnitTests {
 	void findsAnnotationOnPackageInfo() {
 
 		var annotation = JavaPackage.of(Classes.of(PKG_CLASSES), "pkg.onpackage") //
-				.getAnnotation(ApplicationModule.class);
+				.findAnnotation(ApplicationModule.class);
 
 		assertThat(annotation).hasValueSatisfying(it -> {
 			assertThat(it.displayName()).isEqualTo("onPackage");
