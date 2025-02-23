@@ -13,9 +13,11 @@ jobs:
         version:
         - '3.1.12'
         - '3.2.12'
-        - '3.3.9-SNAPSHOT'
-        - '3.4.1'
-        - '3.4.2-SNAPSHOT'
+        - '3.3.10-SNAPSHOT'
+        - '3.4.3'
+        - '3.4.4-SNAPSHOT'
+        - '3.5.0-M2'
+        - '3.5.0-SNAPSHOT'
         jmolecules:
         - '2023.2.1'
         - '2025.0.0-RC2'
