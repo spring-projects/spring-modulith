@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.observability.support;
 
+import io.micrometer.core.instrument.Counter;
 import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.Scope;
 
@@ -111,7 +112,54 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 		var observation = Observation.createNotStarted(convention, DEFAULT,
 				() -> modulithContext, observationRegistry);
 
-		return new ObservingInvocationAdapter(observation).invoke(invocation);
+		MethodInterceptor adapter = new ObservingInvocationAdapter(observation);
+
+		if (context.hasMeterRegistry() && module.isEventListenerInvocation(invocation)) {
+			adapter = new EventCountingInvocationAdapter(adapter);
+		}
+
+		return adapter.invoke(invocation);
+	}
+
+	private class EventCountingInvocationAdapter implements MethodInterceptor {
+
+		private final MethodInterceptor delegate;
+
+		EventCountingInvocationAdapter(MethodInterceptor delegate) {
+			this.delegate = delegate;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
+		 */
+		@Override
+		public Object invoke(MethodInvocation invocation) throws Throwable {
+
+			var builder = Counter.builder("module.listener.invocation")
+					.tag("method", invocation.getMethod().getName())
+					.tag("type", invocation.getMethod().getDeclaringClass().getName())
+					.tag("module", module.getDisplayName());
+
+			try {
+
+				var result = delegate.invoke(invocation);
+
+				builder.tag("success", "true");
+
+				return result;
+
+			} catch (Exception o_O) {
+
+				builder.tag("success", "false");
+
+				throw o_O;
+
+			} finally {
+
+				builder.register(context.getMeterRegistry()).increment();
+			}
+		}
 	}
 
 	private class ObservingInvocationAdapter implements MethodInterceptor {
