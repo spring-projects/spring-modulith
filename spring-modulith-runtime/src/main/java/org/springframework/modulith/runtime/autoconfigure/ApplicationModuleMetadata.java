@@ -99,8 +99,8 @@ class ApplicationModuleMetadata {
 
 			LOGGER.debug("Using application module metadata located in {}.", description);
 
-			try {
-				this.document = JsonPath.parse(metadata.getFile());
+			try (var inputStream = metadata.getInputStream()) {
+				this.document = JsonPath.parse(inputStream);
 			} catch (IOException e) {
 				throw new UncheckedIOException(e);
 			}
