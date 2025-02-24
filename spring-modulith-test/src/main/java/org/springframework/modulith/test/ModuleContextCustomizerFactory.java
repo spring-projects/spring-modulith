@@ -92,6 +92,15 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			context.addApplicationListener(events);
 		}
 
+		/**
+		 * Returns the underlying initialized {@link ModuleTestExecution}.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		ModuleTestExecution getExecution() {
+			return execution.get();
+		}
+
 		private static void logModules(ModuleTestExecution execution) {
 
 			var module = execution.getModule();
