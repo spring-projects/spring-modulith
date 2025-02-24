@@ -76,7 +76,7 @@ Can either be the class name of a custom implementation of `ApplicationModuleDet
 
 |`spring.modulith.events.neo4j.event-index.enabled`
 |`false`
-|Whether to create indexes on the .
+|Whether to create indexes on the Neo4j event publication event hash property.
 
 |`spring.modulith.events.rabbitmq.enable-json`
 |`true`
