@@ -63,12 +63,9 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		private static final Logger LOGGER = LoggerFactory.getLogger(ModuleContextCustomizer.class);
 
 		private final Supplier<ModuleTestExecution> execution;
-		private final Class<?> source;
 
 		ModuleContextCustomizer(Class<?> testClass) {
-
 			this.execution = ModuleTestExecution.of(testClass);
-			this.source = testClass;
 		}
 
 		/*
@@ -166,6 +163,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		 */
 		@Override
 		public boolean equals(Object obj) {
+
 			if (this == obj) {
 				return true;
 			}
@@ -174,7 +172,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 				return false;
 			}
 
-			return Objects.equals(this.source, that.source);
+			return Objects.equals(this.execution.get(), that.execution.get());
 		}
 
 		/*
@@ -183,7 +181,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		 */
 		@Override
 		public int hashCode() {
-			return Objects.hashCode(source);
+			return Objects.hashCode(execution.get());
 		}
 
 		private static void logHeadline(String headline) {
