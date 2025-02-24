@@ -91,7 +91,7 @@ For details, see xref:events.adoc#publication-registry.completion[Event Publicat
 
 |`spring.modulith.events.neo4j.event-index.enabled`
 |`false`
-|Whether to create indexes on the .
+|Whether to create indexes on the Neo4j event publication event hash property.
 
 |`spring.modulith.events.rabbitmq.enable-json`
 |`true`
