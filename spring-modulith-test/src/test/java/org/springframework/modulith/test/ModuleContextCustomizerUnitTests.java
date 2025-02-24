@@ -18,6 +18,7 @@ package org.springframework.modulith.test;
 import static org.assertj.core.api.Assertions.*;
 
 import example.module.SampleTestA;
+import example.module.SampleTestB;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModule;
@@ -34,8 +35,8 @@ class ModuleContextCustomizerUnitTests {
 	@Test
 	void instancesForSameTargetTypeAreEqual() {
 
-		var left = new ModuleContextCustomizer(Object.class);
-		var right = new ModuleContextCustomizer(Object.class);
+		var left = new ModuleContextCustomizer(SampleTestA.class);
+		var right = new ModuleContextCustomizer(SampleTestA.class);
 
 		assertThat(left).isEqualTo(right);
 		assertThat(right).isEqualTo(left);
@@ -52,5 +53,16 @@ class ModuleContextCustomizerUnitTests {
 				.extracting(ApplicationModule::getIdentifier)
 				.extracting(ApplicationModuleIdentifier::toString)
 				.isEqualTo("module");
+	}
+
+	@Test // GH-1050
+	void instancesWithSameModuleSetupAreConsideredEqual() {
+
+		var left = new ModuleContextCustomizer(SampleTestA.class);
+		var right = new ModuleContextCustomizer(SampleTestB.class);
+
+		assertThat(left).isEqualTo(right);
+		assertThat(right).isEqualTo(left);
+		assertThat(left).hasSameHashCodeAs(right);
 	}
 }
