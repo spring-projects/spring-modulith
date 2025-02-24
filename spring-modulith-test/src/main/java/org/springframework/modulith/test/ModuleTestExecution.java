@@ -31,8 +31,10 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.test.context.AnnotatedClassFinder;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.util.ObjectUtils;
@@ -46,9 +48,18 @@ import org.springframework.util.function.SingletonSupplier;
 public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleTestExecution.class);
+	private static final ApplicationModulesFactory BOOTSTRAP;
 
 	private static Map<Class<?>, Class<?>> MODULITH_TYPES = new HashMap<>();
 	private static Map<Key, ModuleTestExecution> EXECUTIONS = new HashMap<>();
+
+	static {
+
+		var factories = SpringFactoriesLoader.loadFactories(ApplicationModulesFactory.class,
+				ModuleTestExecution.class.getClassLoader());
+
+		BOOTSTRAP = !factories.isEmpty() ? factories.get(0) : ApplicationModulesFactory.defaultFactory();
+	}
 
 	private final Key key;
 
@@ -98,7 +109,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
 			var packageName = type.getPackage().getName();
-			var modules = ApplicationModules.of(findSpringBootApplicationByClasses(annotation, type));
+			var modules = BOOTSTRAP.of(findSpringBootApplicationByClasses(annotation, type));
 			var moduleName = annotation.module();
 
 			var module = StringUtils.hasText(moduleName)

@@ -17,7 +17,11 @@ package org.springframework.modulith.test;
 
 import static org.assertj.core.api.Assertions.*;
 
+import example.module.SampleTestA;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.test.ModuleContextCustomizerFactory.ModuleContextCustomizer;
 
 /**
@@ -36,5 +40,17 @@ class ModuleContextCustomizerUnitTests {
 		assertThat(left).isEqualTo(right);
 		assertThat(right).isEqualTo(left);
 		assertThat(left).hasSameHashCodeAs(right);
+	}
+
+	@Test // GH-1090
+	void usesTestClassIfConfigured() {
+
+		var customizer = new ModuleContextCustomizer(SampleTestA.class);
+		var execution = customizer.getExecution();
+
+		assertThat(execution.getModule())
+				.extracting(ApplicationModule::getIdentifier)
+				.extracting(ApplicationModuleIdentifier::toString)
+				.isEqualTo("module");
 	}
 }
