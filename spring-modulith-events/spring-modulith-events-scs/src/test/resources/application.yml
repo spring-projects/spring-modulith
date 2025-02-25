@@ -17,11 +17,17 @@ spring.h2.console.enabled: true
 spring.sql.init.platform: h2
 
 spring:
+  kafka:
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
   cloud:
     stream:
       bindings:
         customers-json-out-0:
           destination: customers-json-topic
         customers-avro-out-0:
+          destination: customers-avro-topic
+          content-type: application/*+avro
+        customers-avro-externalized-out-0:
           destination: customers-avro-topic
           content-type: application/*+avro

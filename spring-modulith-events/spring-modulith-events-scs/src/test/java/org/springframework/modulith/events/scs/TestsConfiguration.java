@@ -1,6 +1,8 @@
 package org.springframework.modulith.events.scs;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaMessageConverter;
+import org.springframework.cloud.stream.schema.avro.AvroSchemaServiceManagerImpl;
 import org.springframework.modulith.events.scs.config.EnableSpringCloudStreamEventExternalization;
 import org.springframework.modulith.events.scs.dtos.avro.CustomerEvent;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -11,6 +13,7 @@ import org.springframework.kafka.test.EmbeddedKafkaZKBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
+import org.springframework.modulith.events.scs.dtos.avro.ExternalizedCustomerEvent;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +37,11 @@ public class TestsConfiguration {
     @Bean
     CustomerEventsProducer customerEventsProducer(ApplicationEventPublisher applicationEventPublisher) {
         return new CustomerEventsProducer(applicationEventPublisher);
+    }
+
+    @Bean
+    public static AvroSchemaMessageConverter avroSchemaMessageConverter() {
+        return new AvroSchemaMessageConverter(new AvroSchemaServiceManagerImpl());
     }
 
     static class CustomerEventsProducer {
@@ -70,7 +78,7 @@ public class TestsConfiguration {
         }
 
         @Transactional(propagation = Propagation.REQUIRES_NEW)
-        public void onCustomerEventAvroPojo(CustomerEvent event) {
+        public void onCustomerEventAvroPojo(ExternalizedCustomerEvent event) {
             applicationEventPublisher.publishEvent(event);
         }
 
