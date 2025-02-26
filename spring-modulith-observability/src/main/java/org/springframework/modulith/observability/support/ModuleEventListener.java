@@ -74,8 +74,8 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		var object = payloadEvent.getPayload();
-		var payloadType = object.getClass();
+		var payload = payloadEvent.getPayload();
+		var payloadType = payload.getClass();
 
 		if (!runtime.isApplicationClass(payloadType)) {
 			return;
@@ -98,7 +98,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
 					.register(registry).increment();
 
-			factory.createCounterBuilder(event).register(registry).increment();
+			factory.createCounterBuilder(payload).register(registry).increment();
 		}
 
 		var observation = observationRegistry.get().getCurrentObservation();
