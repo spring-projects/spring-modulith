@@ -18,16 +18,18 @@ package org.springframework.modulith.core;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates.*;
 import static com.tngtech.archunit.core.domain.properties.HasModifiers.Predicates.*;
-import static java.util.stream.Collectors.*;
 import static org.springframework.modulith.core.SyntacticSugar.*;
 
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -58,8 +60,8 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 			has(simpleName(PACKAGE_INFO_NAME)).or(is(metaAnnotatedWith(PackageInfo.class)));
 
 	private final PackageName name;
-	private final Classes classes, packageClasses;
-	private final Supplier<Set<JavaPackage>> directSubPackages;
+	private final Classes classes;
+	private final Supplier<SortedSet<JavaPackage>> directSubPackages;
 	private final Supplier<JavaPackages> subPackages;
 
 	/**
@@ -67,23 +69,35 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 *
 	 * @param classes must not be {@literal null}.
 	 * @param name must not be {@literal null}.
-	 * @param includeSubPackages
+	 * @param includeSubPackages whether to include sub-packages.
 	 */
 	private JavaPackage(Classes classes, PackageName name, boolean includeSubPackages) {
 
+		this(classes.that(resideInAPackage(name.asFilter(includeSubPackages))), name, includeSubPackages
+				? SingletonSupplier.of(() -> detectSubPackages(classes, name))
+				: SingletonSupplier.of(JavaPackages.NONE));
+	}
+
+	/**
+	 * Creates a new {@link JavaPackage} for the given {@link Classes}, name and pre-computed sub-packages.
+	 *
+	 * @param classes must not be {@literal null}.
+	 * @param name must not be {@literal null}.
+	 * @param subpackages must not be {@literal null}.
+	 * @see #detectSubPackages(Classes, PackageName)
+	 */
+	private JavaPackage(Classes classes, PackageName name, Supplier<JavaPackages> subpackages) {
+
 		Assert.notNull(classes, "Classes must not be null!");
+		Assert.notNull(name, "PackageName must not be null!");
+		Assert.notNull(subpackages, "Sub-packages must not be null!");
 
-		this.classes = classes;
-		this.packageClasses = classes
-				.that(resideInAPackage(name.asFilter(includeSubPackages)));
+		this.classes = classes.that(resideInAPackage(name.asFilter(true)));
 		this.name = name;
-
-		this.directSubPackages = () -> detectSubPackages()
+		this.subPackages = subpackages;
+		this.directSubPackages = SingletonSupplier.of(() -> subPackages.get().stream()
 				.filter(this::isDirectParentOf)
-				.collect(Collectors.toUnmodifiableSet());
-
-		this.subPackages = SingletonSupplier.of(() -> detectSubPackages()
-				.collect(collectingAndThen(toUnmodifiableList(), JavaPackages::new)));
+				.collect(Collectors.toCollection(TreeSet::new)));
 	}
 
 	/**
@@ -167,7 +181,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 * @return will never be {@literal null}.
 	 */
 	public Classes getClasses() {
-		return packageClasses;
+		return classes;
 	}
 
 	/**
@@ -177,7 +191,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 */
 	public Classes getExposedClasses() {
 
-		return packageClasses //
+		return classes //
 				.that(doNotHave(simpleName(PACKAGE_INFO_NAME))) //
 				.that(have(modifier(JavaModifier.PUBLIC)));
 	}
@@ -192,7 +206,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		Assert.notNull(annotation, "Annotation must not be null!");
 
-		return packageClasses.that(ARE_PACKAGE_INFOS.and(are(metaAnnotatedWith(annotation)))).stream() //
+		return classes.that(ARE_PACKAGE_INFOS.and(are(metaAnnotatedWith(annotation)))).stream() //
 				.map(JavaClass::getPackageName) //
 				.filter(Predicate.not(name::hasName))
 				.distinct() //
@@ -226,7 +240,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		Assert.notNull(predicate, "Predicate must not be null!");
 
-		return packageClasses.that(predicate);
+		return classes.that(predicate);
 	}
 
 	/**
@@ -238,7 +252,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		Assert.notNull(type, "Type must not be null!");
 
-		return packageClasses.contains(type);
+		return classes.contains(type);
 	}
 
 	/**
@@ -250,7 +264,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		Assert.hasText(typeName, "Type name must not be null or empty!");
 
-		return packageClasses.contains(typeName);
+		return classes.contains(typeName);
 	}
 
 	/**
@@ -259,7 +273,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 * @return will never be {@literal null}.
 	 */
 	public Stream<JavaClass> stream() {
-		return packageClasses.stream();
+		return classes.stream();
 	}
 
 	/**
@@ -273,7 +287,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		var isPackageInfo = have(simpleName(PACKAGE_INFO_NAME)).or(are(metaAnnotatedWith(PackageInfo.class)));
 
-		return packageClasses.that(isPackageInfo.and(are(metaAnnotatedWith(annotationType)))) //
+		return classes.that(isPackageInfo.and(are(metaAnnotatedWith(annotationType)))) //
 				.toOptional() //
 				.map(it -> it.reflect())
 				.map(it -> AnnotatedElementUtils.getMergedAnnotation(it, annotationType));
@@ -343,7 +357,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 				.map(JavaPackage::asFilter)
 				.toArray(String[]::new);
 
-		return packageClasses.that(resideOutsideOfPackages(excludedPackages));
+		return classes.that(resideOutsideOfPackages(excludedPackages));
 	}
 
 	/**
@@ -387,7 +401,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		var isPackageInfo = have(simpleName(PACKAGE_INFO_NAME)).or(are(metaAnnotatedWith(PackageInfo.class)));
 
-		var annotatedTypes = toSingle().packageClasses
+		var annotatedTypes = toSingle().classes
 				.that(isPackageInfo.and(are(metaAnnotatedWith(annotationType))))
 				.stream()
 				.map(JavaClass::reflect)
@@ -425,17 +439,6 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	@Override
 	public String getDescription() {
 		return classes.getDescription();
-	}
-
-	private Stream<JavaPackage> detectSubPackages() {
-
-		return packageClasses.stream() //
-				.map(JavaClass::getPackageName)
-				.filter(Predicate.not(name::hasName))
-				.map(PackageName::of)
-				.flatMap(name::expandUntil)
-				.distinct()
-				.map(it -> new JavaPackage(classes, it, true));
 	}
 
 	/*
@@ -487,8 +490,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		return Objects.equals(this.classes, that.classes) //
 				&& Objects.equals(this.getDirectSubPackages(), that.getDirectSubPackages()) //
-				&& Objects.equals(this.name, that.name) //
-				&& Objects.equals(this.packageClasses, that.packageClasses);
+				&& Objects.equals(this.name, that.name);
 	}
 
 	/*
@@ -497,10 +499,40 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(classes, directSubPackages.get(), name, packageClasses);
+		return Objects.hash(classes, directSubPackages.get(), name);
 	}
 
 	static Comparator<JavaPackage> reverse() {
 		return (left, right) -> -left.compareTo(right);
+	}
+
+	private static JavaPackages detectSubPackages(Classes classes, PackageName name) {
+
+		var packages = new TreeSet<PackageName>(Comparator.reverseOrder());
+
+		for (JavaClass clazz : classes) {
+
+			var candidate = PackageName.of(clazz.getPackageName());
+
+			if (candidate.equals(name)) {
+				continue;
+			}
+
+			name.expandUntil(candidate).forEach(packages::add);
+		}
+
+		var result = new TreeMap<PackageName, JavaPackage>();
+
+		for (PackageName packageName : packages) {
+
+			Supplier<JavaPackages> subPackages = () -> result.entrySet().stream()
+					.filter(it -> it.getKey().isSubPackageOf(packageName))
+					.map(Entry::getValue)
+					.collect(Collectors.collectingAndThen(Collectors.toList(), JavaPackages::new));
+
+			result.put(packageName, new JavaPackage(classes, packageName, SingletonSupplier.of(subPackages)));
+		}
+
+		return new JavaPackages(result.values());
 	}
 }
