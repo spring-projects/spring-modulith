@@ -30,6 +30,7 @@ import java.util.Optional;
 import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.BiPredicate;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -72,7 +73,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 */
 	private JavaPackage(Classes classes, PackageName name, boolean includeSubPackages) {
 
-		this(classes.that(resideInAPackage(name.asFilter(includeSubPackages))), name, includeSubPackages
+		this(classes.thatResideIn(name, includeSubPackages), name, includeSubPackages
 				? SingletonSupplier.of(() -> detectSubPackages(classes, name))
 				: SingletonSupplier.of(JavaPackages.NONE));
 	}
@@ -91,7 +92,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 		Assert.notNull(name, "PackageName must not be null!");
 		Assert.notNull(subpackages, "Sub-packages must not be null!");
 
-		this.classes = classes.that(resideInAPackage(name.asFilter(true)));
+		this.classes = classes.thatResideIn(name, true);
 		this.name = name;
 		this.subPackages = subpackages;
 		this.directSubPackages = SingletonSupplier.of(() -> subPackages.get().stream()
@@ -205,11 +206,8 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		Assert.notNull(annotation, "Annotation must not be null!");
 
-		return classes.that(ARE_PACKAGE_INFOS.and(are(metaAnnotatedWith(annotation)))).stream() //
-				.map(JavaClass::getPackageName) //
-				.filter(Predicate.not(name::hasName))
-				.distinct() //
-				.map(it -> of(classes, it));
+		return getSubPackages().stream()
+				.filter(it -> it.hasAnnotation(annotation));
 	}
 
 	/**
@@ -370,7 +368,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 	/**
 	 * Finds the annotation of the given type declared on the package itself or any type located the direct package's
-	 * types .
+	 * types.
 	 *
 	 * @param <A> the type of the annotation.
 	 * @param annotationType must not be {@literal null}.
@@ -482,6 +480,17 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	@Override
 	public int hashCode() {
 		return Objects.hash(classes, directSubPackages.get(), name);
+	}
+
+	/**
+	 * Returns whether the current {@link JavaPackage}
+	 *
+	 * @param <A>
+	 * @param annotationType
+	 * @return
+	 */
+	private <A extends Annotation> boolean hasAnnotation(Class<A> annotationType) {
+		return findAnnotation(annotationType).isPresent();
 	}
 
 	static Comparator<JavaPackage> reverse() {

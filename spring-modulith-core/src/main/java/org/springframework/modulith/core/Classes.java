@@ -38,7 +38,6 @@ import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.domain.JavaModifier;
-import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.HasName;
 
 /**
@@ -108,6 +107,26 @@ class Classes implements DescribedIterable<JavaClass> {
 		return classes.stream() //
 				.filter((Predicate<JavaClass>) it -> predicate.test(it)) //
 				.collect(Collectors.collectingAndThen(Collectors.toList(), Classes::new));
+	}
+
+	/**
+	 * Returns all classes that reside the given {@link PackageName}.
+	 *
+	 * @param name must not be {@literal null}.
+	 * @param nested whether to include nested packages
+	 * @return will never be {@literal null}.
+	 */
+	Classes thatResideIn(PackageName name, boolean nested) {
+
+		var result = new ArrayList<JavaClass>();
+
+		for (JavaClass candidate : classes) {
+			if (residesIn(name, candidate, nested)) {
+				result.add(candidate);
+			}
+		}
+
+		return new Classes(result);
 	}
 
 	Classes and(Classes classes) {
@@ -266,6 +285,13 @@ class Classes implements DescribedIterable<JavaClass> {
 
 	private static String format(JavaClass type) {
 		return format(type, "");
+	}
+
+	private static boolean residesIn(PackageName reference, JavaClass type, boolean inNested) {
+
+		var typesPackage = PackageName.ofType(type.getFullName());
+
+		return inNested ? reference.contains(typesPackage) : reference.equals(typesPackage);
 	}
 
 	private static class SameClass extends DescribedPredicate<JavaClass> {
