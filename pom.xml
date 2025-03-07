@@ -90,6 +90,7 @@ limitations under the License.
 
 	<dependencyManagement>
 		<dependencies>
+			
 			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>spring-framework-bom</artifactId>
@@ -133,8 +134,9 @@ limitations under the License.
 			</activation>
 
 			<modules>
-				<module>spring-modulith-integration-test</module>
+				<module>spring-modulith-benchmarks</module>
 				<module>spring-modulith-examples</module>
+				<module>spring-modulith-integration-test</module>
 			</modules>
 
 		</profile>
@@ -166,6 +168,7 @@ limitations under the License.
 			<id>prepare-release</id>
 
 			<modules>
+				<module>spring-modulith-benchmarks</module>
 				<module>spring-modulith-distribution</module>
 				<module>spring-modulith-examples</module>
 				<module>spring-modulith-integration-test</module>
