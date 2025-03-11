@@ -86,7 +86,8 @@ class Classes implements DescribedIterable<JavaClass> {
 	}
 
 	/**
-	 * Returns a {@link Collector} creating a {@link Classes} instance from a {@link Stream} of {@link JavaType}.
+	 * Returns a {@link Collector} creating a {@link Classes} instance from a {@link Stream} of
+	 * {@link com.tngtech.archunit.core.domain.JavaType}.
 	 *
 	 * @return will never be {@literal null}.
 	 */
