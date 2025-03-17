@@ -21,9 +21,12 @@ import example.module.SampleTestA;
 import example.module.SampleTestB;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.test.ModuleContextCustomizerFactory.ModuleContextCustomizer;
+import org.springframework.test.context.MergedContextConfiguration;
+import org.springframework.test.context.support.AnnotationConfigContextLoader;
 
 /**
  * Unit tests for {@link ModuleTypeExcludeFilter}.
@@ -64,5 +67,19 @@ class ModuleContextCustomizerUnitTests {
 		assertThat(left).isEqualTo(right);
 		assertThat(right).isEqualTo(left);
 		assertThat(left).hasSameHashCodeAs(right);
+	}
+
+	@Test // GH-1110
+	void registersAssertablePublishedEvents() {
+
+		var context = new AnnotationConfigApplicationContext();
+		var loader = new AnnotationConfigContextLoader();
+
+		new ModuleContextCustomizer(SampleTestA.class)
+				.customizeContext(context, new MergedContextConfiguration(SampleTestA.class, null, null, null, loader));
+
+		assertThat(context.getApplicationListeners()).hasSize(1)
+				.element(0)
+				.isInstanceOf(AssertablePublishedEvents.class);
 	}
 }

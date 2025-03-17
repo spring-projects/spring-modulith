@@ -84,7 +84,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 			beanFactory.registerSingleton(ModuleTestExecutionBeanDefinitionSelector.class.getName(),
 					new ModuleTestExecutionBeanDefinitionSelector(testExecution));
 
-			var events = new DefaultPublishedEvents();
+			var events = PublishedEventsFactory.createPublishedEvents();
 			beanFactory.registerSingleton(events.getClass().getName(), events);
 			context.addApplicationListener(events);
 		}
