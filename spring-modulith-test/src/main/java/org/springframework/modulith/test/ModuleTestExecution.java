@@ -36,6 +36,7 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.JavaPackage;
+import org.springframework.modulith.core.PackageName;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -134,8 +135,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 	public boolean includes(String className) {
 
-		var result = modules.withinRootPackages(className) //
-				|| basePackages.get().stream().anyMatch(it -> it.contains(className));
+		var result = isLocatedInRootPackageOrContainedInBasePackages(className);
 
 		if (result) {
 			LOGGER.trace("Including class {}.", className);
@@ -237,6 +237,17 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	@Override
 	public int hashCode() {
 		return Objects.hash(key);
+	}
+
+	private boolean isLocatedInRootPackageOrContainedInBasePackages(String className) {
+
+		if (modules.withinRootPackages(className)) {
+			return true;
+		}
+
+		var candidate = PackageName.ofType(className);
+
+		return basePackages.get().stream().map(JavaPackage::getPackageName).anyMatch(it -> it.contains(candidate));
 	}
 
 	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation,

@@ -30,9 +30,9 @@ import org.springframework.util.ClassUtils;
  * last.
  *
  * @author Oliver Drotbohm
- * @since 1.2
+ * @since 1.4, previously package private since 1.2
  */
-class PackageName implements Comparable<PackageName> {
+public class PackageName implements Comparable<PackageName> {
 
 	private static final Map<String, PackageName> PACKAGE_NAMES = new HashMap<>();
 
@@ -68,8 +68,9 @@ class PackageName implements Comparable<PackageName> {
 	 *
 	 * @param fullyQualifiedName must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
+	 * @since 1.4
 	 */
-	static PackageName ofType(String fullyQualifiedName) {
+	public static PackageName ofType(String fullyQualifiedName) {
 
 		Assert.notNull(fullyQualifiedName, "Type name must not be null!");
 
@@ -191,8 +192,9 @@ class PackageName implements Comparable<PackageName> {
 	 * sub-package of it.
 	 *
 	 * @param reference must not be {@literal null}.
+	 * @since 1.4
 	 */
-	boolean contains(PackageName reference) {
+	public boolean contains(PackageName reference) {
 
 		Assert.notNull(reference, "Reference package name must not be null!");
 

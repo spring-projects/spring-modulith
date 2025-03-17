@@ -293,9 +293,9 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 * Returns the name of the package.
 	 *
 	 * @return will never be {@literal null}.
-	 * @since 1.3
+	 * @since 1.4, package protected since 1.3
 	 */
-	PackageName getPackageName() {
+	public PackageName getPackageName() {
 		return name;
 	}
 

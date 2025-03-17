@@ -340,13 +340,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * modules.
 	 *
 	 * @param className must not be {@literal null} or empty.
-	 * @return
 	 */
 	public boolean withinRootPackages(String className) {
 
 		Assert.hasText(className, "Class name must not be null or empty!");
 
-		return rootPackages.stream().anyMatch(it -> it.contains(className));
+		var candidate = PackageName.ofType(className);
+
+		return rootPackages.stream()
+				.map(JavaPackage::getPackageName)
+				.anyMatch(candidate::equals);
 	}
 
 	/**
