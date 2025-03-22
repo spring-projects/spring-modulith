@@ -13,7 +13,7 @@
 	<name>Spring Modulith - Starters - Starter Neo4j</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.starter.neo4j</module.name>
+		<module.name>spring.modulith.starter.neo4j</module.name>
 	</properties>
 
 	<dependencies>

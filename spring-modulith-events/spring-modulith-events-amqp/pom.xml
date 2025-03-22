@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-amqp</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.amqp</module.name>
+		<module.name>spring.modulith.events.amqp</module.name>
 	</properties>
 
 	<dependencies>

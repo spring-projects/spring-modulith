@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-integration-test</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.integrationtests</module.name>
+		<module.name>spring.modulith.integrationtests</module.name>
 	</properties>
 
 	<dependencies>

@@ -13,7 +13,7 @@
 	<artifactId>spring-modulith-events-core</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.core</module.name>
+		<module.name>spring.modulith.events.core</module.name>
 	</properties>
 
 	<dependencies>

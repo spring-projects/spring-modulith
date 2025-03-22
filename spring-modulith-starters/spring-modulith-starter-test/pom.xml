@@ -12,7 +12,7 @@
 	<name>Spring Modulith - Starters - Starter Test</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.starter.test</module.name>
+		<module.name>spring.modulith.starter.test</module.name>
 	</properties>
 
 	<dependencies>

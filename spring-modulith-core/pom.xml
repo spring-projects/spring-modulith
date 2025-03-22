@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-core</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.core</module.name>
+		<module.name>spring.modulith.core</module.name>
 	</properties>
 
 	<dependencies>

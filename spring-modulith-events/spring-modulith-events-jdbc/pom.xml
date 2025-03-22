@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-jdbc</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.jdbc</module.name>
+		<module.name>spring.modulith.events.jdbc</module.name>
 	</properties>
 
 	<dependencyManagement>

@@ -10,7 +10,7 @@
 	<artifactId>spring-modulith-events-tests</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.integrationtests</module.name>
+		<module.name>spring.modulith.events.integrationtests</module.name>
 	</properties>
 
 	<dependencies>

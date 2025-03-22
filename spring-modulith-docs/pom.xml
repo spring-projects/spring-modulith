@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-docs</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.docs</module.name>
+		<module.name>spring.modulith.docs</module.name>
 	</properties>
 
 	<dependencies>

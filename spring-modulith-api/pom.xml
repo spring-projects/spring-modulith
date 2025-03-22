@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-api</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.api</module.name>
+		<module.name>spring.modulith.api</module.name>
 	</properties>
 
 	<dependencies>

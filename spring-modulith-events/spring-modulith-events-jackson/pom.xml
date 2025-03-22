@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-jackson</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.jackson</module.name>
+		<module.name>spring.modulith.events.jackson</module.name>
 	</properties>
 
 	<dependencies>

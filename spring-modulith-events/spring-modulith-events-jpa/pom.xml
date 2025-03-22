@@ -13,7 +13,7 @@
 
 	<properties>
 		<java.version>17</java.version>
-		<module.name>org.springframework.modulith.events.jpa</module.name>
+		<module.name>spring.modulith.events.jpa</module.name>
 	</properties>
 
 	<dependencies>

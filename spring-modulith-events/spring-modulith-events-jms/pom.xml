@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-jms</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.jms</module.name>
+		<module.name>spring.modulith.events.jms</module.name>
 	</properties>
 
 	<dependencies>

@@ -13,7 +13,7 @@
 	<name>Spring Modulith - Starters - Starter Core</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.starter.core</module.name>
+		<module.name>spring.modulith.starter.core</module.name>
 	</properties>
 
 	<dependencies>

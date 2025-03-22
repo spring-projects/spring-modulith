@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-messaging</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.messaging</module.name>
+		<module.name>spring.modulith.events.messaging</module.name>
 	</properties>
 
 	<dependencies>

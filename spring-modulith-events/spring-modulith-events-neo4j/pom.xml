@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-neo4j</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.neo4j</module.name>
+		<module.name>spring.modulith.events.neo4j</module.name>
 	</properties>
 
 	<dependencies>

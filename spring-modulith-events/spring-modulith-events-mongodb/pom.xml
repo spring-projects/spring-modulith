@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-mongodb</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.mongodb</module.name>
+		<module.name>spring.modulith.events.mongodb</module.name>
 	</properties>
 
 	<dependencies>

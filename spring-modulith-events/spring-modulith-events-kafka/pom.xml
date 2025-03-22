@@ -12,7 +12,7 @@
 	<artifactId>spring-modulith-events-kafka</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.events.kafka</module.name>
+		<module.name>spring.modulith.events.kafka</module.name>
 	</properties>
 
 	<dependencies>

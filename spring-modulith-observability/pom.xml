@@ -12,7 +12,7 @@
 	<name>Spring Modulith - Observability</name>
 
 	<properties>
-		<module.name>org.springframework.modulith.observability</module.name>
+		<module.name>spring.modulith.observability</module.name>
 
 		<micrometer-docs-generator.version>1.0.4</micrometer-docs-generator.version>
 		<micrometer-docs-generator.inputPath>${project.basedir}/src/main/java/</micrometer-docs-generator.inputPath>
