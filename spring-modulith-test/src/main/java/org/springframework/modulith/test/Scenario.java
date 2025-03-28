@@ -18,6 +18,7 @@ package org.springframework.modulith.test;
 import static org.assertj.core.api.Assertions.*;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 import java.util.function.BiConsumer;
@@ -34,8 +35,6 @@ import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.util.CheckReturnValue;
 import org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
-import org.springframework.modulith.test.Scenario.When.EventResult;
-import org.springframework.modulith.test.Scenario.When.StateChangeResult;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionOperations;
@@ -61,6 +60,10 @@ public class Scenario {
 
 		if (it instanceof Optional<?> o) {
 			return o.isPresent();
+		}
+
+		if (it instanceof Collection<?> c) {
+			return !c.isEmpty();
 		}
 
 		if (it instanceof Boolean b) {

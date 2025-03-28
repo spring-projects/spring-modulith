@@ -23,7 +23,9 @@ import lombok.RequiredArgsConstructor;
 
 import java.lang.Thread.UncaughtExceptionHandler;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -431,6 +433,57 @@ class ScenarioUnitTests {
 						.toArrive());
 
 		verify(runnable).run();
+	}
+
+	@Test // GH-1131
+	void concludesForNonEmptyOptional() {
+
+		givenAScenario(it -> it.publish(new Object())
+				.andWaitForStateChange(delayed(Optional.of("value"))))
+						.expectSuccess();
+	}
+
+	@Test // GH-1131
+	void doesNotConcludeForEmptyOptional() {
+
+		givenAScenario(it -> it.publish(new Object())
+				.andWaitAtMost(Duration.ofMillis(500))
+				.andWaitForStateChange(delayed(Optional.empty())))
+						.expectFailure();
+	}
+
+	@Test // GH-1131
+	void concludesForNonEmptyCollection() {
+
+		givenAScenario(it -> it.publish(new Object())
+				.andWaitForStateChange(delayed(List.of("value"))))
+						.expectSuccess();
+	}
+
+	@Test // GH-1131
+	void doesNotConcludeForEmptyCollection() {
+
+		givenAScenario(it -> it.publish(new Object())
+				.andWaitAtMost(Duration.ofMillis(500))
+				.andWaitForStateChange(delayed(Collections.emptyList())))
+						.expectFailure();
+	}
+
+	@Test // GH-1131
+	void concludesForNonNull() {
+
+		givenAScenario(it -> it.publish(new Object())
+				.andWaitForStateChange(delayed(new Object())))
+						.expectSuccess();
+	}
+
+	@Test // GH-1131
+	void doesNotConcludeForNull() {
+
+		givenAScenario(it -> it.publish(new Object())
+				.andWaitAtMost(Duration.ofMillis(500))
+				.andWaitForStateChange(delayed(null)))
+						.expectFailure();
 	}
 
 	private Fixture givenAScenario(Consumer<Scenario> consumer) {
