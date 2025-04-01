@@ -17,6 +17,8 @@ package org.springframework.modulith.events.config;
 
 import java.lang.reflect.Method;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -46,6 +48,7 @@ import org.springframework.transaction.event.TransactionalEventListenerFactory;
 @AutoConfiguration
 @AutoConfigureAfter(EventPublicationConfiguration.class)
 public class EventExternalizationAutoConfiguration {
+    private static final Logger LOG = LoggerFactory.getLogger(EventExternalizationAutoConfiguration.class);
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -59,6 +62,9 @@ public class EventExternalizationAutoConfiguration {
 	static EventExternalizationConfiguration eventExternalizationConfiguration(BeanFactory factory) {
 
 		var packages = AutoConfigurationPackages.get(factory);
+
+        LOG.debug("Initializing event externalization with packages: {}", packages);
+        LOG.debug("Configured filter to select events annotated with @Externalized within the above packages.");
 
 		return EventExternalizationConfiguration.defaults(packages).build();
 	}
