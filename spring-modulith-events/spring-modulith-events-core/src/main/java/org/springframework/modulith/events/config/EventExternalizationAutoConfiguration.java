@@ -40,6 +40,7 @@ import org.springframework.transaction.event.TransactionalEventListenerFactory;
  * Auto-configuration to externalize application events.
  *
  * @author Oliver Drotbohm
+ * @author 조상준
  * @since 1.1
  */
 @ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
@@ -48,7 +49,8 @@ import org.springframework.transaction.event.TransactionalEventListenerFactory;
 @AutoConfiguration
 @AutoConfigureAfter(EventPublicationConfiguration.class)
 public class EventExternalizationAutoConfiguration {
-    private static final Logger LOG = LoggerFactory.getLogger(EventExternalizationAutoConfiguration.class);
+
+	private static final Logger LOG = LoggerFactory.getLogger(EventExternalizationAutoConfiguration.class);
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
@@ -63,8 +65,8 @@ public class EventExternalizationAutoConfiguration {
 
 		var packages = AutoConfigurationPackages.get(factory);
 
-        LOG.debug("Initializing event externalization with packages: {}", packages);
-        LOG.debug("Configured filter to select events annotated with @Externalized within the above packages.");
+		LOG.debug("Configuring event externalization to export events annotated with @Externalized in packages: {}",
+				packages);
 
 		return EventExternalizationConfiguration.defaults(packages).build();
 	}
