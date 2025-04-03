@@ -242,10 +242,16 @@ Kotlin::
 +
 [source, kotlin, role="secondary", chomp="none"]
 ----
-@org.springframework.modulith.ApplicationModule(
+package example.inventory
+
+import org.springframework.modulith.ApplicationModule
+import org.springframework.modulith.PackageInfo
+
+@ApplicationModule(
   type = Type.OPEN
 )
-package example.inventory
+@PackageInfo
+class ModuleMetadata {}
 ----
 ======
 
@@ -358,10 +364,16 @@ Kotlin::
 +
 [source, kotlin, role="secondary", chomp="none"]
 ----
-@org.springframework.modulith.ApplicationModule(
+package example.inventory
+
+import org.springframework.modulith.ApplicationModule
+import org.springframework.modulith.PackageInfo
+
+@ApplicationModule(
   allowedDependencies = "order :: spi"
 )
-package example.inventory
+@PackageInfo
+class ModuleMetadata {}
 ----
 ======
 
@@ -387,10 +399,16 @@ Kotlin::
 +
 [source, kotlin, role="secondary", chomp="none"]
 ----
-@org.springframework.modulith.ApplicationModule(
+package example.inventory
+
+import org.springframework.modulith.ApplicationModule
+import org.springframework.modulith.PackageInfo
+
+@ApplicationModule(
   allowedDependencies = "order :: *"
 )
-package example.inventory
+@PackageInfo
+class ModuleMetadata {}
 ----
 ======
 
