@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -70,6 +71,7 @@ public class SpringModulithProcessor implements Processor {
 
 	private Elements elements;
 	private Messager messager;
+	private File javadocJson;
 	private boolean testExecution;
 	private Set<TypeMetadata> metadata = new HashSet<>();
 
@@ -123,6 +125,7 @@ public class SpringModulithProcessor implements Processor {
 
 		this.elements = environment.getElementUtils();
 		this.messager = environment.getMessager();
+		this.javadocJson = getAptOutputFolder(environment).resolve(JSON_LOCATION).toFile();
 
 		try {
 
@@ -165,8 +168,6 @@ public class SpringModulithProcessor implements Processor {
 
 		if (roundEnv.processingOver()) {
 
-			messager.printMessage(Kind.NOTE, "Extracting Javadoc into " + JSON_LOCATION + ".");
-
 			var methodJson = JsonWriter.<MethodMetadata> of(inner -> {
 				inner.add("name", MethodMetadata::name);
 				inner.add("signature", MethodMetadata::signature);
@@ -185,11 +186,11 @@ public class SpringModulithProcessor implements Processor {
 						});
 			});
 
-			File file = new File(JSON_LOCATION);
+			messager.printMessage(Kind.NOTE, "Extracting Javadoc into " + javadocJson.getAbsolutePath() + ".");
 
-			if (!file.exists()) {
+			if (!javadocJson.exists()) {
 				try {
-					Files.createDirectories(file.toPath().getParent());
+					Files.createDirectories(javadocJson.toPath().getParent());
 				} catch (IOException e) {
 					throw new RuntimeException(e);
 				}
@@ -202,7 +203,7 @@ public class SpringModulithProcessor implements Processor {
 							.map(typeJson::write)
 							.toList());
 
-			try (var writer = new FileWriter(file)) {
+			try (var writer = new FileWriter(javadocJson)) {
 				writer.write(output);
 			} catch (IOException e) {
 				throw new RuntimeException(e);
@@ -304,5 +305,23 @@ public class SpringModulithProcessor implements Processor {
 				.map(TypeElementWrapper::toTypeElement);
 
 		return Stream.concat(Stream.of(type), enclosed);
+	}
+
+	private static Path getAptOutputFolder(ProcessingEnvironment environment) {
+
+		var boot = environment.getOptions()
+				.get("org.springframework.boot.configurationprocessor.additionalMetadataLocations");
+
+		if (boot != null) {
+			return Path.of(boot.substring(0, boot.indexOf("/src/main/resources")));
+		}
+
+		var kapt = environment.getOptions().get("kapt.kotlin.generated");
+
+		if (kapt != null) {
+			return Path.of(kapt.substring(0, kapt.indexOf("/build/generated/source")));
+		}
+
+		return Path.of(".");
 	}
 }
