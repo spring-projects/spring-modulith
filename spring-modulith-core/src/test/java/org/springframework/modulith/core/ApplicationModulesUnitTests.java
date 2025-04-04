@@ -37,6 +37,7 @@ class ApplicationModulesUnitTests {
 				.containsExactlyInAnyOrder(
 						"invalid",
 						"customId",
+						"metani",
 						"ni",
 						"ni.nested",
 						"ni.nested.b.first",
