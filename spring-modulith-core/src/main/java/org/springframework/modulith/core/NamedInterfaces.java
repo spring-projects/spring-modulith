@@ -250,7 +250,7 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.filter(it -> !JavaPackage.isPackageInfoType(it)) //
 				.forEach(it -> {
 
-					if (!it.isAnnotatedWith(org.springframework.modulith.NamedInterface.class)) {
+					if (!it.isMetaAnnotatedWith(org.springframework.modulith.NamedInterface.class)) {
 						return;
 					}
 
