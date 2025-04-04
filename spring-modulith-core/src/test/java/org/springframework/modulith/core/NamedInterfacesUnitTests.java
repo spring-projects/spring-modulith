@@ -90,6 +90,18 @@ class NamedInterfacesUnitTests {
 				.containsExactlyInAnyOrder("spi", "kpi");
 	}
 
+	@Test // GH-1139
+	void discoveredNamedInterfaceOnComposedAnnotation() {
+
+		var pkg = TestUtils.getPackage(example.metani.Exposed.class);
+
+		var result = NamedInterfaces.discoverNamedInterfaces(pkg);
+
+		assertThat(result).hasSize(2)
+				.extracting(NamedInterface::getName)
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api");
+	}
+
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {
 
 		var classNames = Arrays.stream(types).map(Class::getName).toArray(String[]::new);
