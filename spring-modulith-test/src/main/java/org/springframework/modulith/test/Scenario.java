@@ -153,8 +153,8 @@ public class Scenario {
 	 * @param <S> the type of the value returned by the stimulus.
 	 * @param supplier must not be {@literal null}.
 	 * @return will never be {@literal null}.
-	 * @see StateChangeResult#andVerify(Consumer)
-	 * @see EventResult#toArriveAndVerify(Consumer)
+	 * @see org.springframework.modulith.test.Scenario.When.StateChangeResult#andVerify(Consumer)
+	 * @see org.springframework.modulith.test.Scenario.When.EventResult#toArriveAndVerify(Consumer)
 	 */
 	public <S> When<S> stimulate(Supplier<S> supplier) {
 		return stimulate(tx -> tx.execute(__ -> supplier.get()));
