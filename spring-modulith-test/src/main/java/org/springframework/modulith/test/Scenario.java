@@ -345,6 +345,11 @@ public class Scenario {
 		 * Expects an event of the given type to arrive. Use API on the returned {@link EventResult} to specify more
 		 * detailed expectations and conclude those with a call a flavor of {@link EventResult#toArrive()}.
 		 *
+		 * Please note that events can only be recorded and taken into account by this method if they are published within
+		 * the executing thread (the one that executes the test) or child threads of this (which is used with @Async, for
+		 * example). If events are published in independent threads, this method does not react to them. In this case, you
+		 * must work with your own {@link ApplicationModuleListener} and {@link When#andWaitForStateChange(Supplier)}.
+   		 *
 		 * @param <E> the type of the event.
 		 * @param type must not be {@literal null}.
 		 * @return will never be {@literal null}.
@@ -461,6 +466,11 @@ public class Scenario {
 			/**
 			 * Expects an event of the given type to arrive eventually. Use API on the returned {@link EventResult} to specify
 			 * more detailed expectations and conclude those with a call a flavor of {@link EventResult#toArrive()}.
+			 *
+			 * Please note that events can only be recorded and taken into account by this method if they are published within
+			 * the executing thread (the one that executes the test) or child threads of this (which is used with @Async, for
+			 * example). If events are published in independent threads, this method does not react to them. In this case, you
+			 * must work with your own {@link ApplicationModuleListener} and {@link When#andWaitForStateChange(Supplier)}.
 			 *
 			 * @param <E> the type of the event
 			 * @param eventType must not be {@literal null}.
