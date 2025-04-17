@@ -412,7 +412,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @return will never be {@literal null}.
 	 */
 	public Optional<ApplicationModule> getModuleByType(Class<?> candidate) {
-		return getModuleByType(candidate.getName());
+
+		return allModules()
+				.filter(it -> it.contains(candidate))
+				.findFirst();
 	}
 
 	/**

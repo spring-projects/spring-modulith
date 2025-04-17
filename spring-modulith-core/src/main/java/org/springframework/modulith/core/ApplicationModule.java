@@ -341,7 +341,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * @param type must not be {@literal null}.
 	 */
 	public boolean contains(JavaClass type) {
-		return contains(type.getName());
+		return classes.contains(type);
 	}
 
 	/**
@@ -350,7 +350,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * @param type must not be {@literal null}.
 	 */
 	public boolean contains(Class<?> type) {
-		return contains(type.getName());
+		return classes.contains(type);
 	}
 
 	/**

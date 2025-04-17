@@ -172,7 +172,11 @@ class Classes implements DescribedIterable<JavaClass> {
 	}
 
 	boolean contains(JavaClass type) {
-		return !that(new SameClass(type)).isEmpty();
+		return classes.contains(type);
+	}
+
+	boolean contains(Class<?> type) {
+		return classes.stream().anyMatch(it -> it.isEquivalentTo(type));
 	}
 
 	boolean contains(String className) {
