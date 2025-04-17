@@ -781,6 +781,19 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return classes;
 	}
 
+	/**
+	 * Returns all types internal to the module.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public Collection<JavaClass> getInternalTypes() {
+
+		return classes.stream()
+				.filter(Predicate.not(this::isExposed))
+				.toList();
+	}
+
 	private String getQualifiedName(NamedInterface namedInterface) {
 		return namedInterface.getQualifiedName(getIdentifier());
 	}
