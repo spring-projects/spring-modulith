@@ -302,6 +302,16 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
+	 * Returns all root packages.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public List<JavaPackage> getRootPackages() {
+		return Collections.unmodifiableList(rootPackages);
+	}
+
+	/**
 	 * Returns all {@link ApplicationModule}s registered as shared ones.
 	 *
 	 * @return will never be {@literal null}.
