@@ -20,11 +20,15 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.Observation.Event;
 import io.micrometer.observation.ObservationRegistry;
 
+import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.observability.support.ModulithObservations.Events;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
@@ -38,6 +42,8 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	private final Supplier<ObservationRegistry> observationRegistry;
 	private final Supplier<MeterRegistry> meterRegistry;
 	private final CrossModuleEventCounterFactory factory;
+
+	private final Map<Class<?>, Optional<ApplicationModule>> modulesByType;
 
 	/**
 	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and
@@ -61,6 +67,8 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 		this.observationRegistry = observationRegistrySupplier;
 		this.meterRegistry = meterRegistrySupplier;
 		this.factory = counterFactory;
+
+		this.modulesByType = new ConcurrentHashMap<>();
 	}
 
 	/*
@@ -81,8 +89,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		var moduleByType = runtime.get()
-				.getModuleByType(payloadType.getSimpleName())
+		var moduleByType = modulesByType.computeIfAbsent(payloadType, it -> runtime.get().getModuleByType(it))
 				.orElse(null);
 
 		if (moduleByType == null) {
