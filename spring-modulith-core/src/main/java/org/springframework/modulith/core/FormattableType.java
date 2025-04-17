@@ -76,7 +76,7 @@ public class FormattableType extends FormatableType {
 					.collect(Collectors.joining("."));
 
 			return abbreviatedPackage.concat(".") //
-					.concat(ClassUtils.getShortName(getFullName()));
+					.concat(ClassUtils.getShortName(type));
 		});
 	}
 
@@ -158,7 +158,7 @@ public class FormattableType extends FormatableType {
 		return abbreviate(basePackageName) //
 				.concat(typePackageName.substring(basePackageName.length())) //
 				.concat(".") //
-				.concat(ClassUtils.getShortName(getFullName()));
+				.concat(ClassUtils.getShortName(type));
 	}
 
 	/*
