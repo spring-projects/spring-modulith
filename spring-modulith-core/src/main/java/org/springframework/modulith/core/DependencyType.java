@@ -46,15 +46,6 @@ public enum DependencyType {
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
-		 */
-		@Override
-		public String format(FormatableType source, FormatableType target) {
-			return String.format("Component %s using %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
-		}
-
-		/*
-		 * (non-Javadoc)
 		 * @see org.springframework.modulith.core.DependencyType#format(org.springframework.modulith.core.FormattableType, org.springframework.modulith.core.FormattableType)
 		 */
 		@Override
@@ -67,16 +58,6 @@ public enum DependencyType {
 	 * Indicates that the module refers to an entity of the other.
 	 */
 	ENTITY {
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
-		 */
-		@Override
-		public String format(FormatableType source, FormatableType target) {
-			return String.format("Entity %s depending on %s", source.getAbbreviatedFullName(),
-					target.getAbbreviatedFullName());
-		}
 
 		/*
 		 * (non-Javadoc)
@@ -94,16 +75,6 @@ public enum DependencyType {
 	 * module. Thus, the target module does not have to be bootstrapped to run the source one.
 	 */
 	EVENT_LISTENER {
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
-		 */
-		@Override
-		public String format(FormatableType source, FormatableType target) {
-			return String.format("%s listening to events of type %s", source.getAbbreviatedFullName(),
-					target.getAbbreviatedFullName());
-		}
 
 		/*
 		 * (non-Javadoc)
@@ -125,15 +96,6 @@ public enum DependencyType {
 		@Override
 		public DependencyType defaultOr(Supplier<DependencyType> supplier) {
 			return supplier.get();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.Module.DependencyType#format(org.springframework.modulith.model.FormatableJavaClass, org.springframework.modulith.model.FormatableJavaClass)
-		 */
-		@Override
-		public String format(FormatableType source, FormatableType target) {
-			return String.format("%s depending on %s", source.getAbbreviatedFullName(), target.getAbbreviatedFullName());
 		}
 
 		/*
@@ -174,12 +136,6 @@ public enum DependencyType {
 	static DependencyType forDependency(Dependency dependency) {
 		return forParameter(dependency.getTargetClass());
 	}
-
-	/**
-	 * @deprecated since 1.3, prefer {@link #format(FormattableType, FormattableType)}.
-	 */
-	@Deprecated
-	public abstract String format(FormatableType source, FormatableType target);
 
 	public abstract String format(FormattableType source, FormattableType target);
 

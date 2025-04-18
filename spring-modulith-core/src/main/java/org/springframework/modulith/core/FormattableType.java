@@ -35,8 +35,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
  *
  * @author Oliver Drotbohm
  */
-@SuppressWarnings("deprecation")
-public class FormattableType extends FormatableType {
+public class FormattableType {
 
 	private static final Map<String, FormattableType> CACHE = new ConcurrentHashMap<>();
 
@@ -44,7 +43,7 @@ public class FormattableType extends FormatableType {
 	private final Supplier<String> abbreviatedName;
 
 	/**
-	 * Creates a new {@link FormatableType} for the given source {@link String} and lazily computed abbreviated name.
+	 * Creates a new {@link FormattableType} for the given source {@link String} and lazily computed abbreviated name.
 	 *
 	 * @param type must not be {@literal null} or empty.
 	 * @param abbreviatedName must not be {@literal null}.
@@ -59,7 +58,7 @@ public class FormattableType extends FormatableType {
 	}
 
 	/**
-	 * Creates a new {@link FormatableType} for the given fully-qualified type name.
+	 * Creates a new {@link FormattableType} for the given fully-qualified type name.
 	 *
 	 * @param type must not be {@literal null} or empty.
 	 */
@@ -81,7 +80,7 @@ public class FormattableType extends FormatableType {
 	}
 
 	/**
-	 * Creates a new {@link FormatableType} for the given {@link JavaClass}.
+	 * Creates a new {@link FormattableType} for the given {@link JavaClass}.
 	 *
 	 * @param type must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -94,7 +93,7 @@ public class FormattableType extends FormatableType {
 	}
 
 	/**
-	 * Creates a new {@link FormatableType} for the given {@link Class}.
+	 * Creates a new {@link FormattableType} for the given {@link Class}.
 	 *
 	 * @param type must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -119,20 +118,23 @@ public class FormattableType extends FormatableType {
 				.collect(Collectors.joining(", "));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.core.FormatableType#getAbbreviatedFullName()
+	/**
+	 * Returns the abbreviated (i.e. every package fragment reduced to its first character) full name, e.g.
+	 * {@code com.acme.MyType} will result in {@code c.a.MyType}.
+	 *
+	 * @return will never be {@literal null}.
 	 */
-	@Override
 	public String getAbbreviatedFullName() {
 		return abbreviatedName.get();
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.core.FormatableType#getAbbreviatedFullName(org.springframework.modulith.core.ApplicationModule)
+	/**
+	 * Returns the abbreviated full name of the type abbreviating only the part of the given {@link ApplicationModule}'s
+	 * base package.
+	 *
+	 * @param module can be {@literal null}.
+	 * @return will never be {@literal null}.
 	 */
-	@Override
 	public String getAbbreviatedFullName(@Nullable ApplicationModule module) {
 
 		if (module == null) {
@@ -161,11 +163,11 @@ public class FormattableType extends FormatableType {
 				.concat(ClassUtils.getShortName(type));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.core.FormatableType#getFullName()
+	/**
+	 * Returns the type's full name.
+	 *
+	 * @return will never be {@literal null}.
 	 */
-	@Override
 	public String getFullName() {
 		return type.replace("$", ".");
 	}
