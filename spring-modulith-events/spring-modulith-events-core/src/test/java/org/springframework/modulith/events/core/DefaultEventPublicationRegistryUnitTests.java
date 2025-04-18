@@ -97,7 +97,6 @@ class DefaultEventPublicationRegistryUnitTests {
 
 		assertThat(inProgress.getPublication(firstEvent, identifier)).containsSame(first);
 		assertThat(inProgress.getPublication(secondEvent, identifier)).containsSame(second);
-
 	}
 
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {
