@@ -19,10 +19,9 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -296,7 +295,7 @@ public class DefaultEventPublicationRegistry
 	 */
 	static class PublicationsInProgress implements Iterable<TargetEventPublication> {
 
-		private final Set<TargetEventPublication> publications = ConcurrentHashMap.newKeySet();
+		private final Map<Key, TargetEventPublication> publications = new ConcurrentHashMap<>();
 
 		/**
 		 * Registers the given {@link TargetEventPublication} as currently processed.
@@ -308,7 +307,7 @@ public class DefaultEventPublicationRegistry
 
 			Assert.notNull(publication, "TargetEventPublication must not be null!");
 
-			publications.add(publication);
+			publications.put(new Key(publication), publication);
 
 			return publication;
 		}
@@ -325,8 +324,7 @@ public class DefaultEventPublicationRegistry
 			Assert.notNull(event, "Event must not be null!");
 			Assert.notNull(identifier, "PublicationTargetIdentifier must not be null!");
 
-			getPublication(event, identifier)
-					.ifPresent(publications::remove);
+			publications.remove(new Key(event, identifier));
 		}
 
 		/**
@@ -338,7 +336,7 @@ public class DefaultEventPublicationRegistry
 
 			Assert.notNull(publication, "TargetEventPublication must not be null!");
 
-			publications.remove(publication);
+			publications.remove(new Key(publication));
 		}
 
 		/**
@@ -354,9 +352,7 @@ public class DefaultEventPublicationRegistry
 			Assert.notNull(event, "Event must not be null!");
 			Assert.notNull(identifier, "PublicationTargetIdentifier must not be null!");
 
-			return publications.stream()
-					.filter(it -> it.isAssociatedWith(event, identifier))
-					.findFirst();
+			return Optional.ofNullable(publications.get(new Key(event, identifier)));
 		}
 
 		/*
@@ -365,7 +361,14 @@ public class DefaultEventPublicationRegistry
 		 */
 		@Override
 		public Iterator<TargetEventPublication> iterator() {
-			return new HashSet<>(publications).iterator();
+			return publications.values().iterator();
+		}
+
+		private record Key(Object event, PublicationTargetIdentifier identifier) {
+
+			public Key(TargetEventPublication publication) {
+				this(publication.getEvent(), publication.getTargetIdentifier());
+			}
 		}
 	}
 }
