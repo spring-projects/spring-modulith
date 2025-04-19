@@ -19,8 +19,9 @@ jobs:
         - '3.5.0-M3'
         - '3.5.0-SNAPSHOT'
         jmolecules:
-        - '2023.2.1'
-        - '2025.0.0-RC2'
+        - '2023.2.2'
+        - '2023.3.1'
+        - '2025.0.0-RC3'
     name: Build against Boot ${{ matrix.version }}
     runs-on: ubuntu-latest
 
