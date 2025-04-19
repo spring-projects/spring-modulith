@@ -14,30 +14,16 @@
 
 	<properties>
 		<jmh.version>1.37</jmh.version>
-		<!-- Customized as the MBR is currently not compatible with JUnit 5.12 -->
-		<junit-jupiter.version>5.11.4</junit-jupiter.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 		<module.name>org.springframework.modulith.benchmark</module.name>
 	</properties>
-	
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>org.junit</groupId>
-				<artifactId>junit-bom</artifactId>
-				<version>${junit-jupiter.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
 
 	<dependencies>
 		
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-events-core</artifactId>
-			<version>1.3.4</version>
+			<version>${project.version}</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -57,7 +43,7 @@
 		<dependency>
 			<groupId>com.github.mp911de.microbenchmark-runner</groupId>
 			<artifactId>microbenchmark-runner-junit5</artifactId>
-			<version>0.4.0.RELEASE</version>
+			<version>0.5.0.RELEASE</version>
 			<scope>test</scope>
 		</dependency>
 
