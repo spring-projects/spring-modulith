@@ -386,7 +386,7 @@ public class DefaultEventPublicationRegistry
 				}
 
 				return this.event == that.event
-						&& this.identifier.equals(identifier);
+						&& this.identifier.equals(that.identifier);
 			}
 
 			/*
