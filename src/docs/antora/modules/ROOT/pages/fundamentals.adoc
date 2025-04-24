@@ -131,12 +131,12 @@ Let us have a look at an example arrangement (icon:plus-circle[role=green] denot
 [source, subs="+specialchars, macros"]
 ----
 icon:cubes[] Example
-└─ icon:folder[] src/main/java
+╰─ icon:folder[] src/main/java
    ├─ icon:cube[] example                        <1>
-   |  └─ icon:plus-circle[role=green] Application.java
-   └─ icon:cube[] example.inventory              <2>
+   │  ╰─ icon:plus-circle[role=green] Application.java
+   ╰─ icon:cube[] example.inventory              <2>
       ├─ icon:plus-circle[role=green] InventoryManagement.java
-      └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+      ╰─ icon:minus-circle[role=red] SomethingInventoryInternal.java
 ----
 <1> The application's main package `example`.
 <2> An application module package `inventory`.
@@ -150,16 +150,16 @@ If an application module package contains sub-packages, types in those might nee
 [source, subs="macros, quotes"]
 ----
 icon:cubes[] Example
-└─ icon:folder[] src/main/java
+╰─ icon:folder[] src/main/java
    ├─ icon:cube[] example
-   |  └─ icon:plus-circle[role=green] Application.java
+   │  ╰─ icon:plus-circle[role=green] Application.java
    ├─ icon:cube[] example.inventory
-   |  ├─ icon:plus-circle[role=green] InventoryManagement.java
-   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+   │  ├─ icon:plus-circle[role=green] InventoryManagement.java
+   │  ╰─ icon:minus-circle[role=red] SomethingInventoryInternal.java
    ├─ **icon:cube[] example.order**
-   |  └─ icon:plus-circle[role=green] OrderManagement.java
-   └─ icon:cube[] example.order.internal
-      └─ icon:plus-circle[role=green] SomethingOrderInternal.java
+   │  ╰─ icon:plus-circle[role=green] OrderManagement.java
+   ╰─ icon:cube[] example.order.internal
+      ╰─ icon:plus-circle[role=green] SomethingOrderInternal.java
 ----
 
 In such an arrangement, the `order` package is considered an API package.
@@ -180,32 +180,32 @@ To define nested application modules, explicitly annotate packages that are supp
 [source, subs="macros, quotes"]
 ----
 icon:cubes[] Example
-└─ icon:folder[] src/main/java
-   |
+╰─ icon:folder[] src/main/java
+   │
    ├─ icon:cube[] example
-   |  └─ icon:plus-circle[role=green] Application.java
-   |
-   |  -> Inventory
-   |
+   │  ╰─ icon:plus-circle[role=green] Application.java
+   │
+   │  -> Inventory
+   │
    ├─ icon:cube[] example.inventory
-   |  ├─ icon:plus-circle[role=green] InventoryManagement.java
-   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+   │  ├─ icon:plus-circle[role=green] InventoryManagement.java
+   │  ╰─ icon:minus-circle[role=red] SomethingInventoryInternal.java
    ├─ icon:cube[] example.inventory.internal
-   |  └─ icon:minus-circle[role=red] SomethingInventoryInternal.java
-   |
-   |  -> Inventory > Nested
-   |
+   │  ╰─ icon:minus-circle[role=red] SomethingInventoryInternal.java
+   │
+   │  -> Inventory > Nested
+   │
    ├─ icon:cube[] example.inventory.nested
-   |  ├─ icon:coffee[] package-info.java // @ApplicationModule
-   |  └─ icon:plus-circle[role=orange] NestedApi.java
+   │  ├─ icon:coffee[] package-info.java // @ApplicationModule
+   │  ╰─ icon:plus-circle[role=orange] NestedApi.java
    ├─ icon:cube[] example.inventory.nested.internal
-   |  └─ icon:minus-circle[role=red] NestedInternal.java
-   |
-   |  -> Order
-   |
-   └─ icon:cube[] example.order
+   │  ╰─ icon:minus-circle[role=red] NestedInternal.java
+   │
+   │  -> Order
+   │
+   ╰─ icon:cube[] example.order
       ├─ icon:plus-circle[role=green] OrderManagement.java
-      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
+      ╰─ icon:minus-circle[role=red] SomethingOrderInternal.java
 ----
 
 In this example `inventory` is an application module as described xref:fundamentals.adoc#modules.simple[above].
@@ -307,17 +307,17 @@ You achieve that by annotating the `package-info.java` file of those packages wi
 [source, text, subs="macros, quotes"]
 ----
 icon:cubes[] Example
-└─ icon:folder[] src/main/java
+╰─ icon:folder[] src/main/java
    ├─ icon:cube[] example
-   |  └─ icon:plus-circle[role=green] Application.java
+   │  ╰─ icon:plus-circle[role=green] Application.java
    ├─ …
    ├─ icon:cube[] example.order
-   |  └─ icon:plus-circle[role=green] OrderManagement.java
+   │  ╰─ icon:plus-circle[role=green] OrderManagement.java
    ├─ **icon:cube[] example.order.spi**
-   |  ├— icon:coffee[] package-info.java
-   |  └─ icon:plus-circle[role=green] SomeSpiInterface.java
-   └─ icon:cube[] example.order.internal
-      └─ icon:minus-circle[role=red] SomethingOrderInternal.java
+   │  ├— icon:coffee[] package-info.java
+   │  ╰─ icon:plus-circle[role=green] SomeSpiInterface.java
+   ╰─ icon:cube[] example.order.internal
+      ╰─ icon:minus-circle[role=red] SomethingOrderInternal.java
 ----
 
 .`package-info.java` in `example.order.spi`
