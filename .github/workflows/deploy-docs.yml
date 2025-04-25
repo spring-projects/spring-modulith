@@ -12,6 +12,11 @@ jobs:
   build:
     if: github.repository_owner == 'spring-projects'
     runs-on: ubuntu-latest
+    services:
+      kroki:
+        image: yuzutech/kroki
+        ports:
+          - 4711:8000
     steps:
 
     - name: Checkout

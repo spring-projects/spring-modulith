@@ -22,6 +22,7 @@ asciidoc:
     hide-uri-scheme: '@'
     tabs-sync-option: '@'
     kroki-fetch-diagram: true
+    kroki-server-url: http://localhost:4711
   extensions:
   - '@springio/asciidoctor-extensions'
   - '@asciidoctor/tabs'
