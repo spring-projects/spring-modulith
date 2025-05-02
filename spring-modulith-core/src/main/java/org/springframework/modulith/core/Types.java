@@ -82,6 +82,8 @@ public class Types {
 		static final String AT_DOMAIN_EVENT = BASE_PACKAGE + ".event.annotation.DomainEvent";
 		static final String DOMAIN_EVENT = BASE_PACKAGE + ".event.types.DomainEvent";
 
+		private static Collection<ArchRule> RULES;
+
 		/**
 		 * Returns whether jMolecules is generally present.
 		 *
@@ -121,31 +123,34 @@ public class Types {
 		 */
 		public static Collection<ArchRule> getRules() {
 
-			var classLoader = JMoleculesTypes.class.getClassLoader();
-			var rules = new ArrayList<ArchRule>();
+			if (RULES == null) {
 
-			if (ClassUtils.isPresent(DDD_RULES, classLoader)) {
-				rules.add(JMoleculesDddRules.all());
+				var classLoader = JMoleculesTypes.class.getClassLoader();
+				RULES = new ArrayList<ArchRule>();
+
+				if (ClassUtils.isPresent(DDD_RULES, classLoader)) {
+					RULES.add(JMoleculesDddRules.all());
+				}
+
+				if (!ClassUtils.isPresent(ARCHITECTURE_RULES, classLoader)) {
+					return RULES;
+				}
+
+				if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
+					RULES.add(JMoleculesArchitectureRules.ensureHexagonal());
+				}
+
+				if (ClassUtils.isPresent(LAYERED, classLoader)) {
+					RULES.add(JMoleculesArchitectureRules.ensureLayering());
+				}
+
+				if (ClassUtils.isPresent(ONION, classLoader)) {
+					RULES.add(JMoleculesArchitectureRules.ensureOnionClassical());
+					RULES.add(JMoleculesArchitectureRules.ensureOnionSimple());
+				}
 			}
 
-			if (!ClassUtils.isPresent(ARCHITECTURE_RULES, classLoader)) {
-				return rules;
-			}
-
-			if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
-				rules.add(JMoleculesArchitectureRules.ensureHexagonal());
-			}
-
-			if (ClassUtils.isPresent(LAYERED, classLoader)) {
-				rules.add(JMoleculesArchitectureRules.ensureLayering());
-			}
-
-			if (ClassUtils.isPresent(ONION, classLoader)) {
-				rules.add(JMoleculesArchitectureRules.ensureOnionClassical());
-				rules.add(JMoleculesArchitectureRules.ensureOnionSimple());
-			}
-
-			return rules;
+			return RULES;
 		}
 	}
 

@@ -35,7 +35,6 @@ import java.util.stream.StreamSupport;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.Nullable;
-import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -442,12 +441,23 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @return will never be {@literal null}.
 	 */
 	public ApplicationModules verify() {
+		return verify(VerificationOptions.defaults());
+	}
+
+	/**
+	 * Execute all verifications to be applied considering the given {@link VerificationOptions}, unless the verification
+	 * has been executed before.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 1.4
+	 */
+	public ApplicationModules verify(VerificationOptions options) {
 
 		if (verified) {
 			return this;
 		}
 
-		Violations violations = detectViolations();
+		Violations violations = detectViolations(options);
 
 		this.verified = true;
 
@@ -464,13 +474,26 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @see Violations#throwIfPresent()
 	 */
 	public Violations detectViolations() {
+		return detectViolations(VerificationOptions.defaults());
+	}
+
+	/**
+	 * Executes all verifications to be applied considering the given {@link VerificationOptions} and returns
+	 * {@link Violations} if any occured. Will always execute the verifications in contrast to {@link #verify()} which
+	 * just runs once.
+	 *
+	 * @return will never be {@literal null}.
+	 * @see Violations#throwIfPresent()
+	 * @since 1.4
+	 */
+	public Violations detectViolations(VerificationOptions options) {
 
 		var cycleViolations = rootPackages.stream() //
 				.map(this::assertNoCyclesFor) //
 				.flatMap(it -> it.getDetails().stream()) //
 				.collect(toViolations());
 
-		var jMoleculesViolations = JMoleculesTypes.getRules().stream()
+		var additionalViolations = options.getAdditionalVerifications().stream()
 				.map(it -> it.evaluate(allClasses))
 				.map(EvaluationResult::getFailureReport)
 				.flatMap(it -> it.getDetails().stream())
@@ -480,7 +503,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.map(it -> it.detectDependencies(this)) //
 				.reduce(NONE, Violations::and);
 
-		return cycleViolations.and(jMoleculesViolations).and(dependencyViolations);
+		return cycleViolations.and(additionalViolations).and(dependencyViolations);
 	}
 
 	/**

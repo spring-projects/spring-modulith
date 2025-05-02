@@ -30,3 +30,33 @@ If those are configured, dependencies to other application modules are rejected.
 See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Module Dependencies] and xref:fundamentals.adoc#modules.named-interfaces[Named Interfaces] for details.
 
 Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design and architectural verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].
+
+== Handling Detected Violations
+
+`ApplicationModules.verify()` throws an exception in case of any architectural violation being detected.
+You can access the violations for further processing, such as ignoring certain violations, by instead calling `ApplicationModules.detectViolations()`.
+
+[source, java]
+----
+ApplicationModules.of(…)
+  .detectViolations()
+  .filter(violation -> …)
+  .throwIfPresent();
+----
+
+== Customizing the Verifcation
+
+As described xref:verification.adoc#verification[above], by default, both the `ApplicationModules.verify(…)` and `….detectViolations(…)` automatically perform additional verifications depending on the classpath configuration.
+
+To customize these, disable them or register additional verifications, both `verify(…)` and `detectVolations(…)` take a `VerificationOptions` instance.
+
+[source, java]
+----
+var hexagonal = JMoleculesArchitectureRules.ensureHexagonal(VerificationDepth.LENIENT); <1>
+var options = VerificationOptions.defaults().withAdditionalVerifications(hexagonal); <2>
+
+ApplicationModules.of(…).verify(options); <3>
+----
+<1> Set up the jMolecules Architecture verification for Hexagonal Architecture in lenient mode.
+<2> Create a `VerificationOptions` instance replacing the default verification with the one just set up.
+<3> Execute the verification using the just configured options.
