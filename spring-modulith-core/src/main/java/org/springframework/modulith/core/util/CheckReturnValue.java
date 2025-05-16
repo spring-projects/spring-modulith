@@ -27,6 +27,7 @@ import java.lang.annotation.Target;
  *      "https://github.com/findbugsproject/findbugs/blob/264ae7baf890d2b347d91805c90057062b5dcb1e/findbugs/src/java/edu/umd/cs/findbugs/detect/BuildCheckReturnAnnotationDatabase.java#L120">Findbugs
  *      source code</a>
  * @since 1.3
+ * @deprecated since 1.4, use Spring Framework's {@link org.springframework.lang.CheckReturnValue} instead.
  */
 @Target({
 		ElementType.CONSTRUCTOR,
@@ -34,5 +35,6 @@ import java.lang.annotation.Target;
 		ElementType.PACKAGE,
 		ElementType.TYPE,
 })
+@Deprecated(since = "1.4", forRemoval = true)
 @Retention(RetentionPolicy.CLASS)
 public @interface CheckReturnValue {}

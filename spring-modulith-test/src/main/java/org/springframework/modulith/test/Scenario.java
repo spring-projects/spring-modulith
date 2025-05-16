@@ -31,8 +31,8 @@ import java.util.function.Supplier;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.lang.CheckReturnValue;
 import org.springframework.lang.Nullable;
-import org.springframework.modulith.core.util.CheckReturnValue;
 import org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents;
 import org.springframework.modulith.test.PublishedEventsAssert.PublishedEventAssert;
 import org.springframework.transaction.TransactionDefinition;
@@ -53,7 +53,6 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  * @see ApplicationModuleTest
  */
-@CheckReturnValue
 public class Scenario {
 
 	private static final Predicate<Object> DEFAULT_ACCEPTANCE = it -> {
@@ -110,6 +109,7 @@ public class Scenario {
 	 * @param event must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
+	@CheckReturnValue
 	public When<Void> publish(Object event) {
 		return stimulate((tx, e) -> {
 			tx.executeWithoutResult(__ -> e.publishEvent(event));
@@ -123,6 +123,7 @@ public class Scenario {
 	 * @param event must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
+	@CheckReturnValue
 	public When<Void> publish(Supplier<Object> event) {
 
 		return stimulate((tx, e) -> {
@@ -136,6 +137,7 @@ public class Scenario {
 	 * @param runnable must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
+	@CheckReturnValue
 	public When<Void> stimulate(Runnable runnable) {
 
 		Assert.notNull(runnable, "Runnable must not be null!");
@@ -156,6 +158,7 @@ public class Scenario {
 	 * @see org.springframework.modulith.test.Scenario.When.StateChangeResult#andVerify(Consumer)
 	 * @see org.springframework.modulith.test.Scenario.When.EventResult#toArriveAndVerify(Consumer)
 	 */
+	@CheckReturnValue
 	public <S> When<S> stimulate(Supplier<S> supplier) {
 		return stimulate(tx -> tx.execute(__ -> supplier.get()));
 	}
@@ -168,6 +171,7 @@ public class Scenario {
 	 * @param function must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
+	@CheckReturnValue
 	public <S> When<S> stimulate(Function<TransactionOperations, S> function) {
 		return stimulate((tx, __) -> {
 			return function.apply(tx);
@@ -181,6 +185,7 @@ public class Scenario {
 	 * @param stimulus must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
+	@CheckReturnValue
 	public When<Void> stimulate(BiConsumer<TransactionOperations, ApplicationEventPublisher> stimulus) {
 
 		Assert.notNull(stimulus, "Stimulus must not be null!");
@@ -199,6 +204,7 @@ public class Scenario {
 	 * @param stimulus must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
+	@CheckReturnValue
 	public <S> When<S> stimulate(BiFunction<TransactionOperations, ApplicationEventPublisher, S> stimulus) {
 
 		Assert.notNull(stimulus, "Stimulus must not be null!");
@@ -221,7 +227,6 @@ public class Scenario {
 		return this;
 	}
 
-	@CheckReturnValue
 	public class When<T> {
 
 		private final BiFunction<TransactionOperations, ApplicationEventPublisher, T> stimulus;
@@ -247,6 +252,7 @@ public class Scenario {
 		 * @param runnable must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 */
+		@CheckReturnValue
 		public When<T> andCleanup(Runnable runnable) {
 
 			Assert.notNull(runnable, "Cleanup callback must not be null!");
@@ -261,6 +267,7 @@ public class Scenario {
 		 * @param consumer must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 */
+		@CheckReturnValue
 		public When<T> andCleanup(Consumer<T> consumer) {
 
 			Assert.notNull(consumer, "Cleanup callback must not be null!");
@@ -277,6 +284,7 @@ public class Scenario {
 		 * @param duration must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 */
+		@CheckReturnValue
 		public When<T> andWaitAtMost(Duration duration) {
 
 			Assert.notNull(duration, "Duration must not be null!");
@@ -292,6 +300,7 @@ public class Scenario {
 		 * @param customizer must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 */
+		@CheckReturnValue
 		public When<T> customize(Function<ConditionFactory, ConditionFactory> customizer) {
 
 			Assert.notNull(customizer, "Customizer must not be null!");
@@ -310,6 +319,7 @@ public class Scenario {
 		 * @return will never be {@literal null}.
 		 * @see #andWaitForEventOfType(Class)
 		 */
+		@CheckReturnValue
 		public <E> EventResult<E> forEventOfType(Class<E> type) {
 			return andWaitForEventOfType(type);
 		}
@@ -323,6 +333,7 @@ public class Scenario {
 		 * @return will never be {@literal null}.
 		 * @see #andWaitForStateChange(Supplier)
 		 */
+		@CheckReturnValue
 		public <S> StateChangeResult<S> forStateChange(Supplier<S> supplier) {
 			return forStateChange(supplier, DEFAULT_ACCEPTANCE);
 		}
@@ -337,6 +348,7 @@ public class Scenario {
 		 * @return will never be {@literal null}.
 		 * @see #andWaitForStateChange(Supplier, Predicate)
 		 */
+		@CheckReturnValue
 		public <S> StateChangeResult<S> forStateChange(Supplier<S> supplier, Predicate<? super S> acceptanceCriteria) {
 			return andWaitForStateChange(supplier, acceptanceCriteria);
 		}
@@ -350,6 +362,7 @@ public class Scenario {
 		 * @return will never be {@literal null}.
 		 * @see #forEventOfType(Class)
 		 */
+		@CheckReturnValue
 		public <E> EventResult<E> andWaitForEventOfType(Class<E> type) {
 			return new EventResult<E>(type, Function.identity(), null);
 		}
@@ -365,6 +378,7 @@ public class Scenario {
 		 * @return will never be {@literal null}.
 		 * @see #forStateChange(Supplier)
 		 */
+		@CheckReturnValue
 		public <S> StateChangeResult<S> andWaitForStateChange(Supplier<S> supplier) {
 			return andWaitForStateChange(supplier, DEFAULT_ACCEPTANCE);
 		}
@@ -379,6 +393,7 @@ public class Scenario {
 		 * @return will never be {@literal null}.
 		 * @see #andWaitForStateChange(Supplier, Predicate)
 		 */
+		@CheckReturnValue
 		public <S> StateChangeResult<S> andWaitForStateChange(Supplier<S> supplier,
 				Predicate<? super S> acceptanceCriteria) {
 
