@@ -12,11 +12,11 @@ jobs:
         boot:
         - '3.1.12'
         - '3.2.12'
-        - '3.3.10'
-        - '3.3.11-SNAPSHOT'
-        - '3.4.4'
-        - '3.4.5-SNAPSHOT'
-        - '3.5.0-SNAPSHOT'
+        - '3.3.12'
+        - '3.3.13-SNAPSHOT'
+        - '3.4.6'
+        - '3.4.7-SNAPSHOT'
+        - '3.5.1-SNAPSHOT'
         jmolecules:
         - '2025.0.0-RC3'
 
