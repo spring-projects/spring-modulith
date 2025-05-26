@@ -1,2 +1,3 @@
 jmolecules-bom=jMolecules
 spring-framework=Spring Framework
+micrometer-tracing=Micrometer Tracing
