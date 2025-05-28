@@ -81,9 +81,9 @@ public class PackageName implements Comparable<PackageName> {
 	}
 
 	/**
-	 * Creates a new {@link PackageName} for the given fully-qualified type name.
+	 * Creates a new {@link PackageName} for the given type.
 	 *
-	 * @param fullyQualifiedName must not be {@literal null} or empty.
+	 * @param type must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 * @since 2.0
 	 */
