@@ -1,6 +1,9 @@
 archunit=ArchUnit
+flapdoodle-mongodb=Flapdoodle MongoDB
 jgit=jGit
 jmolecules-bom=jMolecules
 micrometer-tracing=Micrometer Tracing
 mongodb=MongoDB
 spring-framework=Spring Framework
+structurizr=Structurizr
+testcontainers=Testcontainers
