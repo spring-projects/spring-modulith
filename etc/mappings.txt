@@ -1,2 +1,6 @@
+archunit=ArchUnit
+jgit=jGit
 jmolecules-bom=jMolecules
+micrometer-tracing=Micrometer Tracing
+mongodb=MongoDB
 spring-framework=Spring Framework
