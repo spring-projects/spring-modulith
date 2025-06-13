@@ -38,7 +38,7 @@
 		<archunit.version>1.4.1</archunit.version>
 		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
 		<flapdoodle-mongodb.version>4.16.1</flapdoodle-mongodb.version>
-		<jgit.version>7.0.0.202409031743-r</jgit.version>
+		<jgit.version>7.0.1.202505221510-r</jgit.version>
 		<jgrapht.version>1.5.2</jgrapht.version>
 		<jmolecules-bom.version>2023.3.1</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
