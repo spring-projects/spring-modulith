@@ -11,7 +11,7 @@
 	<artifactId>spring-modulith-moments</artifactId>
 
 	<properties>
-		<module.name>org.springframework.modulith.moments</module.name>
+		<module.name>spring.modulith.moments</module.name>
 	</properties>
 
 	<dependencies>
