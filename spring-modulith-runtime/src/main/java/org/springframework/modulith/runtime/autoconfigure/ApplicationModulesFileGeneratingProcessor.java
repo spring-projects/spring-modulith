@@ -17,11 +17,14 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aot.hint.MemberCategory;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotContribution;
 import org.springframework.beans.factory.aot.BeanFactoryInitializationAotProcessor;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
+
+import com.jayway.jsonpath.internal.function.PathFunctionFactory;
 
 /**
  * Renders the application module description JSON into a resource named
@@ -51,6 +54,22 @@ class ApplicationModulesFileGeneratingProcessor implements BeanFactoryInitializa
 
 			context.getRuntimeHints().resources().registerPattern(location);
 			context.getGeneratedFiles().addResourceFile(location, exporter.toJson());
+
+			// Register JSONPath internals as available for reflective construction to be able to read the generated files in
+			// a native image
+			//
+			// TODO: Remove once https://github.com/json-path/JsonPath/issues/1042 is fixed
+
+			var reflection = context.getRuntimeHints().reflection();
+			var classLoader = ApplicationModulesFileGeneratingProcessor.class.getClassLoader();
+
+			PathFunctionFactory.FUNCTIONS.values().forEach(it -> {
+
+				// Tweak name due to shading
+				var typeName = it.getName().replace("com.jayway.jsonpath", "org.springframework.modulith.runtime.jsonpath");
+
+				reflection.registerTypeIfPresent(classLoader, typeName, MemberCategory.INVOKE_PUBLIC_CONSTRUCTORS);
+			});
 		};
 	}
 }
