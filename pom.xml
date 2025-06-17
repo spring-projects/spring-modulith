@@ -41,7 +41,7 @@
 		<flapdoodle-mongodb.version>4.20.0</flapdoodle-mongodb.version>
 		<jgit.version>7.3.0.202506031305-r</jgit.version>
 		<jgrapht.version>1.5.2</jgrapht.version>
-		<jmolecules-bom.version>2023.3.1</jmolecules-bom.version>
+		<jmolecules-bom.version>2023.3.2</jmolecules-bom.version>
 		<nullaway.version>0.12.7</nullaway.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
