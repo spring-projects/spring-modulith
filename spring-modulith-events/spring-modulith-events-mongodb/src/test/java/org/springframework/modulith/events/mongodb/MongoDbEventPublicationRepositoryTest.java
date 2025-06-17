@@ -32,6 +32,10 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -40,17 +44,32 @@ import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.utility.DockerImageName;
 
 /**
  * @author Björn Kieling
  * @author Dmitry Belyaev
  * @author Oliver Drotbohm
  */
+@Testcontainers(disabledWithoutDocker = true)
 class MongoDbEventPublicationRepositoryTest {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
+	@TestConfiguration(proxyBeanMethods = false)
+	static class Infrastructure {
+
+		@Bean
+		@ServiceConnection
+		MongoDBContainer mongoDBContainer() {
+			return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
+		}
+	}
+
 	@DataMongoTest
+	@Import(Infrastructure.class)
 	@ContextConfiguration(classes = TestApplication.class)
 	static abstract class TestBase {
 
@@ -84,8 +103,9 @@ class MongoDbEventPublicationRepositoryTest {
 			assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
 			assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
 
-			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(new TestEvent("abc"), TARGET_IDENTIFIER))
-					.isPresent();
+			assertThat(
+					repository.findIncompletePublicationsByEventAndTargetIdentifier(new TestEvent("abc"), TARGET_IDENTIFIER))
+							.isPresent();
 
 			// Complete publication
 			repository.markCompleted(publication, Instant.now());
