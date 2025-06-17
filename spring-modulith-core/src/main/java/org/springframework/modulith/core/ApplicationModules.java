@@ -328,8 +328,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		Assert.notNull(type, "Type must not be null!");
 
-		return modules.values().stream() //
-				.anyMatch(module -> module.contains(type));
+		return modules.values().stream().anyMatch(module -> module.contains(type));
 	}
 
 	/**
@@ -499,7 +498,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.flatMap(it -> it.getDetails().stream())
 				.collect(toViolations());
 
-		var dependencyViolations = Stream.concat(rootModules.get().stream(), modules.values().stream()) //
+		var dependencyViolations = allModules() //
 				.map(it -> it.detectDependencies(this)) //
 				.reduce(NONE, Violations::and);
 
@@ -585,10 +584,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	@Override
 	public Iterator<ApplicationModule> iterator() {
-
-		return orderedNames != null
-				? orderedNames.stream().map(this::getRequiredModule).iterator()
-				: modules.values().iterator();
+		return orderedModules().iterator();
 	}
 
 	/*
@@ -661,7 +657,13 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @since 1.1
 	 */
 	private Stream<ApplicationModule> allModules() {
-		return Stream.concat(modules.values().stream(), rootModules.get().stream());
+		return Stream.concat(orderedModules(), rootModules.get().stream());
+	}
+
+	private Stream<ApplicationModule> orderedModules() {
+		return orderedNames != null
+				? orderedNames.stream().map(this::getRequiredModule)
+				: modules.values().stream().sorted();
 	}
 
 	/**
