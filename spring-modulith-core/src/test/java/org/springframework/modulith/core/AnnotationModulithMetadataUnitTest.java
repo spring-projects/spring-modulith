@@ -54,6 +54,16 @@ class AnnotationModulithMetadataUnitTest {
 		});
 	}
 
+	@Test // GH-1247
+	void skipsNestedAdditionalPackages() {
+
+		assertThat(AnnotationModulithMetadata.of(WithInvalidAdditionalpackages.class)).hasValueSatisfying(it -> {
+			assertThat(it.getBasePackages())
+					.hasSize(1)
+					.contains(WithInvalidAdditionalpackages.class.getPackageName());
+		});
+	}
+
 	@Modulithic(useFullyQualifiedModuleNames = true)
 	static class Sample {}
 
@@ -63,4 +73,7 @@ class AnnotationModulithMetadataUnitTest {
 	@Retention(RetentionPolicy.RUNTIME)
 	@Modulithic(useFullyQualifiedModuleNames = true)
 	@interface Intermediate {}
+
+	@Modulithic(additionalPackages = "org.springframework.modulith.core.nested")
+	static class WithInvalidAdditionalpackages {}
 }

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -146,11 +147,14 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 		var result = new ArrayList<String>();
 		result.add(basePackage);
 
-		for (var candidate : annotation.additionalPackages()) {
-			if (!result.contains(candidate)) {
-				result.add(candidate);
-			}
-		}
+		var name = PackageName.of(basePackage);
+
+		// Only add non-nested additional packages
+		Stream.of(annotation.additionalPackages())
+				.map(PackageName::of)
+				.filter(Predicate.not(name::contains))
+				.map(PackageName::getName)
+				.forEach(result::add);
 
 		return result;
 	}
