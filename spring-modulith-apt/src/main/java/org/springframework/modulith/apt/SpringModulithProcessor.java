@@ -319,7 +319,12 @@ public class SpringModulithProcessor implements Processor {
 		var kapt = environment.getOptions().get("kapt.kotlin.generated");
 
 		if (kapt != null) {
-			return Path.of(kapt.substring(0, kapt.indexOf("/build/generated/source")));
+
+			// Strip Gradle or Maven suffixes
+			var index = kapt.indexOf("/build/generated/source");
+			index = index == -1 ? kapt.indexOf("/target/generated-sources") : index;
+
+			return Path.of(kapt.substring(0, index));
 		}
 
 		return Path.of(".");
