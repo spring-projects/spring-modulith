@@ -121,6 +121,7 @@
 		<dependency>
 			<groupId>org.jspecify</groupId>
 			<artifactId>jspecify</artifactId>
+			<version>1.0.0</version> <!-- explicitly declared to allow integration builds against Boot 3 -->
 		</dependency>
 
 		<dependency>
