@@ -17,8 +17,10 @@ jobs:
         - '3.4.6'
         - '3.4.7-SNAPSHOT'
         - '3.5.1-SNAPSHOT'
+        framework:
+        - '6.2.8'
         jmolecules:
-        - '2025.0.0-RC3'
+        - '2025.0.0-RC4'
 
     name: Build against Boot ${{ matrix.boot }} / jMolecules ${{ matrix.jmolecules }}
     runs-on: ubuntu-latest
@@ -43,4 +45,4 @@ jobs:
       run: |
         cd spring-modulith-examples
         ../mvnw -B versions:update-parent -s ../settings.xml -Pspring-enterprise,with-preview-repos -DskipResolution=true -DparentVersion=${{ matrix.boot }}
-        ../mvnw -B clean verify -s ../settings.xml -Pspring-enterprise,with-preview-repos -Dspring-boot.version=${{ matrix.boot }} -Djmolecules.version=${{ matrix.jmolecules }}
+        ../mvnw -B clean verify -s ../settings.xml -Pspring-enterprise,with-preview-repos -Dspring-boot.version=${{ matrix.boot }} -Dspring-framework.version=${{ matrix.framework }} -Djmolecules.version=${{ matrix.jmolecules }}
