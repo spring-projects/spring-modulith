@@ -105,7 +105,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 	public static Supplier<ModuleTestExecution> of(Class<?> type) {
 
-		return () -> {
+		return SingletonSupplier.of(() -> {
 
 			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
 			var packageName = type.getPackage().getName();
@@ -120,7 +120,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 			return EXECUTIONS.computeIfAbsent(new Key(module.getBasePackage().getName(), annotation),
 					it -> new ModuleTestExecution(annotation, modules, module));
-		};
+		});
 	}
 
 	/**

@@ -26,14 +26,45 @@ import org.junit.jupiter.api.Test;
  */
 class ModuleTypeExcludeFilterUnitTests {
 
-	@Test
+	@Test // GH-725, GH-1216
 	void instancesForSameTargetTypeAreEqual() {
 
-		var left = new ModuleTypeExcludeFilter(Object.class);
-		var right = new ModuleTypeExcludeFilter(Object.class);
+		var left = new ModuleTypeExcludeFilter(First.class);
+		var right = new ModuleTypeExcludeFilter(First.class);
 
 		assertThat(left).isEqualTo(right);
 		assertThat(right).isEqualTo(left);
 		assertThat(left).hasSameHashCodeAs(right);
 	}
+
+	@Test // GH-1216
+	void instancesForDifferentTargetButSameTestSetupTypeAreEqual() {
+
+		var left = new ModuleTypeExcludeFilter(First.class);
+		var right = new ModuleTypeExcludeFilter(Second.class);
+
+		assertThat(left).isEqualTo(right);
+		assertThat(right).isEqualTo(left);
+		assertThat(left).hasSameHashCodeAs(right);
+	}
+
+	@Test // GH-1216
+	void instancesForDifferentTargetAndDifferentTestSetupTypeAreNotEqual() {
+
+		var left = new ModuleTypeExcludeFilter(Second.class);
+		var right = new ModuleTypeExcludeFilter(Third.class);
+
+		assertThat(left).isNotEqualTo(right);
+		assertThat(right).isNotEqualTo(left);
+		assertThat(left).doesNotHaveSameHashCodeAs(right);
+	}
+
+	@ApplicationModuleTest
+	static class First {}
+
+	@ApplicationModuleTest
+	static class Second {}
+
+	@ApplicationModuleTest(extraIncludes = "foo")
+	static class Third {}
 }
