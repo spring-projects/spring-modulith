@@ -25,19 +25,20 @@ import org.springframework.core.type.classreading.MetadataReaderFactory;
 import org.springframework.util.Assert;
 
 /**
+ * A {@link TypeExcludeFilter} that only selects types included in a {@link ModuleTestExecution}, i.e. from the modules
+ * included in a particular test run.
+ *
  * @author Oliver Drotbohm
  */
 class ModuleTypeExcludeFilter extends TypeExcludeFilter {
 
 	private final Supplier<ModuleTestExecution> execution;
-	private final Class<?> source;
 
 	public ModuleTypeExcludeFilter(Class<?> testClass) {
 
 		Assert.notNull(testClass, "Test class must not be null!");
 
 		this.execution = ModuleTestExecution.of(testClass);
-		this.source = testClass;
 	}
 
 	/*
@@ -64,7 +65,7 @@ class ModuleTypeExcludeFilter extends TypeExcludeFilter {
 			return false;
 		}
 
-		return Objects.equals(source, that.source);
+		return Objects.equals(execution.get(), that.execution.get());
 	}
 
 	/*
@@ -73,6 +74,6 @@ class ModuleTypeExcludeFilter extends TypeExcludeFilter {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(source);
+		return Objects.hash(execution.get());
 	}
 }
