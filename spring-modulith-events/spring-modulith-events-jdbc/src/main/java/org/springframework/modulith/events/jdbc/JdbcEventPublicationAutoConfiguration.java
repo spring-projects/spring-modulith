@@ -31,6 +31,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
+import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.support.CompletionMode;
 
@@ -55,14 +56,17 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	@Bean
 	JdbcRepositorySettings jdbcEventPublicationRepositorySettings(DatabaseType databaseType,
 			JdbcConfigurationProperties properties) {
-
-		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties.getSchema());
+		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties);
 	}
 
 	@Bean
-	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
+	EventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
 			EventSerializer serializer, JdbcRepositorySettings settings) {
-		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, settings);
+
+		return switch (settings.getSchemaVersion()) {
+			case V2 -> new JdbcEventPublicationRepositoryV2(jdbcTemplate, serializer, settings);
+			case V1 -> new JdbcEventPublicationRepository(jdbcTemplate, serializer, settings);
+		};
 	}
 
 	@Bean

@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
 
@@ -92,12 +93,69 @@ public interface EventPublication {
 		return getCompletionDate().isPresent();
 	}
 
+	/**
+	 * Return the publication's {@link Status}.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 2.0
+	 */
+	Status getStatus();
+
+	/**
+	 * Returns the last time the {@link EventPublication} was resubmitted.
+	 *
+	 * @return can be {@literal null}.
+	 * @since 2.0
+	 */
+	@Nullable
+	Instant getLastResubmissionDate();
+
+	/**
+	 * Returns the number of completion attempts.
+	 *
+	 * @since 2.0
+	 */
+	int getCompletionAttempts();
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Comparable#compareTo(java.lang.Object)
 	 */
-	@SuppressWarnings("javadoc")
 	default int compareTo(EventPublication that) {
 		return this.getPublicationDate().compareTo(that.getPublicationDate());
+	}
+
+	/**
+	 * The status of an {@link EventPublication}.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 2.0
+	 */
+	enum Status {
+
+		/**
+		 * The event publication has been published initially.
+		 */
+		PUBLISHED,
+
+		/**
+		 * An event listener has picked up the publication and is processing it.
+		 */
+		PROCESSING,
+
+		/**
+		 * The processing of the publication has successfully completed.
+		 */
+		COMPLETED,
+
+		/**
+		 * The processing ended up in a failure.
+		 */
+		FAILED,
+
+		/**
+		 * A previously failed publication has been resubmitted for processing.
+		 */
+		RESUBMITTED;
 	}
 }

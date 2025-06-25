@@ -25,6 +25,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
+import org.springframework.modulith.events.config.StalenessProperties;
+import org.springframework.modulith.events.core.Staleness;
 import org.springframework.modulith.events.core.InMemoryEventPublicationRepository;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.stereotype.Component;
@@ -53,6 +55,11 @@ class PersistentApplicationEventMulticasterIntegrationTests {
 		@Bean
 		SampleEventListener listener() {
 			return new SampleEventListener();
+		}
+
+		@Bean
+		Staleness eventPublicationRepositoryProperties() {
+			return StalenessProperties.DEFAULTS;
 		}
 	}
 

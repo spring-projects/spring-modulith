@@ -41,4 +41,12 @@ public interface IncompleteEventPublications {
 	 * @param duration must not be {@literal null}.
 	 */
 	void resubmitIncompletePublicationsOlderThan(Duration duration);
+
+	/**
+	 * Triggers the re-submission of incomplete {@link EventPublication}s matching the given {@link ResubmissionOptions}.
+	 *
+	 * @param options must not be {@literal null}.
+	 * @since 2.0
+	 */
+	void resubmitIncompletePublications(ResubmissionOptions options);
 }

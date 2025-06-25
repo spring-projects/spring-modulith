@@ -42,7 +42,6 @@ import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
-import org.springframework.util.ObjectUtils;
 
 /**
  * JDBC-based repository to store {@link TargetEventPublication}s.
@@ -53,50 +52,72 @@ import org.springframework.util.ObjectUtils;
  * @author Raed Ben Hamouda
  * @author Cora Iberkleid
  */
-class JdbcEventPublicationRepository implements EventPublicationRepository, BeanClassLoaderAware {
+@Transactional
+class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, BeanClassLoaderAware {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(JdbcEventPublicationRepository.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(JdbcEventPublicationRepositoryV2.class);
+
+	private static final String ALL_COLUMNS = "ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT, STATUS, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE";
 
 	private static final String SQL_STATEMENT_INSERT = """
-			INSERT INTO %s (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
-			VALUES (?, ?, ?, ?, ?)
+			INSERT INTO %s (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT, STATUS, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE)
+			VALUES (?, ?, ?, ?, ?, ?, ?, ?)
 			""";
 
 	private static final String SQL_STATEMENT_FIND_COMPLETED = """
-			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
-			FROM %s
-			WHERE COMPLETION_DATE IS NOT NULL
-			ORDER BY PUBLICATION_DATE ASC
-			""";
-
-	private static final String SQL_STATEMENT_FIND_INCOMPLETE = """
-			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
-			FROM %s
-			WHERE COMPLETION_DATE IS NULL
-			ORDER BY PUBLICATION_DATE ASC
-			""";
-
-	private static final String SQL_STATEMENT_FIND_INCOMPLETE_PUBLISHED_BEFORE = """
-			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			SELECT %s
 			FROM %s
 			WHERE
-					COMPLETION_DATE IS NULL
+					COMPLETION_DATE IS NOT NULL OR STATUS IS NOT NULL AND STATUS = 'COMPLETED'
+			ORDER BY PUBLICATION_DATE ASC
+			""".formatted(ALL_COLUMNS, "%s");
+
+	private static final String SQL_STATEMENT_FIND_INCOMPLETE = """
+			SELECT %s
+			FROM %s
+			WHERE
+					COMPLETION_DATE IS NULL OR STATUS != 'COMPLETED'
+			ORDER BY
+					PUBLICATION_DATE ASC
+			""".formatted(ALL_COLUMNS, "%s");
+
+	private static final String SQL_STATEMENT_FIND_INCOMPLETE_PUBLISHED_BEFORE = """
+			SELECT %s
+			FROM %s
+			WHERE
+					(COMPLETION_DATE IS NULL OR STATUS IS NOT NULL AND STATUS = 'PROCESSING')
 					AND PUBLICATION_DATE < ?
 			ORDER BY PUBLICATION_DATE ASC
-			""";
+			""".formatted(ALL_COLUMNS, "%s");
 
 	private static final String SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID = """
 			UPDATE %s
-			SET COMPLETION_DATE = ?
+			SET
+					STATUS = 'COMPLETED',
+					COMPLETION_DATE = ?
 			WHERE
 					LISTENER_ID = ?
 					AND COMPLETION_DATE IS NULL
 					AND SERIALIZED_EVENT = ?
 			""";
 
+	private static String getUpdateSql(String table, Status status) {
+
+		return asOneLine("""
+				UPDATE %s
+				SET
+						STATUS = '%s'
+				WHERE
+						ID = ?
+						AND STATUS != '%s'
+				""".formatted(table, status.name(), status.name()));
+	}
+
 	private static final String SQL_STATEMENT_UPDATE_BY_ID = """
 			UPDATE %s
-			SET COMPLETION_DATE = ?
+			SET
+					STATUS = 'COMPLETED',
+					COMPLETION_DATE = ?
 			WHERE
 					ID = ?
 			""";
@@ -107,7 +128,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			WHERE
 					SERIALIZED_EVENT = ?
 					AND LISTENER_ID = ?
-					AND COMPLETION_DATE IS NULL
+					AND (COMPLETION_DATE IS NULL OR STATUS = 'FAILED')
 			ORDER BY PUBLICATION_DATE
 			""";
 
@@ -136,29 +157,29 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			DELETE
 			FROM %s
 			WHERE
-					COMPLETION_DATE IS NOT NULL
+					COMPLETION_DATE IS NOT NULL OR STATUS = 'PROCESSING'
 			""";
 
 	private static final String SQL_STATEMENT_DELETE_COMPLETED_BEFORE = """
 			DELETE
 			FROM %s
 			WHERE
-					COMPLETION_DATE < ?
+					COMPLETION_DATE < ? AND (STATUS = 'COMPLETED' OR STATUS IS NULL)
 			""";
 
+	// Only copy if no entry in target table
 	private static final String SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID = """
-			-- Only copy if no entry in target table
-			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, COMPLETION_DATE)
-			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, ?
+			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, STATUS, COMPLETION_DATE, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE)
+			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, 'COMPLETED', ?, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE
 			 	FROM %s
 			 	WHERE ID = ?
 			 	  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID)
 			""";
 
+	// Only copy if no entry in target table
 	private static final String SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID = """
-			-- Only copy if no entry in target table
-			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, COMPLETION_DATE)
-			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, ?
+			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, STATUS, COMPLETION_DATE, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE)
+			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, 'COMPLETED', ?, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE
 			 	FROM %s
 			 	WHERE LISTENER_ID = ?
 				  AND SERIALIZED_EVENT = ?
@@ -176,7 +197,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	private final String sqlStatementInsert,
 			sqlStatementFindCompleted,
 			sqlStatementFindIncomplete,
-			sqlStatementFindIncompleteBefore,
+			sqlStatementFindUncompletedBefore,
 			sqlStatementUpdateByEventAndListenerId,
 			sqlStatementUpdateById,
 			sqlStatementFindByEventAndListenerId,
@@ -186,7 +207,9 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			sqlStatementDeleteCompleted,
 			sqlStatementDeleteCompletedBefore,
 			sqlStatementCopyToArchive,
-			sqlStatementCopyToArchiveByEventAndListenerId;
+			sqlStatementCopyToArchiveByEventAndListenerId,
+			sqlStatementMarkProcessing,
+			sqlStatementMarkFailed;
 
 	/**
 	 * Creates a new {@link JdbcEventPublicationRepository} for the given {@link JdbcOperations}, {@link EventSerializer},
@@ -196,7 +219,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 * @param serializer must not be {@literal null}.
 	 * @param settings must not be {@literal null}.
 	 */
-	public JdbcEventPublicationRepository(JdbcOperations operations, EventSerializer serializer,
+	public JdbcEventPublicationRepositoryV2(JdbcOperations operations, EventSerializer serializer,
 			JdbcRepositorySettings settings) {
 
 		Assert.notNull(operations, "JdbcOperations must not be null!");
@@ -207,26 +230,30 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		this.serializer = serializer;
 		this.settings = settings;
 
-		var schema = settings.getSchema();
-		var table = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
-		var completedTable = settings.isArchiveCompletion() ? table + "_ARCHIVE" : table;
+		var table = settings.getTable();
+		var completedTable = settings.getArchiveTable();
 
-		this.sqlStatementInsert = SQL_STATEMENT_INSERT.formatted(table);
-		this.sqlStatementFindCompleted = SQL_STATEMENT_FIND_COMPLETED.formatted(completedTable);
-		this.sqlStatementFindIncomplete = SQL_STATEMENT_FIND_INCOMPLETE.formatted(table);
-		this.sqlStatementFindIncompleteBefore = SQL_STATEMENT_FIND_INCOMPLETE_PUBLISHED_BEFORE.formatted(table);
-		this.sqlStatementUpdateByEventAndListenerId = SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table);
-		this.sqlStatementUpdateById = SQL_STATEMENT_UPDATE_BY_ID.formatted(table);
-		this.sqlStatementFindByEventAndListenerId = SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table);
-		this.sqlStatementDelete = SQL_STATEMENT_DELETE.formatted(table);
-		this.sqlStatementDeleteByEventAndListenerId = SQL_STATEMENT_DELETE_BY_EVENT_AND_LISTENER_ID.formatted(table);
-		this.sqlStatementDeleteById = SQL_STATEMENT_DELETE_BY_ID.formatted(table);
-		this.sqlStatementDeleteCompleted = SQL_STATEMENT_DELETE_COMPLETED.formatted(completedTable);
-		this.sqlStatementDeleteCompletedBefore = SQL_STATEMENT_DELETE_COMPLETED_BEFORE.formatted(completedTable);
-		this.sqlStatementCopyToArchive = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable, table,
-				completedTable);
-		this.sqlStatementCopyToArchiveByEventAndListenerId = SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID
-				.formatted(completedTable, table, completedTable);
+		this.sqlStatementInsert = asOneLine(SQL_STATEMENT_INSERT.formatted(table));
+		this.sqlStatementFindCompleted = asOneLine(SQL_STATEMENT_FIND_COMPLETED.formatted(completedTable));
+		this.sqlStatementFindIncomplete = asOneLine(SQL_STATEMENT_FIND_INCOMPLETE.formatted(table));
+		this.sqlStatementFindUncompletedBefore = asOneLine(SQL_STATEMENT_FIND_INCOMPLETE_PUBLISHED_BEFORE.formatted(table));
+		this.sqlStatementUpdateByEventAndListenerId = asOneLine(
+				SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table));
+		this.sqlStatementUpdateById = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table));
+		this.sqlStatementFindByEventAndListenerId = asOneLine(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table));
+		this.sqlStatementDelete = asOneLine(SQL_STATEMENT_DELETE.formatted(table));
+		this.sqlStatementDeleteByEventAndListenerId = asOneLine(
+				SQL_STATEMENT_DELETE_BY_EVENT_AND_LISTENER_ID.formatted(table));
+		this.sqlStatementDeleteById = asOneLine(SQL_STATEMENT_DELETE_BY_ID.formatted(table));
+		this.sqlStatementDeleteCompleted = asOneLine(SQL_STATEMENT_DELETE_COMPLETED.formatted(completedTable));
+		this.sqlStatementDeleteCompletedBefore = asOneLine(SQL_STATEMENT_DELETE_COMPLETED_BEFORE.formatted(completedTable));
+		this.sqlStatementCopyToArchive = asOneLine(SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable, table,
+				completedTable));
+		this.sqlStatementCopyToArchiveByEventAndListenerId = asOneLine(
+				SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID
+						.formatted(completedTable, table, completedTable));
+		this.sqlStatementMarkProcessing = getUpdateSql(table, Status.PROCESSING);
+		this.sqlStatementMarkFailed = getUpdateSql(table, Status.FAILED);
 	}
 
 	/*
@@ -243,7 +270,6 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 * @see org.springframework.modulith.events.EventPublicationRepository#create(org.springframework.modulith.events.EventPublication)
 	 */
 	@Override
-	@Transactional
 	public TargetEventPublication create(TargetEventPublication publication) {
 
 		var serializedEvent = serializeEvent(publication.getEvent());
@@ -254,9 +280,21 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 				publication.getEvent().getClass().getName(), //
 				publication.getTargetIdentifier().getValue(), //
 				Timestamp.from(publication.getPublicationDate()), //
-				serializedEvent);
+				serializedEvent, //
+				publication.getStatus().name(), //
+				1, //
+				Timestamp.from(publication.getPublicationDate()));
 
 		return publication;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markProcessing(java.util.UUID)
+	 */
+	@Override
+	public void markProcessing(UUID identifier) {
+		operations.update(sqlStatementMarkProcessing, identifier);
 	}
 
 	/*
@@ -264,7 +302,6 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 * @see org.springframework.modulith.events.EventPublicationRepository#markCompleted(java.lang.Object, org.springframework.modulith.events.PublicationTargetIdentifier, java.time.Instant)
 	 */
 	@Override
-	@Transactional
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
 		var targetIdentifier = identifier.getValue();
@@ -296,7 +333,6 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markCompleted(java.util.UUID, java.time.Instant)
 	 */
 	@Override
-	@Transactional
 	public void markCompleted(UUID identifier, Instant completionDate) {
 
 		var databaseId = uuidToDatabase(identifier);
@@ -312,6 +348,41 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		} else {
 			operations.update(sqlStatementUpdateById, timestamp, databaseId);
 		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markFailed(java.util.UUID)
+	 */
+	@Override
+	public void markFailed(UUID identifier) {
+		operations.update(sqlStatementMarkFailed, uuidToDatabase(identifier));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 */
+	@Override
+	public boolean markResubmitted(UUID identifier, Instant instant) {
+
+		var sql = asOneLine("""
+				UPDATE %s
+				SET
+						STATUS = 'RESUBMITTED',
+						COMPLETION_ATTEMPTS = COMPLETION_ATTEMPTS + 1,
+						LAST_RESUBMISSION_DATE = ?
+				WHERE
+						ID = ?
+						AND STATUS != 'RESUBMITTED'
+				""".formatted(settings.getTable()));
+
+		var timestamp = Timestamp.from(instant);
+		var id = uuidToDatabase(identifier);
+
+		int rowsAffected = operations.update(sql, timestamp, id);
+
+		return rowsAffected == 1;
 	}
 
 	/*
@@ -357,9 +428,10 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublicationsPublishedBefore(java.time.Instant)
 	 */
 	@Override
+	@Transactional(readOnly = true)
 	public List<TargetEventPublication> findIncompletePublicationsPublishedBefore(Instant instant) {
 
-		var result = operations.query(sqlStatementFindIncompleteBefore,
+		var result = operations.query(sqlStatementFindUncompletedBefore,
 				this::resultSetToPublications, Timestamp.from(instant));
 
 		return result == null ? Collections.emptyList() : result;
@@ -406,11 +478,18 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	@Override
 	public List<TargetEventPublication> findByStatus(Status status) {
 
-		if (Status.COMPLETED == status) {
-			return findCompletedPublications();
-		}
+		var table = status == Status.COMPLETED && settings.isArchiveCompletion()
+				? settings.getArchiveTable()
+				: settings.getTable();
 
-		return Collections.emptyList();
+		var sql = """
+				SELECT %s FROM %s
+				 WHERE STATUS = '%s'
+				""".formatted(ALL_COLUMNS, table, status.name());
+
+		var result = operations.query(sql, this::resultSetToPublications);
+
+		return result == null ? Collections.emptyList() : result;
 	}
 
 	/*
@@ -419,7 +498,59 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	 */
 	@Override
 	public int countByStatus(Status status) {
-		return findByStatus(status).size();
+
+		var table = status == Status.COMPLETED && settings.isArchiveCompletion()
+				? settings.getArchiveTable()
+				: settings.getTable();
+
+		var sql = asOneLine("""
+				SELECT COUNT(ID) FROM %s
+				 WHERE STATUS = '%s'
+				""".formatted(table, status.name()));
+
+		var result = operations.queryForObject(sql, int.class);
+
+		return result == null ? 0 : result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findFailedPublications(org.springframework.modulith.events.core.EventPublicationRepository.IncompleteCriteria)
+	 */
+	@Override
+	@Transactional(readOnly = true)
+	public List<TargetEventPublication> findFailedPublications(FailedCriteria criteria) {
+
+		var sql = """
+				SELECT %s
+				  FROM %s
+				 WHERE STATUS = 'FAILED' OR (STATUS IS NULL AND COMPLETION_DATE IS NULL)
+				""".formatted(ALL_COLUMNS, settings.getTable());
+
+		var instant = criteria.getPublicationDateReference();
+		var args = new ArrayList<>();
+
+		if (instant != null) {
+
+			sql += """
+					AND PUBLICATION_DATE < ?
+					""";
+
+			args.add(instant);
+		}
+
+		var itemsToRead = criteria.getMaxItemsToRead();
+
+		if (itemsToRead != -1) {
+
+			sql += """
+					LIMIT %s
+					""".formatted(itemsToRead);
+		}
+
+		var result = operations.query(asOneLine(sql), this::resultSetToPublications, args.toArray());
+
+		return result == null ? Collections.emptyList() : result;
 	}
 
 	private String serializeEvent(Object event) {
@@ -469,10 +600,23 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		var publicationDate = rs.getTimestamp("PUBLICATION_DATE").toInstant();
 		var listenerId = rs.getString("LISTENER_ID");
 		var serializedEvent = rs.getString("SERIALIZED_EVENT");
+		var status = getStatusFrom(rs);
+		var lastResubmissionDate = rs.getTimestamp("LAST_RESUBMISSION_DATE").toInstant();
+		var completionAttempts = rs.getInt("COMPLETION_ATTEMPTS");
 
 		return new JdbcEventPublication(id, publicationDate, listenerId,
 				() -> serializer.deserialize(serializedEvent, eventClass),
-				completionDate == null ? null : completionDate.toInstant());
+				completionDate == null ? null : completionDate.toInstant(), status, lastResubmissionDate, completionAttempts);
+	}
+
+	private static @Nullable Status getStatusFrom(ResultSet rs) {
+
+		try {
+			var status = rs.getString("STATUS");
+			return status == null ? null : Status.valueOf(status);
+		} catch (SQLException e) {
+			return null;
+		}
 	}
 
 	private Object uuidToDatabase(UUID id) {
@@ -510,15 +654,25 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 				.collect(Collectors.joining(", ", "(", ")"));
 	}
 
+	private static String asOneLine(String string) {
+		return string.replace("\n", " ")
+				.replace("\t", " ")
+				.replaceAll("\\s+", " ")
+				.trim();
+	}
+
 	private static class JdbcEventPublication implements TargetEventPublication {
 
 		private final UUID id;
 		private final Instant publicationDate;
 		private final String listenerId;
 		private final Supplier<Object> eventSupplier;
+		private final @Nullable Instant lastResubmissionDate;
+		private final int completionAttempts;
 
 		private @Nullable Instant completionDate;
 		private @Nullable Object event;
+		private Status status;
 
 		/**
 		 * @param id must not be {@literal null}.
@@ -528,7 +682,8 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 * @param completionDate can be {@literal null}.
 		 */
 		public JdbcEventPublication(UUID id, Instant publicationDate, String listenerId, Supplier<Object> event,
-				@Nullable Instant completionDate) {
+				@Nullable Instant completionDate, @Nullable Status status, @Nullable Instant lastResubmissionDate,
+				int completionAttempts) {
 
 			Assert.notNull(id, "Id must not be null!");
 			Assert.notNull(publicationDate, "Publication date must not be null!");
@@ -540,6 +695,9 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			this.listenerId = listenerId;
 			this.eventSupplier = event;
 			this.completionDate = completionDate;
+			this.status = status != null ? status : completionDate != null ? Status.COMPLETED : Status.PROCESSING;
+			this.lastResubmissionDate = lastResubmissionDate;
+			this.completionAttempts = completionAttempts;
 		}
 
 		/*
@@ -556,7 +714,6 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 * @see org.springframework.modulith.events.EventPublication#getEvent()
 		 */
 		@Override
-		@SuppressWarnings("null")
 		public Object getEvent() {
 
 			if (event == null) {
@@ -609,6 +766,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		@Override
 		public void markCompleted(Instant instant) {
 			this.completionDate = instant;
+			this.status = Status.COMPLETED;
 		}
 
 		/*
@@ -617,6 +775,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 */
 		@Override
 		public Status getStatus() {
+
+			if (status != null) {
+				return status;
+			}
+
 			return completionDate != null ? Status.COMPLETED : Status.PROCESSING;
 		}
 
@@ -626,7 +789,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 */
 		@Override
 		public @Nullable Instant getLastResubmissionDate() {
-			return null;
+			return lastResubmissionDate;
 		}
 
 		/*
@@ -635,7 +798,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 */
 		@Override
 		public int getCompletionAttempts() {
-			return 1;
+			return completionAttempts;
 		}
 
 		/*

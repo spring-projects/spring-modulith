@@ -31,6 +31,7 @@ class JdbcConfigurationProperties {
 
 	private final SchemaInitialization schemaInitialization;
 	private final @Nullable String schema;
+	private final boolean useLegacyStructure;
 
 	/**
 	 * Creates a new {@link JdbcConfigurationProperties} instance.
@@ -39,10 +40,12 @@ class JdbcConfigurationProperties {
 	 * @param schema the schema name of event publication table, can be {@literal null}.
 	 */
 	@ConstructorBinding
-	JdbcConfigurationProperties(SchemaInitialization schemaInitialization, @Nullable String schema) {
+	JdbcConfigurationProperties(SchemaInitialization schemaInitialization, @Nullable String schema,
+			@Nullable Boolean useLegacyStructure) {
 
 		this.schemaInitialization = schemaInitialization;
 		this.schema = schema;
+		this.useLegacyStructure = useLegacyStructure == null ? false : useLegacyStructure.booleanValue();
 	}
 
 	/**
@@ -59,6 +62,15 @@ class JdbcConfigurationProperties {
 	 */
 	public @Nullable String getSchema() {
 		return schema;
+	}
+
+	/**
+	 * Whether to use the legacy event publication database schema.
+	 *
+	 * @since 2.0
+	 */
+	public boolean isUseLegacyStructure() {
+		return useLegacyStructure;
 	}
 
 	void verify(DatabaseType databaseType) {

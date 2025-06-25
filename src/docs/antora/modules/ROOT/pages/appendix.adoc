@@ -1,6 +1,6 @@
 [[appendix]]
 = Appendix
-:jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources
+:jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources/schemas
 
 [appendix]
 [[compatibility-matrix]]
@@ -87,6 +87,10 @@ For details, see xref:events.adoc#publication-registry.completion[Event Publicat
 |
 |The schema name for the event publication table. If not specified, the table will not be schema-qualified.
 
+|`spring.modulith.events.jdbc.use-legacy-structure`
+|`false`
+|Whether to use the legacy event publication database structure.
+
 |`spring.modulith.events.kafka.enable-json`
 |`true`
 |Whether to enable JSON support for `KafkaTemplate`.
@@ -107,6 +111,22 @@ For details, see xref:events.adoc#publication-registry.completion[Event Publicat
 |`false`
 |Whether to republish outstanding event publications on restarts of the application.
 Usually not recommended in multi-instance deployments as other instances might still be processing events.
+
+|`spring.modulith.events.staleness.check-interval`
+|`Duration.ofMinutes(1)`
+|The interval in which we should check for stale event publications.
+
+|`spring.modulith.events.staleness.processing`
+|`Duration.ZERO`
+|After which duration an event publication in the processing state is considered stale.
+
+|`spring.modulith.events.staleness.published`
+|`Duration.ZERO`
+|After which duration an event publication in the published state is considered stale.
+
+|`spring.modulith.events.staleness.resubmitted`
+|`Duration.ZERO`
+|After which duration an event publication in the resubmitted state is considered stale.
 
 |`spring.modulith.moments.enableTimeMachine`
 |`false`
@@ -244,49 +264,187 @@ If you would like Spring Modulith to create the schema for you, set the applicat
 [[schemas.h2]]
 === H2
 
+==== Current schemas
+
+.Standard schema
 [source, sql]
 ----
-include::{jdbc-schema-base}/schema-h2.sql[]
+include::{jdbc-schema-base}/v2/schema-h2.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v2/schema-h2-archive.sql[]
+----
+
+==== Legacy schemas
+
+.Standard schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-h2.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-h2-archive.sql[]
 ----
 
 [[schemas.hsqldb]]
 === HSQLDB
 
+==== Current schemas
+
+.Standard schema
 [source, sql]
 ----
-include::{jdbc-schema-base}/schema-hsqldb.sql[]
+include::{jdbc-schema-base}/v2/schema-hsqldb.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v2/schema-hsqldb-archive.sql[]
+----
+
+==== Legacy schemas
+
+.Standard schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-hsqldb.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-hsqldb-archive.sql[]
 ----
 
 [[schemas.mariadb]]
 === MariaDB
 
+==== Current schemas
+
+.Standard schema
 [source, sql]
 ----
-include::{jdbc-schema-base}/schema-mariadb.sql[]
+include::{jdbc-schema-base}/v2/schema-mariadb.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v2/schema-mariadb-archive.sql[]
+----
+
+==== Legacy schemas
+
+.Standard schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-mariadb.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-mariadb-archive.sql[]
 ----
 
 [[schemas.sqlserver]]
 === Microsoft SQL Server
 
+==== Current schemas
+
+.Standard schema
 [source, sql]
 ----
-include::{jdbc-schema-base}/schema-sqlserver.sql[]
+include::{jdbc-schema-base}/v2/schema-sqlserver.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v2/schema-sqlserver-archive.sql[]
+----
+
+==== Legacy schemas
+
+.Standard schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-sqlserver.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-sqlserver-archive.sql[]
 ----
 
 [[schemas.mysql]]
 === MySQL
 
+==== Current schemas
+
+.Standard schema
 [source, sql]
 ----
-include::{jdbc-schema-base}/schema-mysql.sql[]
+include::{jdbc-schema-base}/v2/schema-mysql.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v2/schema-mysql-archive.sql[]
+----
+
+==== Legacy schemas
+
+.Standard schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-mysql.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-mysql-archive.sql[]
 ----
 
 [[schemas.postgresql]]
 === PostgreSQL
 
+==== Current schemas
+
+.Standard schema
 [source, sql]
 ----
-include::{jdbc-schema-base}/schema-postgresql.sql[]
+include::{jdbc-schema-base}/v2/schema-postgresql.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v2/schema-postgresql-archive.sql[]
+----
+
+==== Legacy schemas
+
+.Standard schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-postgresql.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{jdbc-schema-base}/v1/schema-postgresql-archive.sql[]
 ----
 
 [appendix]

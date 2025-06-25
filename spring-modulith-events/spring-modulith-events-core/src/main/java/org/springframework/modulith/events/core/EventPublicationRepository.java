@@ -16,10 +16,13 @@
 package org.springframework.modulith.events.core;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.util.Assert;
 
 /**
@@ -38,6 +41,15 @@ public interface EventPublicationRepository {
 	 * @return will never be {@literal null}.
 	 */
 	TargetEventPublication create(TargetEventPublication publication);
+
+	/**
+	 * Marks the {@link org.springframework.modulith.events.EventPublication} with the given identifier as processing.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @since 2.0
+	 * @see org.springframework.modulith.events.EventPublication.Status#PROCESSING
+	 */
+	default void markProcessing(UUID identifier) {}
 
 	/**
 	 * Marks the given {@link TargetEventPublication} as completed.
@@ -62,6 +74,7 @@ public interface EventPublicationRepository {
 	 * @param event must not be {@literal null}.
 	 * @param identifier must not be {@literal null}.
 	 * @param completionDate must not be {@literal null}.
+	 * @see org.springframework.modulith.events.EventPublication.Status#COMPLETED
 	 */
 	void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate);
 
@@ -71,8 +84,34 @@ public interface EventPublicationRepository {
 	 * @param identifier must not be {@literal null}.
 	 * @param completionDate must not be {@literal null}.
 	 * @since 1.3
+	 * @see org.springframework.modulith.events.EventPublication.Status#COMPLETED
 	 */
 	void markCompleted(UUID identifier, Instant completionDate);
+
+	/**
+	 * Marks the {@link org.springframework.modulith.events.EventPublication} with the given identifier as failed.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @since 2.0
+	 * @see org.springframework.modulith.events.EventPublication.Status#FAILED
+	 */
+	default void markFailed(UUID identifier) {}
+
+	/**
+	 * Marks the {@link org.springframework.modulith.events.EventPublication} with the given identifier as resubmitted.
+	 * Returns {@literal false} in case the update was not successful, which usually means that the instance identified
+	 * might have been claimed for re-submission by another application instance.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @param resubmissionDate must not be {@literal null}.
+	 * @return whether the {@link org.springframework.modulith.events.EventPublication} with the given identifier was
+	 *         marked as resubmitted.
+	 * @since 2.0
+	 * @see org.springframework.modulith.events.EventPublication.Status#RESUBMITTED
+	 */
+	default boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+		return true;
+	}
 
 	/**
 	 * Returns all {@link TargetEventPublication}s that have not been completed yet.
@@ -131,4 +170,73 @@ public interface EventPublicationRepository {
 	 * @param instant must not be {@literal null}.
 	 */
 	void deleteCompletedPublicationsBefore(Instant instant);
+
+	/**
+	 * @param criteria must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.0
+	 */
+	default List<TargetEventPublication> findFailedPublications(FailedCriteria criteria) {
+
+		Assert.notNull(criteria, "FailedCriteria must not be null!");
+
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Returns all {@link TargetEventPublication}s with the given
+	 * {@link org.springframework.modulith.events.EventPublication.Status}.
+	 *
+	 * @param status must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.0
+	 */
+	default List<TargetEventPublication> findByStatus(Status status) {
+
+		Assert.notNull(status, "Status must not be null!");
+
+		return Collections.emptyList();
+	}
+
+	/**
+	 * Returns the number of {@link org.springframework.modulith.events.EventPublication}s for the given status.
+	 *
+	 * @param status must not be {@literal null}.
+	 * @return must not be negative
+	 * @since 2.0
+	 */
+	default int countByStatus(Status status) {
+		return 0;
+	}
+
+	interface FailedCriteria {
+
+		public static FailedCriteria ALL = new FailedCriteria() {
+
+			@Override
+			public int getMaxItemsToRead() {
+				return -1;
+			}
+
+			@Override
+			public @Nullable Instant getPublicationDateReference() {
+				return null;
+			}
+		};
+
+		/**
+		 * The reference date to use as cutoff when selecting failed
+		 * {@link org.springframework.modulith.events.EventPublication}s, i.e. only older publications will be selected.
+		 *
+		 * @return can be {@literal null}.
+		 */
+		@Nullable
+		Instant getPublicationDateReference();
+
+		/**
+		 * The number of {@link org.springframework.modulith.events.EventPublication}s to read. Return -1 to indicate you
+		 * want to read all items.
+		 */
+		int getMaxItemsToRead();
+	}
 }

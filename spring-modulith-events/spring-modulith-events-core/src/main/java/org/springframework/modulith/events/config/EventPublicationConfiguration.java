@@ -44,6 +44,7 @@ class EventPublicationConfiguration {
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
 			ObjectProvider<Clock> clock) {
+
 		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()));
 	}
 

@@ -40,7 +40,9 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.FailedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
+import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.modulith.events.core.ConditionalEventListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -62,7 +64,7 @@ import org.springframework.util.ReflectionUtils;
  * @see CompletionRegisteringAdvisor
  */
 public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
-		implements IncompleteEventPublications, SmartInitializingSingleton {
+		implements FailedEventPublications, IncompleteEventPublications, SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
 	private static final Method LEGACY_SHOULD_HANDLE = Objects
@@ -169,6 +171,24 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublications(org.springframework.modulith.events.ResubmissionOptions)
+	 */
+	@Override
+	public void resubmitIncompletePublications(ResubmissionOptions options) {
+		doResubmitIncompletePublications(options);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.FailedEventPublications#resubmit(org.springframework.modulith.events.ResubmissionOptions)
+	 */
+	@Override
+	public void resubmit(ResubmissionOptions options) {
+		doResubmitIncompletePublications(options);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.beans.factory.SmartInitializingSingleton#afterSingletonsInstantiated()
 	 */
 	@Override
@@ -197,8 +217,11 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				.map(it -> executeListenerWithCompletion(publication, it)) //
 				.orElseGet(() -> {
 
-					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} incomplete.",
+					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} failed.",
 							publication.getTargetIdentifier(), publication.getIdentifier());
+
+					registry.get().markFailed(publication.getEvent(), publication.getTargetIdentifier());
+
 					return null;
 				});
 	}
@@ -207,6 +230,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			Predicate<EventPublication> filter) {
 
 		registry.get().processIncompletePublications(filter, this::invokeTargetListener, duration);
+	}
+
+	private void doResubmitIncompletePublications(ResubmissionOptions options) {
+		registry.get().processFailedPublications(options, this::invokeTargetListener);
 	}
 
 	private static ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,

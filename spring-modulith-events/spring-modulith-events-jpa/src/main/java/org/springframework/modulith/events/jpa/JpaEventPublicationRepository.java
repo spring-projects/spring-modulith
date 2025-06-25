@@ -472,6 +472,33 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		/*
 		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getStatus()
+		 */
+		@Override
+		public Status getStatus() {
+			return publication.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getCompletionAttempts()
+		 */
+		@Override
+		public int getCompletionAttempts() {
+			return 1;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.EventPublication#getLastResubmissionDate()
+		 */
+		@Override
+		public @Nullable Instant getLastResubmissionDate() {
+			return null;
+		}
+
+		/*
+		 * (non-Javadoc)
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
