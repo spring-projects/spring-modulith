@@ -103,7 +103,7 @@ class DefaultEventPublicationRegistryUnitTests {
 
 		var clock = Clock.fixed(instant, ZoneId.systemDefault());
 
-		return new DefaultEventPublicationRegistry(repository, clock);
+		return new DefaultEventPublicationRegistry(repository, clock, EventPublicationProperties.DEFAULTS);
 	}
 
 	private Consumer<TargetEventPublication> failingConsumer() {

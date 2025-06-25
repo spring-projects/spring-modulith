@@ -70,12 +70,12 @@ class DatabaseSchemaInitializerUnitTests {
 
 	private DatabaseSchemaInitializer createInitializer(JdbcConfigurationProperties properties, DatabaseType type) {
 
-		var settings = new JdbcRepositorySettings(type, CompletionMode.UPDATE, properties.getSchema());
+		var settings = new JdbcRepositorySettings(type, CompletionMode.UPDATE, properties);
 
 		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
 	}
 
 	private static JdbcConfigurationProperties withSchema(String schema) {
-		return new JdbcConfigurationProperties(new SchemaInitialization(true), schema);
+		return new JdbcConfigurationProperties(new SchemaInitialization(true), schema, false);
 	}
 }

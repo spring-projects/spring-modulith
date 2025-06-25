@@ -135,11 +135,17 @@ enum DatabaseType {
 		return (UUID) id;
 	}
 
-	String getSchemaResourceFilename() {
-		return "/schema-" + value + ".sql";
+	String getSchemaResourceFilename(boolean legacy) {
+		return getSchemaBase(legacy) + ".sql";
 	}
 
-	String getArchiveSchemaResourceFilename() { return "/schema-" + value + "-archive.sql"; }
+	String getArchiveSchemaResourceFilename(boolean legacy) {
+		return getSchemaBase(legacy) + "-archive.sql";
+	}
+
+	private String getSchemaBase(boolean legacy) {
+		return "/schemas/" + (legacy ? "v1" : "v2") + "/schema-" + value;
+	}
 
 	boolean isSchemaSupported() {
 		return true;

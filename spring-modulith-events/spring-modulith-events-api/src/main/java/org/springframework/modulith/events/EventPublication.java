@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.PayloadApplicationEvent;
 
@@ -99,5 +100,25 @@ public interface EventPublication {
 	@SuppressWarnings("javadoc")
 	default int compareTo(EventPublication that) {
 		return this.getPublicationDate().compareTo(that.getPublicationDate());
+	}
+
+	Status getStatus();
+
+	@Nullable
+	Instant getLastResubmissionDate();
+
+	int getCompletionAttempts();
+
+	enum Status {
+
+		PUBLISHED,
+
+		PROCESSING,
+
+		COMPLETED,
+
+		FAILED,
+
+		RESUBMITTED;
 	}
 }

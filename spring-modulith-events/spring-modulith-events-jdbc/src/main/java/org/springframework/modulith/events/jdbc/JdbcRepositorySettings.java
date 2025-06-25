@@ -18,6 +18,7 @@ package org.springframework.modulith.events.jdbc;
 import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.util.Assert;
+import org.springframework.util.ObjectUtils;
 
 /**
  * Internal abstraction of customization options for {@link JdbcEventPublicationRepository}.
@@ -31,22 +32,26 @@ public class JdbcRepositorySettings {
 	private final DatabaseType databaseType;
 	private final @Nullable String schema;
 	private final CompletionMode completionMode;
+	private final boolean useLegacyStructure;
 
 	/**
 	 * Creates a new {@link JdbcRepositorySettings} for the given {@link DatabaseType}, {@link CompletionMode} and schema
 	 *
 	 * @param databaseType must not be {@literal null}.
-	 * @param schema can be {@literal null}
 	 * @param completionMode must not be {@literal null}.
+	 * @param properties must not be {@literal null}.
 	 */
-	JdbcRepositorySettings(DatabaseType databaseType, CompletionMode completionMode, @Nullable String schema) {
+	JdbcRepositorySettings(DatabaseType databaseType, CompletionMode completionMode,
+			JdbcConfigurationProperties properties) {
 
 		Assert.notNull(databaseType, "Database type must not be null!");
 		Assert.notNull(completionMode, "Completion mode must not be null!");
+		Assert.notNull(properties, "JdbcConfigurationProperties must not be null!");
 
 		this.databaseType = databaseType;
-		this.schema = schema;
+		this.schema = properties.getSchema();
 		this.completionMode = completionMode;
+		this.useLegacyStructure = properties.isUseLegacyStructure();
 
 		if (schema != null && !databaseType.isSchemaSupported()) {
 			throw new IllegalStateException(DatabaseType.SCHEMA_NOT_SUPPORTED);
@@ -90,5 +95,28 @@ public class JdbcRepositorySettings {
 	 */
 	public boolean isUpdateCompletion() {
 		return completionMode == CompletionMode.UPDATE;
+	}
+
+	public String getSchemaResourceFilename() {
+		return databaseType.getSchemaResourceFilename(useLegacyStructure);
+	}
+
+	public String getArchiveSchemaResourceFilename() {
+		return databaseType.getArchiveSchemaResourceFilename(useLegacyStructure);
+	}
+
+	/**
+	 * @return the useLegacyStructure
+	 */
+	public boolean isUseLegacyStructure() {
+		return useLegacyStructure;
+	}
+
+	String getTable() {
+		return ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
+	}
+
+	String getArchiveTable() {
+		return isArchiveCompletion() ? getTable() + "_ARCHIVE" : getTable();
 	}
 }
