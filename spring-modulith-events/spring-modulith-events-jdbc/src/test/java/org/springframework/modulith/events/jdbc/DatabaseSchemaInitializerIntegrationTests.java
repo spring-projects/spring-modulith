@@ -53,7 +53,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 
 	@Nested
 	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
-	static class WithInitEnabled extends TestBase {
+	class WithInitEnabled extends TestBase {
 
 		@Autowired JdbcOperations operations;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
@@ -130,7 +130,7 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@Nested
 	@ActiveProfiles("mssql")
 	class MSSQL extends WithInitEnabled {}
-	
+
 	@Nested
 	@ActiveProfiles("oracle")
 	class Oracle extends WithInitEnabled {}

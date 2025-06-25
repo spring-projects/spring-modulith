@@ -41,4 +41,6 @@ public interface IncompleteEventPublications {
 	 * @param duration must not be {@literal null}.
 	 */
 	void resubmitIncompletePublicationsOlderThan(Duration duration);
+
+	void resubmitIncompletePublications(ResubmissionOptions options);
 }

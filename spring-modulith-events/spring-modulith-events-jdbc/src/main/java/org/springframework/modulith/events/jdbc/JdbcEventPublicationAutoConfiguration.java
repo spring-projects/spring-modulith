@@ -19,6 +19,7 @@ import java.sql.DatabaseMetaData;
 
 import javax.sql.DataSource;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -27,10 +28,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
+import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.JdbcUtils;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration;
 import org.springframework.modulith.events.config.EventPublicationConfigurationExtension;
+import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.support.CompletionMode;
 
@@ -55,14 +58,20 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	@Bean
 	JdbcRepositorySettings jdbcEventPublicationRepositorySettings(DatabaseType databaseType,
 			JdbcConfigurationProperties properties) {
-
-		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties.getSchema());
+		return new JdbcRepositorySettings(databaseType, CompletionMode.from(environment), properties);
 	}
 
 	@Bean
-	JdbcEventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
-			EventSerializer serializer, JdbcRepositorySettings settings) {
-		return new JdbcEventPublicationRepository(jdbcTemplate, serializer, settings);
+	EventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
+			EventSerializer serializer, JdbcRepositorySettings settings,
+			ObjectProvider<DatabaseSchemaInitializer> initializer) {
+
+		initializer.getIfAvailable();
+
+		return switch (detectSchemaVersion(jdbcTemplate, settings)) {
+			case V2 -> new JdbcEventPublicationRepositoryV2(jdbcTemplate, serializer, settings);
+			case V1 -> new JdbcEventPublicationRepository(jdbcTemplate, serializer, settings);
+		};
 	}
 
 	@Bean
@@ -71,6 +80,32 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcRepositorySettings settings) {
 
 		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
+	}
+
+	private final SchemaVersion detectSchemaVersion(JdbcOperations operations, JdbcRepositorySettings settings) {
+
+		return settings.isUseLegacyStructure()
+				? SchemaVersion.V1
+				: SchemaVersion.V2;
+
+		// return operations.execute((Connection connection) -> {
+		//
+		// // var schema = settings.getSchema();
+		// //
+		// // if (!schema.isBlank()) {
+		// //
+		// // var setSchemaSql = settings.getDatabaseType().getSetSchemaSql(schema);
+		// // // operations.update(setSchemaSql);
+		// // connection.setSchema(schema);
+		// // }
+		//
+		// try (var columns = connection.getMetaData().getColumns(null, null, settings.getTable(),
+		// "STATUS")) {
+		// return columns.next() ? SchemaVersion.V2 : SchemaVersion.V1;
+		// } catch (Exception o_O) {
+		// return SchemaVersion.V1;
+		// }
+		// });
 	}
 
 	private static String fromDataSource(DataSource dataSource) {
@@ -87,5 +122,9 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 		}
 
 		return name == null ? "UNKNOWN" : name;
+	}
+
+	private enum SchemaVersion {
+		V1, V2;
 	}
 }

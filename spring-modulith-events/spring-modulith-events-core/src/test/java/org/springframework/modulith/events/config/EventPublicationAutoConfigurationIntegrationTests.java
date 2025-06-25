@@ -43,6 +43,7 @@ import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.ProxyAsyncConfiguration;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.aspectj.AspectJAsyncConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
 
@@ -135,6 +136,16 @@ class EventPublicationAutoConfigurationIntegrationTests {
 					.hasSingleBean(CompletedEventPublications.class)
 					.hasSingleBean(IncompleteEventPublications.class);
 		});
+	}
+
+	@Test
+	void registersStalenessMonitorIfPropertiesConfigured() {
+
+		basicSetup()
+				.withPropertyValues("spring.modulith.events.staleness-check-intervall=10s")
+				.run(context -> {
+					assertThat(context).hasSingleBean(SchedulingConfigurer.class);
+				});
 	}
 
 	private static <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,

@@ -27,6 +27,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
+import org.springframework.modulith.events.core.EventPublicationProperties;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 
@@ -43,8 +44,10 @@ class EventPublicationConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
-			ObjectProvider<Clock> clock) {
-		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()));
+			ObjectProvider<Clock> clock, ObjectProvider<EventPublicationProperties> properties) {
+
+		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()),
+				properties.getIfAvailable(() -> EventPublicationProperties.DEFAULTS));
 	}
 
 	@Bean

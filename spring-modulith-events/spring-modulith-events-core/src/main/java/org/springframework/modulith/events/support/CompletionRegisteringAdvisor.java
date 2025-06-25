@@ -167,6 +167,8 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			var method = invocation.getMethod();
 			var argument = invocation.getArguments()[0];
 
+			registerStateTransition(method, argument, EventPublicationRegistry::markProcessing);
+
 			try {
 
 				result = invocation.proceed();
@@ -175,7 +177,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 
 					return future
 							.thenApply(it -> {
-								markCompleted(method, argument);
+								registerStateTransition(method, argument, EventPublicationRegistry::markCompleted);
 								return it;
 							})
 							.exceptionallyCompose(it -> {
@@ -191,7 +193,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 				throw o_O;
 			}
 
-			markCompleted(method, argument);
+			registerStateTransition(method, argument, EventPublicationRegistry::markCompleted);
 
 			return result;
 		}
@@ -207,7 +209,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 
 		private void handleFailure(Method method, Object event, Throwable o_O) {
 
-			markFailed(method, event);
+			registerStateTransition(method, event, EventPublicationRegistry::markFailed);
 
 			if (LOG.isDebugEnabled()) {
 				LOG.debug("Invocation of listener {} failed. Leaving event publication uncompleted.", method, o_O);
@@ -217,20 +219,17 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			}
 		}
 
-		private void markCompleted(Method method, Object event) {
+		private void registerStateTransition(Method method, Object event,
+				RegistryInvoker consumer) {
 
-			// Mark publication complete if the method is a transactional event listener.
 			String adapterId = LISTENER_IDS.get(method);
 			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
-			registry.get().markCompleted(event, identifier);
+
+			consumer.invoke(registry.get(), event, identifier);
 		}
 
-		private void markFailed(Method method, Object event) {
-
-			// Mark publication complete if the method is a transactional event listener.
-			String adapterId = LISTENER_IDS.get(method);
-			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
-			registry.get().markFailed(event, identifier);
+		interface RegistryInvoker {
+			void invoke(EventPublicationRegistry registry, Object event, PublicationTargetIdentifier identifier);
 		}
 
 		private static String lookupListenerId(Method method) {

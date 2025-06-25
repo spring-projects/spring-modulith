@@ -488,6 +488,21 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			return delegate.completionDate != null;
 		}
 
+		@Override
+		public Status getStatus() {
+			return delegate.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
+		}
+
+		@Override
+		public int getCompletionAttempts() {
+			return 1;
+		}
+
+		@Override
+		public @Nullable Instant getLastResubmissionDate() {
+			return null;
+		}
+
 		/*
 		 * (non-Javadoc)
 		 * @see java.lang.Object#equals(java.lang.Object)

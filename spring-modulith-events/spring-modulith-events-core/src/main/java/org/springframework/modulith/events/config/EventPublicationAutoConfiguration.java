@@ -33,6 +33,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutdown;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
@@ -42,6 +43,7 @@ import org.springframework.modulith.events.config.EventPublicationAutoConfigurat
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
+import org.springframework.modulith.events.core.EventPublicationProperties;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 import org.springframework.scheduling.annotation.AbstractAsyncConfiguration;
@@ -56,7 +58,8 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  * @author Dmitry Belyaev
  */
 @AutoConfiguration
-@Import(AsyncEnablingConfiguration.class)
+@Import({ AsyncEnablingConfiguration.class, StalenessMonitorConfiguration.class })
+@EnableConfigurationProperties(EventPublicationProperties.class)
 public class EventPublicationAutoConfiguration extends EventPublicationConfiguration {
 
 	@Override
@@ -64,8 +67,8 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRepository.class)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
-			ObjectProvider<Clock> clock) {
-		return super.eventPublicationRegistry(repository, clock);
+			ObjectProvider<Clock> clock, ObjectProvider<EventPublicationProperties> properties) {
+		return super.eventPublicationRegistry(repository, clock, properties);
 	}
 
 	@Bean

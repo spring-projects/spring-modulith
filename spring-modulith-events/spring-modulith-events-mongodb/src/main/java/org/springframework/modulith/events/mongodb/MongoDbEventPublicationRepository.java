@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.bson.Document;
+import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -323,6 +324,21 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		@Override
 		public void markCompleted(Instant instant) {
 			this.publication.completionDate = instant;
+		}
+
+		@Override
+		public Status getStatus() {
+			return publication.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
+		}
+
+		@Override
+		public int getCompletionAttempts() {
+			return 1;
+		}
+
+		@Override
+		public @Nullable Instant getLastResubmissionDate() {
+			return null;
 		}
 
 		/*

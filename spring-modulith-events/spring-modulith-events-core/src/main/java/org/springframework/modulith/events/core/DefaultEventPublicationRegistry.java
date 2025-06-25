@@ -33,6 +33,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.EventPublication.Status;
+import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -53,6 +55,7 @@ public class DefaultEventPublicationRegistry
 
 	private final EventPublicationRepository events;
 	private final Clock clock;
+	private final EventPublicationProperties properties;
 	private final PublicationsInProgress inProgress;
 
 	/**
@@ -60,14 +63,17 @@ public class DefaultEventPublicationRegistry
 	 *
 	 * @param events must not be {@literal null}.
 	 * @param clock must not be {@literal null}.
+	 * @param properties must not be {@literal null}.
 	 */
-	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock) {
+	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock,
+			EventPublicationProperties properties) {
 
 		Assert.notNull(events, "EventPublicationRepository must not be null!");
 		Assert.notNull(clock, "Clock must not be null!");
 
 		this.events = events;
 		this.clock = clock;
+		this.properties = properties;
 		this.inProgress = new PublicationsInProgress();
 	}
 
@@ -108,6 +114,15 @@ public class DefaultEventPublicationRegistry
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#markProcessing(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
+	 */
+	@Override
+	public void markProcessing(Object event, PublicationTargetIdentifier identifier) {
+		propagateStateTransition(event, identifier, it -> events.markProcessing(it.getIdentifier()), () -> {});
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.EventPublicationRegistry#markCompleted(java.lang.Object, org.springframework.modulith.events.PublicationTargetIdentifier)
 	 */
 	@Override
@@ -120,15 +135,10 @@ public class DefaultEventPublicationRegistry
 		LOGGER.debug("Marking publication of event {} to listener {} completed.", //
 				event.getClass().getName(), targetIdentifier.getValue());
 
-		Instant now = clock.instant();
-		Runnable fallback = () -> events.markCompleted(event, targetIdentifier, now);
-		Consumer<TargetEventPublication> optimized = it -> {
-			events.markCompleted(it.getIdentifier(), now);
-			inProgress.unregister(event, targetIdentifier);
-		};
+		var now = clock.instant();
 
-		inProgress.getPublication(event, targetIdentifier)
-				.ifPresentOrElse(optimized, fallback);
+		propagateStateTransitionAndConclude(event, targetIdentifier, it -> events.markCompleted(it, now),
+				() -> events.markCompleted(event, targetIdentifier, now));
 	}
 
 	/*
@@ -137,6 +147,9 @@ public class DefaultEventPublicationRegistry
 	 */
 	@Override
 	public void markFailed(Object event, PublicationTargetIdentifier targetIdentifier) {
+
+		propagateStateTransitionAndConclude(event, targetIdentifier, it -> events.markFailed(it.getIdentifier()), () -> {});
+
 		inProgress.unregister(event, targetIdentifier);
 	}
 
@@ -206,9 +219,26 @@ public class DefaultEventPublicationRegistry
 
 		LOGGER.debug(getConfirmationMessage(publications) + " found.");
 
+		processPublications(publications, filter, consumer);
+	}
+
+	/**
+	 * @param publications
+	 * @param filter
+	 * @param consumer
+	 */
+	private void processPublications(Collection<TargetEventPublication> publications, Predicate<EventPublication> filter,
+			Consumer<TargetEventPublication> consumer) {
+
 		publications.stream() //
 				.filter(filter) //
 				.forEach(it -> {
+
+					if (!events.markResubmitted(it.getIdentifier(), clock.instant())) {
+						return;
+					}
+
+					LOGGER.debug("Resubmitting event publication %s.".formatted(it.getIdentifier()));
 
 					try {
 
@@ -224,6 +254,53 @@ public class DefaultEventPublicationRegistry
 						}
 					}
 				});
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#processFailedPublications(org.springframework.modulith.events.ResubmissionOptions, java.util.function.Consumer)
+	 */
+	@Override
+	public void processFailedPublications(ResubmissionOptions options, Consumer<TargetEventPublication> consumer) {
+
+		var currentlyResubmitted = events.countByStatus(Status.RESUBMITTED);
+
+		if (currentlyResubmitted >= options.getMaxInFlight()) {
+
+			LOGGER.info("Skipping resubmission as only %s should be resubmitted in parallel and currently %s are.",
+					options.getMaxInFlight(), currentlyResubmitted);
+			return;
+		}
+
+		var criteria = new EventPublicationRepository.IncompleteCriteria() {
+
+			@Override
+			public Instant getInstant() {
+				return clock.instant().minus(options.getMinAge());
+			}
+
+			/*
+			 * (non-Javadoc)
+			 * @see org.springframework.modulith.events.core.EventPublicationRepository.IncompleteCriteria#getMaxItemsToRead()
+			 */
+			@Override
+			public int getMaxItemsToRead() {
+				return Math.min(options.getBatchSize(), options.getBatchSize() - currentlyResubmitted);
+			}
+		};
+
+		processPublications(events.findFailedPublications(criteria), options.getFilter(), consumer);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#markStalePublicationsFailed()
+	 */
+	@Override
+	public void markStalePublicationsFailed() {
+
+		markFailed(Status.RESUBMITTED, properties.getResubmissionStaleness());
+		markFailed(Status.PROCESSING, properties.getProcessingStaleness());
 	}
 
 	/*
@@ -274,6 +351,45 @@ public class DefaultEventPublicationRegistry
 		Assert.notNull(publication, "TargetEventPublication must not be null!");
 
 		markFailed(publication.getEvent(), publication.getTargetIdentifier());
+	}
+
+	private void propagateStateTransitionAndConclude(Object event, PublicationTargetIdentifier identifier,
+			Consumer<TargetEventPublication> consumer,
+			Runnable runnable) {
+
+		Runnable concluding = () -> {
+			runnable.run();
+			inProgress.unregister(event, identifier);
+		};
+
+		propagateStateTransition(event, identifier, consumer.andThen(inProgress::unregister), concluding);
+	}
+
+	private void propagateStateTransition(Object event, PublicationTargetIdentifier identifier,
+			Consumer<TargetEventPublication> consumer, Runnable runnable) {
+
+		inProgress.getPublication(event, identifier)
+				.ifPresentOrElse(consumer::accept, runnable);
+	}
+
+	private void markFailed(Status status, Duration duration) {
+
+		var reference = clock.instant().minus(duration);
+		var result = events.findByStatus(status).stream()
+				.filter(it -> it.getPublicationDate().isBefore(reference))
+				.map(TargetEventPublication::getIdentifier).toList();
+
+		if (result.isEmpty()) {
+
+			LOGGER.info("No stale publications of status {} found.", status);
+			return;
+		}
+
+		LOGGER.info("Marking stale publications of status {} older than {} as failed:", status, duration);
+
+		result.stream()
+				.peek(it -> LOGGER.info("- {}", it))
+				.forEach(events::markFailed);
 	}
 
 	private static String getConfirmationMessage(Collection<?> publications) {
