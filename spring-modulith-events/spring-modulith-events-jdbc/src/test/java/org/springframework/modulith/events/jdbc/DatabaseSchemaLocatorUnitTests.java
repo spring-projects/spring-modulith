@@ -34,7 +34,7 @@ import org.springframework.modulith.events.support.CompletionMode;
  * @author Oliver Drotbohm
  */
 @ExtendWith(MockitoExtension.class)
-public class DatabaseSchemaLocatorUnitTests {
+class DatabaseSchemaLocatorUnitTests {
 
 	@Mock ResourceLoader resourceLoader;
 
@@ -47,7 +47,8 @@ public class DatabaseSchemaLocatorUnitTests {
 
 		var locator = new DatabaseSchemaLocator(resourceLoader);
 		var captor = ArgumentCaptor.forClass(String.class);
-		var settings = new JdbcRepositorySettings(DatabaseType.H2, CompletionMode.UPDATE, null);
+		var settings = new JdbcRepositorySettings(DatabaseType.H2, CompletionMode.UPDATE,
+				mock(JdbcConfigurationProperties.class));
 
 		assertThatNoException().isThrownBy(() -> locator.getSchemaResource(settings));
 		verify(resourceLoader).getResource(captor.capture());

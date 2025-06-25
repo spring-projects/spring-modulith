@@ -37,6 +37,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.modulith.events.EventPublication.Status;
+import org.springframework.modulith.events.core.EventPublicationRepository.IncompleteCriteria;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
@@ -44,7 +46,6 @@ import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
@@ -57,18 +58,17 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Raed Ben Hamouda
  * @author Cora Iberkleid
  */
-class JdbcEventPublicationRepositoryIntegrationTests {
+class JdbcEventPublicationRepositoryV2IntegrationTests {
 
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
 	@Import(TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
 	@ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
-	@TestPropertySource(properties = "spring.modulith.events.jdbc.use-legacy-structure=true")
 	static abstract class TestBase {
 
 		@Autowired JdbcOperations operations;
-		@Autowired JdbcEventPublicationRepository repository;
+		@Autowired JdbcEventPublicationRepositoryV2 repository;
 		@Autowired JdbcRepositorySettings properties;
 
 		@MockitoBean EventSerializer serializer;
@@ -386,6 +386,55 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			var publication = repository.findIncompletePublications().get(0);
 
 			assertThat(publication.getEvent()).isSameAs(publication.getEvent());
+		}
+
+		@Test
+		void looksUpFailedPublication() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(IncompleteCriteria.ALL))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test
+		void claimsResubmissionOnce() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			var now = Instant.now();
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+		}
+
+		@Test
+		void countsByStatus() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			assertOneByStatus(Status.PUBLISHED);
+
+			repository.markFailed(publication.getIdentifier());
+			assertOneByStatus(Status.FAILED);
+
+			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			assertOneByStatus(Status.RESUBMITTED);
+		}
+
+		private void assertOneByStatus(Status reference) {
+
+			for (var status : Status.values()) {
+				assertThat(repository.countByStatus(status)).isEqualTo(status == reference ? 1 : 0);
+			}
 		}
 
 		String table() {

@@ -16,10 +16,13 @@
 package org.springframework.modulith.events.core;
 
 import java.time.Instant;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.util.Assert;
 
 /**
@@ -38,6 +41,8 @@ public interface EventPublicationRepository {
 	 * @return will never be {@literal null}.
 	 */
 	TargetEventPublication create(TargetEventPublication publication);
+
+	default void markProcessing(UUID identifier) {}
 
 	/**
 	 * Marks the given {@link TargetEventPublication} as completed.
@@ -73,6 +78,12 @@ public interface EventPublicationRepository {
 	 * @since 1.3
 	 */
 	void markCompleted(UUID identifier, Instant completionDate);
+
+	default boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+		return true;
+	}
+
+	default void markFailed(UUID identifier) {}
 
 	/**
 	 * Returns all {@link TargetEventPublication}s that have not been completed yet.
@@ -131,4 +142,37 @@ public interface EventPublicationRepository {
 	 * @param instant must not be {@literal null}.
 	 */
 	void deleteCompletedPublicationsBefore(Instant instant);
+
+	default List<TargetEventPublication> findFailedPublications(IncompleteCriteria criteria) {
+		return Collections.emptyList();
+	}
+
+	default List<TargetEventPublication> findByStatus(Status status) {
+		return Collections.emptyList();
+	}
+
+	default int countByStatus(Status status) {
+		return -1;
+	}
+
+	interface IncompleteCriteria {
+
+		public static IncompleteCriteria ALL = new IncompleteCriteria() {
+
+			@Override
+			public int getMaxItemsToRead() {
+				return -1;
+			}
+
+			@Override
+			public @Nullable Instant getInstant() {
+				return null;
+			}
+		};
+
+		@Nullable
+		Instant getInstant();
+
+		int getMaxItemsToRead();
+	}
 }
