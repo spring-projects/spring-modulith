@@ -34,7 +34,10 @@ class DefaultEventPublication implements TargetEventPublication {
 	private final Object event;
 	private final PublicationTargetIdentifier targetIdentifier;
 	private final Instant publicationDate;
+	private final Instant lastResubmissionDate;
+	private final int completionAttempts;
 
+	private Status status;
 	private Optional<Instant> completionDate;
 
 	/**
@@ -55,6 +58,9 @@ class DefaultEventPublication implements TargetEventPublication {
 		this.targetIdentifier = targetIdentifier;
 		this.publicationDate = publicationDate;
 		this.completionDate = Optional.empty();
+		this.status = Status.PUBLISHED;
+		this.lastResubmissionDate = publicationDate;
+		this.completionAttempts = 1;
 	}
 
 	/*
@@ -106,7 +112,36 @@ class DefaultEventPublication implements TargetEventPublication {
 	 */
 	@Override
 	public void markCompleted(Instant instant) {
+
 		this.completionDate = Optional.of(instant);
+		this.status = Status.COMPLETED;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getStatus()
+	 */
+	@Override
+	public Status getStatus() {
+		return status;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getLastResubmissionDate()
+	 */
+	@Override
+	public @Nullable Instant getLastResubmissionDate() {
+		return lastResubmissionDate;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventPublication#getCompletionAttempts()
+	 */
+	@Override
+	public int getCompletionAttempts() {
+		return completionAttempts;
 	}
 
 	/*
@@ -117,7 +152,7 @@ class DefaultEventPublication implements TargetEventPublication {
 	public String toString() {
 
 		return "DefaultEventPublication [event=" + event + ", targetIdentifier=" + targetIdentifier + ", publicationDate="
-				+ publicationDate + ", completionDate=" + completionDate + "]";
+				+ publicationDate + ", completionDate=" + completionDate + ", status=" + status + "]";
 	}
 
 	/*
@@ -138,7 +173,8 @@ class DefaultEventPublication implements TargetEventPublication {
 		return Objects.equals(this.completionDate, that.completionDate) //
 				&& Objects.equals(this.event, that.event) //
 				&& Objects.equals(this.publicationDate, that.publicationDate) //
-				&& Objects.equals(this.targetIdentifier, that.targetIdentifier);
+				&& Objects.equals(this.targetIdentifier, that.targetIdentifier) //
+				&& Objects.equals(this.status, that.status);
 	}
 
 	/*
@@ -147,6 +183,6 @@ class DefaultEventPublication implements TargetEventPublication {
 	 */
 	@Override
 	public int hashCode() {
-		return Objects.hash(completionDate, event, publicationDate, targetIdentifier);
+		return Objects.hash(completionDate, event, publicationDate, targetIdentifier, status);
 	}
 }

@@ -22,12 +22,12 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.context.ApplicationListener;
 import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.ResubmissionOptions;
 
 /**
- * A registry to capture event publications to {@link ApplicationListener}s. Allows to register those publications, mark
- * them as completed and lookup incomplete publications.
+ * A registry to capture event publications to {@link org.springframework.context.ApplicationListener}s. Allows to
+ * register those publications, mark them as completed and lookup incomplete publications.
  *
  * @author Oliver Drotbohm
  * @author Björn Kieling
@@ -36,7 +36,8 @@ import org.springframework.modulith.events.EventPublication;
 public interface EventPublicationRegistry {
 
 	/**
-	 * Stores {@link TargetEventPublication}s for the given event and {@link ApplicationListener}s.
+	 * Stores {@link TargetEventPublication}s for the given event and
+	 * {@link org.springframework.context.ApplicationListener}s.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param listeners must not be {@literal null}.
@@ -59,6 +60,8 @@ public interface EventPublicationRegistry {
 	 * @since 1.1
 	 */
 	Collection<TargetEventPublication> findIncompletePublicationsOlderThan(Duration duration);
+
+	void markProcessing(Object event, PublicationTargetIdentifier identifier);
 
 	/**
 	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as completed.
@@ -95,4 +98,8 @@ public interface EventPublicationRegistry {
 	 */
 	void processIncompletePublications(Predicate<EventPublication> filter,
 			Consumer<TargetEventPublication> consumer, @Nullable Duration duration);
+
+	void processFailedPublications(ResubmissionOptions options, Consumer<TargetEventPublication> consumer);
+
+	void markStalePublicationsFailed();
 }
