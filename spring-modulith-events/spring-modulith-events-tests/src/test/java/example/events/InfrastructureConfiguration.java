@@ -15,7 +15,6 @@
  */
 package example.events;
 
-import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
 
 import javax.sql.DataSource;
@@ -26,7 +25,6 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.orm.jpa.vendor.Database;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
@@ -59,11 +57,6 @@ class InfrastructureConfiguration {
 	@Bean
 	JpaTransactionManager transactionManager(EntityManagerFactory factory) {
 		return new JpaTransactionManager(factory);
-	}
-
-	@Bean
-	EntityManager entityManager(EntityManagerFactory factory) {
-		return SharedEntityManagerCreator.createSharedEntityManager(factory);
 	}
 
 	@Bean

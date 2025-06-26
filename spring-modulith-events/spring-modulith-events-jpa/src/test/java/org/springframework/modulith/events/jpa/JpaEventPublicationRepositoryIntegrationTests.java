@@ -50,7 +50,6 @@ import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.orm.jpa.JpaTransactionManager;
 import org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean;
-import org.springframework.orm.jpa.SharedEntityManagerCreator;
 import org.springframework.orm.jpa.vendor.AbstractJpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
@@ -98,11 +97,6 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			factory.setPackagesToScan(getClass().getPackage().getName());
 
 			return factory;
-		}
-
-		@Bean
-		EntityManager entityManager(EntityManagerFactory factory) {
-			return SharedEntityManagerCreator.createSharedEntityManager(factory);
 		}
 
 		@Bean
