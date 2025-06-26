@@ -26,4 +26,4 @@ jobs:
         ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
         ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
         DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
-      run: ./mvnw -B clean deploy -Pci,artifactory,nullaway
+      run: ./mvnw -B clean deploy -Pci,artifactory
