@@ -17,6 +17,7 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import example.Example;
 import example.ni.AnnotatedNamedInterfaceType;
 import example.ni.RootType;
 import example.ni.api.ApiType;
@@ -29,6 +30,9 @@ import example.ni.nested.b.InNestedB;
 import example.ni.nested.b.first.InNestedBFirst;
 import example.ni.nested.b.second.InNestedBSecond;
 import example.ni.ontype.Exposed;
+import example.ni.propagate.AnotherRelatedType;
+import example.ni.propagate.RelatedType;
+import example.ni.propagate.TransitivelyRelated;
 import example.ni.spi.SpiType;
 import example.ninvalid.InvalidDefaultNamedInterface;
 
@@ -52,7 +56,7 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.discoverNamedInterfaces(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype", "propagate");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class);
 		assertInterfaceContains(interfaces, "api", ApiType.class, AnnotatedNamedInterfaceType.class);
@@ -80,11 +84,11 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.forOpen(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype", "propagate");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME,
 				RootType.class, Internal.class, InNested.class, InNestedA.class, InNestedB.class, InNestedBFirst.class,
-				InNestedBSecond.class);
+				InNestedBSecond.class, AnotherRelatedType.class, RelatedType.class, TransitivelyRelated.class);
 	}
 
 	@Test // GH-595
@@ -152,6 +156,22 @@ class NamedInterfacesUnitTests {
 		assertThat(result).hasSize(2)
 				.extracting(NamedInterface::getName)
 				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api");
+	}
+
+	@Test // GH-1264
+	@SuppressWarnings("null")
+	void propagatesNamedInterfaceAssignment() {
+
+		var pkg = TestUtils.getPackage(RootType.class);
+		var result = NamedInterfaces.discoverNamedInterfaces(pkg);
+
+		assertThat(result.getByName("propagate")).hasValueSatisfying(it -> {
+
+			assertThat(it)
+					.<Class<?>> extracting(JavaClass::reflect)
+					.contains(RelatedType.class, AnotherRelatedType.class)
+					.doesNotContain(Example.class);
+		});
 	}
 
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {

@@ -21,7 +21,10 @@ import static org.springframework.modulith.core.SyntacticSugar.*;
 import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.jmolecules.archunit.JMoleculesArchitectureRules;
 import org.jmolecules.archunit.JMoleculesDddRules;
@@ -35,6 +38,9 @@ import org.springframework.util.ClassUtils;
 import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
+import com.tngtech.archunit.core.domain.JavaModifier;
+import com.tngtech.archunit.core.domain.JavaType;
+import com.tngtech.archunit.core.domain.properties.HasModifiers;
 import com.tngtech.archunit.lang.ArchRule;
 
 /**
@@ -161,9 +167,63 @@ public class Types {
 	static class JavaTypes {
 
 		static Predicate<JavaClass> IS_CORE_JAVA_TYPE = it -> it.getName().startsWith("java.")
-				|| it.getName().startsWith("javax.");
+				|| it.getName().startsWith("javax.")
+				|| it.isPrimitive();
 
 		static Predicate<JavaClass> IS_NOT_CORE_JAVA_TYPE = Predicate.not(IS_CORE_JAVA_TYPE);
+
+		/**
+		 * Returns all related types of the given one, i.e., all public, non-core, non-primitive Java types declared on
+		 * public methods (as either return type or parameter) and constructors, with the given filter applied.
+		 *
+		 * @param type must not be {@literal null}.
+		 * @param filter must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 2.0
+		 */
+		static Stream<JavaClass> relatedTypesOf(JavaClass type, Predicate<? super JavaClass> filter) {
+
+			if (JavaTypes.IS_CORE_JAVA_TYPE.or(Predicate.not(JavaTypes::isPublic)).test(type)) {
+				return Stream.empty();
+			}
+
+			var result = new HashSet<JavaClass>();
+
+			collectExposedTypes(type, result, filter, new HashSet<>());
+
+			return result.stream();
+		}
+
+		private static void collectExposedTypes(JavaClass type, Set<JavaClass> exposedTypes,
+				Predicate<? super JavaClass> filter, Collection<JavaType> visited) {
+
+			if (visited.contains(type)) {
+				return;
+			}
+
+			visited.add(type);
+
+			if (filter.test(type)) {
+				exposedTypes.add(type);
+			}
+
+			var constructorParameters = type.getAllConstructors().stream()
+					.filter(JavaTypes::isPublic)
+					.flatMap(it -> it.getParameterTypes().stream());
+
+			var methodReturnTypeAndParameters = type.getAllMethods().stream()
+					.filter(JavaTypes::isPublic)
+					.flatMap(it -> Stream.concat(it.getParameterTypes().stream(), Stream.of(it.getReturnType())));
+
+			Stream.concat(constructorParameters, methodReturnTypeAndParameters)
+					.flatMap(it -> it.getAllInvolvedRawTypes().stream())
+					.filter(IS_NOT_CORE_JAVA_TYPE.and(JavaTypes::isPublic).and(filter))
+					.forEach(it -> collectExposedTypes(it, exposedTypes, filter, visited));
+		}
+
+		private static boolean isPublic(HasModifiers source) {
+			return source.getModifiers().contains(JavaModifier.PUBLIC);
+		}
 	}
 
 	static class JavaXTypes {
@@ -195,7 +255,8 @@ public class Types {
 		static final String AT_SERVICE = BASE_PACKAGE + ".stereotype.Service";
 		static final String AT_SPRING_BOOT_APPLICATION = BASE_PACKAGE + ".boot.autoconfigure.SpringBootApplication";
 		static final String AT_TX_EVENT_LISTENER = BASE_PACKAGE + ".transaction.event.TransactionalEventListener";
-		static final String AT_CONFIGURATION_PROPERTIES = BASE_PACKAGE + ".boot.context.properties.ConfigurationProperties";
+		static final String AT_CONFIGURATION_PROPERTIES = BASE_PACKAGE
+				+ ".boot.context.properties.ConfigurationProperties";
 
 		static DescribedPredicate<? super JavaClass> isConfiguration() {
 			return isAnnotatedWith(AT_CONFIGURATION);

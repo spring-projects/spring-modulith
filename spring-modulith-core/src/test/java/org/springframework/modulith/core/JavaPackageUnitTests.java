@@ -48,7 +48,7 @@ class JavaPackageUnitTests {
 		assertThat(pkg.getLocalName()).isEqualTo("ni");
 		assertThat(pkg.getDirectSubPackages()) //
 				.extracting(JavaPackage::getLocalName) //
-				.containsExactlyInAnyOrder("api", "internal", "nested", "ontype", "spi");
+				.containsExactlyInAnyOrder("api", "internal", "nested", "ontype", "propagate", "spi");
 	}
 
 	@Test // GH-578
@@ -68,6 +68,7 @@ class JavaPackageUnitTests {
 								"nested.b.first",
 								"nested.b.second",
 								"ontype",
+								"propagate",
 								"spi");
 	}
 
@@ -79,7 +80,7 @@ class JavaPackageUnitTests {
 		assertThat(subPackages.flatten().stream()
 				.map(JavaPackage::getPackageName)
 				.map(it -> it.getLocalName("example.ni")))
-						.containsExactlyInAnyOrder("api", "internal", "nested", "ontype", "spi");
+						.containsExactlyInAnyOrder("api", "internal", "nested", "ontype", "propagate", "spi");
 	}
 
 	@Test // GH-578

@@ -27,6 +27,7 @@ import org.springframework.core.annotation.AliasFor;
  * Annotation to mark a package as named interface of a {@link ApplicationModule} or assign a type to a named interface.
  *
  * @author Oliver Drotbohm
+ * @author Iván García Sainz-Aja
  */
 @Documented
 @Target({ ElementType.PACKAGE, ElementType.TYPE })
@@ -52,4 +53,15 @@ public @interface NamedInterface {
 	 */
 	@AliasFor("value")
 	String[] name() default {};
+
+	/**
+	 * Whether to automatically propagate the named interface assignment to related types of the annotated one. When set
+	 * to {@code true}, types that appear in public method signatures (parameters and return types) of the explicitly
+	 * annotated types and are located in the same package space, will also be considered part of the named interface
+	 * declared.
+	 *
+	 * @return {@code true} to automatically include related types, {@code false} otherwise
+	 * @since 2.0
+	 */
+	boolean propagate() default true;
 }
