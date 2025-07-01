@@ -17,13 +17,7 @@ package org.springframework.modulith.core;
 
 import static java.util.stream.Collectors.*;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -303,13 +297,55 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 					}
 
 					NamedInterface.getDefaultedNames(annotation, it.getPackageName())
-							.forEach(name -> mappings.add(name, it));
+							.forEach(name -> {
+								mappings.add(name, it);
+								if(annotation.autoIncludeRelatedTypes()) {
+									mappings.addAll(name, methodSignatureExposedTypes(it));
+								}
+					});
 				});
 
 		return mappings.entrySet().stream() //
 				.map(entry -> NamedInterface.of(entry.getKey(), Classes.of(entry.getValue()))) //
 				.toList();
 	}
+
+    private static List<JavaClass> methodSignatureExposedTypes(JavaClass javaClass) {
+        var dependencies = new HashSet<JavaClass>();
+        var visited = new HashSet<JavaClass>();
+
+        collectExposedTypes(javaClass, dependencies, visited);
+
+        return dependencies.stream()
+                .filter(Types.JavaTypes.IS_NOT_CORE_JAVA_TYPE)
+                .toList();
+    }
+
+    private static void collectExposedTypes(JavaClass type, Set<JavaClass> exposedTypes, Set<JavaClass> visited) {
+        if (visited.contains(type)) {
+            return;
+        }
+
+        visited.add(type);
+
+        type.getAllMethods().forEach(method -> {
+            method.getParameterTypes().forEach(paramType -> {
+                Set<JavaClass> rawTypes = paramType.getAllInvolvedRawTypes();
+                exposedTypes.addAll(rawTypes);
+
+                rawTypes.forEach(rawType -> {
+                    collectExposedTypes(rawType, exposedTypes, visited);
+                });
+            });
+
+            Set<JavaClass> returnRawTypes = method.getReturnType().getAllInvolvedRawTypes();
+            exposedTypes.addAll(returnRawTypes);
+
+            returnRawTypes.forEach(rawType -> {
+                collectExposedTypes(rawType, exposedTypes, visited);
+            });
+        });
+    }
 
 	/**
 	 * A builder API to manually construct {@link NamedInterfaces} instances. Allows selecting packages to create

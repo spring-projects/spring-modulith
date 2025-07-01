@@ -52,4 +52,14 @@ public @interface NamedInterface {
 	 */
 	@AliasFor("value")
 	String[] name() default {};
+
+	/**
+	 * Whether to automatically include types related to the ones declared in the named interface.
+	 * When set to {@code true}, types that appear in public method signatures (parameters and return types)
+	 * of the explicitly declared types will also be considered part of this named interface.
+	 * This is useful to avoid having to explicitly declare all types that are part of the interface's API.
+	 * 
+	 * @return {@code true} to automatically include related types, {@code false} otherwise
+	 */
+	boolean autoIncludeRelatedTypes() default false;
 }
