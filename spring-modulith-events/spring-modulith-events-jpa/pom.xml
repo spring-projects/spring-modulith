@@ -38,7 +38,7 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-autoconfigure</artifactId>
+			<artifactId>spring-boot-hibernate</artifactId>
 			<optional>true</optional>
 		</dependency>
 

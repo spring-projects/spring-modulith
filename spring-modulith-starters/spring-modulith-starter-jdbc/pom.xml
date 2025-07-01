@@ -24,6 +24,11 @@
 			<version>2.0.0-SNAPSHOT</version>
 		</dependency>
 
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-jdbc</artifactId>
+		</dependency>
+
 		<!-- Events -->
 
 		<dependency>
