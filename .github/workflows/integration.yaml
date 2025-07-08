@@ -9,6 +9,10 @@ jobs:
   integration:
     strategy:
       matrix:
+        branch:
+        - '1.4.x'
+        - '1.3.x'
+        - '1.2.x'
         boot:
         - '3.1.12'
         - '3.2.12'
@@ -22,13 +26,15 @@ jobs:
         jmolecules:
         - '2025.0.0-RC4'
 
-    name: Build against Boot ${{ matrix.boot }} / jMolecules ${{ matrix.jmolecules }}
+    name: Build ${{ matrix.branch }} against Boot ${{ matrix.boot }} / jMolecules ${{ matrix.jmolecules }}
     runs-on: ubuntu-latest
 
     steps:
 
     - name: Check out sources
       uses: actions/checkout@v4
+      with:
+          ref: ${{ matrix.branch }}
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
