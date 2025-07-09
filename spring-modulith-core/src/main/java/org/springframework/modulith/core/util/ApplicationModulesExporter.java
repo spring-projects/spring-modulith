@@ -139,6 +139,15 @@ public class ApplicationModulesExporter {
 		json.put("displayName", module.getDisplayName());
 		json.put("basePackage", module.getBasePackage().getName());
 
+		modules.getParentOf(module).ifPresent(it -> {
+			json.put("parent", it.getIdentifier().toString());
+		});
+
+		json.put("nestedModules", modules.getNestedModules(module).stream()
+				.map(ApplicationModule::getIdentifier)
+				.map(Object::toString)
+				.toList());
+
 		if (details.equals(Details.FULL)) {
 			json.put("namedInterfaces", toNamedInterfaces(module.getNamedInterfaces()));
 			json.put("initializers", module.getSpringBeans(ApplicationModuleInitializer.class).stream()
