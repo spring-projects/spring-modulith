@@ -143,7 +143,7 @@ public class ApplicationModulesExporter {
 			json.put("parent", it.getIdentifier().toString());
 		});
 
-		json.put("nestedModules", modules.getNestedModules(module).stream()
+		json.put("nested", modules.getNestedModules(module).stream()
 				.map(ApplicationModule::getIdentifier)
 				.map(Object::toString)
 				.toList());
