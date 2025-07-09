@@ -578,6 +578,17 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		return getParentOf(module).isPresent();
 	}
 
+	/**
+	 * Returns all nested modules of the given {@link ApplicationModule}.
+	 *
+	 * @param module must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4.2
+	 */
+	public Collection<ApplicationModule> getNestedModules(ApplicationModule module) {
+		return module.getNestedModules(this);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()
