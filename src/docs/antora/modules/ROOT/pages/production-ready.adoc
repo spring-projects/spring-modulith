@@ -119,6 +119,8 @@ The `modulith` resource adheres to the following structure:
 |`+$.{moduleName}+`|The technical name of an application module. Target for module references in `dependencies.target`.
 |`+$.{moduleName}.displayName+`|The human-readable name of the application module.
 |`+$.{moduleName}.basePackage+`|The application module's base package.
+|`+$.{moduleName}.parent+`|(optional) The name of the parent module. See xref:fundamentals.adoc#modules.nested for details.
+|`+$.{moduleName}.nestedModules+`|The names of nested modules, if any. See xref:fundamentals.adoc#modules.nested for details.
 |`+$.{moduleName}.dependencies[]+`|All outgoing dependencies of the application module
 |`+$.{moduleName}.dependencies[].target+`|The name of the application module depended on. A reference to a `+{moduleName}+`.
 |`+$.{moduleName}.dependencies[].types[]+`|The types of dependencies towards the target module. Can either be `DEFAULT` (simple type dependency), `USES_COMPONENT` (Spring bean dependency) or `EVENT_LISTENER`.
