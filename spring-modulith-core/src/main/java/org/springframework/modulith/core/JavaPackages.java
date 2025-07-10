@@ -49,23 +49,12 @@ class JavaPackages implements Iterable<JavaPackage> {
 	}
 
 	/**
-	 * Creates a new {@link JavaPackages} containing all sub-packages of the given reference package contained in the
-	 * given packages.
+	 * Creates a new {@link JavaPackages} instance for the given {@link JavaPackage}s.
 	 *
-	 * @param reference must not be {@literal null}.
 	 * @param packages must not be {@literal null}.
-	 * @return will never be {@literal null}.
 	 */
-	public static JavaPackages onlySubPackagesOf(JavaPackage reference, Collection<JavaPackage> packages) {
-
-		Assert.notNull(reference, "Reference package must not be null!");
-		Assert.notNull(packages, "Packages must not be null!");
-
-		var subPackages = packages.stream()
-				.filter(it -> it.isSubPackageOf(reference))
-				.toList();
-
-		return subPackages.isEmpty() ? NONE : new JavaPackages(subPackages).flatten();
+	JavaPackages(JavaPackage... packages) {
+		this(List.of(packages));
 	}
 
 	/**
@@ -122,5 +111,14 @@ class JavaPackages implements Iterable<JavaPackage> {
 		}
 
 		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return packages.toString();
 	}
 }

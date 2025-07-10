@@ -102,14 +102,14 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		Assert.notNull(source, "Base package must not be null!");
 		Assert.notNull(exclusions, "Exclusions must not be null!");
 
-		JavaPackage basePackage = source.getModuleBasePackage();
+		JavaPackage basePackage = source.getModuleBasePackage().without(exclusions);
 
 		this.source = source;
 		this.basePackage = basePackage;
 		this.exclusions = exclusions;
-		this.classes = basePackage.getClasses(exclusions);
+		this.classes = basePackage.getClasses();
 		this.information = ApplicationModuleInformation.of(basePackage);
-		this.namedInterfaces = source.getNamedInterfaces(information);
+		this.namedInterfaces = source.getNamedInterfaces(information, basePackage);
 
 		this.springBeans = SingletonSupplier.of(() -> filterSpringBeans(classes));
 		this.aggregateRoots = SingletonSupplier.of(() -> findAggregateRoots(classes));

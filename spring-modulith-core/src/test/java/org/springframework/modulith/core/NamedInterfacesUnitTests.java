@@ -24,6 +24,7 @@ import example.ni.internal.AdditionalSpiType;
 import example.ni.internal.DefaultedNamedInterfaceType;
 import example.ni.internal.Internal;
 import example.ni.nested.InNested;
+import example.ni.nested.NestedNi;
 import example.ni.nested.a.InNestedA;
 import example.ni.nested.b.InNestedB;
 import example.ni.nested.b.first.InNestedBFirst;
@@ -48,7 +49,8 @@ class NamedInterfacesUnitTests {
 	@Test
 	void discoversNamedInterfaces() {
 
-		var javaPackage = TestUtils.getPackage(RootType.class);
+		var javaPackage = TestUtils.getPackage(RootType.class)
+				.without(new JavaPackages(TestUtils.getPackage(NestedNi.class)));
 		var interfaces = NamedInterfaces.discoverNamedInterfaces(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
@@ -80,7 +82,7 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.forOpen(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "nestedNi", "ontype");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME,
 				RootType.class, Internal.class, InNested.class, InNestedA.class, InNestedB.class, InNestedBFirst.class,

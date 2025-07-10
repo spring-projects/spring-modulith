@@ -17,6 +17,7 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import example.ni.nested.NestedNi;
 import example.ni.nested.a.InNestedA;
 
 import java.util.List;
@@ -90,7 +91,7 @@ class JavaPackageUnitTests {
 		var nestedA = JavaPackage.of(classes, "example.ni.nested.a");
 		assertThat(nestedA.contains(InNestedA.class.getName()));
 
-		assertThat(pkg.getClasses(List.of(nestedA)).stream().map(JavaClass::getName))
+		assertThat(pkg.getClassesExcept(List.of(nestedA)).stream().map(JavaClass::getName))
 				.doesNotContain(InNestedA.class.getName());
 	}
 
@@ -127,5 +128,16 @@ class JavaPackageUnitTests {
 				.containsExactly("with.many",
 						"with.many.intermediate",
 						"with.many.intermediate.packages");
+	}
+
+	@Test // GH-1279
+	void considersExclusions() {
+
+		var pkg = JavaPackage.of(classes, "example.ni");
+
+		var exclusion = pkg.getSubPackage("nested").orElseThrow();
+		var result = pkg.without(new JavaPackages(exclusion));
+
+		assertThat(result.contains(classes.getRequiredClass(NestedNi.class))).isFalse();
 	}
 }
