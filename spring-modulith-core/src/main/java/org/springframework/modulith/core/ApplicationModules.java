@@ -146,9 +146,12 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.modules = sources.stream() //
 				.map(it -> {
 
-					return new ApplicationModule(it,
-							JavaPackages.onlySubPackagesOf(it.getModuleBasePackage(),
-									sources.stream().map(ApplicationModuleSource::getModuleBasePackage).toList())); //
+					var exclusions = sources.stream()
+							.map(ApplicationModuleSource::getModuleBasePackage)
+							.toList();
+
+					return new ApplicationModule(it, new JavaPackages(exclusions));
+
 				})
 				.collect(toMap(ApplicationModule::getIdentifier, Function.identity()));
 
