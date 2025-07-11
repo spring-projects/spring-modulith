@@ -1,3 +1,4 @@
+aptk=APTK
 archunit=ArchUnit
 flapdoodle-mongodb=Flapdoodle MongoDB
 jgit=jGit
