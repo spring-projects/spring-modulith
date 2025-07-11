@@ -27,6 +27,7 @@ import static org.springframework.modulith.core.Types.SpringTypes.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -168,7 +169,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
-	 * Returns {@link DeclaredDependencies} of the current {@link ApplicationModule}.
+	 * Returns {@link AllowedDependencies} of the current {@link ApplicationModule}.
 	 *
 	 * @param modules must not be {@literal null}.
 	 * @param type must not be {@literal null}.
@@ -519,31 +520,32 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
-	 * Returns all declared module dependencies, either explicitly declared or defined as shared on the given
+	 * Returns all declared allowed module dependencies, either explicitly declared or defined as shared on the given
 	 * {@link ApplicationModules} instance.
 	 *
 	 * @param modules must not be {@literal null}.
-	 * @return
+	 * @return will never be {@literal null}.
+	 * @since 1.4.2, previously package private
 	 */
-	DeclaredDependencies getDeclaredDependencies(ApplicationModules modules) {
+	public AllowedDependencies getAllowedDependencies(ApplicationModules modules) {
 
 		Assert.notNull(modules, "Modules must not be null!");
 
 		var allowedDependencyNames = information.getDeclaredDependencies();
 
-		if (DeclaredDependencies.isOpen(allowedDependencyNames)) {
-			return DeclaredDependencies.open();
+		if (AllowedDependencies.isOpen(allowedDependencyNames)) {
+			return AllowedDependencies.open();
 		}
 
 		var explicitlyDeclaredModules = allowedDependencyNames.stream() //
-				.map(it -> DeclaredDependency.of(it, this, modules));
+				.map(it -> AllowedDependency.of(it, this, modules));
 
 		var sharedDependencies = modules.getSharedModules().stream()
-				.map(DeclaredDependency::to);
+				.map(AllowedDependency::to);
 
 		return Stream.concat(explicitlyDeclaredModules, sharedDependencies) //
 				.distinct() //
-				.collect(Collectors.collectingAndThen(Collectors.toList(), DeclaredDependencies::closed));
+				.collect(Collectors.collectingAndThen(Collectors.toList(), AllowedDependencies::closed));
 	}
 
 	/**
@@ -568,9 +570,9 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 * Returns whether the module is considered open.
 	 *
 	 * @see org.springframework.modulith.ApplicationModule.Type
-	 * @since 1.2
+	 * @since 1.4.2, previously package private since 1.2.
 	 */
-	boolean isOpen() {
+	public boolean isOpen() {
 		return information.isOpen();
 	}
 
@@ -887,7 +889,13 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		return it -> it.getSimpleName().equals(candidate) || it.getFullName().equals(candidate);
 	}
 
-	static class DeclaredDependency {
+	/**
+	 * Describes a dependency explicitly declared as allowed for an {@link ApplicationModule}.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 1.4.2, package private before
+	 */
+	public static class AllowedDependency {
 
 		private static final String INVALID_EXPLICIT_MODULE_DEPENDENCY = "Invalid explicit module dependency in %s! No module found with name '%s'.";
 		private static final String INVALID_NAMED_INTERFACE_DECLARATION = "No named interface named '%s' found! Original dependency declaration: %s -> %s.";
@@ -897,12 +905,12 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		private final @Nullable NamedInterface namedInterface;
 
 		/**
-		 * Creates a new {@link DeclaredDependency} for the given {@link ApplicationModule} and {@link NamedInterface}.
+		 * Creates a new {@link AllowedDependency} for the given {@link ApplicationModule} and {@link NamedInterface}.
 		 *
 		 * @param target must not be {@literal null}.
 		 * @param namedInterface can be {@literal null}.
 		 */
-		private DeclaredDependency(ApplicationModule target, @Nullable NamedInterface namedInterface) {
+		private AllowedDependency(ApplicationModule target, @Nullable NamedInterface namedInterface) {
 
 			Assert.notNull(target, "Target ApplicationModule must not be null!");
 
@@ -911,7 +919,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		}
 
 		/**
-		 * Creates an {@link DeclaredDependency} to the module and optionally named interface defined by the given
+		 * Creates an {@link AllowedDependency} to the module and optionally named interface defined by the given
 		 * identifier.
 		 *
 		 * @param identifier must not be {@literal null} or empty. Follows the
@@ -922,7 +930,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 * @throws IllegalArgumentException in case the given identifier is invalid, i.e. does not refer to an existing
 		 *           module or named interface.
 		 */
-		public static DeclaredDependency of(String identifier, ApplicationModule source,
+		static AllowedDependency of(String identifier, ApplicationModule source,
 				ApplicationModules modules) {
 
 			Assert.hasText(identifier, "Module dependency identifier must not be null or empty!");
@@ -936,7 +944,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(source.getIdentifier(), targetModuleName)));
 
 			if (WILDCARD.equals(namedInterfaceName)) {
-				return new DeclaredDependency(target, null);
+				return new AllowedDependency(target, null);
 			}
 
 			var namedInterfaces = target.getNamedInterfaces();
@@ -947,29 +955,47 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfaceName, source.getIdentifier(),
 											identifier)));
 
-			return new DeclaredDependency(target, namedInterface);
+			return new AllowedDependency(target, namedInterface);
 		}
 
 		/**
-		 * Creates a new {@link DeclaredDependency} to the unnamed interface of the given {@link ApplicationModule}.
+		 * Creates a new {@link AllowedDependency} to the unnamed interface of the given {@link ApplicationModule}.
 		 *
 		 * @param module must not be {@literal null}.
 		 * @return
 		 */
-		public static DeclaredDependency to(ApplicationModule module) {
+		static AllowedDependency to(ApplicationModule module) {
 
 			Assert.notNull(module, "ApplicationModule must not be null!");
 
-			return new DeclaredDependency(module, module.getNamedInterfaces().getUnnamedInterface());
+			return new AllowedDependency(module, module.getNamedInterfaces().getUnnamedInterface());
 		}
 
 		/**
-		 * Returns whether the {@link DeclaredDependency} contains the given {@link JavaClass}.
+		 * Returns the target module of the dependency.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public ApplicationModule getTargetModule() {
+			return target;
+		}
+
+		/**
+		 * Returns the {@link NamedInterface} declared as valid target if declared.
+		 *
+		 * @return can be {@literal null}.
+		 */
+		public @Nullable NamedInterface getTargetNamedInterface() {
+			return namedInterface;
+		}
+
+		/**
+		 * Returns whether the {@link AllowedDependency} contains the given {@link JavaClass}.
 		 *
 		 * @param type must not be {@literal null}.
 		 * @return
 		 */
-		public boolean contains(JavaClass type) {
+		boolean contains(JavaClass type) {
 
 			Assert.notNull(type, "Type must not be null!");
 
@@ -979,7 +1005,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		}
 
 		/**
-		 * Returns whether the {@link DeclaredDependency} contains the given {@link Class}.
+		 * Returns whether the {@link AllowedDependency} contains the given {@link Class}.
 		 *
 		 * @param type must not be {@literal null}.
 		 * @return
@@ -1001,16 +1027,17 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		public String toString() {
 
 			var result = target.getIdentifier().toString();
+			var ni = namedInterface;
 
-			if (namedInterface == null) {
+			if (ni == null) {
 				return result + " :: " + WILDCARD;
 			}
 
-			if (namedInterface.isUnnamed()) {
+			if (ni.isUnnamed()) {
 				return result;
 			}
 
-			return result + " :: " + namedInterface.getName();
+			return result + " :: " + ni.getName();
 		}
 
 		/*
@@ -1018,13 +1045,13 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(@Nullable Object obj) {
 
 			if (this == obj) {
 				return true;
 			}
 
-			if (!(obj instanceof DeclaredDependency that)) {
+			if (!(obj instanceof AllowedDependency that)) {
 				return false;
 			}
 
@@ -1043,35 +1070,36 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
-	 * A collection wrapper for {@link DeclaredDependency} instances.
+	 * A collection wrapper for {@link AllowedDependency} instances.
 	 *
 	 * @author Oliver Drotbohm
+	 * @since 1.4.2, previously package private
 	 */
-	static class DeclaredDependencies {
+	public static class AllowedDependencies implements Iterable<AllowedDependency> {
 
 		private static final String OPEN_TOKEN = "¯\\_(ツ)_/¯";
 
-		private final List<DeclaredDependency> dependencies;
+		private final List<AllowedDependency> dependencies;
 		private final boolean closed;
 
-		static boolean isOpen(List<String> declaredDependencies) {
-			return declaredDependencies.size() == 1 && declaredDependencies.get(0).equals(OPEN_TOKEN);
+		static boolean isOpen(List<String> AllowedDependencies) {
+			return AllowedDependencies.size() == 1 && AllowedDependencies.get(0).equals(OPEN_TOKEN);
 		}
 
-		public static DeclaredDependencies open() {
-			return new DeclaredDependencies(Collections.emptyList(), false);
+		static AllowedDependencies open() {
+			return new AllowedDependencies(Collections.emptyList(), false);
 		}
 
-		public static DeclaredDependencies closed(List<DeclaredDependency> dependencies) {
-			return new DeclaredDependencies(dependencies, true);
+		static AllowedDependencies closed(List<AllowedDependency> dependencies) {
+			return new AllowedDependencies(dependencies, true);
 		}
 
 		/**
-		 * Creates a new {@link DeclaredDependencies} for the given {@link List} of {@link DeclaredDependency}.
+		 * Creates a new {@link AllowedDependencies} for the given {@link List} of {@link AllowedDependency}.
 		 *
 		 * @param dependencies must not be {@literal null}.
 		 */
-		private DeclaredDependencies(List<DeclaredDependency> dependencies, boolean closed) {
+		private AllowedDependencies(List<AllowedDependency> dependencies, boolean closed) {
 
 			Assert.notNull(dependencies, "Dependencies must not be null!");
 
@@ -1080,12 +1108,28 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		}
 
 		/**
+		 * Returns whether we have any allowed dependencies at all.
+		 */
+		public boolean isEmpty() {
+			return dependencies.isEmpty();
+		}
+
+		/**
+		 * Returns all {@link AllowedDependency} instances as a {@link Stream}.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public Stream<AllowedDependency> stream() {
+			return dependencies.stream();
+		}
+
+		/**
 		 * Returns whether the given {@link JavaClass} is a valid dependency.
 		 *
 		 * @param type must not be {@literal null}.
 		 * @return
 		 */
-		public boolean isAllowedDependency(JavaClass type) {
+		boolean isAllowedDependency(JavaClass type) {
 			return isAllowedDependency(it -> it.contains(type));
 		}
 
@@ -1093,11 +1137,20 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			return isAllowedDependency(it -> it.contains(type));
 		}
 
-		private boolean isAllowedDependency(Predicate<DeclaredDependency> predicate) {
+		private boolean isAllowedDependency(Predicate<AllowedDependency> predicate) {
 
 			Assert.notNull(predicate, "Predicate must not be null!");
 
 			return closed ? !dependencies.isEmpty() && contains(predicate) : dependencies.isEmpty() || contains(predicate);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Iterable#iterator()
+		 */
+		@Override
+		public Iterator<AllowedDependency> iterator() {
+			return dependencies.iterator();
 		}
 
 		/*
@@ -1109,7 +1162,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			return dependencies.isEmpty() //
 					? "none" //
-					: dependencies.stream().map(DeclaredDependency::toString).collect(Collectors.joining(", "));
+					: dependencies.stream().map(AllowedDependency::toString).collect(Collectors.joining(", "));
 		}
 
 		/*
@@ -1117,13 +1170,13 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 * @see java.lang.Object#equals(java.lang.Object)
 		 */
 		@Override
-		public boolean equals(Object obj) {
+		public boolean equals(@Nullable Object obj) {
 
 			if (this == obj) {
 				return true;
 			}
 
-			if (!(obj instanceof DeclaredDependencies that)) {
+			if (!(obj instanceof AllowedDependencies that)) {
 				return false;
 			}
 
@@ -1144,7 +1197,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 *
 		 * @param type must not be {@literal null}.
 		 */
-		private boolean contains(Predicate<DeclaredDependency> condition) {
+		private boolean contains(Predicate<AllowedDependency> condition) {
 
 			Assert.notNull(condition, "Condition must not be null!");
 
@@ -1276,10 +1329,10 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 				return violations;
 			}
 
-			var declaredDependencies = originModule.getDeclaredDependencies(modules);
+			var allowed = originModule.getAllowedDependencies(modules);
 
 			// Check explicitly defined allowed targets
-			if (!declaredDependencies.isAllowedDependency(target)) {
+			if (!allowed.isAllowedDependency(target)) {
 
 				var targetNamedInterfaces = targetModule.getNamedInterfaces()
 						.getNamedInterfacesContaining(target)
@@ -1295,7 +1348,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 				var message = "Module '%s' depends on %s via %s -> %s. Allowed targets: %s." //
 						.formatted(originModule.getIdentifier(), targetString, source.getName(), target.getName(),
-								declaredDependencies.toString());
+								allowed.toString());
 
 				return violations.and(new Violation(message));
 			}

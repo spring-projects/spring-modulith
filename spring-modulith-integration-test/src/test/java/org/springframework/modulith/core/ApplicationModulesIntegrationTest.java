@@ -182,11 +182,11 @@ class ApplicationModulesIntegrationTest {
 		var third = modules.getModuleByType(Third.class).orElseThrow();
 
 		// Disallowed due to allowedDependencies = {}
-		assertThat(first.getDeclaredDependencies(modules).isAllowedDependency(Second.class)).isFalse();
+		assertThat(first.getAllowedDependencies(modules).isAllowedDependency(Second.class)).isFalse();
 
 		// Allowed as allowedDependencies not set
-		assertThat(second.getDeclaredDependencies(modules).isAllowedDependency(Third.class)).isTrue();
-		assertThat(third.getDeclaredDependencies(modules).isAllowedDependency(Fourth.class)).isTrue();
+		assertThat(second.getAllowedDependencies(modules).isAllowedDependency(Third.class)).isTrue();
+		assertThat(third.getAllowedDependencies(modules).isAllowedDependency(Fourth.class)).isTrue();
 	}
 
 	@Test // GH-406
