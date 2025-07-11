@@ -44,6 +44,8 @@ import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.modulith.runtime.autoconfigure.SpringModulithRuntimeAutoConfiguration.ApplicationModulesBootstrap;
+import org.springframework.modulith.runtime.autoconfigure.SpringModulithRuntimeAutoConfiguration.RuntimeApplicationModuleVerifier;
 
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 
@@ -72,8 +74,8 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 
 		runner.withUserConfiguration(SampleApp.class)
 				.run(context -> {
-					assertThat(context.getBean(ApplicationRuntime.class)).isNotNull();
-					assertThat(context.getBean(ApplicationModulesRuntime.class)).isNotNull();
+					assertThat(context).hasSingleBean(ApplicationRuntime.class);
+					assertThat(context).hasSingleBean(ApplicationModulesRuntime.class);
 				});
 	}
 
@@ -157,6 +159,27 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 					assertThat(context).hasSingleBean(ApplicationModuleIdentifiers.class);
 
 					assertThat(context.getBean(ApplicationModuleIdentifiers.class)).isEmpty();
+				});
+	}
+
+	@Test // GH-1287
+	void doesNotActivateVerifyingListenerByDefault() {
+
+		runner.run(context -> {
+			assertThat(context).hasSingleBean(SpringModulithRuntimeProperties.class);
+			assertThat(context).doesNotHaveBean(RuntimeApplicationModuleVerifier.class);
+			tracker.assertBeanNotInitialized(ApplicationModulesBootstrap.class);
+		});
+	}
+
+	@Test // GH-1287
+	void registersVerifyingApplicationListenerIfConfigured() {
+
+		runner.withUserConfiguration(SampleApp.class)
+				.withPropertyValues("spring.modulith.runtime.verification-enabled=true")
+				.run(context -> {
+					assertThat(context).hasSingleBean(RuntimeApplicationModuleVerifier.class);
+					tracker.assertBeanInitialized(ApplicationModulesBootstrap.class);
 				});
 	}
 

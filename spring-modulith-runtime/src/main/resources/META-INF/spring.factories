@@ -1,3 +1,4 @@
 # Failure analyzers
 org.springframework.boot.diagnostics.FailureAnalyzer=\
-org.springframework.modulith.runtime.autoconfigure.MissingRuntimeDependencyFailureAnalyzer
+  org.springframework.modulith.runtime.autoconfigure.MissingRuntimeDependencyFailureAnalyzer,\
+  org.springframework.modulith.runtime.autoconfigure.FailedModuleVerificationFailureAnalyzer

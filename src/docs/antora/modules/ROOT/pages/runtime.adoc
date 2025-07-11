@@ -39,6 +39,7 @@ Adding this JAR will cause Spring Boot auto-configuration to run that registers 
 
 * An `ApplicationModulesRuntime` that allows to access the `ApplicationModules`.
 * A `SpringBootApplicationRuntime` to back the former bean to detect the main application class.
+* A `RuntimeApplicationModuleVerifier` to verify the application module arrangement on startup and abort it if violations are detected, only if `spring.modulith.runtime.verification-enabled` is configured to `true`.
 * An event listener for https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#features.spring-application.application-events-and-listeners[`ApplicationStartedEvent`]s that will invoke xref:runtime.adoc#application-module-initializer[`ApplicationModuleInitializer`] beans defined in the application context.
 
 [[application-module-initializer]]
