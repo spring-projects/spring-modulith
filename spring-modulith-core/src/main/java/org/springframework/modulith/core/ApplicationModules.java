@@ -848,6 +848,10 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		private static boolean visit(ApplicationModule module, ApplicationModules modules, Set<ApplicationModule> visited,
 				Set<ApplicationModule> inProgress, int level, Map<Integer, Set<ApplicationModuleIdentifier>> levelMap) {
 
+			if (module.isRootModule()) {
+				return false;
+			}
+
 			if (inProgress.contains(module)) {
 				return true;
 			}
