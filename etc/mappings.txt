@@ -1,5 +1,6 @@
 aptk=APTK
 archunit=ArchUnit
+cute=Cute
 flapdoodle-mongodb=Flapdoodle MongoDB
 jgit=jGit
 jmolecules-bom=jMolecules

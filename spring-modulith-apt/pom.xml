@@ -45,7 +45,7 @@
 		<dependency>
 			<groupId>io.toolisticon.cute</groupId>
 			<artifactId>cute</artifactId>
-			<version>1.7.0</version>
+			<version>${cute.version}</version>
 			<scope>test</scope>
 		</dependency>
 

@@ -38,6 +38,7 @@
 		<aptk.version>0.30.2</aptk.version>
 		<archunit.version>1.4.1</archunit.version>
 		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
+		<cute.version>1.8.0</cute.version>
 		<errorprone.version>2.36.0</errorprone.version>
 		<flapdoodle-mongodb.version>4.20.0</flapdoodle-mongodb.version>
 		<jgit.version>7.3.0.202506031305-r</jgit.version>
