@@ -94,7 +94,7 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 * @return will never be {@literal null}.
 	 * @since 1.4 (previously package protected)
 	 */
-	public static NamedInterface of(String name, Classes classes) {
+	static NamedInterface of(String name, Classes classes) {
 		return new NamedInterface(name, classes);
 	}
 
