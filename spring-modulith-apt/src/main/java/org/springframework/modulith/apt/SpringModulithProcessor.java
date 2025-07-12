@@ -129,14 +129,16 @@ public class SpringModulithProcessor implements Processor {
 
 		try {
 
-			var path = environment.getFiler()
-					.createResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/spring-modulith")
-					.toUri()
-					.toString();
+			var placeholder = environment.getFiler()
+					.createResource(StandardLocation.CLASS_OUTPUT, "", "META-INF/spring-modulith/__placeholder");
+
+			var path = placeholder.toUri().toString();
 
 			if (path.contains(BuildSystemUtils.getTestTarget())) {
 				this.testExecution = true;
 			}
+
+			placeholder.delete();
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
