@@ -112,7 +112,7 @@ public class ApplicationModuleSource {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	public JavaPackage getModuleBasePackage() {
+	JavaPackage getModuleBasePackage() {
 		return moduleBasePackage;
 	}
 
@@ -121,7 +121,7 @@ public class ApplicationModuleSource {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	public ApplicationModuleIdentifier getIdentifier() {
+	ApplicationModuleIdentifier getIdentifier() {
 		return identifier;
 	}
 
@@ -132,7 +132,7 @@ public class ApplicationModuleSource {
 	 * @return will never be {@literal null}.
 	 * @since 1.4
 	 */
-	public NamedInterfaces getNamedInterfaces(ApplicationModuleInformation information) {
+	NamedInterfaces getNamedInterfaces(ApplicationModuleInformation information) {
 		return getNamedInterfaces(information, moduleBasePackage);
 	}
 
