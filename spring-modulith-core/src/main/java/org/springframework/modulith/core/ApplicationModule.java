@@ -107,7 +107,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		this.source = source;
 		this.basePackage = basePackage;
-		this.exclusions = exclusions;
+		this.exclusions = exclusions.getSubPackagesOf(basePackage);
 		this.classes = basePackage.getClasses();
 		this.information = ApplicationModuleInformation.of(basePackage);
 		this.namedInterfaces = source.getNamedInterfaces(information, basePackage);
@@ -475,15 +475,10 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		if (modules != null) {
 
-			List<ApplicationModule> dependencies = getBootstrapDependencies(modules).toList();
-
+			var directDependencies = getDependencies(modules, DependencyDepth.IMMEDIATE);
 			builder.append("> Direct module dependencies: ");
-			builder.append(dependencies.isEmpty()
-					? "none"
-					: dependencies.stream()
-							.map(ApplicationModule::getIdentifier)
-							.map(ApplicationModuleIdentifier::toString)
-							.collect(Collectors.joining(", ")));
+			builder.append(directDependencies.isEmpty() ? "none"
+					: toBulletList(directDependencies.uniqueModules(), getBootstrapDependencies(modules)));
 			builder.append('\n');
 		}
 
@@ -887,6 +882,21 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 	private static Predicate<JavaClass> hasSimpleOrFullyQualifiedName(String candidate) {
 		return it -> it.getSimpleName().equals(candidate) || it.getFullName().equals(candidate);
+	}
+
+	private static String toBulletList(Stream<ApplicationModule> modules,
+			Stream<ApplicationModule> bootstrapDependencies) {
+
+		var bootstrapIdentifiers = bootstrapDependencies
+				.map(ApplicationModule::getIdentifier)
+				.map(ApplicationModuleIdentifier::toString)
+				.toList();
+
+		return modules.sorted()
+				.map(ApplicationModule::getIdentifier)
+				.map(ApplicationModuleIdentifier::toString)
+				.map(it -> (bootstrapIdentifiers.contains(it) ? "  + " : "  - ").concat(it))
+				.collect(Collectors.joining("\n", "\n", ""));
 	}
 
 	/**

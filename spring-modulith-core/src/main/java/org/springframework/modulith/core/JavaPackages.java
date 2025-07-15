@@ -79,6 +79,22 @@ class JavaPackages implements Iterable<JavaPackage> {
 		return packages.stream();
 	}
 
+	/**
+	 * Returns all {@link JavaPackages} that are a sub-package of the given one.
+	 *
+	 * @param pkg must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 1.4.2
+	 */
+	JavaPackages getSubPackagesOf(JavaPackage pkg) {
+
+		Assert.notNull(pkg, "JavaPackage must not be null!");
+
+		return new JavaPackages(stream()
+				.filter(pkg::isParentPackageOf)
+				.toList());
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Iterable#iterator()

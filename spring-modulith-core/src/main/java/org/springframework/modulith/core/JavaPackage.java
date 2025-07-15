@@ -326,10 +326,9 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	}
 
 	/**
-	 * Returns whether the given reference package is a sub-package of the current one.
+	 * Returns whether the current {@link JavaPackage} is a sub-package of the given reference one.
 	 *
 	 * @param reference must not be {@literal null}.
-	 * @return will never be {@literal null}.
 	 * @since 1.3
 	 */
 	boolean isSubPackageOf(JavaPackage reference) {
@@ -337,6 +336,16 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 		Assert.notNull(reference, "Reference package must not be null!");
 
 		return name.isSubPackageOf(reference.name);
+	}
+
+	/**
+	 * Returns whether the current {@link JavaPackage} is a parent package of the given reference one.
+	 *
+	 * @param reference must not be {@literal null}.
+	 * @since 1.4.2
+	 */
+	boolean isParentPackageOf(JavaPackage reference) {
+		return reference.isSubPackageOf(this);
 	}
 
 	/**
