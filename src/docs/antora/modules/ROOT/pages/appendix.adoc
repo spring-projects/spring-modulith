@@ -19,6 +19,7 @@
 
 |2.0 (snapshot)
 |4.0 SNAPSHOT
+|4.0 SNAPSHOT and milestones
 |2023.2
 |2023.2, 2025.0 RC2
 
