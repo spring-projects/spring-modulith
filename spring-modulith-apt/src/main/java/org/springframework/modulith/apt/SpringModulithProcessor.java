@@ -138,8 +138,6 @@ public class SpringModulithProcessor implements Processor {
 				this.testExecution = true;
 			}
 
-			placeholder.delete();
-
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
