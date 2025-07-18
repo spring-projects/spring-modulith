@@ -27,7 +27,7 @@ As a result, Spring Modulith enables developers to build applications that are e
 * Javadoc: https://docs.spring.io/spring-modulith/docs/{projectVersion}/api
 
 [[compatibility]]
-== Spring Boot compatbility
+== Spring Boot compatibility
 
 Find a full Spring Boot compatibility matrix xref:appendix.adoc#compatibility-matrix[here].
 
