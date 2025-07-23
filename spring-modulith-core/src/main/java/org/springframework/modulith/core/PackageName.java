@@ -16,9 +16,9 @@
 package org.springframework.modulith.core;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -37,7 +37,7 @@ public class PackageName implements Comparable<PackageName> {
 
 	public static final String DEFAULT = "<<default>>";
 
-	private static final Map<String, PackageName> PACKAGE_NAMES = new HashMap<>();
+	private static final Map<String, PackageName> PACKAGE_NAMES = new ConcurrentHashMap<>();
 
 	private final String name;
 	private final String[] segments;
