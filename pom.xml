@@ -261,15 +261,12 @@ limitations under the License.
 						</configuration>
 					</plugin>
 					<plugin>
-						<groupId>org.sonatype.plugins</groupId>
-						<artifactId>nexus-staging-maven-plugin</artifactId>
-						<version>1.7.0</version>
-						<extensions>true</extensions>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
 						<configuration>
-							<serverId>sonatype-new</serverId>
-							<nexusUrl>https://s01.oss.sonatype.org/</nexusUrl>
-							<autoReleaseAfterClose>true</autoReleaseAfterClose>
-							<keepStagingRepositoryOnFailure>true</keepStagingRepositoryOnFailure>
+							<deploymentName>Spring Modulith ${project.version}</deploymentName>
+							<publishingServerId>central-ossrh</publishingServerId>
+							<autoPublish>true</autoPublish>
 						</configuration>
 					</plugin>
 				</plugins>
@@ -536,6 +533,12 @@ limitations under the License.
 					<artifactId>exec-maven-plugin</artifactId>
 					<version>3.5.0</version>
 				</plugin>
+				<plugin>
+					<groupId>org.sonatype.central</groupId>
+					<artifactId>central-publishing-maven-plugin</artifactId>
+					<version>0.8.0</version>
+					<extensions>true</extensions>
+				</plugin>
 			</plugins>
 		</pluginManagement>
 
@@ -649,7 +652,7 @@ limitations under the License.
 		<url>https://github.com/spring-projects/spring-modulith</url>
 		<connection>scm:git:https://github.com/spring-projects/spring-modulith</connection>
 		<developerConnection>scm:git:ssh://git@github.com/spring-projects-experimental/spring-modulith</developerConnection>
-		<tag>main</tag>
+		<tag>1.4.x</tag>
 	</scm>
 
 	<repositories>
