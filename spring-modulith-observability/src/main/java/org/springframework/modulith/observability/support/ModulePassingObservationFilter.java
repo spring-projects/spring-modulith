@@ -19,6 +19,8 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.ContextView;
 import io.micrometer.observation.ObservationFilter;
 
+import java.util.Objects;
+
 /**
  * Ensures that {@link ModulithObservations.LowKeys#MODULE_KEY} gets propagated from parent to child.
  *
@@ -38,9 +40,11 @@ public class ModulePassingObservationFilter implements ObservationFilter {
 		if (isModuleKeyValueAbsentInCurrent(context) && isModuleKeyValuePresentInParent(context)) {
 
 			var moduleKey = ModulithObservations.LowKeys.MODULE_KEY;
+			var parent = Objects.requireNonNull(context.getParentObservation());
+			var moduleValue = Objects.requireNonNull(parent.getContextView()
+					.getLowCardinalityKeyValue(moduleKey.asString()));
 
-			return context.addLowCardinalityKeyValue(moduleKey.withValue(context.getParentObservation().getContextView()
-					.getLowCardinalityKeyValue(moduleKey.asString()).getValue()));
+			return context.addLowCardinalityKeyValue(moduleKey.withValue(moduleValue.getValue()));
 		}
 
 		return context;
