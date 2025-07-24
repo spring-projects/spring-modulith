@@ -26,7 +26,7 @@ import org.junit.jupiter.api.Test;
  */
 class ApplicationModulesUnitTests {
 
-	ApplicationModules modules = TestUtils.of("example", "example.ninvalid");
+	ApplicationModules modules = TestUtils.of("example", "example.ninvalid", "example.cycle..");
 
 	@Test // GH 578
 	void discoversComplexModuleArrangement() {

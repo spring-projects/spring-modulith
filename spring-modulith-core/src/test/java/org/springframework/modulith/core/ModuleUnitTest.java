@@ -105,4 +105,17 @@ class ModuleUnitTest {
 		assertThat(dependency.contains(SpiType.class)).isTrue();
 		assertThat(dependency.contains(ApiType.class)).isTrue();
 	}
+
+	@Test // GH-1299
+	void obtainsDependenciesForCyclicArrangement() {
+
+		var modules = TestUtils.of("example.cycle");
+
+		modules.forEach(it -> {
+
+			assertThat(it.getDependencies(modules, DependencyDepth.ALL).uniqueModules())
+					.extracting(ApplicationModule::getIdentifier)
+					.contains(it.getIdentifier());
+		});
+	}
 }
