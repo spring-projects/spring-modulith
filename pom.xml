@@ -47,7 +47,7 @@
 		<spring-framework.version>6.2.8</spring-framework.version> <!-- For Javadoc links only -->
 		<testcontainers.version>1.17.6</testcontainers.version>
 		<structurizr.version>3.1.0</structurizr.version>
-		<micrometer-tracing.version>1.5.1</micrometer-tracing.version>
+		<micrometer-tracing.version>1.5.2</micrometer-tracing.version>
 
 	</properties>
 
