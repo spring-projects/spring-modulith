@@ -16,12 +16,12 @@
 package org.springframework.modulith.test;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -50,8 +50,8 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleTestExecution.class);
 	private static final ApplicationModulesFactory BOOTSTRAP;
 
-	private static Map<Class<?>, Class<?>> MODULITH_TYPES = new HashMap<>();
-	private static Map<Key, ModuleTestExecution> EXECUTIONS = new HashMap<>();
+	private static final Map<Class<?>, Class<?>> MODULITH_TYPES = new ConcurrentHashMap<>();
+	private static final Map<Key, ModuleTestExecution> EXECUTIONS = new ConcurrentHashMap<>();
 
 	static {
 
