@@ -14,9 +14,9 @@ jobs:
         - '3.2.12'
         - '3.3.13'
         - '3.3.14-SNAPSHOT'
-        - '3.4.8-SNAPSHOT'
-        - '3.5.2'
-        - '3.5.3-SNAPSHOT'
+        - '3.4.9-SNAPSHOT'
+        - '3.5.4'
+        - '3.5.5-SNAPSHOT'
         jmolecules:
         - '2025.0.0-RC4'
 
