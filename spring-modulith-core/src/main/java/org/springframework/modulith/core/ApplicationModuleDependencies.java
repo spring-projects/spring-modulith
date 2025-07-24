@@ -16,6 +16,7 @@
 package org.springframework.modulith.core;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.function.Function;
@@ -29,6 +30,8 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  */
 public class ApplicationModuleDependencies {
+
+	static final ApplicationModuleDependencies NONE = new ApplicationModuleDependencies(Collections.emptyList());
 
 	private final List<ApplicationModuleDependency> dependencies;
 	private final Collection<ApplicationModule> modules;

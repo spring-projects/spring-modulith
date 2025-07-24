@@ -27,10 +27,12 @@ import static org.springframework.modulith.core.Types.SpringTypes.*;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -587,12 +589,11 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		Assert.notNull(depth, "DependencyDepth must not be null!");
 		Assert.notNull(types, "DependencyTypes must not be null!");
 
-		return getAllModuleDependencies(modules) //
-				.filter(it -> types.length == 0 ? true : Arrays.stream(types).anyMatch(it::hasType)) //
-				.distinct() //
-				.flatMap(it -> DefaultApplicationModuleDependency.of(it, modules)) //
-				.distinct() //
-				.flatMap(it -> resolveRecurseively(modules, it, depth, types)) //
+		if (depth == DependencyDepth.NONE) {
+			return ApplicationModuleDependencies.NONE;
+		}
+
+		return getDependencies(modules, new DependencyTraversal(depth, types))
 				.collect(Collectors.collectingAndThen(Collectors.toList(), ApplicationModuleDependencies::of));
 	}
 
@@ -821,14 +822,26 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 				.collect(Classes.toClasses());
 	}
 
-	private Stream<ApplicationModuleDependency> resolveRecurseively(ApplicationModules modules,
-			DefaultApplicationModuleDependency dependency, DependencyDepth depth, DependencyType... type) {
+	private Stream<ApplicationModuleDependency> getDependencies(ApplicationModules modules,
+			DependencyTraversal traversal) {
 
-		var tail = depth == DependencyDepth.ALL
-				? dependency.getTargetModule()
-						.getDependencies(modules, depth, type)
-						.stream()
-						.distinct()
+		return getAllModuleDependencies(modules) //
+				.filter(traversal::include) //
+				.distinct() //
+				.flatMap(it -> DefaultApplicationModuleDependency.of(it, modules)) //
+				.distinct() //
+				.flatMap(it -> resolveRecursively(modules, it, traversal)); //
+	}
+
+	private static Stream<ApplicationModuleDependency> resolveRecursively(ApplicationModules modules,
+			ApplicationModuleDependency dependency, DependencyTraversal seen) {
+
+		if (!seen.register(dependency.getTargetModule())) {
+			return Stream.of(dependency);
+		}
+
+		var tail = seen.hasDepth(DependencyDepth.ALL)
+				? dependency.getTargetModule().getDependencies(modules, seen).distinct()
 				: Stream.<ApplicationModuleDependency> empty();
 
 		return Stream.concat(Stream.of(dependency), tail);
@@ -1238,6 +1251,10 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			return this.type.equals(type);
 		}
 
+		boolean hasAnyType(Collection<DependencyType> candidates) {
+			return candidates.contains(type);
+		}
+
 		Violations isValidDependencyWithin(ApplicationModules modules) {
 
 			var originModule = getExistingModuleOf(source, modules);
@@ -1523,6 +1540,43 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			}
 
 			throw new IllegalArgumentException(String.format("Invalid member type %s!", member.toString()));
+		}
+	}
+
+	/**
+	 * A helper type to keep track of a traversal configuration and seen {@link ApplicationModule}s.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	private static class DependencyTraversal {
+
+		private final Set<ApplicationModule> seen = new HashSet<>();
+		private final DependencyDepth depth;
+		private final Set<DependencyType> types;
+
+		DependencyTraversal(DependencyDepth depth, DependencyType... types) {
+
+			this.depth = depth;
+			this.types = Set.of(types);
+		}
+
+		boolean include(QualifiedDependency dependency) {
+			return types.isEmpty() || dependency.hasAnyType(types);
+		}
+
+		boolean hasDepth(DependencyDepth depth) {
+			return this.depth == depth;
+		}
+
+		boolean register(ApplicationModule module) {
+
+			if (seen.contains(module)) {
+				return false;
+			}
+
+			seen.add(module);
+
+			return true;
 		}
 	}
 
