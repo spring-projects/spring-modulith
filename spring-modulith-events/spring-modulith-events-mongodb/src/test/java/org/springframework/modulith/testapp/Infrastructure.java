@@ -1,5 +1,5 @@
 /*
- * Copyright 2022-2025 the original author or authors.
+ * Copyright 2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,13 +15,18 @@
  */
 package org.springframework.modulith.testapp;
 
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.Import;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
+import org.springframework.context.annotation.Bean;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.utility.DockerImageName;
 
-/**
- * @author Dmitry Belyaev
- * @author Björn Kieling
- */
-@SpringBootApplication
-@Import(Infrastructure.class)
-public class TestApplication {}
+@TestConfiguration(proxyBeanMethods = false)
+public class Infrastructure {
+
+	@Bean
+	@ServiceConnection
+	MongoDBContainer mongoDBContainer() {
+		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
+	}
+}
