@@ -43,7 +43,6 @@
 		<dependency>
 			<groupId>org.springframework.data</groupId>
 			<artifactId>spring-data-mongodb</artifactId>
-			<version>5.0.0-SNAPSHOT</version>
 		</dependency>
 		
 		<dependency>
