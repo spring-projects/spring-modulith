@@ -33,8 +33,6 @@ dependencies {
 ----
 ======
 
-IMPORTANT: It's worth noting that using the runtime support of Spring Modulith will mean that you include both https://www.archunit.org/[ArchUnit] and the https://jgrapht.org/[JGraphT] (required to topologically sort application modules) library in your application.
-
 Adding this JAR will cause Spring Boot auto-configuration to run that registers the following components in your application:
 
 * An `ApplicationModulesRuntime` that allows to access the `ApplicationModules`.
