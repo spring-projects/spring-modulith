@@ -35,13 +35,6 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.jgrapht</groupId>
-			<artifactId>jgrapht-core</artifactId>
-			<version>${jgrapht.version}</version>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-core</artifactId>
 		</dependency>
