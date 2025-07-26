@@ -20,9 +20,9 @@ import static org.assertj.core.api.Assertions.*;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.modulith.test.TestUtils;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.acme.myproject.NonVerifyingModuleTest;
 import com.acme.myproject.moduleA.ServiceComponentA;
@@ -34,7 +34,7 @@ import com.acme.myproject.moduleB.ServiceComponentB;
 class ModuleCTest {
 
 	@Nested
-	public static class FailsStandaloneTest {
+	class FailsStandaloneTest {
 
 		@NonVerifyingModuleTest
 		static class Config {}
@@ -46,7 +46,7 @@ class ModuleCTest {
 	}
 
 	@Nested
-	static class FailsWithDirectDependencyTest {
+	class FailsWithDirectDependencyTest {
 
 		@NonVerifyingModuleTest(BootstrapMode.DIRECT_DEPENDENCIES)
 		static class Config {}
@@ -59,7 +59,7 @@ class ModuleCTest {
 
 	@Nested
 	@NonVerifyingModuleTest(BootstrapMode.DIRECT_DEPENDENCIES)
-	static class SucceedsWithDirectDependencyPlusItsDependenciesMocksTest {
+	class SucceedsWithDirectDependencyPlusItsDependenciesMocksTest {
 
 		@MockitoBean ServiceComponentA serviceComponentA;
 
@@ -71,7 +71,7 @@ class ModuleCTest {
 
 	@Nested
 	@NonVerifyingModuleTest(BootstrapMode.ALL_DEPENDENCIES)
-	static class SucceedsWithAllDependenciesTest {
+	class SucceedsWithAllDependenciesTest {
 
 		@Autowired ServiceComponentA serviceComponentA;
 		@Autowired ServiceComponentB serviceComponentB;

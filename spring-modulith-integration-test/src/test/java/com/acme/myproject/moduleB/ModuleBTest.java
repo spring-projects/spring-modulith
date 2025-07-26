@@ -22,10 +22,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.modulith.test.TestUtils;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.acme.myproject.NonVerifyingModuleTest;
 import com.acme.myproject.moduleA.ServiceComponentA;
@@ -37,7 +37,7 @@ import com.acme.myproject.moduleB.internal.InternalComponentB;
 class ModuleBTest {
 
 	@Nested
-	static class WithoutMocksTest {
+	class WithoutMocksTest {
 
 		@Autowired ServiceComponentB serviceComponentB;
 
@@ -52,7 +52,7 @@ class ModuleBTest {
 
 	@Nested
 	@NonVerifyingModuleTest
-	static class WithMocksTest {
+	class WithMocksTest {
 
 		@Autowired ApplicationContext context;
 		@MockitoBean ServiceComponentA serviceComponentA;
@@ -80,7 +80,7 @@ class ModuleBTest {
 
 	@Nested
 	@NonVerifyingModuleTest(BootstrapMode.DIRECT_DEPENDENCIES)
-	static class WithUpstreamModuleTest {
+	class WithUpstreamModuleTest {
 
 		@Autowired ServiceComponentA componentA;
 		@Autowired ServiceComponentB componentB;

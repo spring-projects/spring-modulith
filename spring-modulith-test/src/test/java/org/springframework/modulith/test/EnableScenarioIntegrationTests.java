@@ -20,7 +20,6 @@ import static org.mockito.Mockito.*;
 
 import example.TestConfiguration;
 
-import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Bean;
@@ -34,7 +33,6 @@ import org.springframework.transaction.support.TransactionTemplate;
  *
  * @author Oliver Drotbohm
  */
-@Nested
 @EnableScenarios
 @SpringBootTest(classes = { TestConfiguration.class, TransactionTemplateTestConfiguration.class })
 class EnableScenarioIntegrationTests {

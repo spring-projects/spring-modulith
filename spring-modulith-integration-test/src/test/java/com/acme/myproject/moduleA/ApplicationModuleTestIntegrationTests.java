@@ -22,16 +22,17 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient;
 import org.springframework.context.ApplicationContext;
-import org.springframework.modulith.test.ApplicationModuleTest;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.reactive.server.WebTestClient;
+
+import com.acme.myproject.NonVerifyingModuleTest;
 
 /**
  * Integration tests for {@link ApplicationModuleTest}.
  *
  * @author Oliver Drotbohm
  */
-@ApplicationModuleTest(verifyAutomatically = false)
+@NonVerifyingModuleTest
 class ApplicationModuleTestIntegrationTests {
 
 	@Test // GH-173
@@ -46,7 +47,7 @@ class ApplicationModuleTestIntegrationTests {
 
 	// GH-253
 	@Nested
-	@ApplicationModuleTest(verifyAutomatically = false)
+	@NonVerifyingModuleTest
 	@ContextConfiguration
 	@AutoConfigureWebTestClient
 	class SampleTest {
