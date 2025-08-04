@@ -430,6 +430,15 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 			assertOneByStatus(Status.RESUBMITTED);
 		}
 
+		@Test // GH-1321
+		void marksPublicationAsProcessing() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markProcessing(publication.getIdentifier());
+		}
+
 		private void assertOneByStatus(Status reference) {
 
 			for (var status : Status.values()) {

@@ -294,7 +294,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 	 */
 	@Override
 	public void markProcessing(UUID identifier) {
-		operations.update(sqlStatementMarkProcessing, identifier);
+		operations.update(sqlStatementMarkProcessing, uuidToDatabase(identifier));
 	}
 
 	/*
