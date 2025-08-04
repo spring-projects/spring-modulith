@@ -87,6 +87,11 @@ enum DatabaseType {
 		boolean isSchemaSupported() {
 			return false;
 		}
+
+		@Override
+		String getLimitClause(long limit) {
+			return " OFFSET 0 ROWS FETCH NEXT " + limit + " ROWS ONLY";
+		}
 	},
 
 	ORACLE("oracle", "Oracle") {
@@ -104,6 +109,11 @@ enum DatabaseType {
 		@Override
 		boolean isSchemaSupported() {
 			return false;
+		}
+
+		@Override
+		String getLimitClause(long limit) {
+			return " FETCH FIRST " + limit + " ROWS ONLY";
 		}
 	};
 
@@ -141,6 +151,10 @@ enum DatabaseType {
 
 	String getArchiveSchemaResourceFilename(boolean legacy) {
 		return getSchemaBase(legacy) + "-archive.sql";
+	}
+
+	String getLimitClause(long limit) {
+		return " LIMIT " + limit;
 	}
 
 	private String getSchemaBase(boolean legacy) {

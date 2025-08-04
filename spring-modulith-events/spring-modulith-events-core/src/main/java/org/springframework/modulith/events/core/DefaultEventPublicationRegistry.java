@@ -17,7 +17,6 @@ package org.springframework.modulith.events.core;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -35,6 +34,7 @@ import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.ResubmissionOptions;
+import org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
@@ -234,18 +234,9 @@ public class DefaultEventPublicationRegistry
 			return;
 		}
 
-		var criteria = new EventPublicationRepository.FailedCriteria() {
-
-			@Override
-			public Instant getPublicationDateReference() {
-				return clock.instant().minus(options.getMinAge());
-			}
-
-			@Override
-			public int getMaxItemsToRead() {
-				return Math.min(options.getBatchSize(), options.getBatchSize() - currentlyResubmitted);
-			}
-		};
+		var criteria = FailedCriteria.ALL
+				.withPublicationsPublishedBefore(clock.instant().minus(options.getMinAge()))
+				.withItemsToRead(Math.min(options.getBatchSize(), options.getBatchSize() - currentlyResubmitted));
 
 		processPublications(events.findFailedPublications(criteria), options.getFilter(), consumer);
 	}

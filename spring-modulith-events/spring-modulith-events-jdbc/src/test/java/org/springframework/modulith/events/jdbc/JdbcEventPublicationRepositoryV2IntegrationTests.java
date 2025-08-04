@@ -439,6 +439,37 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 			repository.markProcessing(publication.getIdentifier());
 		}
 
+		@Test // GH-1321
+		void looksUpFailedPublicationInBatch() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(FailedCriteria.ALL.withItemsToRead(10)))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1321
+		void looksUpFailedPublicationWithReferenceDate() throws Exception {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			Thread.sleep(200);
+
+			var criteria = FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().plusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
 		private void assertOneByStatus(Status reference) {
 
 			for (var status : Status.values()) {

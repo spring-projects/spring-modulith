@@ -533,19 +533,18 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		if (instant != null) {
 
 			sql += """
-					AND PUBLICATION_DATE < ?
+					 AND PUBLICATION_DATE < ?
 					""";
 
-			args.add(instant);
+			args.add(Timestamp.from(instant));
 		}
+
+		sql += " ORDER BY PUBLICATION_DATE ASC";
 
 		var itemsToRead = criteria.getMaxItemsToRead();
 
 		if (itemsToRead != -1) {
-
-			sql += """
-					LIMIT %s
-					""".formatted(itemsToRead);
+			sql += settings.getDatabaseType().getLimitClause(itemsToRead);
 		}
 
 		var result = operations.query(asOneLine(sql), this::resultSetToPublications, args.toArray());

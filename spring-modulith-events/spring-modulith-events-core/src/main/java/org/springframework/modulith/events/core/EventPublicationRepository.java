@@ -209,20 +209,17 @@ public interface EventPublicationRepository {
 		return 0;
 	}
 
-	interface FailedCriteria {
+	static class FailedCriteria {
 
-		public static FailedCriteria ALL = new FailedCriteria() {
+		public static FailedCriteria ALL = new FailedCriteria(-1, null);
 
-			@Override
-			public int getMaxItemsToRead() {
-				return -1;
-			}
+		private final long maxItemsToRead;
+		private final @Nullable Instant publicationDateReference;
 
-			@Override
-			public @Nullable Instant getPublicationDateReference() {
-				return null;
-			}
-		};
+		private FailedCriteria(long maxItemsToRead, @Nullable Instant publicationDateReference) {
+			this.maxItemsToRead = maxItemsToRead;
+			this.publicationDateReference = publicationDateReference;
+		}
 
 		/**
 		 * The reference date to use as cutoff when selecting failed
@@ -231,12 +228,24 @@ public interface EventPublicationRepository {
 		 * @return can be {@literal null}.
 		 */
 		@Nullable
-		Instant getPublicationDateReference();
+		public Instant getPublicationDateReference() {
+			return publicationDateReference;
+		}
+
+		public FailedCriteria withPublicationsPublishedBefore(Instant reference) {
+			return new FailedCriteria(maxItemsToRead, reference);
+		}
 
 		/**
 		 * The number of {@link org.springframework.modulith.events.EventPublication}s to read. Return -1 to indicate you
 		 * want to read all items.
 		 */
-		int getMaxItemsToRead();
+		public long getMaxItemsToRead() {
+			return maxItemsToRead;
+		}
+
+		public FailedCriteria withItemsToRead(long itemsToRead) {
+			return new FailedCriteria(itemsToRead, publicationDateReference);
+		}
 	}
 }
