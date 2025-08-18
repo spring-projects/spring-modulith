@@ -19,6 +19,8 @@ import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactoryInitializer;
+import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
 import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.modulith.core.ApplicationModules;
@@ -32,7 +34,7 @@ import org.springframework.util.function.SingletonSupplier;
  * @author Oliver Drotbohm
  */
 @Endpoint(id = "modulith")
-public class ApplicationModulesEndpoint {
+public class ApplicationModulesEndpoint implements BeanFactoryInitializer<ListableBeanFactory> {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesEndpoint.class);
 
@@ -86,5 +88,14 @@ public class ApplicationModulesEndpoint {
 	@ReadOperation
 	String getApplicationModules() {
 		return structure.obtain();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.beans.factory.BeanFactoryInitializer#initialize(org.springframework.beans.factory.ListableBeanFactory)
+	 */
+	@Override
+	public void initialize(ListableBeanFactory beanFactory) {
+		structure.obtain();
 	}
 }
