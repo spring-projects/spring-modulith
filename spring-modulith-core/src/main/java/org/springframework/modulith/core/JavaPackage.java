@@ -24,6 +24,7 @@ import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Optional;
@@ -36,6 +37,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import org.jspecify.annotations.NonNull;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.PackageInfo;
 import org.springframework.util.Assert;
@@ -407,11 +409,12 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 		var isPackageInfo = have(simpleName(PACKAGE_INFO_NAME)).or(are(metaAnnotatedWith(PackageInfo.class)));
 
-		var annotatedTypes = toSingle().classes
+		List<@NonNull A> annotatedTypes = toSingle().classes
 				.that(isPackageInfo.and(are(metaAnnotatedWith(annotationType))))
 				.stream()
 				.map(JavaClass::reflect)
 				.map(it -> AnnotatedElementUtils.findMergedAnnotation(it, annotationType))
+				.filter(it -> it != null)
 				.toList();
 
 		if (annotatedTypes.size() > 1) {
