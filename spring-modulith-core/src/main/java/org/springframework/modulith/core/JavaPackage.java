@@ -412,6 +412,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 				.stream()
 				.map(JavaClass::reflect)
 				.map(it -> AnnotatedElementUtils.findMergedAnnotation(it, annotationType))
+				.filter(it -> it != null)
 				.toList();
 
 		if (annotatedTypes.size() > 1) {
