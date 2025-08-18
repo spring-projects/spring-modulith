@@ -35,6 +35,8 @@ import org.springframework.boot.test.autoconfigure.data.mongo.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.modulith.events.EventPublication.Status;
+import org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
@@ -299,6 +301,88 @@ class MongoDbEventPublicationRepositoryTest {
 					.matches(it -> it.getEvent().equals(second.getEvent()));
 		}
 
+		@Test // GH-1336
+		void looksUpFailedPublication() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(FailedCriteria.ALL))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1336
+		void claimsResubmissionOnce() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			var now = Instant.now();
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+		}
+
+		@Test // GH-1336
+		void countsByStatus() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			assertOneByStatus(Status.PUBLISHED);
+
+			repository.markFailed(publication.getIdentifier());
+			assertOneByStatus(Status.FAILED);
+
+			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			assertOneByStatus(Status.RESUBMITTED);
+		}
+
+		@Test // GH-1336
+		void marksPublicationAsProcessing() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markProcessing(publication.getIdentifier());
+		}
+
+		@Test // GH-1336
+		void looksUpFailedPublicationInBatch() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(FailedCriteria.ALL.withItemsToRead(10)))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1321
+		void looksUpFailedPublicationWithReferenceDate() throws Exception {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			Thread.sleep(200);
+
+			var criteria = FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().plusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
 		private TargetEventPublication createPublication(Object event) {
 			return createPublication(event, TARGET_IDENTIFIER);
 		}
@@ -309,8 +393,17 @@ class MongoDbEventPublicationRepositoryTest {
 
 		private void savePublicationAt(LocalDateTime date) {
 
-			mongoTemplate.save(
-					new MongoDbEventPublication(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", null));
+			var now = date.toInstant(ZoneOffset.UTC);
+			var publication = new MongoDbEventPublication(UUID.randomUUID(), now, "", "", null, Status.PUBLISHED, now, 1);
+
+			mongoTemplate.save(publication);
+		}
+
+		private void assertOneByStatus(Status reference) {
+
+			for (var status : Status.values()) {
+				assertThat(repository.countByStatus(status)).isEqualTo(status == reference ? 1 : 0);
+			}
 		}
 	}
 

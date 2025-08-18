@@ -36,6 +36,7 @@ import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.data.util.TypeInformation;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
@@ -58,6 +59,10 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	private static final String ID = "id";
 	private static final String LISTENER_ID = "listenerId";
 	private static final String PUBLICATION_DATE = "publicationDate";
+	private static final String STATUS = "status";
+	private static final String COMPLETION_ATTEMPTS = "completionAttempts";
+	private static final String LAST_RESUBMISSION_DATE = "lastResubmissionDate";
+
 	private static final Sort DEFAULT_SORT = Sort.by(PUBLICATION_DATE).ascending();
 
 	static final String ARCHIVE_COLLECTION = "event_publication_archive";
@@ -146,6 +151,36 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markFailed(java.util.UUID)
+	 */
+	@Override
+	public void markFailed(UUID identifier) {
+
+		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.FAILED));
+		var update = Update.update(STATUS, Status.FAILED);
+
+		mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 */
+	@Override
+	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+
+		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.RESUBMITTED));
+		var update = Update.update(STATUS, Status.RESUBMITTED)
+				.inc(COMPLETION_ATTEMPTS, 1)
+				.set(LAST_RESUBMISSION_DATE, resubmissionDate);
+
+		var result = mongoTemplate.updateFirst(query, update, MongoDbEventPublication.class, collection);
+
+		return result.getModifiedCount() == 1;
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublications()
 	 */
 	@Override
@@ -186,6 +221,48 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
 		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)), archiveCollection);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findFailedPublications(org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria)
+	 */
+	@Override
+	public List<TargetEventPublication> findFailedPublications(FailedCriteria criteria) {
+
+		var statusFailed = where(STATUS).is(Status.FAILED);
+		var noStatusAndCompletionDate = where(STATUS).isNull().and(COMPLETION_DATE).isNull();
+		var baseCriteria = new Criteria().orOperator(statusFailed, noStatusAndCompletionDate);
+
+		// Apply date delimiter
+		var reference = criteria.getPublicationDateReference();
+
+		if (reference != null) {
+			baseCriteria.and(PUBLICATION_DATE).lt(reference);
+		}
+
+		// Apply limit
+		var limit = criteria.getMaxItemsToRead();
+
+		if (limit > Integer.MAX_VALUE) {
+			throw new IllegalArgumentException("Number of items to read needs to fit into an integer!");
+		}
+
+		return readMapped(defaultQuery(baseCriteria).limit((int) limit));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#countByStatus(org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public int countByStatus(Status status) {
+
+		var collection = status == Status.COMPLETED && completionMode == CompletionMode.ARCHIVE
+				? archiveCollection
+				: this.collection;
+
+		return (int) mongoTemplate.count(query(where(STATUS).is(status)), MongoDbEventPublication.class, collection);
 	}
 
 	/*
@@ -250,7 +327,11 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 				publication.getIdentifier(), //
 				publication.getPublicationDate(), //
 				publication.getTargetIdentifier().getValue(), //
-				publication.getEvent());
+				publication.getEvent(), //
+				publication.getCompletionDate().orElse(null), //
+				publication.getStatus(), //
+				publication.getLastResubmissionDate(), //
+				publication.getCompletionAttempts());
 	}
 
 	private static TargetEventPublication documentToDomain(MongoDbEventPublication document) {
@@ -323,22 +404,27 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		@Override
 		public void markCompleted(Instant instant) {
-			this.publication.completionDate = instant;
+			this.publication.markCompleted(instant);
 		}
 
 		@Override
 		public Status getStatus() {
+
+			if (publication.status != null) {
+				return publication.status;
+			}
+
 			return publication.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
 		}
 
 		@Override
 		public int getCompletionAttempts() {
-			return 1;
+			return publication.completionAttempts;
 		}
 
 		@Override
 		public @Nullable Instant getLastResubmissionDate() {
-			return null;
+			return publication.lastResubmissionDate;
 		}
 
 		/*
