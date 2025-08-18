@@ -136,7 +136,7 @@ public class Types {
 				var classLoader = JMoleculesTypes.class.getClassLoader();
 				rules = new ArrayList<ArchRule>();
 
-				if (ClassUtils.isPresent(DDD_RULES, classLoader)) {
+				if (ClassUtils.isPresent(DDD_RULES, classLoader) && ClassUtils.isPresent(AT_ENTITY, classLoader)) {
 					rules.add(JMoleculesDddRules.all());
 				}
 
