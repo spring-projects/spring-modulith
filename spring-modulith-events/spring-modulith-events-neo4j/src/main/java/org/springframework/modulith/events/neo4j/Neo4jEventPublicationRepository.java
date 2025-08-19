@@ -21,6 +21,7 @@ import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -41,6 +42,7 @@ import org.neo4j.driver.Values;
 import org.neo4j.driver.types.TypeSystem;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.data.util.Lazy;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -68,9 +70,15 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	private static final String LISTENER_ID = "listenerId";
 	private static final String PUBLICATION_DATE = "publicationDate";
 	private static final String COMPLETION_DATE = "completionDate";
+	private static final String STATUS = "status";
+	private static final String COMPLETION_ATTEMPTS = "completionAttempts";
+	private static final String LAST_RESUBMISSION_DATE = "lastResubmissionDate";
+
+	// return references
+	private static final String STATUS_COUNT = "statusCount";
 
 	private static final Collection<String> ALL_PROPERTIES = List.of(ID, EVENT_SERIALIZED, EVENT_HASH, EVENT_TYPE,
-			LISTENER_ID, PUBLICATION_DATE, COMPLETION_DATE);
+			LISTENER_ID, PUBLICATION_DATE, COMPLETION_DATE, STATUS, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE);
 
 	private static final Node EVENT_PUBLICATION_NODE = node("Neo4jEventPublication")
 			.named("neo4jEventPublication");
@@ -121,7 +129,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.set(EVENT_PUBLICATION_NODE.property(EVENT_TYPE).to(parameter(EVENT_TYPE)))
 			.set(EVENT_PUBLICATION_NODE.property(LISTENER_ID).to(parameter(LISTENER_ID)))
 			.set(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).to(parameter(PUBLICATION_DATE)))
-			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
 			.build();
 
 	private static final Statement COMPLETE_STATEMENT = match(EVENT_PUBLICATION_NODE)
@@ -131,24 +139,48 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 			.build();
 
-	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT = Lazy
-			.of(() -> applyProperties(match(EVENT_PUBLICATION_NODE)
-					.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+	private static final Statement FIND_BY_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(STATUS).eq(parameter(STATUS)))
+			.returning(EVENT_PUBLICATION_NODE)
+			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+			.build();
+
+	private static final Statement COUNT_BY_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(STATUS).eq(parameter(STATUS)))
+			.returning(count(EVENT_PUBLICATION_NODE).as(STATUS_COUNT))
+			.build();
+
+	private static final Statement UPDATE_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+			.and(EVENT_PUBLICATION_NODE.property(STATUS).ne(parameter(STATUS)))
+			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
+			.build();
+
+	private static final Statement RESUBMIT_STATEMENT = match(EVENT_PUBLICATION_NODE)
+			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+			.and(EVENT_PUBLICATION_NODE.property(STATUS).ne(literalOf(Status.RESUBMITTED.name())))
+			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
+			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS)
+					.to(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS).add(literalOf(1))))
+			.set(EVENT_PUBLICATION_NODE.property(LAST_RESUBMISSION_DATE).to(parameter(LAST_RESUBMISSION_DATE)))
+			.build();
+
+	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT = Lazy.of(
+			() -> applyProperties(match(EVENT_PUBLICATION_NODE).where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
 					.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
 							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(ID).eq(parameter(ID)))
 							.returning(literalTrue()).build())))
 					.with(EVENT_PUBLICATION_NODE)));
 
 	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT = Lazy
-			.of(() -> applyProperties(
-					match(EVENT_PUBLICATION_NODE)
-							.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
-							.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
-							.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
-									.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
-									.and(EVENT_PUBLICATION_ARCHIVE_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
-									.returning(literalTrue()).build())))
-							.with(EVENT_PUBLICATION_NODE)));
+			.of(() -> applyProperties(match(EVENT_PUBLICATION_NODE)
+					.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+					.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+					.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
+							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+							.and(EVENT_PUBLICATION_ARCHIVE_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
+							.returning(literalTrue()).build())))
+					.with(EVENT_PUBLICATION_NODE)));
 
 	private static Statement applyProperties(OrderableOngoingReadingAndWithWithoutWhere source) {
 
@@ -238,7 +270,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 						EVENT_TYPE, eventType,
 						LISTENER_ID, listenerId,
 						PUBLICATION_DATE, Values.value(publicationDate.atOffset(ZoneOffset.UTC)),
-						COMPLETION_DATE, Values.NULL))
+						STATUS, publication.getStatus().name()))
 				.run();
 
 		return publication;
@@ -396,7 +428,9 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	@Transactional
 	public void deleteCompletedPublications() {
-		neo4jClient.query(renderer.render(deleteCompletedStatement)).run();
+
+		neo4jClient.query(renderer.render(deleteCompletedStatement))
+				.run();
 	}
 
 	/*
@@ -410,6 +444,110 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 		neo4jClient.query(renderer.render(deleteCompletedBeforeStatement))
 				.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(PUBLICATION_DATE)
 				.run();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#countByStatus(org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public int countByStatus(Status status) {
+
+		return neo4jClient.query(renderer.render(COUNT_BY_STATUS_STATEMENT))
+				.bind(status.name()).to(STATUS)
+				.fetchAs(Integer.class)
+				.one()
+				.get();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findByStatus(org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public List<TargetEventPublication> findByStatus(Status status) {
+
+		return List.copyOf(neo4jClient.query(renderer.render(FIND_BY_STATUS_STATEMENT))
+				.bind(status.name()).to(STATUS)
+				.fetchAs(TargetEventPublication.class)
+				.mappedBy(status == Status.COMPLETED ? completeMapping() : incompleteMapping())
+				.all());
+	}
+
+	@Override
+	public List<TargetEventPublication> findFailedPublications(FailedCriteria criteria) {
+
+		var parameters = new HashMap<String, Object>();
+
+		// in place CypherDSL usage because of conditional
+		var match = match(EVENT_PUBLICATION_NODE)
+				.where(EVENT_PUBLICATION_NODE.property(STATUS).eq(literalOf(Status.FAILED.name())))
+				.or(EVENT_PUBLICATION_NODE.property(STATUS).isNull()
+						.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull()));
+
+		var instant = criteria.getPublicationDateReference();
+
+		if (instant != null) {
+
+			match = match.and(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE).lt(parameter(PUBLICATION_DATE)));
+
+			parameters.put(PUBLICATION_DATE, Values.value(instant.atOffset(ZoneOffset.UTC)));
+		}
+
+		var limit = criteria.getMaxItemsToRead();
+		var builder = match.returning(EVENT_PUBLICATION_NODE)
+				.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+				.ascending();
+
+		var statement = limit != -1 ? builder.limit(limit) : builder;
+
+		return List.copyOf(neo4jClient.query(renderer.render(statement.build()))
+				.bindAll(parameters)
+				.fetchAs(TargetEventPublication.class)
+				.mappedBy(incompleteMapping())
+				.all());
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markFailed(java.util.UUID)
+	 */
+	@Override
+	public void markFailed(UUID identifier) {
+
+		neo4jClient.query(renderer.render(UPDATE_STATUS_STATEMENT))
+				.bind(Values.value(identifier.toString())).to(ID)
+				.bind(Status.FAILED.name()).to(STATUS)
+				.run();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markProcessing(java.util.UUID)
+	 */
+	@Override
+	public void markProcessing(UUID identifier) {
+
+		neo4jClient.query(renderer.render(UPDATE_STATUS_STATEMENT))
+				.bind(Values.value(identifier.toString())).to(ID)
+				.bind(Status.PROCESSING.name()).to(STATUS)
+				.run();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 */
+	@Override
+	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+
+		var update = neo4jClient.query(renderer.render(RESUBMIT_STATEMENT))
+				.bind(Values.value(identifier.toString())).to(ID)
+				.bind(Status.RESUBMITTED.name()).to(STATUS)
+				.bind(Values.value(resubmissionDate.atOffset(ZoneOffset.UTC))).to(LAST_RESUBMISSION_DATE)
+				.run();
+
+		return update.counters().propertiesSet() > 1;
 	}
 
 	private BiFunction<TypeSystem, org.neo4j.driver.Record, TargetEventPublication> incompleteMapping() {
@@ -431,12 +569,17 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 		var eventHash = publicationNode.get(EVENT_HASH).asString();
 		var eventType = publicationNode.get(EVENT_TYPE).asString();
 		var completionDate = publicationNode.get(COMPLETION_DATE);
+		var status = publicationNode.get(STATUS).asString();
+		var completionAttempts = publicationNode.get(COMPLETION_ATTEMPTS);
+		var lastResubmissionDate = publicationNode.get(LAST_RESUBMISSION_DATE);
 
 		try {
 
 			var event = eventSerializer.deserialize(eventSerialized, Class.forName(eventType));
-			var publication = new Neo4jEventPublication(identifier, publicationDate, listenerId, event,
-					eventHash, completionDate.isNull() ? null : completionDate.asZonedDateTime().toInstant());
+			var publication = new Neo4jEventPublication(identifier, publicationDate, listenerId, event, eventHash,
+					completionDate.isNull() ? null : completionDate.asZonedDateTime().toInstant(),
+					Status.valueOf(status), completionAttempts != Values.NULL ? completionAttempts.asInt() : 0,
+					lastResubmissionDate.isNull() ? null : lastResubmissionDate.asZonedDateTime().toInstant());
 
 			return new Neo4jEventPublicationAdapter(publication);
 

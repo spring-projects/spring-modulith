@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.UUID;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.modulith.events.EventPublication.Status;
 
 /**
  * The event publication entity definition.
@@ -33,11 +34,15 @@ class Neo4jEventPublication {
 	public final String listenerId;
 	public final Object event;
 	public final String eventHash;
+	public final int completionAttempts;
 
 	public @Nullable Instant completionDate;
+	public @Nullable Instant lastResubmissionDate;
+	public Status status;
 
 	public Neo4jEventPublication(UUID identifier, Instant publicationDate, String listenerId, Object event,
-			String eventHash, @Nullable Instant completionDate) {
+			String eventHash, @Nullable Instant completionDate, Status status, int completionAttempts,
+			@Nullable Instant lastResubmissionDate) {
 
 		this.identifier = identifier;
 		this.publicationDate = publicationDate;
@@ -45,5 +50,8 @@ class Neo4jEventPublication {
 		this.event = event;
 		this.eventHash = eventHash;
 		this.completionDate = completionDate;
+		this.status = status;
+		this.lastResubmissionDate = lastResubmissionDate;
+		this.completionAttempts = completionAttempts;
 	}
 }

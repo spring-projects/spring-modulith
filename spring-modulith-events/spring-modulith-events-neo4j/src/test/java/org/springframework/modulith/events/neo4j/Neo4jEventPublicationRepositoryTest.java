@@ -37,6 +37,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
@@ -292,6 +294,101 @@ class Neo4jEventPublicationRepositoryTest {
 				assertThat(repository.findCompletedPublications())
 						.extracting(TargetEventPublication::getIdentifier)
 						.containsExactly(publication.getIdentifier());
+			}
+		}
+
+		@Test // GH-1337
+		void countsByStatus() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			assertOneByStatus(EventPublication.Status.PUBLISHED);
+
+			repository.markFailed(publication.getIdentifier());
+			assertOneByStatus(EventPublication.Status.FAILED);
+
+			var resubmitted = repository.markResubmitted(publication.getIdentifier(), Instant.now());
+
+			assertThat(resubmitted).isTrue();
+			assertOneByStatus(EventPublication.Status.RESUBMITTED);
+		}
+
+		@Test // GH-1337
+		void looksUpFailedPublication() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(EventPublicationRepository.FailedCriteria.ALL))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1337
+		void claimsResubmissionOnce() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			var now = Instant.now();
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+		}
+
+		@Test // GH-1337
+		void marksPublicationAsProcessing() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markProcessing(publication.getIdentifier());
+		}
+
+		@Test // GH-1337
+		void looksUpFailedPublicationInBatch() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(10)))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1337
+		void looksUpFailedPublicationWithReferenceDate() throws Exception {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			Thread.sleep(200);
+
+			var criteria = EventPublicationRepository.FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().plusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		private void assertOneByStatus(EventPublication.Status reference) {
+
+			for (var status : EventPublication.Status.values()) {
+
+				var expected = status == reference ? 1 : 0;
+
+				assertThat(repository.findByStatus(status).size()).isEqualTo(expected);
+				assertThat(repository.countByStatus(status)).isEqualTo(expected);
 			}
 		}
 
