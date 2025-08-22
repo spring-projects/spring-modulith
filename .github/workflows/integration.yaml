@@ -18,11 +18,11 @@ jobs:
         - '3.2.12'
         - '3.3.12'
         - '3.3.13-SNAPSHOT'
-        - '3.4.7'
-        - '3.4.8-SNAPSHOT'
-        - '3.5.3-SNAPSHOT'
-        framework:
-        - '6.2.8'
+        - '3.4.9'
+        - '3.4.10-SNAPSHOT'
+        - '3.5.5'
+        - '3.5.6-SNAPSHOT'
+        - '4.0.0-SNAPSHOT'
         jmolecules:
         - '2025.0.0-RC4'
 
