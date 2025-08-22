@@ -33,7 +33,7 @@ jobs:
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
       run: |
-        ./mvnw -B clean install -DskipTests
+        ./mvnw -B clean install -Psonatype -DskipTests
         ./mvnw -B clean deploy -Pci,sonatype -s settings.xml
 
     - name: Setup Graphviz
