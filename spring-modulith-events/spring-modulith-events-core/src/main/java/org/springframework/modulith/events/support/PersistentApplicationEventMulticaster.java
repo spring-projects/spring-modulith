@@ -250,7 +250,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	private static boolean matches(ApplicationEvent event, Object payload, ApplicationListener<?> listener) {
 
 		// Verify general listener matching by eagerly evaluating the condition
-		if (!invokeShouldHandle(listener, event, payload)) {
+		if (!invokeShouldHandle(listener, event)) {
 			return false;
 		}
 
@@ -260,15 +260,14 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	}
 
 	/**
-	 * Checks if the given listener should handle the specified event by invoking 
+	 * Checks if the given listener should handle the specified event by invoking
 	 * {@link ApplicationListenerMethodAdapter#shouldHandle(ApplicationEvent)} when applicable.
 	 *
 	 * @param candidate the listener to test, must not be {@literal null}.
 	 * @param event the event to publish, must not be {@literal null}.
-	 * @param payload the actual payload, must not be {@literal null}.
 	 * @return whether the event should be handled by the given candidate.
 	 */
-	private static boolean invokeShouldHandle(ApplicationListener<?> candidate, ApplicationEvent event, Object payload) {
+	private static boolean invokeShouldHandle(ApplicationListener<?> candidate, ApplicationEvent event) {
 
 		if (candidate instanceof ApplicationListenerMethodAdapter listener) {
 			return listener.shouldHandle(event);
