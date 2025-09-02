@@ -17,6 +17,9 @@ package org.springframework.modulith.core.util;
 
 import static org.assertj.core.api.Assertions.*;
 
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
+
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
@@ -24,7 +27,6 @@ import org.springframework.modulith.core.ApplicationModules;
 
 import com.acme.myproject.Application;
 import com.acme.myproject.moduleA.ServiceComponentA;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.jayway.jsonpath.JsonPath;
 
 /**
@@ -59,7 +61,7 @@ class ApplicationModulesExporterUnitTests {
 	@Test // #227
 	void fullRenderingProducesValidJson() {
 		assertThatNoException().isThrownBy(() -> {
-			new ObjectMapper().readTree(EXPORTER.toJson());
+			new JsonMapper().readTree(EXPORTER.toJson());
 		});
 	}
 

@@ -15,10 +15,8 @@
  */
 package org.springframework.modulith.events.amqp;
 
-import tools.jackson.databind.json.JsonMapper;
-
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.amqp.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -26,24 +24,29 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
- * Auto-configuration to configure {@link RabbitTemplate} to use the Jackson {@link JsonMapper} present in the
+ * Auto-configuration to configure {@link RabbitTemplate} to use the Jackson {@link ObjectMapper} present in the
  * application.
  *
  * @author Oliver Drotbohm
+ * @since 2.0
+ * @deprecated since 2.0 in favor of {@link RabbitJacksonConfiguration}
  */
+@Deprecated
 @AutoConfiguration
-@ConditionalOnClass({ RabbitTemplate.class, JsonMapper.class })
+@ConditionalOnClass({ RabbitTemplate.class, ObjectMapper.class })
 @ConditionalOnProperty(name = "spring.modulith.events.rabbitmq.enable-json", havingValue = "true",
 		matchIfMissing = true)
-class RabbitJacksonConfiguration {
+class RabbitJackson2Configuration {
 
 	@Bean
-	@ConditionalOnBean(JsonMapper.class)
-	RabbitTemplateCustomizer rabbitTemplateCustomizer(JsonMapper mapper) {
+	@ConditionalOnBean(ObjectMapper.class)
+	RabbitTemplateCustomizer rabbitTemplateCustomizer(ObjectMapper mapper) {
 
 		return template -> {
-			template.setMessageConverter(new JacksonJsonMessageConverter(mapper));
+			template.setMessageConverter(new Jackson2JsonMessageConverter(mapper));
 		};
 	}
 }

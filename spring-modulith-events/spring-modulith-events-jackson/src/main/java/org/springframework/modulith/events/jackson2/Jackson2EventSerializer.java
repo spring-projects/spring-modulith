@@ -13,30 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.jackson;
+package org.springframework.modulith.events.jackson2;
 
-import tools.jackson.databind.json.JsonMapper;
-
+import java.io.IOException;
 import java.util.function.Supplier;
 
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 /**
  * A Jackson-based {@link EventSerializer}.
  *
  * @author Oliver Drotbohm
+ * @since 2.0
+ * @deprecated since 2.0, in favor of {@code JacksonEventSerializationConfiguration}.
  */
-class JacksonEventSerializer implements EventSerializer {
+@Deprecated
+class Jackson2EventSerializer implements EventSerializer {
 
-	private final Supplier<JsonMapper> mapper;
+	private final Supplier<ObjectMapper> mapper;
 
 	/**
-	 * Creates a new {@link JacksonEventSerializer} for the given {@link JsonMapper}.
+	 * Creates a new {@link Jackson2EventSerializer} for the given {@link ObjectMapper}.
 	 *
 	 * @param mapper must not be {@literal null}.
 	 */
-	public JacksonEventSerializer(Supplier<JsonMapper> mapper) {
+	public Jackson2EventSerializer(Supplier<ObjectMapper> mapper) {
 
 		Assert.notNull(mapper, "ObjectMapper must not be null!");
 
@@ -49,7 +54,12 @@ class JacksonEventSerializer implements EventSerializer {
 	 */
 	@Override
 	public Object serialize(Object event) {
-		return mapper.get().writeValueAsString(event);
+
+		try {
+			return mapper.get().writeValueAsString(event);
+		} catch (JsonProcessingException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
 	/*
@@ -58,6 +68,11 @@ class JacksonEventSerializer implements EventSerializer {
 	 */
 	@Override
 	public <T> T deserialize(Object serialized, Class<T> type) {
-		return mapper.get().readerFor(type).readValue(serialized.toString());
+
+		try {
+			return mapper.get().readerFor(type).readValue(serialized.toString());
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
 	}
 }

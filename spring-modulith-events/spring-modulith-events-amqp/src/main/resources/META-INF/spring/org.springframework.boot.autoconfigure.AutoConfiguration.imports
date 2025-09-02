@@ -1,2 +1,3 @@
 org.springframework.modulith.events.amqp.RabbitEventExternalizerConfiguration
 org.springframework.modulith.events.amqp.RabbitJacksonConfiguration
+org.springframework.modulith.events.amqp.RabbitJackson2Configuration

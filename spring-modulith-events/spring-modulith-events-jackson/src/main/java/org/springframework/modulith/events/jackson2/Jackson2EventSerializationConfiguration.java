@@ -13,15 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.jackson;
-
-import tools.jackson.databind.JacksonModule;
-import tools.jackson.databind.SerializationFeature;
-import tools.jackson.databind.json.JsonMapper;
+package org.springframework.modulith.events.jackson2;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.ApplicationContext;
@@ -30,28 +25,34 @@ import org.springframework.modulith.events.config.EventSerializationConfiguratio
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.util.Assert;
 
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+
 /**
- * Application configuration to register a Jackson 3-based {@link EventSerializer}.
+ * Application configuration to register a Jackson-based {@link EventSerializer}.
  *
  * @author Oliver Drotbohm
+ * @since 2.0
+ * @deprecated since 2.0, in favor of {@code JacksonEventSerializationConfiguration}.
  */
+@Deprecated
 @AutoConfiguration
-@AutoConfigureBefore(name = "org.springframework.modulith.events.jackson2.Jackson2EventSerializationConfiguration")
-@ConditionalOnClass(JsonMapper.class)
+@ConditionalOnClass(ObjectMapper.class)
 @ConditionalOnMissingBean(EventSerializer.class)
-class JacksonEventSerializationConfiguration implements EventSerializationConfigurationExtension {
+class Jackson2EventSerializationConfiguration implements EventSerializationConfigurationExtension {
 
-	private final ObjectProvider<JsonMapper> mapper;
+	private final ObjectProvider<ObjectMapper> mapper;
 	private final ApplicationContext context;
 
 	/**
-	 * Creates a new {@link JacksonEventSerializationConfiguration} for the given {@link JsonMapper} and
+	 * Creates a new {@link Jackson2EventSerializationConfiguration} for the given {@link ObjectMapper} and
 	 * {@link ApplicationContext}.
 	 *
 	 * @param mapper must not be {@literal null}.
 	 * @param context must not be {@literal null}.
 	 */
-	public JacksonEventSerializationConfiguration(ObjectProvider<JsonMapper> mapper, ApplicationContext context) {
+	public Jackson2EventSerializationConfiguration(ObjectProvider<ObjectMapper> mapper, ApplicationContext context) {
 
 		Assert.notNull(mapper, "ObjectMapper must not be null!");
 		Assert.notNull(context, "ApplicationContext must not be null!");
@@ -61,15 +62,17 @@ class JacksonEventSerializationConfiguration implements EventSerializationConfig
 	}
 
 	@Bean
-	JacksonEventSerializer jacksonEventSerializer() {
-		return new JacksonEventSerializer(() -> mapper.getIfAvailable(() -> defaultMapper()));
+	Jackson2EventSerializer jacksonEventSerializer() {
+		return new Jackson2EventSerializer(() -> mapper.getIfAvailable(() -> defaultObjectMapper()));
 	}
 
-	private JsonMapper defaultMapper() {
+	private ObjectMapper defaultObjectMapper() {
 
-		return JsonMapper.builder()
-				.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
-				.addModules(context.getBeansOfType(JacksonModule.class).values())
-				.build();
+		var mapper = new ObjectMapper();
+
+		mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
+		mapper.registerModules(context.getBeansOfType(Module.class).values());
+
+		return mapper;
 	}
 }

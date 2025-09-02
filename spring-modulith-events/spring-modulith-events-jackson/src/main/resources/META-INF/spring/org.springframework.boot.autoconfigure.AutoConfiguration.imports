@@ -1,1 +1,2 @@
 org.springframework.modulith.events.jackson.JacksonEventSerializationConfiguration
+org.springframework.modulith.events.jackson2.Jackson2EventSerializationConfiguration
