@@ -15,11 +15,9 @@
  */
 package org.springframework.modulith.events.support;
 
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -50,7 +48,6 @@ import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.util.Assert;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register {@link EventPublication}s in an
