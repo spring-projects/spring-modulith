@@ -27,6 +27,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.jmolecules.archunit.JMoleculesArchitectureRules;
+import org.jmolecules.archunit.JMoleculesArchitectureRules.VerificationDepth;
 import org.jmolecules.archunit.JMoleculesDddRules;
 import org.jmolecules.ddd.annotation.Module;
 import org.jspecify.annotations.Nullable;
@@ -145,7 +146,7 @@ public class Types {
 				}
 
 				if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
-					rules.add(JMoleculesArchitectureRules.ensureHexagonal());
+					rules.add(JMoleculesArchitectureRules.ensureHexagonal(VerificationDepth.LENIENT));
 				}
 
 				if (ClassUtils.isPresent(LAYERED, classLoader)) {
