@@ -16,9 +16,21 @@
 package org.springframework.modulith.events.support;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+import static org.springframework.modulith.events.EventExternalizationConfiguration.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.modulith.events.Externalized;
+import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,4 +50,73 @@ class DelegatingEventExternalizerUnitTests {
 
 		assertThat(annotation.propagation()).isEqualTo(Propagation.SUPPORTS);
 	}
+
+	@Test // GH-1370
+	public void testOnlyOneDownstreamExecutionAtATime() throws InterruptedException {
+
+		var numberOfInvocations = 3;
+		var events = Collections.synchronizedList(new ArrayList<String>());
+		var complete = new CountDownLatch(numberOfInvocations);
+		var counter = new AtomicInteger(0);
+		var mock = mock(Downstream.class);
+
+		when(mock.someMethod(any(RoutingTarget.class), any(Object.class))).thenAnswer(invocation -> {
+
+			var callNumber = counter.incrementAndGet();
+
+			events.add("CALL-" + callNumber);
+
+			return CompletableFuture.supplyAsync(() -> {
+
+				try {
+					// Simulate some work in the CompletableFuture
+					Thread.sleep(200);
+
+					events.add("COMPLETE-" + callNumber);
+
+					return "result-" + callNumber;
+
+				} catch (InterruptedException e) {
+					return "interrupted";
+				}
+			});
+		});
+
+		var configuration = externalizing()
+				.select(annotatedAsExternalized())
+				.serializeExternalization(true)
+				.build();
+
+		var service = new DelegatingEventExternalizer(configuration, mock::someMethod);
+
+		for (int i = 0; i < numberOfInvocations; i++) {
+
+			final var input = new Sample();
+
+			new Thread(() -> {
+
+				try {
+					service.externalize(input).get();
+				} catch (Exception e) {
+					e.printStackTrace();
+				} finally {
+					complete.countDown();
+				}
+
+			}).start();
+		}
+
+		complete.await(1, TimeUnit.SECONDS);
+
+		assertThat(events).containsExactly("CALL-1", "COMPLETE-1", "CALL-2", "COMPLETE-2", "CALL-3", "COMPLETE-3");
+
+		verify(mock, times(3)).someMethod(any(RoutingTarget.class), any(Object.class));
+	}
+
+	interface Downstream {
+		CompletableFuture<?> someMethod(RoutingTarget target, Object event);
+	}
+
+	@Externalized
+	static class Sample {}
 }

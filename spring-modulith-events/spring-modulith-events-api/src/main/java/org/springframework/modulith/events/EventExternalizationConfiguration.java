@@ -200,6 +200,15 @@ public interface EventExternalizationConfiguration {
 	Map<String, Object> getHeadersFor(Object event);
 
 	/**
+	 * Returns whether the event externalization should be serialized to make sure the broker sees the events in the order
+	 * they were published in the application. By default, this is not guaranteed as multiple threads might trigger events
+	 * and the externalization of one event might overtake the one of another.
+	 *
+	 * @since 2.0
+	 */
+	boolean serializeExternalization();
+
+	/**
 	 * API to define which events are supposed to be selected for externalization.
 	 *
 	 * @author Oliver Drotbohm
@@ -372,13 +381,26 @@ public interface EventExternalizationConfiguration {
 		}
 	}
 
+	public static abstract class BaseConfiguration<T extends BaseConfiguration<T>> {
+
+		protected boolean serializeExternalization;
+
+		@SuppressWarnings("unchecked")
+		public T serializeExternalization(boolean serializeExternalization) {
+
+			this.serializeExternalization = serializeExternalization;
+
+			return (T) this;
+		}
+	}
+
 	/**
 	 * API to define the event routing.
 	 *
 	 * @author Oliver Drotbohm
 	 * @since 1.1
 	 */
-	public static class Router {
+	public static class Router extends BaseConfiguration<Router> {
 
 		private static final Function<Object, RoutingTarget> DEFAULT_ROUTER = it -> {
 			return mergeWithExternalizedAnnotation(it, byFullyQualifiedTypeName().apply(it));
@@ -398,7 +420,7 @@ public interface EventExternalizationConfiguration {
 		 * @param headers must not be {@literal null}.
 		 */
 		Router(Predicate<Object> filter, Function<Object, Object> mapper, Function<Object, RoutingTarget> router,
-				Function<Object, Map<String, Object>> headers) {
+				Function<Object, Map<String, Object>> headers, boolean serializeExternalization) {
 
 			Assert.notNull(filter, "Selector must not be null!");
 			Assert.notNull(mapper, "Mapper must not be null!");
@@ -409,6 +431,7 @@ public interface EventExternalizationConfiguration {
 			this.mapper = mapper;
 			this.router = router;
 			this.headers = headers;
+			this.serializeExternalization = serializeExternalization;
 		}
 
 		/**
@@ -417,7 +440,7 @@ public interface EventExternalizationConfiguration {
 		 * @param filter must not be {@literal null}.
 		 */
 		Router(Predicate<Object> filter) {
-			this(filter, Function.identity(), DEFAULT_ROUTER, it -> Collections.emptyMap());
+			this(filter, Function.identity(), DEFAULT_ROUTER, it -> Collections.emptyMap(), false);
 		}
 
 		/**
@@ -431,7 +454,7 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(mapper, "Mapper must not be null!");
 
-			return new Router(filter, mapper, router, headers);
+			return new Router(filter, mapper, router, headers, serializeExternalization);
 		}
 
 		/**
@@ -453,7 +476,7 @@ public interface EventExternalizationConfiguration {
 					.map(mapper::apply)
 					.orElse(it);
 
-			return new Router(filter, this.mapper.compose(combined), router, headers);
+			return new Router(filter, this.mapper.compose(combined), router, headers, serializeExternalization);
 		}
 
 		/**
@@ -469,7 +492,7 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(extractor, "Headers extractor must not be null!");
 
-			return new Router(filter, mapper, router, extractor);
+			return new Router(filter, mapper, router, extractor, serializeExternalization);
 		}
 
 		/**
@@ -488,7 +511,7 @@ public interface EventExternalizationConfiguration {
 					.map(extractor::apply)
 					.orElseGet(() -> this.headers.apply(it));
 
-			return new Router(filter, mapper, router, combined);
+			return new Router(filter, mapper, router, combined, serializeExternalization);
 		}
 
 		/**
@@ -497,7 +520,7 @@ public interface EventExternalizationConfiguration {
 		 * @return will never be {@literal null}.
 		 */
 		public Router routeMapped() {
-			return new Router(filter, mapper, router.compose(mapper), headers);
+			return new Router(filter, mapper, router.compose(mapper), headers, serializeExternalization);
 		}
 
 		/**
@@ -510,7 +533,7 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(router, "Router must not be null!");
 
-			return new Router(filter, mapper, router, headers);
+			return new Router(filter, mapper, router, headers, serializeExternalization);
 		}
 
 		/**
@@ -530,7 +553,7 @@ public interface EventExternalizationConfiguration {
 					.map(router::apply)
 					.orElseGet(() -> this.router.apply(it));
 
-			return new Router(filter, mapper, adapted, headers);
+			return new Router(filter, mapper, adapted, headers, serializeExternalization);
 		}
 
 		/**
@@ -553,7 +576,7 @@ public interface EventExternalizationConfiguration {
 					.map(t -> this.router.apply(t).withKey(extractor.apply(t)))
 					.orElseGet(() -> this.router.apply(it));
 
-			return new Router(filter, mapper, adapted, headers);
+			return new Router(filter, mapper, adapted, headers, serializeExternalization);
 		}
 
 		/**
@@ -569,7 +592,7 @@ public interface EventExternalizationConfiguration {
 
 			Function<Object, RoutingTarget> adapted = it -> router.apply(it).orElseGet(() -> this.router.apply(it));
 
-			return new Router(filter, mapper, adapted, headers).build();
+			return new Router(filter, mapper, adapted, headers, serializeExternalization).build();
 		}
 
 		/**
@@ -597,7 +620,7 @@ public interface EventExternalizationConfiguration {
 
 			Assert.notNull(router, "Router must not be null!");
 
-			return new Router(filter, mapper, it -> router.apply(it.getClass()), headers);
+			return new Router(filter, mapper, it -> router.apply(it.getClass()), headers, serializeExternalization);
 		}
 
 		/**
@@ -606,7 +629,7 @@ public interface EventExternalizationConfiguration {
 		 * @return will never be {@literal null}.
 		 */
 		public EventExternalizationConfiguration build() {
-			return new DefaultEventExternalizationConfiguration(filter, mapper, router, headers);
+			return new DefaultEventExternalizationConfiguration(filter, mapper, router, headers, serializeExternalization);
 		}
 
 		private static <T> Optional<T> toOptional(Class<T> type, Object source) {

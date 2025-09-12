@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Semaphore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,7 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 	private static final Logger logger = LoggerFactory.getLogger(EventExternalizationSupport.class);
 
 	private final EventExternalizationConfiguration configuration;
+	private final Semaphore semaphore = new Semaphore(1);
 
 	/**
 	 * Creates a new {@link EventExternalizationSupport} for the given {@link EventExternalizationConfiguration}.
@@ -85,8 +87,9 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 			logger.debug("Externalizing event of type {} to {}.", event.getClass(), target);
 		}
 
-		return externalize(mapped, target)
-				.thenApply(it -> new EventExternalized<>(event, mapped, target, it));
+		return configuration.serializeExternalization()
+				? doExternalizeSerialized(event, mapped, target)
+				: doExternalize(event, mapped, target);
 	}
 
 	/**
@@ -97,4 +100,26 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 	 * @return the externalization result, will never be {@literal null}.
 	 */
 	protected abstract CompletableFuture<?> externalize(Object payload, RoutingTarget target);
+
+	private CompletableFuture<?> doExternalizeSerialized(Object event, Object mapped, RoutingTarget target) {
+
+		try {
+
+			semaphore.acquire();
+
+			return doExternalize(event, mapped, target)
+					.whenComplete((__, ___) -> semaphore.release());
+
+		} catch (InterruptedException o_O) {
+
+			semaphore.release();
+			throw new RuntimeException(o_O);
+		}
+	}
+
+	private CompletableFuture<?> doExternalize(Object event, Object mapped, RoutingTarget target) {
+
+		return externalize(mapped, target)
+				.thenApply(it -> new EventExternalized<>(event, mapped, target, it));
+	}
 }

@@ -377,6 +377,9 @@ Forwards routing information as a header - called `springModulith_routingTarget`
 [[externalization.fundamentals]]
 === Fundamentals of Event Externalization
 
+Spring Modulith's event externalization is implemented as xref:events.adoc#aml[transactional event listener] delegating to broker specific publication implementations.
+That means that Spring Modulith's xref:events.adoc#publication-registry[Event Publication Registry] guards the externalization against failures during the interaction with the broker so that the publications can be resubmitted through the APIs provided.
+
 The event externalization performs three steps on each application event published.
 
 1. _Determining whether the event is supposed to be externalized_ -- We refer to this as "`event selection`".
@@ -506,6 +509,16 @@ Note that the routing will still be determined by the original event instance, u
 <4> We add custom headers to the message to be sent out either generally as shown or specific to a certain payload type.
 <5> We finally determine a routing key by defining a method handle to extract a value of the event instance.
 Alternatively, a full `RoutingKey` can be produced for individual events by using the general `route(…)` method on the `Router` instance returned from the previous call.
+
+[[externalization.serialization]]
+== Serializing Event Externalization
+
+Spring Modulith's event externalization is implemented as transactional event listener.
+This means that multiple threads might trigger the interaction with the broker at the same time.
+This can become particularly relevant when event publications are resubmitted.
+As the broker might see a sudden spike in interactions, some interactions might take a bit longer so that the externalization of later events might overtake former ones.
+
+To prevent that, the interaction with the broker can be serialized so that only one event is sent out at a time by setting the `spring.modulith.events.externalization.serialize-externalization` property to `true`.
 
 [[testing]]
 == Testing published events

@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
 import org.springframework.context.event.EventListenerFactory;
 import org.springframework.core.Ordered;
+import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.ConditionalEventListener;
 import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
@@ -61,14 +62,24 @@ public class EventExternalizationAutoConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean
-	static EventExternalizationConfiguration eventExternalizationConfiguration(BeanFactory factory) {
+	static EventExternalizationConfiguration eventExternalizationConfiguration(BeanFactory factory,
+			Environment environment) {
 
 		var packages = AutoConfigurationPackages.get(factory);
 
-		LOG.debug("Configuring event externalization to export events annotated with @Externalized in packages: {}",
-				packages);
+		var configuration = EventExternalizationConfiguration.defaults(packages);
 
-		return EventExternalizationConfiguration.defaults(packages).build();
+		var serialize = environment.getProperty("spring.modulith.events.externalization.serialize-externalization",
+				boolean.class);
+
+		if (serialize != null) {
+			configuration = configuration.serializeExternalization(serialize);
+		}
+
+		LOG.debug("Configuring {}event externalization to export events annotated with @Externalized in packages: {}",
+				Boolean.TRUE.equals(serialize) ? "serialized " : "", packages);
+
+		return configuration.build();
 	}
 
 	/**

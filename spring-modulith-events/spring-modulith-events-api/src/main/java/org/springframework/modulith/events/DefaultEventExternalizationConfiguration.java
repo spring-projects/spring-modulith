@@ -33,6 +33,7 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 	private final Function<Object, Object> mapper;
 	private final Function<Object, RoutingTarget> router;
 	private final Function<Object, Map<String, Object>> headers;
+	private final boolean serializeExternalization;
 
 	/**
 	 * Creates a new {@link DefaultEventExternalizationConfiguration}
@@ -43,7 +44,8 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 	 * @param headers must not be {@literal null}.
 	 */
 	DefaultEventExternalizationConfiguration(Predicate<Object> filter, Function<Object, Object> mapper,
-			Function<Object, RoutingTarget> router, Function<Object, Map<String, Object>> headers) {
+			Function<Object, RoutingTarget> router, Function<Object, Map<String, Object>> headers,
+			boolean serializeExternalization) {
 
 		Assert.notNull(filter, "Filter must not be null!");
 		Assert.notNull(mapper, "Mapper must not be null!");
@@ -53,6 +55,7 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 		this.mapper = mapper;
 		this.router = router;
 		this.headers = headers;
+		this.serializeExternalization = serializeExternalization;
 	}
 
 	/**
@@ -110,5 +113,14 @@ class DefaultEventExternalizationConfiguration implements EventExternalizationCo
 		Assert.notNull(event, "Event must not be null!");
 
 		return headers.apply(event);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.EventExternalizationConfiguration#serializeExternalization()
+	 */
+	@Override
+	public boolean serializeExternalization() {
+		return serializeExternalization;
 	}
 }
