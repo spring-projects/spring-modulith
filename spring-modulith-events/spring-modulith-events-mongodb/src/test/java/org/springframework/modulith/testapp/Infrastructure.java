@@ -15,18 +15,40 @@
  */
 package org.springframework.modulith.testapp;
 
+import org.bson.UuidRepresentation;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
+import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
+import com.mongodb.MongoClientSettings.Builder;
+
 @TestConfiguration(proxyBeanMethods = false)
-public class Infrastructure {
+public class Infrastructure extends AbstractMongoClientConfiguration {
 
 	@Bean
 	@ServiceConnection
 	MongoDBContainer mongoDBContainer() {
 		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.config.MongoConfigurationSupport#getDatabaseName()
+	 */
+	@Override
+	protected String getDatabaseName() {
+		return "test";
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.data.mongodb.config.MongoConfigurationSupport#configureClientSettings(com.mongodb.MongoClientSettings.Builder)
+	 */
+	@Override
+	protected void configureClientSettings(Builder builder) {
+		builder.uuidRepresentation(UuidRepresentation.STANDARD);
 	}
 }
