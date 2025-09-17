@@ -35,7 +35,7 @@
 
 	<properties>
 
-		<aptk.version>0.30.3</aptk.version>
+		<aptk.version>0.30.5</aptk.version>
 		<archunit.version>1.4.1</archunit.version>
 		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
 		<cute.version>1.8.2</cute.version>
