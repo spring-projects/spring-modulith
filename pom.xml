@@ -50,7 +50,7 @@
 		<spring-framework.version>7.0.0-SNAPSHOT</spring-framework.version> <!-- For Javadoc links only -->
 		<testcontainers.version>1.21.3</testcontainers.version>
 		<structurizr.version>4.1.0</structurizr.version>
-		<micrometer-tracing.version>1.6.0-M1</micrometer-tracing.version>
+		<micrometer-tracing.version>1.6.0-M3</micrometer-tracing.version>
 
 	</properties>
 
