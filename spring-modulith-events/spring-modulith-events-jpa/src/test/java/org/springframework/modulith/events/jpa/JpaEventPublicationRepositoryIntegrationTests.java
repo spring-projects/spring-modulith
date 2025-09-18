@@ -44,6 +44,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
+import org.springframework.modulith.events.EventPublication.Status;
+import org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
@@ -338,6 +340,88 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			assertThat(getIncompletePublications()).hasSize(0);
 		}
 
+		@Test // GH-1375
+		void looksUpFailedPublication() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(FailedCriteria.ALL))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1375
+		void claimsResubmissionOnce() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			var now = Instant.now();
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+		}
+
+		@Test // GH-1375
+		void countsByStatus() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			assertOneByStatus(Status.PUBLISHED);
+
+			repository.markFailed(publication.getIdentifier());
+			assertOneByStatus(Status.FAILED);
+
+			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			assertOneByStatus(Status.RESUBMITTED);
+		}
+
+		@Test // GH-1375
+		void marksPublicationAsProcessing() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markProcessing(publication.getIdentifier());
+		}
+
+		@Test // GH-1375
+		void looksUpFailedPublicationInBatch() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findFailedPublications(FailedCriteria.ALL.withItemsToRead(10)))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1375
+		void looksUpFailedPublicationWithReferenceDate() throws Exception {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			Thread.sleep(200);
+
+			var criteria = FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().plusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
 		private List<JpaEventPublication> getIncompletePublications() {
 			return em.createQuery("select p from DefaultJpaEventPublication p", JpaEventPublication.class).getResultList();
 		}
@@ -357,7 +441,24 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		}
 
 		private void savePublicationAt(LocalDateTime date) {
-			em.persist(JpaEventPublication.of(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class));
+			em.persist(JpaEventPublication.of(UUID.randomUUID(), date.toInstant(ZoneOffset.UTC), "", "", Object.class,
+					Status.PUBLISHED, null, 0));
+		}
+
+		private void assertOneByStatus(Status reference) {
+
+			for (var status : Status.values()) {
+
+				assertThat(repository.countByStatus(status)).isEqualTo(status == reference ? 1 : 0);
+
+				var result = repository.findByStatus(status);
+
+				if (status == reference) {
+					assertThat(result).hasSize(1).element(0).isNotNull();
+				} else {
+					assertThat(result).isEmpty();
+				}
+			}
 		}
 
 		private record TestEvent(String eventId) {}

@@ -21,6 +21,8 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.jpa.JpaEventPublication;
 
 @Entity(name = "ArchivedJpaEventPublication")
@@ -28,10 +30,10 @@ import org.springframework.modulith.events.jpa.JpaEventPublication;
 public class ArchivedJpaEventPublication extends JpaEventPublication {
 
 	public ArchivedJpaEventPublication(UUID id, Instant publicationDate, String listenerId, String serializedEvent,
-			Class<?> eventType) {
-		super(id, publicationDate, listenerId, serializedEvent, eventType);
+			Class<?> eventType, @Nullable Status status, @Nullable Instant lastResubmissionDate, int completionAttempts) {
+		super(id, publicationDate, listenerId, serializedEvent, eventType, status, lastResubmissionDate,
+				completionAttempts);
 	}
 
-	@SuppressWarnings("unused")
 	ArchivedJpaEventPublication() {}
 }

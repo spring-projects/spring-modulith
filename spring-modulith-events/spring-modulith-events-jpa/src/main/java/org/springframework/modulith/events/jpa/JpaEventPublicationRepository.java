@@ -18,17 +18,21 @@ package org.springframework.modulith.events.jpa;
 import jakarta.persistence.EntityManager;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
+import org.springframework.modulith.events.jpa.updating.DefaultJpaEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -93,7 +97,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static final String MARK_COMPLETED_BY_ID = """
 			update DefaultJpaEventPublication p
-			   set p.completionDate = ?2
+			   set p.status = org.springframework.modulith.events.EventPublication$Status.COMPLETED,
+			       p.completionDate = ?2
 			 where p.id = ?1
 			""";
 
@@ -117,16 +122,49 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static final String DELETE_COMPLETED = """
 			delete
-			from %s p
-			where
-				p.completionDate is not null
+			  from %s p
+			  where p.completionDate is not null
 			""";
 
 	private static final String DELETE_COMPLETED_BEFORE = """
 			delete
-			from %s p
-			where
-				p.completionDate < ?1
+			  from %s p
+			 where p.completionDate < ?1
+			""";
+
+	private static final String UPDATE = """
+			update DefaultJpaEventPublication p
+			   set p.status = ?1
+			 where p.id = ?2
+			   and status != ?1
+			""";
+
+	private static final String MARK_RESUBMITTED = """
+			update DefaultJpaEventPublication p
+			   set p.status = org.springframework.modulith.events.EventPublication$Status.RESUBMITTED,
+			       p.completionAttempts = p.completionAttempts + 1,
+			       p.lastResubmissionDate = ?1
+			 where p.id = ?2
+			   and p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED
+			""";
+
+	private static final String COUNT_BY_STATUS = """
+			select count(p.id)
+			  from %s p
+			 where p.status = ?1
+			""";
+
+	private static final String FIND_BY_STATUS = """
+			select p
+			  from %s p
+			 where p.status = ?1
+			""";
+
+	private static final String FIND_FAILED = """
+				select p
+			  from DefaultJpaEventPublication p
+			 where p.status = org.springframework.modulith.events.EventPublication$Status.FAILED
+			    or (p.status is null and p.completionDate is null)
 			""";
 
 	private static final int DELETE_BATCH_SIZE = 100;
@@ -136,6 +174,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	private final CompletionMode completionMode;
 
 	private final String getCompleted, deleteCompleted, deleteCompletedBefore;
+	private final Function<Status, String> entityNameByStatus;
 
 	/**
 	 * Creates a new {@link JpaEventPublicationRepository} for the given {@link EntityManager} and
@@ -157,6 +196,10 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		var archiveEntityName = getCompletedEntityType().getSimpleName();
 
+		this.entityNameByStatus = status -> status == Status.COMPLETED
+				? archiveEntityName
+				: JpaEventPublication.getIncompleteType().getSimpleName();
+
 		this.getCompleted = COMPLETE.formatted(archiveEntityName);
 		this.deleteCompleted = DELETE_COMPLETED.formatted(archiveEntityName);
 		this.deleteCompletedBefore = DELETE_COMPLETED_BEFORE.formatted(archiveEntityName);
@@ -172,6 +215,15 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		entityManager.persist(domainToEntity(publication));
 
 		return publication;
+	}
+
+	@Override
+	public void markProcessing(UUID identifier) {
+
+		entityManager.createQuery(UPDATE)
+				.setParameter(1, Status.PROCESSING)
+				.setParameter(2, identifier)
+				.executeUpdate();
 	}
 
 	/*
@@ -242,6 +294,34 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markFailed(java.util.UUID)
+	 */
+	@Override
+	public void markFailed(UUID identifier) {
+
+		entityManager.createQuery(UPDATE)
+				.setParameter(1, Status.FAILED)
+				.setParameter(2, identifier)
+				.executeUpdate();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 */
+	@Override
+	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+
+		var result = entityManager.createQuery(MARK_RESUBMITTED)
+				.setParameter(1, resubmissionDate)
+				.setParameter(2, identifier)
+				.executeUpdate();
+
+		return result == 1;
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.EventPublicationRepository#findIncompletePublications()
 	 */
 	@Override
@@ -292,8 +372,43 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		var type = getCompletedEntityType();
 
 		return entityManager.createQuery(getCompleted, type)
-				.getResultList()
-				.stream()
+				.getResultStream()
+				.map(this::entityToDomain)
+				.toList();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findFailedPublications(org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria)
+	 */
+	@Override
+	public List<TargetEventPublication> findFailedPublications(FailedCriteria criteria) {
+
+		var query = FIND_FAILED;
+
+		var instant = criteria.getPublicationDateReference();
+		var args = new ArrayList<>();
+
+		if (instant != null) {
+			query += " and p.publicationDate < ?1";
+			args.add(instant);
+		}
+
+		query += " order by p.publicationDate asc";
+
+		var jpaQuery = entityManager.createQuery(query, DefaultJpaEventPublication.class);
+
+		for (int i = 0; i < args.size(); i++) {
+			jpaQuery = jpaQuery.setParameter(i + 1, args.get(i));
+		}
+
+		var itemsToRead = criteria.getMaxItemsToRead();
+
+		if (itemsToRead != -1) {
+			jpaQuery.setMaxResults(((Long) itemsToRead).intValue());
+		}
+
+		return jpaQuery.getResultStream()
 				.map(this::entityToDomain)
 				.toList();
 	}
@@ -333,6 +448,36 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				.executeUpdate();
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findByStatus(org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public List<TargetEventPublication> findByStatus(Status status) {
+
+		var query = entityNameByStatus.andThen(FIND_BY_STATUS::formatted).apply(status);
+
+		return entityManager.createQuery(query, JpaEventPublication.class)
+				.setParameter(1, status)
+				.getResultStream()
+				.map(this::entityToDomain)
+				.toList();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#countByStatus(org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public int countByStatus(Status status) {
+
+		var query = entityNameByStatus.andThen(COUNT_BY_STATUS::formatted).apply(status);
+
+		return ((Long) entityManager.createQuery(query)
+				.setParameter(1, status)
+				.getSingleResult()).intValue();
+	}
+
 	/**
 	 * Returns the type representing completed event publications.
 	 *
@@ -364,7 +509,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		var event = domain.getEvent();
 
 		return JpaEventPublication.of(domain.getIdentifier(), domain.getPublicationDate(),
-				domain.getTargetIdentifier().getValue(), serializeEvent(event), event.getClass());
+				domain.getTargetIdentifier().getValue(), serializeEvent(event), event.getClass(), domain.getStatus(),
+				domain.getLastResubmissionDate(), domain.getCompletionAttempts());
 	}
 
 	private TargetEventPublication entityToDomain(JpaEventPublication entity) {
