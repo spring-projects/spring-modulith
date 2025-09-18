@@ -44,7 +44,7 @@ import org.springframework.util.StringUtils;
 class ModuleTestAutoConfiguration {
 
 	static final String AUTOCONFIG_PACKAGES = "org.springframework.boot.autoconfigure.AutoConfigurationPackages";
-	static final String ENTITY_SCAN_PACKAGE = "org.springframework.boot.autoconfigure.domain.EntityScanPackages";
+	static final String ENTITY_SCAN_PACKAGE = "org.springframework.boot.persistence.autoconfigure.EntityScanPackages";
 
 	static class AutoConfigurationAndEntityScanPackageCustomizer implements ImportBeanDefinitionRegistrar {
 

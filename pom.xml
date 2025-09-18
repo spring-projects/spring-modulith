@@ -46,7 +46,7 @@
 		<nullaway.version>0.12.7</nullaway.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring-boot.version>4.0.0-SNAPSHOT</spring-boot.version>
+		<spring-boot.version>4.0.0-M3</spring-boot.version>
 		<spring-framework.version>7.0.0-M9</spring-framework.version> <!-- For Javadoc links only -->
 		<testcontainers.version>1.21.3</testcontainers.version>
 		<structurizr.version>4.1.0</structurizr.version>

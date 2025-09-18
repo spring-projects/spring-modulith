@@ -21,8 +21,8 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.domain.EntityScan;
-import org.springframework.boot.autoconfigure.domain.EntityScanPackages;
+import org.springframework.boot.persistence.autoconfigure.EntityScan;
+import org.springframework.boot.persistence.autoconfigure.EntityScanPackages;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 /**
