@@ -113,6 +113,7 @@ public class DefaultEventPublicationRegistry
 	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#markProcessing(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
 	 */
 	@Override
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void markProcessing(Object event, PublicationTargetIdentifier identifier) {
 		propagateStateTransition(event, identifier, it -> events.markProcessing(it.getIdentifier()), () -> {});
 	}
@@ -142,6 +143,7 @@ public class DefaultEventPublicationRegistry
 	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#markFailed(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
 	 */
 	@Override
+	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void markFailed(Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		propagateStateTransitionAndConclude(event, targetIdentifier, it -> events.markFailed(it.getIdentifier()), () -> {});
