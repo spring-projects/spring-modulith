@@ -134,7 +134,7 @@ public class SpringModulithProcessor implements Processor {
 
 			var path = placeholder.toUri().toString();
 
-			if (path.contains(BuildSystemUtils.getTestTarget())) {
+            if (BuildSystemUtils.isTestTarget(path)) {
 				this.testExecution = true;
 			}
 

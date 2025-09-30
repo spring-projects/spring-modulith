@@ -15,12 +15,13 @@
  */
 package org.springframework.modulith.docs.util;
 
-import java.io.File;
-import java.util.Optional;
-
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.Assert;
+
+import java.io.File;
+import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * Utilities to detect the build system used.
@@ -54,12 +55,20 @@ public class BuildSystemUtils {
 	}
 
 	/**
-	 * Returns the path to the folder containing test classes.
+     * Whether the path to the folder contains test classes.
 	 *
+     * @param path must not be {@literal null} or empty.
 	 * @return will never be {@literal null}.
 	 */
-	public static String getTestTarget() {
-		return isMaven() ? "target/test-classes" : "build/classes/java/test";
+    public static boolean isTestTarget(String path) {
+
+        Assert.notNull(path, "Path must not be null!");
+
+        var pattern = isMaven()
+                ? Pattern.compile("^.*/target/test-classes/.*$")
+                : Pattern.compile("^.*/build(/.+)?/classes(/(java|kotlin))?/(test|testFixtures)/.*$");
+
+        return pattern.matcher(path).matches();
 	}
 
 	/**
