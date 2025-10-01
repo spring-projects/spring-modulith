@@ -26,6 +26,7 @@ import org.springframework.util.Assert;
  * Utilities to detect the build system used.
  *
  * @author Oliver Drotbohm
+ * @author Dennis Wittkötter
  * @since 1.3
  */
 public class BuildSystemUtils {
@@ -57,9 +58,23 @@ public class BuildSystemUtils {
 	 * Returns the path to the folder containing test classes.
 	 *
 	 * @return will never be {@literal null}.
+	 * @deprecated since 1.4.4, 2.0. Use {@link #pointsToTestTarget(String)} instead.
 	 */
+	@Deprecated(since = "1.4.4, 2.0", forRemoval = true)
 	public static String getTestTarget() {
 		return isMaven() ? "target/test-classes" : "build/classes/java/test";
+	}
+
+	/**
+	 * Returns whether the given path points to a resource in the test target folder.
+	 *
+	 * @param path must not be {@literal null} or empty.
+	 */
+	public static boolean pointsToTestTarget(String path) {
+
+		Assert.hasText(path, "Path must not be null or empty!");
+
+		return isMaven() ? pointsToMavenTestTarget(path) : pointsToGradleTestTarget(path);
 	}
 
 	/**
@@ -70,6 +85,14 @@ public class BuildSystemUtils {
 	 */
 	public static String getResourceTarget() {
 		return isMaven() ? "target/classes" : "build/resources/main";
+	}
+
+	static boolean pointsToMavenTestTarget(String path) {
+		return path.matches("target\\/test-classes\\/.*");
+	}
+
+	static boolean pointsToGradleTestTarget(String path) {
+		return path.matches("build(\\/.+)?\\/classes(\\/(java|kotlin))?\\/(test|testFixtures)\\/.*");
 	}
 
 	private static String getTargetFolder() {
