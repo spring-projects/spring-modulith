@@ -44,7 +44,7 @@ ApplicationModules.of(…)
   .throwIfPresent();
 ----
 
-== Customizing the Verifcation
+== Customizing the Verification
 
 As described xref:verification.adoc#verification[above], by default, both the `ApplicationModules.verify(…)` and `….detectViolations(…)` automatically perform additional verifications depending on the classpath configuration.
 
