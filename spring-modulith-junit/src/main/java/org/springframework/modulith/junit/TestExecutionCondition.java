@@ -24,6 +24,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringBootConfiguration;
 import org.springframework.boot.test.context.AnnotatedClassFinder;
+import org.springframework.lang.Nullable;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependencies;
 import org.springframework.modulith.core.ApplicationModules;
@@ -71,7 +72,7 @@ class TestExecutionCondition {
 			return enabled("Change in test class detected, executing test.");
 		}
 
-		var mainClass = SPA_CLASS_FINDER.findFromClass(testClass);
+		var mainClass = findMainClass(testClass);
 
 		if (mainClass == null) {// TODO:: Try with @ApplicationModuleTest -> main class
 			return enabled("Unable to locate SpringBootApplication Class");
@@ -120,6 +121,20 @@ class TestExecutionCondition {
 		log.info(message);
 
 		return creator.apply(message);
+	}
+
+	/**
+	 * Finds the canonical main class of the application. Falls back to {@literal null} in case multiple types are found.
+	 *
+	 * @param testClass must not be {@literal null}.
+	 */
+	private static @Nullable Class<?> findMainClass(Class<?> testClass) {
+
+		try {
+			return SPA_CLASS_FINDER.findFromClass(testClass);
+		} catch (IllegalStateException o_O) {
+			return null;
+		}
 	}
 
 	record ConditionContext(Class<?> testClass, Changes changes) {}
