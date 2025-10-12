@@ -161,38 +161,51 @@ public class Changes implements Iterable<Change> {
 		boolean hasOrigin(String nameOrPath);
 
 		/**
-		 * creates a new
-		 *
-		 * @param file
-		 * @return
+		 * Creates a change from a modified file
 		 */
 		static Change of(ModifiedFile file) {
+			boolean isJavaSource = file.isJavaSource();
 
-			if (!file.isJavaSource()) {
+			if (!isJavaSource && !file.isKotlinSource()) {
 				return new OtherFileChange(file.path());
 			}
 
+			var languageConfig = isJavaSource ? LanguageConfig.JAVA : LanguageConfig.KOTLIN;
+			return toSourceChange(file, languageConfig);
+		}
+
+		private static Change toSourceChange(ModifiedFile file, LanguageConfig config) {
 			var withoutExtension = StringUtils.stripFilenameExtension(file.path());
-			var startOfMainDir = withoutExtension.indexOf(JavaSourceChange.STANDARD_SOURCE_DIRECTORY);
-			var startOfTestDir = withoutExtension.indexOf(JavaSourceChange.STANDARD_TEST_SOURCE_DIRECTORY);
+			var startOfMainDir = withoutExtension.indexOf(config.mainDir());
+			var startOfTestDir = withoutExtension.indexOf(config.testDir());
 
 			if (startOfTestDir > -1 && (startOfMainDir < 0 || startOfTestDir < startOfMainDir)) {
 
-				var fullyQualifiedClassName = ClassUtils.convertResourcePathToClassName(
-						withoutExtension.substring(startOfTestDir + JavaSourceChange.STANDARD_TEST_SOURCE_DIRECTORY.length() + 1));
+				var fullyQualifiedClassName = ClassUtils
+						.convertResourcePathToClassName(withoutExtension.substring(startOfTestDir + config.testDir().length() + 1));
 
-				return new JavaTestSourceChange(fullyQualifiedClassName);
+				return config.testFactory().apply(fullyQualifiedClassName);
 			}
 
 			if (startOfMainDir > -1 && (startOfTestDir < 0 || startOfMainDir < startOfTestDir)) {
 
-				var fullyQualifiedClassName = ClassUtils.convertResourcePathToClassName(
-						withoutExtension.substring(startOfMainDir + JavaSourceChange.STANDARD_SOURCE_DIRECTORY.length() + 1));
+				var fullyQualifiedClassName = ClassUtils
+						.convertResourcePathToClassName(withoutExtension.substring(startOfMainDir + config.mainDir().length() + 1));
 
-				return new JavaSourceChange(fullyQualifiedClassName);
+				return config.mainFactory().apply(fullyQualifiedClassName);
 			}
 
-			return new JavaSourceChange(ClassUtils.convertResourcePathToClassName(withoutExtension));
+			return config.mainFactory().apply(ClassUtils.convertResourcePathToClassName(withoutExtension));
+		}
+
+		record LanguageConfig(String mainDir, String testDir, Function<String, ? extends SourceChange> mainFactory,
+				Function<String, ? extends SourceChange> testFactory) {
+
+			static final LanguageConfig JAVA = new LanguageConfig(JavaSourceChange.STANDARD_SOURCE_DIRECTORY,
+					JavaSourceChange.STANDARD_TEST_SOURCE_DIRECTORY, JavaSourceChange::new, JavaTestSourceChange::new);
+
+			static final LanguageConfig KOTLIN = new LanguageConfig(KotlinSourceChange.STANDARD_SOURCE_DIRECTORY,
+					KotlinSourceChange.STANDARD_TEST_SOURCE_DIRECTORY, KotlinSourceChange::new, KotlinTestSourceChange::new);
 		}
 
 		/**
@@ -200,7 +213,8 @@ public class Changes implements Iterable<Change> {
 		 *
 		 * @author Oliver Drotbohm
 		 */
-		sealed interface SourceChange extends Change permits JavaSourceChange, JavaTestSourceChange {
+		sealed interface SourceChange extends Change
+				permits KotlinSourceChange, KotlinTestSourceChange, JavaSourceChange, JavaTestSourceChange {
 
 			String fullyQualifiedClassName();
 
@@ -243,7 +257,22 @@ public class Changes implements Iterable<Change> {
 		 * @author David Bilge
 		 * @author Oliver Drotbohm
 		 */
-		record JavaTestSourceChange(String fullyQualifiedClassName) implements SourceChange {}
+		record JavaTestSourceChange(String fullyQualifiedClassName) implements SourceChange {
+		}
+
+		/**
+		 * A change in a Kotlin source file.
+		 */
+		record KotlinSourceChange(String fullyQualifiedClassName) implements SourceChange {
+			private static final String STANDARD_SOURCE_DIRECTORY = "src/main/kotlin";
+			private static final String STANDARD_TEST_SOURCE_DIRECTORY = "src/test/kotlin";
+		}
+
+		/**
+		 * A change in a Kotlin test source file.
+		 */
+		record KotlinTestSourceChange(String fullyQualifiedClassName) implements SourceChange {
+		}
 
 		/**
 		 * Some arbitrary file change.
