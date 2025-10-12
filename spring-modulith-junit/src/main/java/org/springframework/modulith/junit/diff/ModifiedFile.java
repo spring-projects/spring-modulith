@@ -37,6 +37,13 @@ public record ModifiedFile(String path) {
 		return "java".equalsIgnoreCase(StringUtils.getFilenameExtension(path));
 	}
 
+	/**
+	 * Returns whether the modified file is Kotlin source file.
+	 */
+	public boolean isKotlinSource() {
+		return "kt".equalsIgnoreCase(StringUtils.getFilenameExtension(path));
+	}
+
 	public static Stream<ModifiedFile> of(String... paths) {
 		return Arrays.stream(paths).map(ModifiedFile::new);
 	}

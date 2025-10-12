@@ -24,6 +24,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.springframework.modulith.junit.Changes.Change.JavaSourceChange;
 import org.springframework.modulith.junit.Changes.Change.JavaTestSourceChange;
+import org.springframework.modulith.junit.Changes.Change.KotlinSourceChange;
+import org.springframework.modulith.junit.Changes.Change.KotlinTestSourceChange;
 import org.springframework.modulith.junit.Changes.Change.OtherFileChange;
 import org.springframework.modulith.junit.diff.ModifiedFile;
 
@@ -73,6 +75,8 @@ class ChangesUnitTests {
 		var modifiedFilePaths = Stream.of(
 				"src/main/java/org/springframework/modulith/junit/Changes.java",
 				"src/test/java/org/springframework/modulith/ChangesTest.java",
+				"src/test/kotlin/org/springframework/modulith/KotlinServiceTest.kt",
+				"src/main/kotlin/org/springframework/modulith/KotlinService.kt",
 				"src/main/resources/META-INF/additional-spring-configuration-metadata.json")
 				.map(ModifiedFile::new);
 
@@ -84,6 +88,8 @@ class ChangesUnitTests {
 		assertThat(result).containsExactlyInAnyOrder(
 				new JavaSourceChange("org.springframework.modulith.junit.Changes"),
 				new JavaTestSourceChange("org.springframework.modulith.ChangesTest"),
+				new KotlinTestSourceChange("org.springframework.modulith.KotlinServiceTest"),
+				new KotlinSourceChange("org.springframework.modulith.KotlinService"),
 				new OtherFileChange("src/main/resources/META-INF/additional-spring-configuration-metadata.json"));
 	}
 }
