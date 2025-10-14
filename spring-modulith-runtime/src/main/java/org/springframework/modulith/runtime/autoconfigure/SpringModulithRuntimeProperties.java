@@ -34,12 +34,25 @@ class SpringModulithRuntimeProperties {
 	 */
 	private final boolean verificationEnabled;
 
+	/**
+	 * Whether to apply module-specific Flyway migrations.
+	 */
+	private final boolean flywayEnabled;
+
 	@ConstructorBinding
-	SpringModulithRuntimeProperties(@DefaultValue("false") boolean verificationEnabled) {
+	SpringModulithRuntimeProperties(
+			@DefaultValue("false") boolean verificationEnabled,
+			@DefaultValue("false") boolean flywayEnabled) {
+
 		this.verificationEnabled = verificationEnabled;
+		this.flywayEnabled = flywayEnabled;
 	}
 
 	public boolean isVerificationEnabled() {
 		return verificationEnabled;
+	}
+
+	public boolean isFlywayEnabled() {
+		return flywayEnabled;
 	}
 }

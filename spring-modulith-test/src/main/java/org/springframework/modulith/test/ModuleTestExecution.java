@@ -15,6 +15,7 @@
  */
 package org.springframework.modulith.test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
@@ -33,11 +34,13 @@ import org.springframework.boot.test.context.AnnotatedClassFinder;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.core.PackageName;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
+import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -71,6 +74,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 	private final Supplier<List<JavaPackage>> basePackages;
 	private final Supplier<List<ApplicationModule>> dependencies;
+	private final Supplier<List<ApplicationModule>> includedModules;
 
 	private ModuleTestExecution(ApplicationModuleTest annotation, ApplicationModules modules, ApplicationModule module) {
 
@@ -97,6 +101,17 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 			var bootstrapDependencies = module.getBootstrapDependencies(modules,
 					bootstrapMode.getDepth());
 			return Stream.concat(bootstrapDependencies, extraIncludes.stream()).distinct().toList();
+		});
+
+		this.includedModules = SingletonSupplier.of(() -> {
+
+			var included = new ArrayList<ApplicationModule>();
+			included.add(module);
+			included.addAll(getDependencies());
+			included.addAll(getExtraIncludes());
+			included.addAll(modules.getSharedModules());
+
+			return included;
 		});
 
 		if (annotation.verifyAutomatically()) {
@@ -207,6 +222,21 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	 */
 	public List<ApplicationModule> getExtraIncludes() {
 		return extraIncludes;
+	}
+
+	/**
+	 * Returns whether the module with the given identifier is included in the current execution.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @since 2.0
+	 */
+	public boolean isIncludedInExecution(ApplicationModuleIdentifier identifier) {
+
+		Assert.notNull(identifier, "ApplicationModuleIdentifier must not be null!");
+
+		return includedModules.get().stream()
+				.map(ApplicationModule::getIdentifier)
+				.anyMatch(identifier::equals);
 	}
 
 	/*

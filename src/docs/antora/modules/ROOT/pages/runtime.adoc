@@ -105,3 +105,16 @@ class MyInitializer : ApplicationModuleInitializer {
 ----
 ======
 Note that the `ApplicationModuleInitializer` beans will only be invoked if the `spring-modulith-runtime` JAR is on the classpath (see xref:runtime.adoc#setup[Setting up Runtime Support for Application Modules]) as that pulls in the dependencies that are needed to topologically sort the initializers according to the application module structure.
+
+[[module-aware-flyway-migrations]]
+== Application-Module Aware Flyway Migrations
+
+As of Spring Modulith 2.0, we support the execution of module-specific https://docs.spring.io/spring-boot/how-to/data-initialization.html#howto.data-initialization.migration-tool.flyway[Flyway migrations].
+Application modules are encouraged to define migrations for their own persistent data only, which means that these migrations have to be executed in the order of the module dependency tree.
+
+Assume a default Flyway setup with migrations located in `classpath:db/migration`, two application modules `first` and `second` (with `second` depending on `first`), and an activated `spring.modulith.runtime.flyway-enabled` xref:appendix.adoc#configuration-properties[configuration property].
+With that in place we will augment the configured migration to run the default one first, followed by one for `classpath:db/migration/first` and one for `classpath:db/migration/second`.
+
+By selecting which folder to place the migration files in, you can differentiate migrations always to be run from ones that will only get executed for the corresponding module. The application module test integration will only execute the default migration and the ones for modules included in the test run.
+
+We will not augment migration runs including wildcard expressions in the migration location definition.

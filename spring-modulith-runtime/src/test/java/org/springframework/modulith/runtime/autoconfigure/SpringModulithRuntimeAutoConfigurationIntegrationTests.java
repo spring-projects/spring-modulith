@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import example.moduleA.ModuleAType;
+import example.moduleA.SampleTestClass;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -39,6 +40,7 @@ import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.modulith.ApplicationModuleInitializer;
+import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.core.util.ApplicationModulesExporter;
@@ -46,6 +48,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.modulith.runtime.autoconfigure.SpringModulithRuntimeAutoConfiguration.ApplicationModulesBootstrap;
 import org.springframework.modulith.runtime.autoconfigure.SpringModulithRuntimeAutoConfiguration.RuntimeApplicationModuleVerifier;
+import org.springframework.modulith.test.ModuleTestExecution;
 
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 
@@ -180,6 +183,26 @@ class SpringModulithRuntimeAutoConfigurationIntegrationTests {
 				.run(context -> {
 					assertThat(context).hasSingleBean(RuntimeApplicationModuleVerifier.class);
 					tracker.assertBeanInitialized(ApplicationModulesBootstrap.class);
+				});
+	}
+
+	@Test // GH-1067
+	void filtersFlywayModulesIfTestExecutionPresent() {
+
+		runner.withBean(ModuleTestExecution.class, ModuleTestExecution.of(SampleTestClass.class))
+				.run(context -> {
+
+					assertThat(context).hasSingleBean(ModuleTestExecution.class);
+
+					var execution = context.getBean(ModuleTestExecution.class);
+
+					assertThat(execution.getModules())
+							.extracting(ApplicationModule::getIdentifier)
+							.extracting(ApplicationModuleIdentifier::toString)
+							.containsExactly("moduleA", "moduleB");
+
+					assertThat(execution.isIncludedInExecution(ApplicationModuleIdentifier.of("moduleA"))).isTrue();
+					assertThat(execution.isIncludedInExecution(ApplicationModuleIdentifier.of("moduleB"))).isFalse();
 				});
 	}
 

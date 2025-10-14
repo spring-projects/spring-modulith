@@ -17,11 +17,14 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 
+import org.flywaydb.core.Flyway;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryInitializer;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.ObjectProvider;
@@ -32,10 +35,13 @@ import org.springframework.beans.factory.config.ConfigurableBeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBooleanProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -45,6 +51,7 @@ import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
@@ -52,6 +59,9 @@ import org.springframework.modulith.core.VerificationOptions;
 import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.modulith.runtime.flyway.SpringModulithFlywayMigrationStrategy;
+import org.springframework.modulith.test.ModuleTestExecution;
+import org.springframework.util.ClassUtils;
 
 /**
  * Auto-configuration to register an {@link ApplicationRuntime}, a {@link ApplicationModulesRuntime} and an
@@ -142,6 +152,34 @@ class SpringModulithRuntimeAutoConfiguration {
 				: ApplicationModuleIdentifiers.of(runtime.getObject().get());
 	}
 
+	private static class ModuleFilter implements Predicate<ApplicationModuleIdentifier> {
+
+		private static final boolean IN_TEST = ClassUtils.isPresent("org.springframework.modulith.test.ModuleTestExecution",
+				SpringModulithFlywayMigrationStrategy.class.getClassLoader());
+
+		private final BeanFactory factory;
+
+		ModuleFilter(BeanFactory factory) {
+			this.factory = factory;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.util.function.Predicate#test(java.lang.Object)
+		 */
+		@Override
+		public boolean test(ApplicationModuleIdentifier identifier) {
+
+			if (!IN_TEST) {
+				return true;
+			}
+
+			var execution = factory.getBeanProvider(ModuleTestExecution.class).getIfAvailable();
+
+			return execution != null ? execution.isIncludedInExecution(identifier) : true;
+		}
+	}
+
 	static class ApplicationModulesBootstrap {
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesBootstrap.class);
@@ -189,6 +227,22 @@ class SpringModulithRuntimeAutoConfiguration {
 			}
 
 			return result;
+		}
+	}
+
+	@AutoConfiguration
+	@ConditionalOnClass({ Flyway.class, FlywayMigrationStrategy.class })
+	static class SpringModulithFlywayAutoConfiguration {
+
+		@Bean
+		@ConditionalOnProperty(name = "spring.modulith.runtime.flyway-enabled", havingValue = "true")
+		SpringModulithFlywayMigrationStrategy springModulithFlywayMigrationStrategy(
+				ApplicationModuleIdentifiers identifiers, BeanFactory factory) {
+
+			var filter = new ModuleFilter(factory);
+			var filtered = ApplicationModuleIdentifiers.of(identifiers.stream().filter(filter).toList());
+
+			return new SpringModulithFlywayMigrationStrategy(filtered);
 		}
 	}
 
