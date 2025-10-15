@@ -164,6 +164,7 @@ public class Changes implements Iterable<Change> {
 		 * Creates a change from a modified file
 		 */
 		static Change of(ModifiedFile file) {
+
 			boolean isJavaSource = file.isJavaSource();
 
 			if (!isJavaSource && !file.isKotlinSource()) {
@@ -171,31 +172,8 @@ public class Changes implements Iterable<Change> {
 			}
 
 			var languageConfig = isJavaSource ? LanguageConfig.JAVA : LanguageConfig.KOTLIN;
-			return toSourceChange(file, languageConfig);
-		}
 
-		private static Change toSourceChange(ModifiedFile file, LanguageConfig config) {
-			var withoutExtension = StringUtils.stripFilenameExtension(file.path());
-			var startOfMainDir = withoutExtension.indexOf(config.mainDir());
-			var startOfTestDir = withoutExtension.indexOf(config.testDir());
-
-			if (startOfTestDir > -1 && (startOfMainDir < 0 || startOfTestDir < startOfMainDir)) {
-
-				var fullyQualifiedClassName = ClassUtils
-						.convertResourcePathToClassName(withoutExtension.substring(startOfTestDir + config.testDir().length() + 1));
-
-				return config.testFactory().apply(fullyQualifiedClassName);
-			}
-
-			if (startOfMainDir > -1 && (startOfTestDir < 0 || startOfMainDir < startOfTestDir)) {
-
-				var fullyQualifiedClassName = ClassUtils
-						.convertResourcePathToClassName(withoutExtension.substring(startOfMainDir + config.mainDir().length() + 1));
-
-				return config.mainFactory().apply(fullyQualifiedClassName);
-			}
-
-			return config.mainFactory().apply(ClassUtils.convertResourcePathToClassName(withoutExtension));
+			return languageConfig.toChange(file);
 		}
 
 		record LanguageConfig(String mainDir, String testDir, Function<String, ? extends SourceChange> mainFactory,
@@ -206,6 +184,33 @@ public class Changes implements Iterable<Change> {
 
 			static final LanguageConfig KOTLIN = new LanguageConfig(KotlinSourceChange.STANDARD_SOURCE_DIRECTORY,
 					KotlinSourceChange.STANDARD_TEST_SOURCE_DIRECTORY, KotlinSourceChange::new, KotlinTestSourceChange::new);
+
+			Change toChange(ModifiedFile file) {
+
+				var withoutExtension = StringUtils.stripFilenameExtension(file.path());
+				var startOfMainDir = withoutExtension.indexOf(mainDir);
+				var startOfTestDir = withoutExtension.indexOf(testDir);
+
+				if (startOfTestDir > -1 && (startOfMainDir < 0 || startOfTestDir < startOfMainDir)) {
+
+					var fullyQualifiedClassName = ClassUtils.convertResourcePathToClassName(
+							withoutExtension.substring(startOfTestDir + testDir.length() + 1));
+
+					return testFactory.apply(fullyQualifiedClassName);
+				}
+
+				var mainFactory = mainFactory();
+
+				if (startOfMainDir > -1 && (startOfTestDir < 0 || startOfMainDir < startOfTestDir)) {
+
+					var fullyQualifiedClassName = ClassUtils.convertResourcePathToClassName(
+							withoutExtension.substring(startOfMainDir + mainDir.length() + 1));
+
+					return mainFactory.apply(fullyQualifiedClassName);
+				}
+
+				return mainFactory.apply(ClassUtils.convertResourcePathToClassName(withoutExtension));
+			}
 		}
 
 		/**
@@ -257,8 +262,7 @@ public class Changes implements Iterable<Change> {
 		 * @author David Bilge
 		 * @author Oliver Drotbohm
 		 */
-		record JavaTestSourceChange(String fullyQualifiedClassName) implements SourceChange {
-		}
+		record JavaTestSourceChange(String fullyQualifiedClassName) implements SourceChange {}
 
 		/**
 		 * A change in a Kotlin source file.
@@ -271,8 +275,7 @@ public class Changes implements Iterable<Change> {
 		/**
 		 * A change in a Kotlin test source file.
 		 */
-		record KotlinTestSourceChange(String fullyQualifiedClassName) implements SourceChange {
-		}
+		record KotlinTestSourceChange(String fullyQualifiedClassName) implements SourceChange {}
 
 		/**
 		 * Some arbitrary file change.

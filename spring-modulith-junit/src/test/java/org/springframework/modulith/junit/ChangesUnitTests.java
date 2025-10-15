@@ -68,7 +68,7 @@ class ChangesUnitTests {
 		});
 	}
 
-	@Test // GH-31
+	@Test // GH-31, GH-1382
 	void shouldInterpredModifiedFilePathsCorrectly() {
 
 		// given
