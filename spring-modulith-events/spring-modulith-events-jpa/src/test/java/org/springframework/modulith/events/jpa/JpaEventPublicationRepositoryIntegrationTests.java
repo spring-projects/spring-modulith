@@ -41,6 +41,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.ConnectionCallback;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabase;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseBuilder;
 import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
@@ -115,6 +117,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		@Autowired JpaEventPublicationRepository repository;
 		@Autowired EntityManager em;
 		@Autowired Environment environment;
+		@Autowired DataSource dataSource;
 
 		CompletionMode completionMode;
 
@@ -126,6 +129,23 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		@AfterEach
 		public void flush() {
 			em.flush();
+		}
+
+		@Test // GH-1389
+		void createsStatusColumnAsString() {
+
+			new JdbcTemplate(dataSource).execute((ConnectionCallback<Void>) connection -> {
+
+				var metadata = connection.getMetaData();
+
+				try (var columns = metadata.getColumns(null, null, "EVENT_PUBLICATION", "STATUS")) {
+					while (columns.next()) {
+						assertThat(columns.getInt("DATA_TYPE")).isEqualTo(12);
+					}
+				}
+
+				return null;
+			});
 		}
 
 		@Test

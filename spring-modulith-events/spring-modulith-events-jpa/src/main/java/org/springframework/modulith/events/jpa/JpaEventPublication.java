@@ -16,6 +16,8 @@
 package org.springframework.modulith.events.jpa;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Id;
 import jakarta.persistence.MappedSuperclass;
 
@@ -51,7 +53,7 @@ public abstract class JpaEventPublication {
 	protected @Nullable Instant completionDate;
 	protected @Nullable Instant lastResubmissionDate;
 	protected int completionAttempts;
-	protected Status status;
+	protected @Enumerated(EnumType.STRING) Status status;
 
 	/**
 	 * Creates a new {@link JpaEventPublication} for the given publication date, listener id, serialized event and event
