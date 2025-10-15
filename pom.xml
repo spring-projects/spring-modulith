@@ -41,7 +41,7 @@
 		<cute.version>1.9.0</cute.version>
 		<errorprone.version>2.36.0</errorprone.version>
 		<flapdoodle-mongodb.version>4.20.0</flapdoodle-mongodb.version>
-		<jgit.version>7.3.0.202506031305-r</jgit.version>
+		<jgit.version>7.4.0.202509020913-r</jgit.version>
 		<jmolecules-bom.version>2025.0.0-RC5</jmolecules-bom.version>
 		<nullaway.version>0.12.7</nullaway.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
