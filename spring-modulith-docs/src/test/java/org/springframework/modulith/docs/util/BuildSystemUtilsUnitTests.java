@@ -45,7 +45,8 @@ class BuildSystemUtilsUnitTests {
 		var values = getSampleResources(
 				"build/classes/java/test",
 				"build/classes/kotlin/test",
-				"build/tmp/kapt3/classes/testFixtures");
+				"build/tmp/kapt3/classes/testFixtures",
+                "file:///full/path/to/project/build/tmp/kapt3/classes/test");
 
 		return DynamicTest.stream(values, it -> it + " is a test resource", it -> {
 			assertThat(BuildSystemUtils.pointsToGradleTestTarget(it)).isTrue();

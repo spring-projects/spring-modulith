@@ -92,7 +92,7 @@ public class BuildSystemUtils {
 	}
 
 	static boolean pointsToGradleTestTarget(String path) {
-		return path.matches("build(\\/.+)?\\/classes(\\/(java|kotlin))?\\/(test|testFixtures)\\/.*");
+		return path.matches("(.*\\/)?build(\\/.+)?\\/classes(\\/.+)?\\/(test|testFixtures)\\/.*");
 	}
 
 	private static String getTargetFolder() {
