@@ -27,7 +27,7 @@ urls:
   latest_version_segment: ''
 runtime:
   log:
-    failure_level: warn
+    failure_level: error
     format: pretty
 ui:
   bundle:

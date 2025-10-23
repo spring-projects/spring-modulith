@@ -27,6 +27,23 @@
 			<properties>
 				<maven.deploy.skip>false</maven.deploy.skip>
 			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>io.spring.maven.antora</groupId>
+						<artifactId>antora-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>generate-docs</id>
+								<goals>
+									<goal>antora</goal>
+								</goals>
+								<phase>compile</phase>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
 		</profile>
 	</profiles>
 
@@ -35,10 +52,6 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-assembly-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<groupId>io.spring.maven.antora</groupId>
-				<artifactId>antora-maven-plugin</artifactId>
 			</plugin>
 		</plugins>
 	</build>
