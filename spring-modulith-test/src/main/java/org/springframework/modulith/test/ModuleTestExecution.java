@@ -88,7 +88,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		this.basePackages = SingletonSupplier.of(() -> {
 
 			var moduleBasePackages = module.getBootstrapBasePackages(modules, bootstrapMode.getDepth());
-			var sharedBasePackages = modules.getSharedModules().stream().map(it -> it.getBasePackage());
+			var sharedBasePackages = modules.getSharedModules().stream().map(ApplicationModule::getBasePackage);
 			var extraPackages = extraIncludes.stream().map(ApplicationModule::getBasePackage);
 
 			var intermediate = Stream.concat(moduleBasePackages, extraPackages);
