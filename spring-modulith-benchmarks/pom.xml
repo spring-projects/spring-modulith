@@ -40,8 +40,8 @@
 
 		<dependency>
 			<groupId>com.github.mp911de.microbenchmark-runner</groupId>
-			<artifactId>microbenchmark-runner-junit5</artifactId>
-			<version>0.5.0.RELEASE</version>
+			<artifactId>microbenchmark-runner-junit</artifactId>
+			<version>1.0.0</version>
 			<scope>test</scope>
 		</dependency>
 

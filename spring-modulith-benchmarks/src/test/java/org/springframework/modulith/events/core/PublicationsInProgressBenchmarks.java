@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.events.core;
 
-import jmh.mbr.junit5.Microbenchmark;
+import jmh.mbr.junit.Microbenchmark;
 import lombok.Value;
 
 import java.util.ArrayList;

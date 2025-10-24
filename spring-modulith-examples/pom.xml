@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.0-M2</version>
+		<version>4.0.0-RC1</version>
 		<relativePath />
 	</parent>
 
@@ -17,7 +17,8 @@
 
 	<modules>
 		<module>spring-modulith-example-epr-jdbc</module>
-		<module>spring-modulith-example-epr-mongodb</module>
+		<!-- Skip because it doesn't work with Boot 4.0 RC1 for now -->
+		<!--<module>spring-modulith-example-epr-mongodb</module>-->
 		<module>spring-modulith-example-epr-neo4j</module>
 		<module>spring-modulith-example-full</module>
 		<module>spring-modulith-example-kafka</module>
@@ -26,7 +27,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<jmolecules.version>2025.0.0-RC5</jmolecules.version>
-		<spring-framework.version>7.0.0-RC1</spring-framework.version>
+		<spring-framework.version>7.0.0-RC2</spring-framework.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 

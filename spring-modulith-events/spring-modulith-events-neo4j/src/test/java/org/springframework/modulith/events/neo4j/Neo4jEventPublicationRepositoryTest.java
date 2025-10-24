@@ -47,9 +47,9 @@ import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 import org.springframework.util.DigestUtils;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -65,7 +65,7 @@ class Neo4jEventPublicationRepositoryTest {
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
 	@Container //
-	static final Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
+	static final Neo4jContainer neo4jContainer = new Neo4jContainer(DockerImageName.parse("neo4j:5"))
 			.withRandomPassword();
 
 	static abstract class TestBase {

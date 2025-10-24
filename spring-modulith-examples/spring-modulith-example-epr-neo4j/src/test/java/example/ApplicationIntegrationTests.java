@@ -34,8 +34,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.test.EnableScenarios;
 import org.springframework.modulith.test.Scenario;
-import org.testcontainers.containers.Neo4jContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 
 /**
  * @author Oliver Drotbohm
@@ -51,12 +51,12 @@ class ApplicationIntegrationTests {
 
 		@Bean
 		@ServiceConnection
-		Neo4jContainer<?> neo4jContainer() {
-			return new Neo4jContainer<>("neo4j:5").withRandomPassword();
+		Neo4jContainer neo4jContainer() {
+			return new Neo4jContainer("neo4j:5").withRandomPassword();
 		}
 
 		@Bean
-		Driver driver(Neo4jContainer<?> container) {
+		Driver driver(Neo4jContainer container) {
 			return GraphDatabase.driver(container.getBoltUrl(), AuthTokens.basic("neo4j", container.getAdminPassword()));
 		}
 

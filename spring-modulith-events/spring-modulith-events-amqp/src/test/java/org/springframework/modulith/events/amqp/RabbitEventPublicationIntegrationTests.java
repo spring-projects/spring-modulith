@@ -35,7 +35,7 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.Externalized;
 import org.springframework.transaction.annotation.Transactional;
-import org.testcontainers.containers.RabbitMQContainer;
+import org.testcontainers.rabbitmq.RabbitMQContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
