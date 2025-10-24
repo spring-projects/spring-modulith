@@ -95,7 +95,7 @@ public class Groupings {
 				.isPresent("org.jmolecules.architecture.layered.ApplicationLayer", JMoleculesGroupings.class.getClassLoader());
 
 		private static final boolean JMOLECULES_ONION_PRESENT = ClassUtils
-				.isPresent("org.jmolecules.architecture.onion.classical.ApplicationRing",
+				.isPresent("org.jmolecules.architecture.onion.simplified.ApplicationRing",
 						JMoleculesGroupings.class.getClassLoader());
 
 		public static Grouping[] getGroupings() {
