@@ -44,7 +44,7 @@
 		<jmolecules-bom.version>2023.3.4</jmolecules-bom.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-		<spring-boot.version>3.5.5</spring-boot.version>
+		<spring-boot.version>3.5.7</spring-boot.version>
 		<spring-framework.version>6.2.12</spring-framework.version> <!-- For Javadoc links only -->
 		<testcontainers.version>1.21.3</testcontainers.version>
 		<structurizr.version>3.1.0</structurizr.version>
