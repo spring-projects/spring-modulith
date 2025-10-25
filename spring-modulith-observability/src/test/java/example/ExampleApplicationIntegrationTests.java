@@ -19,7 +19,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.actuate.observability.AutoConfigureObservability;
+import org.springframework.boot.micrometer.metrics.test.autoconfigure.AutoConfigureMetrics;
+import org.springframework.boot.micrometer.tracing.test.autoconfigure.AutoConfigureTracing;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.observability.support.ModuleEventListener;
@@ -28,7 +29,8 @@ import org.springframework.modulith.observability.support.ModuleEventListener;
  * @author Oliver Drotbohm
  */
 @SpringBootTest
-@AutoConfigureObservability
+@AutoConfigureMetrics
+@AutoConfigureTracing
 class ExampleApplicationIntegrationTests {
 
 	@Autowired ApplicationContext context;

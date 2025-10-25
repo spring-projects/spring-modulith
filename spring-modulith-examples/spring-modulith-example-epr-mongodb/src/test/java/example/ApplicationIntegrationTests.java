@@ -31,8 +31,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.test.EnableScenarios;
 import org.springframework.modulith.test.Scenario;
-import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.mongodb.MongoDBContainer;
 
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -63,7 +63,7 @@ class ApplicationIntegrationTests {
 		@Bean
 		@ServiceConnection
 		MongoDBContainer mongoDBContainer() {
-			return new MongoDBContainer("mongo:6.0.3");
+			return new MongoDBContainer("mongo:latest");
 		}
 
 		@Bean

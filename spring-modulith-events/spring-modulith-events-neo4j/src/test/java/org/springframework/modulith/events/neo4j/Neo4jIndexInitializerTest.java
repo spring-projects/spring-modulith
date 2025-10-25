@@ -26,17 +26,17 @@ import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
-import org.springframework.boot.test.autoconfigure.data.neo4j.DataNeo4jTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.boot.data.neo4j.test.autoconfigure.DataNeo4jTest;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.neo4j.core.Neo4jClient;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
-import org.testcontainers.containers.Neo4jContainer;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.neo4j.Neo4jContainer;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -49,7 +49,8 @@ class Neo4jIndexInitializerTest {
 	@ContextConfiguration(classes = TestApplication.class)
 	static class TestBase {
 
-		@Container private static Neo4jContainer<?> neo4jContainer = new Neo4jContainer<>(DockerImageName.parse("neo4j:5"))
+		@Container //
+		private static Neo4jContainer neo4jContainer = new Neo4jContainer(DockerImageName.parse("neo4j:5"))
 				.withRandomPassword();
 
 		@MockitoBean EventSerializer eventSerializer;
