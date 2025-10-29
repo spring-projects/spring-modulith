@@ -29,10 +29,10 @@ import org.junit.jupiter.api.TestFactory;
  */
 class BuildSystemUtilsUnitTests {
 
-	@TestFactory // GH-1386
+	@TestFactory // GH-1386, GH-1432
 	Stream<DynamicTest> detectsMavenTargetResources() {
 
-		var values = getSampleResources("target/test-classes");
+		var values = getSampleResources("target/test-classes", "some-folder/target/test-classes");
 
 		return DynamicTest.stream(values, it -> it + " is a test resource", it -> {
 			assertThat(BuildSystemUtils.pointsToTestTarget(it)).isTrue();
@@ -46,7 +46,7 @@ class BuildSystemUtilsUnitTests {
 				"build/classes/java/test",
 				"build/classes/kotlin/test",
 				"build/tmp/kapt3/classes/testFixtures",
-                "file:///full/path/to/project/build/tmp/kapt3/classes/test");
+				"file:///full/path/to/project/build/tmp/kapt3/classes/test");
 
 		return DynamicTest.stream(values, it -> it + " is a test resource", it -> {
 			assertThat(BuildSystemUtils.pointsToGradleTestTarget(it)).isTrue();

@@ -88,7 +88,7 @@ public class BuildSystemUtils {
 	}
 
 	static boolean pointsToMavenTestTarget(String path) {
-		return path.matches("target\\/test-classes\\/.*");
+		return path.matches("(.*\\/)?target\\/test-classes\\/.*");
 	}
 
 	static boolean pointsToGradleTestTarget(String path) {
