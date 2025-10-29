@@ -23,6 +23,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.boot.context.config.ConfigDataEnvironmentPostProcessor;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.io.DefaultResourceLoader;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -83,7 +84,8 @@ class ApplicationModuleDetectionStrategyLookup {
 	static ApplicationModuleDetectionStrategy getStrategy() {
 
 		var environment = new StandardEnvironment();
-		ConfigDataEnvironmentPostProcessor.applyTo(environment);
+		ConfigDataEnvironmentPostProcessor.applyTo(environment,
+				new DefaultResourceLoader(ApplicationModuleDetectionStrategyLookup.class.getClassLoader()), null);
 
 		var configuredStrategy = environment.getProperty(DETECTION_STRATEGY_PROPERTY, String.class);
 
