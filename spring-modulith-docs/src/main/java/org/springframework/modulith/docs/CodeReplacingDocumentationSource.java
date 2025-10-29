@@ -17,6 +17,7 @@ package org.springframework.modulith.docs;
 
 import java.util.Optional;
 
+import org.springframework.modulith.core.JavaPackage;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
@@ -67,6 +68,16 @@ class CodeReplacingDocumentationSource implements DocumentationSource {
 	@Override
 	public Optional<String> getDocumentation(JavaClass type) {
 		return delegate.getDocumentation(type)
+				.map(asciidoctor::toAsciidoctor);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.docs.DocumentationSource#getDocumentation(org.springframework.modulith.core.JavaPackage)
+	 */
+	@Override
+	public Optional<String> getDocumentation(JavaPackage pkg) {
+		return delegate.getDocumentation(pkg)
 				.map(asciidoctor::toAsciidoctor);
 	}
 }

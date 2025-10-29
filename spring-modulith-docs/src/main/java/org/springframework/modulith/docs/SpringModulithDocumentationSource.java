@@ -26,6 +26,7 @@ import java.util.Optional;
 import org.jspecify.annotations.Nullable;
 import org.springframework.boot.json.BasicJsonParser;
 import org.springframework.core.io.Resource;
+import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.docs.metadata.MethodMetadata;
 import org.springframework.modulith.docs.metadata.TypeMetadata;
 import org.springframework.modulith.docs.util.BuildSystemUtils;
@@ -112,6 +113,19 @@ class SpringModulithDocumentationSource implements DocumentationSource {
 				.findFirst()
 				.map(MethodMetadata::comment)
 				.filter(StringUtils::hasText);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.docs.DocumentationSource#getDocumentation(org.springframework.modulith.core.JavaPackage)
+	 */
+	@Override
+	public Optional<String> getDocumentation(JavaPackage pkg) {
+
+		return metadata.stream()
+				.filter(it -> it.name().equals(pkg.getName()))
+				.findFirst()
+				.map(TypeMetadata::comment);
 	}
 
 	@SuppressWarnings("unchecked")

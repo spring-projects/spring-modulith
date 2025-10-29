@@ -410,6 +410,10 @@ class Asciidoctor {
 		return bullets.isBlank() ? "None" : bullets;
 	}
 
+	public String renderModuleDescription(ApplicationModule module) {
+		return docSource.get().getDocumentation(module.getBasePackage()).orElse("");
+	}
+
 	public String renderHeadline(int i, String modules) {
 		return "=".repeat(i) + " " + modules + System.lineSeparator();
 	}

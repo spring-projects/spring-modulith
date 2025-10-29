@@ -71,6 +71,19 @@ class SpringModulithProcessorUnitTests {
 		});
 	}
 
+	@Test // GH-1430
+	void extractsPackageComments() throws Exception {
+
+		assertSucceded(getSourceFile("package-info"));
+
+		var output = new File(JSON_LOCATION);
+
+		var context = JsonPath.parse(output);
+		var comment = context.read("$[?(@.name == 'example')].comment", String[].class)[0];
+
+		assertThat(comment).isEqualTo("Test comment.");
+	}
+
 	private static DoCustomAssertions assertSucceded(String source) {
 
 		return assertSourceProcessed(source)
