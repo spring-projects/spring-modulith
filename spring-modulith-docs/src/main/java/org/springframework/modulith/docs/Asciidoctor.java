@@ -411,7 +411,7 @@ class Asciidoctor {
 	}
 
 	public String renderModuleDescription(ApplicationModule module) {
-		return docSource.get().getDocumentation(module.getBasePackage()).orElse("");
+		return docSource.flatMap(it -> it.getDocumentation(module.getBasePackage())).orElse("");
 	}
 
 	public String renderHeadline(int i, String modules) {
