@@ -112,8 +112,22 @@ public interface PublishedEvents extends TypedEvents {
 		 *          must not be {@literal null}.
 		 * @param value the value expected as outcome of the mapping step, can be {@literal null}.
 		 * @return will never be {@literal null}.
+		 * @deprecated use {@link #matchingValue(Function, Object)} instead.
 		 */
+		@Deprecated(since = "2.0", forRemoval = true)
 		<S> TypedPublishedEvents<T> matching(Function<T, S> mapper, @Nullable S value);
+
+		/**
+		 * Returns all {@link TypedPublishedEvents} that match the given value after applying the given mapping step.
+		 *
+		 * @param <S> the intermediate type to apply the {@link Predicate} on
+		 * @param mapper the mapping step to extract a part of the original event subject to verify against the given value,
+		 *          must not be {@literal null}.
+		 * @param value the value expected as outcome of the mapping step, can be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 2.0
+		 */
+		<S> TypedPublishedEvents<T> matchingValue(Function<T, S> mapper, @Nullable S value);
 
 		/**
 		 * Returns all {@link TypedPublishedEvents} that match the given predicate after applying the given mapping step.

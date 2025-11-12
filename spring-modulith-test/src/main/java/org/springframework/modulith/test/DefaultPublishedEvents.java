@@ -150,6 +150,15 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 			return matching(mapper, (Predicate<S>) it -> Objects.equals(it, value));
 		}
 
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matchingValue(java.util.function.Function, java.lang.Object)
+		 */
+		@Override
+		public <S> TypedPublishedEvents<T> matchingValue(Function<T, S> mapper, @Nullable S value) {
+			return matching(mapper, (Predicate<S>) it -> Objects.equals(it, value));
+		}
+
 		/**
 		 * Returns a {@link Stream} of events filtered by the given {@link Predicate}.
 		 *
