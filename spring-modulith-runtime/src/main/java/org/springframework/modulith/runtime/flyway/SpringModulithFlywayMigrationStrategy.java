@@ -21,6 +21,8 @@ import java.util.stream.Stream;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.Configuration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
@@ -35,6 +37,9 @@ import org.springframework.util.Assert;
  * @since 2.0
  */
 public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStrategy {
+
+	private static final ApplicationModuleIdentifier ROOT = ApplicationModuleIdentifier.of("__root");
+	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithFlywayMigrationStrategy.class);
 
 	private final ApplicationModuleIdentifiers identifiers;
 
@@ -66,9 +71,6 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 
 		private final Flyway flyway;
 
-		/**
-		 * @param flyway
-		 */
 		SpringModulithFlywayCustomizer(Flyway flyway) {
 			this.flyway = flyway;
 		}
@@ -76,35 +78,45 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 		Stream<Flyway> augment(ApplicationModuleIdentifiers identifiers) {
 
 			var configuration = flyway.getConfiguration();
-			var original = Stream.of(flyway);
-
-			if (Stream.of(configuration.getLocations()).map(Location::toString).anyMatch(it -> it.endsWith("*"))) {
-				return original;
-			}
-
-			var augmented = identifiers.stream()
-					.map(it -> augmentWithApplicationModule(it, configuration))
-					.map(it -> withNewLocation(configuration, it));
-
-			return Stream.concat(original, augmented);
+			return Stream.concat(Stream.of(ROOT), identifiers.stream())
+					.peek(it -> LOGGER.debug("Executing Flyway migrations for application module {}.", it))
+					.map(it -> augmentWithApplicationModule(it, configuration));
 		}
 
-		private List<String> augmentWithApplicationModule(ApplicationModuleIdentifier identifier,
+		private Flyway augmentWithApplicationModule(ApplicationModuleIdentifier identifier,
 				Configuration configuration) {
+
+			var locations = Stream.of(configuration.getLocations())
+					.map(Location::toString)
+					.map(it -> customizeLocation(it, identifier))
+					.toList();
+
+			return withNewLocation(configuration, locations, identifier);
+		}
+
+		private static String customizeLocation(String location, ApplicationModuleIdentifier identifier) {
+
+			if (location.endsWith("*")) {
+				return location;
+			}
 
 			var asPath = identifier.toString().replace('.', '/');
 
-			return Stream.of(configuration.getLocations())
-					.map(Location::toString)
-					.map(it -> it.concat("/").concat(asPath))
-					.toList();
+			return location + "/" + asPath;
 		}
 
-		private static Flyway withNewLocation(Configuration configuration, List<String> locations) {
+		private static Flyway withNewLocation(Configuration configuration, List<String> locations,
+				ApplicationModuleIdentifier identifier) {
+
+			var table = configuration.getTable();
+			var customizedTable = identifier.equals(ROOT) ? table : table + "_" + identifier;
 
 			return Flyway.configure()
 					.configuration(configuration)
 					.locations(locations.toArray(String[]::new))
+					.table(customizedTable)
+					.baselineVersion("0")
+					.baselineOnMigrate(true)
 					.load();
 		}
 	}

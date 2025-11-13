@@ -46,7 +46,9 @@ public class SpringModulithFlywayCustomizerUnitTests {
 	@TestFactory // GH-1067
 	Stream<DynamicTest> augmentsLocationWithApplicationModuleIdentifier() {
 
-		var expected = List.of(List.of("classpath:db/migration/first"), List.of("classpath:db/migration/second"));
+		var expected = List.of(
+				List.of("classpath:db/migration/first"),
+				List.of("classpath:db/migration/second"));
 
 		var twoIdentifiers = List.of("first", "second");
 		var singleIdentifier = List.of("identifier");
@@ -58,10 +60,12 @@ public class SpringModulithFlywayCustomizerUnitTests {
 		var mixedLocation = List.of("classpath:db/foo", "classpath:db/migration/**");
 
 		var first = new Fixture(twoIdentifiers, noLocation, expected);
-		var second = new Fixture(singleIdentifier, wildcardLocation, List.of(wildcardLocation));
+		var second = new Fixture(singleIdentifier, wildcardLocation,
+				List.of(List.of("classpath:db/migration/**")));
 		var third = new Fixture(singleIdentifier, multipleLocations,
 				List.of(List.of("classpath:db/first/identifier", "classpath:db/second/identifier")));
-		var fourth = new Fixture(singleIdentifier, mixedLocation, List.of(mixedLocation));
+		var fourth = new Fixture(singleIdentifier, mixedLocation,
+				List.of(List.of("classpath:db/foo/identifier", "classpath:db/migration/**")));
 		var fifth = new Fixture(fullyQualifiedIdentifier, noLocation,
 				List.of(List.of("classpath:db/migration/fully/qualified")));
 
@@ -93,33 +97,36 @@ public class SpringModulithFlywayCustomizerUnitTests {
 			var result = new SpringModulithFlywayCustomizer(configure.load())
 					.augment(createIdentifiers(identifiers));
 
-			var numberOfFlywayInstances = hasWildCardLocation() ? 1 : identifiers.size() + 1;
+			var numberOfFlywayInstances = identifiers.size() + 1;
+			var expectedRootLocations = locations.isEmpty()
+					? List.of("classpath:db/migration/__root")
+					: locations.stream()
+							.map(it -> it.endsWith("*") ? it : it + "/__root")
+							.toList();
 
-			assertThat(result).hasSize(numberOfFlywayInstances).satisfies(it -> {
+			assertThat(result)
+					.hasSize(numberOfFlywayInstances)
+					.satisfies(it -> {
 
-				// Keeps original migration first
+						// Keeps original migration first
 
-				assertThat(it).element(0)
-						.extracting(Flyway::getConfiguration)
-						.extracting(Configuration::getLocations, as(InstanceOfAssertFactories.ARRAY))
-						.extracting(Object::toString)
-						.containsAll(locations.isEmpty() ? List.of("classpath:db/migration") : locations);
+						assertThat(it).element(0)
+								.extracting(Flyway::getConfiguration)
+								.extracting(Configuration::getLocations, as(InstanceOfAssertFactories.ARRAY))
+								.extracting(Object::toString)
+								.containsAll(expectedRootLocations);
 
-				// Has added expected additional migrations
+						// Has added expected additional migrations
 
-				for (int i = 1; i < expected.size(); i++) {
+						for (int i = 0; i < expected.size(); i++) {
 
-					var customized = it.get(i);
+							var customized = it.get(i + 1);
 
-					assertThat(customized.getConfiguration().getLocations())
-							.extracting(Location::toString)
-							.containsAll(expected.get(i - 1));
-				}
-			});
-		}
-
-		private boolean hasWildCardLocation() {
-			return locations.stream().anyMatch(it -> it.endsWith("*"));
+							assertThat(customized.getConfiguration().getLocations())
+									.extracting(Location::toString)
+									.containsAll(expected.get(i));
+						}
+					});
 		}
 
 		private static ApplicationModuleIdentifiers createIdentifiers(List<String> identifiers) {

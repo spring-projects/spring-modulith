@@ -113,8 +113,14 @@ As of Spring Modulith 2.0, we support the execution of module-specific https://d
 Application modules are encouraged to define migrations for their own persistent data only, which means that these migrations have to be executed in the order of the module dependency tree.
 
 Assume a default Flyway setup with migrations located in `classpath:db/migration`, two application modules `first` and `second` (with `second` depending on `first`), and an activated `spring.modulith.runtime.flyway-enabled` xref:appendix.adoc#configuration-properties[configuration property].
-With that in place we will augment the configured migration to run the default one first, followed by one for `classpath:db/migration/first` and one for `classpath:db/migration/second`.
+
+With that in place we will customize the Flyway setup as follows:
+
+- The root migration folder will be changed to `db/migration/__root`. For that, the default version tracking table will be used.
+- Additional migrations for `db/migration/${moduleIdentifier}` will be registered with a tracking table of `flyway_schema_history_${moduleIdentifier}`.
+These migrations are also set up to a baseline version of 0 and set up to baseline on migrate.
+- Migration locations ending in a wildcard will not be customized.
+
+Note, that he version numbers used in migration scripts are now effectively scoped to the application module and should not use global ordering.
 
 By selecting which folder to place the migration files in, you can differentiate migrations always to be run from ones that will only get executed for the corresponding module. The application module test integration will only execute the default migration and the ones for modules included in the test run.
-
-We will not augment migration runs including wildcard expressions in the migration location definition.
