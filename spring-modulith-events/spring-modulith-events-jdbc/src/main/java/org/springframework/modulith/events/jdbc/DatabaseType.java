@@ -118,6 +118,7 @@ enum DatabaseType {
 	};
 
 	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name is not supported!";
+	static final String SCHEMA_ROOT = "org/springframework/modulith/events/jdbc/schemas";
 
 	static DatabaseType from(String productName) {
 
@@ -158,7 +159,7 @@ enum DatabaseType {
 	}
 
 	private String getSchemaBase(boolean legacy) {
-		return "/schemas/" + (legacy ? "v1" : "v2") + "/schema-" + value;
+		return SCHEMA_ROOT + "/" + (legacy ? "v1" : "v2") + "/schema-" + value;
 	}
 
 	boolean isSchemaSupported() {
