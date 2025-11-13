@@ -1,6 +1,6 @@
 [[appendix]]
 = Appendix
-:jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources/schemas
+:jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources/org/springframework/modulith/events/jdbc/schemas
 
 [appendix]
 [[compatibility-matrix]]
