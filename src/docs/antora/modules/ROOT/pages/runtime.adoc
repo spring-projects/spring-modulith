@@ -117,7 +117,7 @@ Assume a default Flyway setup with migrations located in `classpath:db/migration
 With that in place we will customize the Flyway setup as follows:
 
 - The root migration folder will be changed to `db/migration/__root`. For that, the default version tracking table will be used.
-- Additional migrations for `db/migration/${moduleIdentifier}` will be registered with a tracking table of `flyway_schema_history_${moduleIdentifier}`.
+- Additional migrations for `db/migration/$moduleIdentifier` will be registered with a tracking table of `flyway_schema_history_$moduleIdentifier`.
 These migrations are also set up to a baseline version of 0 and set up to baseline on migrate.
 - Migration locations ending in a wildcard will not be customized.
 
