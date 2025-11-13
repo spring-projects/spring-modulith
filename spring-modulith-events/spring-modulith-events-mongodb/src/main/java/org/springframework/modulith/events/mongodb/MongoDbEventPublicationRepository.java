@@ -28,6 +28,7 @@ import java.util.UUID;
 import org.bson.Document;
 import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.core.TypeInformation;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Fields;
@@ -35,7 +36,6 @@ import org.springframework.data.mongodb.core.aggregation.MergeOperation.WhenDocu
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
-import org.springframework.data.util.TypeInformation;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
