@@ -108,6 +108,7 @@ enum DatabaseType {
 	};
 
 	static final String SCHEMA_NOT_SUPPORTED = "Setting the schema name is not supported!";
+	static final String SCHEMA_ROOT = "schema-";
 
 	static DatabaseType from(String productName) {
 
@@ -136,10 +137,12 @@ enum DatabaseType {
 	}
 
 	String getSchemaResourceFilename() {
-		return "/schema-" + value + ".sql";
+		return SCHEMA_ROOT + value + ".sql";
 	}
 
-	String getArchiveSchemaResourceFilename() { return "/schema-" + value + "-archive.sql"; }
+	String getArchiveSchemaResourceFilename() {
+		return SCHEMA_ROOT + value + "-archive.sql";
+	}
 
 	boolean isSchemaSupported() {
 		return true;
