@@ -1,4 +1,11 @@
 {
+	"groups": [
+		{
+			"name": "spring.modulith.events.staleness",
+			"type": "org.springframework.modulith.events.config.StalenessProperties",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
+		}
+	],
 	"properties": [
 		{
 			"name": "spring.modulith.default-async-termination",
@@ -34,6 +41,30 @@
 			"type": "java.lang.Boolean",
 			"description": "Whether to republish outstanding event publications on restarts of the application.",
 			"defaultValue": "false"
+		},
+		{
+			"name": "spring.modulith.events.staleness.check-intervall",
+			"type": "java.time.Duration",
+			"description": "Configures the {@link Duration} to check for stale event publications. Defaults to one minute.",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
+		},
+		{
+			"name": "spring.modulith.events.staleness.processing",
+			"type": "java.time.Duration",
+			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#PROCESSING} will be considered stale.",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
+		},
+		{
+			"name": "spring.modulith.events.staleness.published",
+			"type": "java.time.Duration",
+			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#PROCESSING} will be considered stale.",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
+		},
+		{
+			"name": "spring.modulith.events.staleness.resubmission",
+			"type": "java.time.Duration",
+			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#RESUBMITTED} will be considered stale.",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
 		}
 	]
 }
