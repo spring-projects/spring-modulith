@@ -291,6 +291,7 @@ public class Changes implements Iterable<Change> {
 
 					// Gradle
 					"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts",
+                    "libs.versions.toml",
 
 					// Maven
 					"pom.xml");
