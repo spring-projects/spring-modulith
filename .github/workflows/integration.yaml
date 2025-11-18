@@ -51,4 +51,4 @@ jobs:
       run: |
         cd spring-modulith-examples
         ../mvnw -B versions:update-parent -s ../settings.xml -Pspring-enterprise,with-preview-repos -DskipResolution=true -DparentVersion=${{ matrix.boot }}
-        ../mvnw -B clean verify -s ../settings.xml -Pspring-enterprise,with-preview-repos -Dspring-boot.version=${{ matrix.boot }} -Dspring-framework.version=${{ matrix.framework }} -Djmolecules.version=${{ matrix.jmolecules }}
+        ../mvnw -B clean verify -s ../settings.xml -Pspring-enterprise,with-preview-repos -Dspring-boot.version=${{ matrix.boot }} -Djmolecules.version=${{ matrix.jmolecules }}
