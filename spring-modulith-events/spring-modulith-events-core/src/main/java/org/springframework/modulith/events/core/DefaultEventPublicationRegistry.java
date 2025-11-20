@@ -136,7 +136,7 @@ public class DefaultEventPublicationRegistry
 	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#markFailed(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
 	 */
 	@Override
-	public void markFailed(Object event, PublicationTargetIdentifier targetIdentifier) {
+	public void markFailed(Object event, PublicationTargetIdentifier targetIdentifier, Throwable o_O) {
 		inProgress.unregister(event, targetIdentifier);
 	}
 
@@ -266,14 +266,14 @@ public class DefaultEventPublicationRegistry
 	 * Marks the given {@link TargetEventPublication} as failed.
 	 *
 	 * @param publication must not be {@literal null}.
-	 * @see #markFailed(Object, PublicationTargetIdentifier)
+	 * @see #markFailed(Object, PublicationTargetIdentifier, Throwable)
 	 * @since 1.3
 	 */
-	void markFailed(TargetEventPublication publication) {
+	void markFailed(TargetEventPublication publication, Throwable exception) {
 
 		Assert.notNull(publication, "TargetEventPublication must not be null!");
 
-		markFailed(publication.getEvent(), publication.getTargetIdentifier());
+		markFailed(publication.getEvent(), publication.getTargetIdentifier(), exception);
 	}
 
 	private static String getConfirmationMessage(Collection<?> publications) {

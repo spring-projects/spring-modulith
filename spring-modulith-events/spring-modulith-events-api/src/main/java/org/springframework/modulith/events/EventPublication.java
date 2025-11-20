@@ -16,6 +16,7 @@
 package org.springframework.modulith.events;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -72,6 +73,12 @@ public interface EventPublication {
 	 * @return will never be {@literal null}.
 	 */
 	Optional<Instant> getCompletionDate();
+
+	/**
+	 * Returns the list of failed attempts to publish the event
+	 * @return will never be {@literal null}.
+	 */
+	List<FailedAttemptInfo> getFailedAttempts();
 
 	/**
 	 * Returns whether the publication of the event has completed.

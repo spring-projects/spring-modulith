@@ -34,6 +34,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanClassLoaderAware;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.events.FailedAttemptInfo;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -60,23 +61,28 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			INSERT INTO %s (ID, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT)
 			VALUES (?, ?, ?, ?, ?)
 			""";
+	private static final String SQL_STATEMENT_INSERT_FAILURE = """
+			INSERT INTO %s (EVENT_ID, FAILED_DATE, REASON)
+			VALUES (?, ?, ?)
+			""";
 
 	private static final String SQL_STATEMENT_FIND_COMPLETED = """
-			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT, FAILED_EVENT_INFO
 			FROM %s
 			WHERE COMPLETION_DATE IS NOT NULL
 			ORDER BY PUBLICATION_DATE ASC
 			""";
 
 	private static final String SQL_STATEMENT_FIND_UNCOMPLETED = """
-			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
-			FROM %s
+			SELECT e.ID, e.COMPLETION_DATE, e.EVENT_TYPE, e.LISTENER_ID, e.PUBLICATION_DATE, e.SERIALIZED_EVENT, f.REASON
+			FROM %s e
+			INNER JOIN %s f on f.EVENT_ID = e.ID
 			WHERE COMPLETION_DATE IS NULL
 			ORDER BY PUBLICATION_DATE ASC
 			""";
 
 	private static final String SQL_STATEMENT_FIND_UNCOMPLETED_BEFORE = """
-			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT
+			SELECT ID, COMPLETION_DATE, EVENT_TYPE, LISTENER_ID, PUBLICATION_DATE, SERIALIZED_EVENT, FAILED_EVENT_INFO
 			FROM %s
 			WHERE
 					COMPLETION_DATE IS NULL
@@ -96,6 +102,12 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	private static final String SQL_STATEMENT_UPDATE_BY_ID = """
 			UPDATE %s
 			SET COMPLETION_DATE = ?
+			WHERE
+					ID = ?
+			""";
+	private static final String SQL_STATEMENT_UPDATE_FAILED_BY_ID = """
+			UPDATE %s
+			SET FAILED_EVENT_INFO = ?
 			WHERE
 					ID = ?
 			""";
@@ -173,6 +185,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 	private ClassLoader classLoader;
 
 	private final String sqlStatementInsert,
+			sqlStatementInsertFailed,
 			sqlStatementFindCompleted,
 			sqlStatementFindUncompleted,
 			sqlStatementFindUncompletedBefore,
@@ -208,11 +221,13 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 		var schema = settings.getSchema();
 		var table = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
+		var failedEventInfoTable = ObjectUtils.isEmpty(schema) ? "EVENT_FAILED_EVENT_INFO" : schema + ".EVENT_FAILED_EVENT_INFO";
 		var completedTable = settings.isArchiveCompletion() ? table + "_ARCHIVE" : table;
 
 		this.sqlStatementInsert = SQL_STATEMENT_INSERT.formatted(table);
+		this.sqlStatementInsertFailed = SQL_STATEMENT_INSERT_FAILURE.formatted(failedEventInfoTable);
 		this.sqlStatementFindCompleted = SQL_STATEMENT_FIND_COMPLETED.formatted(completedTable);
-		this.sqlStatementFindUncompleted = SQL_STATEMENT_FIND_UNCOMPLETED.formatted(table);
+		this.sqlStatementFindUncompleted = SQL_STATEMENT_FIND_UNCOMPLETED.formatted(table, failedEventInfoTable);
 		this.sqlStatementFindUncompletedBefore = SQL_STATEMENT_FIND_UNCOMPLETED_BEFORE.formatted(table);
 		this.sqlStatementUpdateByEventAndListenerId = SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table);
 		this.sqlStatementUpdateById = SQL_STATEMENT_UPDATE_BY_ID.formatted(table);
@@ -286,6 +301,14 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 					targetIdentifier, //
 					serializedEvent);
 		}
+	}
+
+	@Override
+	public void markFailed(UUID identifier, Instant failedDate, Throwable exception) {
+
+		var databaseId = uuidToDatabase(identifier);
+		var reason = serializer.serialize(new JdbcFailedAttemptInfo(failedDate, exception));
+		this.operations.update(sqlStatementInsertFailed, databaseId, failedDate, reason);
 	}
 
 	/*
@@ -442,10 +465,12 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		var publicationDate = rs.getTimestamp("PUBLICATION_DATE").toInstant();
 		var listenerId = rs.getString("LISTENER_ID");
 		var serializedEvent = rs.getString("SERIALIZED_EVENT");
+		var failedEventInfo = rs.getString("REASON");
 
 		return new JdbcEventPublication(id, publicationDate, listenerId,
 				() -> serializer.deserialize(serializedEvent, eventClass),
-				completionDate == null ? null : completionDate.toInstant());
+				completionDate == null ? null : completionDate.toInstant(),
+				List.of(serializer.deserialize(failedEventInfo, JdbcFailedAttemptInfo.class)));// TODO add value from resultset
 	}
 
 	private Object uuidToDatabase(UUID id) {
@@ -493,6 +518,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
 		private @Nullable Instant completionDate;
 		private @Nullable Object event;
+		private List<FailedAttemptInfo> failedAttempts;
 
 		/**
 		 * @param id must not be {@literal null}.
@@ -500,20 +526,23 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		 * @param listenerId must not be {@literal null} or empty.
 		 * @param event must not be {@literal null}..
 		 * @param completionDate can be {@literal null}.
+		 * @param failedAttempts can be {@literal null}.
 		 */
 		public JdbcEventPublication(UUID id, Instant publicationDate, String listenerId, Supplier<Object> event,
-				@Nullable Instant completionDate) {
+				@Nullable Instant completionDate, List<FailedAttemptInfo> failedAttempts) {
 
 			Assert.notNull(id, "Id must not be null!");
 			Assert.notNull(publicationDate, "Publication date must not be null!");
 			Assert.hasText(listenerId, "Listener id must not be null or empty!");
 			Assert.notNull(event, "Event must not be null!");
+			Assert.notNull(failedAttempts, "Failed attempts must not be null!");
 
 			this.id = id;
 			this.publicationDate = publicationDate;
 			this.listenerId = listenerId;
 			this.eventSupplier = event;
 			this.completionDate = completionDate;
+			this.failedAttempts = failedAttempts;
 		}
 
 		/*
@@ -567,6 +596,11 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			return Optional.ofNullable(completionDate);
 		}
 
+		@Override
+		public List<FailedAttemptInfo> getFailedAttempts() {
+			return failedAttempts;
+		}
+
 		/*
 		 * (non-Javadoc)
 		 * @see org.springframework.modulith.events.CompletableEventPublication#isPublicationCompleted()
@@ -583,6 +617,15 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		@Override
 		public void markCompleted(Instant instant) {
 			this.completionDate = instant;
+		}
+
+		@Override
+		public void markFailed(Instant instant, Throwable exception) {
+
+			if (failedAttempts == null) {
+				failedAttempts = new ArrayList<>();
+			}
+			failedAttempts.add(new JdbcFailedAttemptInfo(instant, exception));
 		}
 
 		/*
@@ -614,6 +657,19 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 		@Override
 		public int hashCode() {
 			return Objects.hash(completionDate, id, listenerId, publicationDate, getEvent());
+		}
+	}
+
+	record JdbcFailedAttemptInfo(Instant publicationDate, Throwable failureReason) implements FailedAttemptInfo {
+
+		@Override
+		public Instant getPublicationDate() {
+			return publicationDate;
+		}
+
+		@Override
+		public Throwable getFailureReason() {
+			return failureReason;
 		}
 	}
 }

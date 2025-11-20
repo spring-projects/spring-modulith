@@ -15,20 +15,6 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import static org.assertj.core.api.Assertions.*;
-import static org.junit.jupiter.api.Assumptions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
-import java.util.Comparator;
-import java.util.List;
-
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -47,6 +33,23 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
+import java.util.Comparator;
+import java.util.List;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.within;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.when;
+
 /**
  * Integration tests for {@link JdbcEventPublicationRepository}.
  *
@@ -58,515 +61,646 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  */
 class JdbcEventPublicationRepositoryIntegrationTests {
 
-	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
+    static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
-	@Import(TestApplication.class)
-	@Testcontainers(disabledWithoutDocker = true)
-	@ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
-	static abstract class TestBase {
+    @Import(TestApplication.class)
+    @Testcontainers(disabledWithoutDocker = true)
+    @ContextConfiguration(classes = JdbcEventPublicationAutoConfiguration.class)
+    static abstract class TestBase {
 
-		@Autowired JdbcOperations operations;
-		@Autowired JdbcEventPublicationRepository repository;
-		@Autowired JdbcRepositorySettings properties;
+        @Autowired
+        JdbcOperations operations;
+        @Autowired
+        JdbcEventPublicationRepository repository;
+        @Autowired
+        JdbcRepositorySettings properties;
 
-		@MockitoBean EventSerializer serializer;
+        @MockitoBean
+        EventSerializer serializer;
 
-		@AfterEach
-		@BeforeEach
-		void cleanUp() {
+        @AfterEach
+        @BeforeEach
+        void cleanUp() {
 
-			operations.execute("TRUNCATE TABLE " + table());
+            operations.execute("TRUNCATE TABLE " + failedInfoTable());
+            operations.execute("TRUNCATE TABLE " + table());
 
-			if (properties.isArchiveCompletion()) {
-				operations.execute("TRUNCATE TABLE " + archiveTable());
-			}
-		}
+            if (properties.isArchiveCompletion()) {
+                operations.execute("TRUNCATE TABLE " + archiveTable());
+            }
+        }
 
-		@Test // GH-3
-		void shouldPersistAndUpdateEventPublication() {
+        @Test
+            // GH-3
+        void shouldPersistAndUpdateEventPublication() {
 
-			var testEvent = new TestEvent("id");
-			var serializedEvent = "{\"eventId\":\"id\"}";
+            var testEvent = new TestEvent("id");
+            var serializedEvent = "{\"eventId\":\"id\"}";
 
-			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+            when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+            when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+            var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			var eventPublications = repository.findIncompletePublications();
+            var eventPublications = repository.findIncompletePublications();
 
-			assertThat(eventPublications).hasSize(1);
-			assertThat(eventPublications).element(0).satisfies(it -> {
-				assertThat(it.getEvent()).isEqualTo(publication.getEvent());
-				assertThat(it.getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
-			});
+            assertThat(eventPublications).hasSize(1);
+            assertThat(eventPublications).element(0).satisfies(it -> {
+                assertThat(it.getEvent()).isEqualTo(publication.getEvent());
+                assertThat(it.getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
+            });
 
-			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
-					.isPresent();
+            assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+                    .isPresent();
 
-			// Complete publication
-			repository.markCompleted(publication, Instant.now());
+            // Complete publication
+            repository.markCompleted(publication, Instant.now());
 
-			assertThat(repository.findIncompletePublications()).isEmpty();
-		}
+            assertThat(repository.findIncompletePublications()).isEmpty();
+        }
 
-		@Test // GH-133
-		void returnsOldestIncompletePublicationsFirst() {
+        @Test
+            // GH-133
+        void returnsOldestIncompletePublicationsFirst() {
 
-			when(serializer.serialize(any())).thenReturn("{}");
+            when(serializer.serialize(any())).thenReturn("{}");
 
-			var now = LocalDateTime.now();
+            var now = LocalDateTime.now();
 
-			createPublicationAt(now.withHour(3));
-			createPublicationAt(now.withHour(0));
-			createPublicationAt(now.withHour(1));
+            createPublicationAt(now.withHour(3));
+            createPublicationAt(now.withHour(0));
+            createPublicationAt(now.withHour(1));
 
-			assertThat(repository.findIncompletePublications())
-					.isSortedAccordingTo(Comparator.comparing(TargetEventPublication::getPublicationDate));
-		}
+            assertThat(repository.findIncompletePublications())
+                    .isSortedAccordingTo(Comparator.comparing(TargetEventPublication::getPublicationDate));
+        }
 
-		private void createPublicationAt(LocalDateTime publicationDate) {
-			repository.create(TargetEventPublication.of("", TARGET_IDENTIFIER, publicationDate.toInstant(ZoneOffset.UTC)));
-		}
+        private void createPublicationAt(LocalDateTime publicationDate) {
+            repository.create(TargetEventPublication.of("", TARGET_IDENTIFIER, publicationDate.toInstant(ZoneOffset.UTC)));
+        }
 
-		@Test // GH-3
-		void shouldUpdateSingleEventPublication() {
+        @Test
+            // GH-3
+        void shouldUpdateSingleEventPublication() {
 
-			var testEvent1 = new TestEvent("id1");
-			var testEvent2 = new TestEvent("id2");
-			var serializedEvent1 = "{\"eventId\":\"id1\"}";
-			var serializedEvent2 = "{\"eventId\":\"id2\"}";
+            var testEvent1 = new TestEvent("id1");
+            var testEvent2 = new TestEvent("id2");
+            var serializedEvent1 = "{\"eventId\":\"id1\"}";
+            var serializedEvent2 = "{\"eventId\":\"id2\"}";
 
-			when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-			when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+            when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+            when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+            when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+            when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-			repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-			var publication = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+            repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+            var publication = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 
-			// Complete publication
-			repository.markCompleted(publication, Instant.now());
+            // Complete publication
+            repository.markCompleted(publication, Instant.now());
 
-			assertThat(repository.findIncompletePublications()).hasSize(1)
-					.element(0).extracting(TargetEventPublication::getEvent).isEqualTo(testEvent1);
-		}
+            assertThat(repository.findIncompletePublications()).hasSize(1)
+                    .element(0).extracting(TargetEventPublication::getEvent).isEqualTo(testEvent1);
+        }
 
-		@Test // GH-3
-		void shouldTolerateEmptyResult() {
+        @Test
+            // GH-3
+        void shouldTolerateEmptyResult() {
 
-			var testEvent = new TestEvent("id");
-			var serializedEvent = "{\"eventId\":\"id\"}";
+            var testEvent = new TestEvent("id");
+            var serializedEvent = "{\"eventId\":\"id\"}";
 
-			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+            when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
 
-			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
-					.isEmpty();
-		}
+            assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+                    .isEmpty();
+        }
 
-		@Test // GH-3
-		void shouldNotReturnCompletedEvents() {
+        @Test
+            // GH-3
+        void shouldNotReturnCompletedEvents() {
 
-			var testEvent = new TestEvent("id1");
-			var serializedEvent = "{\"eventId\":\"id1\"}";
+            var testEvent = new TestEvent("id1");
+            var serializedEvent = "{\"eventId\":\"id1\"}";
 
-			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+            when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+            when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			var publication = TargetEventPublication.of(testEvent, TARGET_IDENTIFIER);
+            var publication = TargetEventPublication.of(testEvent, TARGET_IDENTIFIER);
 
-			repository.create(publication);
-			repository.markCompleted(publication, Instant.now());
+            repository.create(publication);
+            repository.markCompleted(publication, Instant.now());
 
-			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+            var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
-			assertThat(actual).isEmpty();
-		}
+            assertThat(actual).isEmpty();
+        }
 
-		@Test // GH-3
-		void shouldReturnTheOldestEvent() throws Exception {
+        @Test
+            // GH-3
+        void shouldReturnTheOldestEvent() throws Exception {
 
-			var testEvent = new TestEvent("id");
-			var serializedEvent = "{\"eventId\":\"id\"}";
+            var testEvent = new TestEvent("id");
+            var serializedEvent = "{\"eventId\":\"id\"}";
 
-			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+            when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+            when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
-			Thread.sleep(10);
-			repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+            var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+            Thread.sleep(10);
+            repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
+            var actual = repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER);
 
-			assertThat(actual).hasValueSatisfying(it -> {
-				assertThat(it.getPublicationDate()) //
-						.isCloseTo(publication.getPublicationDate(), within(1, ChronoUnit.MILLIS));
-			});
-		}
+            assertThat(actual).hasValueSatisfying(it -> {
+                assertThat(it.getPublicationDate()) //
+                        .isCloseTo(publication.getPublicationDate(), within(1, ChronoUnit.MILLIS));
+            });
+        }
 
-		@Test // GH-3
-		void shouldSilentlyIgnoreNotSerializableEvents() {
+        @Test
+            // GH-3
+        void shouldSilentlyIgnoreNotSerializableEvents() {
 
-			var testEvent = new TestEvent("id");
-			var serializedEvent = "{\"eventId\":\"id\"}";
+            var testEvent = new TestEvent("id");
+            var serializedEvent = "{\"eventId\":\"id\"}";
 
-			when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
-			when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+            when(serializer.serialize(testEvent)).thenReturn(serializedEvent);
+            when(serializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
 
-			// Store publication
-			repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+            // Store publication
+            repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
-			operations.update("UPDATE " + table() + " SET EVENT_TYPE='abc'");
+            operations.update("UPDATE " + table() + " SET EVENT_TYPE='abc'");
 
-			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
-					.isEmpty();
-		}
+            assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+                    .isEmpty();
+        }
 
-		@Test // GH-20
-		void shouldDeleteCompletedEvents() {
+        @Test
+            // GH-20
+        void shouldDeleteCompletedEvents() {
 
-			var testEvent1 = new TestEvent("abc");
-			var serializedEvent1 = "{\"eventId\":\"abc\"}";
-			var testEvent2 = new TestEvent("def");
-			var serializedEvent2 = "{\"eventId\":\"def\"}";
+            var testEvent1 = new TestEvent("abc");
+            var serializedEvent1 = "{\"eventId\":\"abc\"}";
+            var testEvent2 = new TestEvent("def");
+            var serializedEvent2 = "{\"eventId\":\"def\"}";
 
-			when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-			when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+            when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+            when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+            when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+            when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-			var publication = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+            var publication = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+            repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 
-			repository.markCompleted(publication, Instant.now());
+            repository.markCompleted(publication, Instant.now());
 
-			repository.deleteCompletedPublications();
+            repository.deleteCompletedPublications();
 
-			assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
-					.hasSize(1).element(0).isEqualTo(serializedEvent2);
+            assertThat(operations.query("SELECT * FROM " + table(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+                    .hasSize(1).element(0).isEqualTo(serializedEvent2);
 
-			if (properties.isArchiveCompletion()) {
-				assertThat(operations.query("SELECT * FROM " + archiveTable(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
-						.hasSize(0);
-			}
+            if (properties.isArchiveCompletion()) {
+                assertThat(operations.query("SELECT * FROM " + archiveTable(), (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+                        .hasSize(0);
+            }
 
-		}
+        }
 
-		@Test // GH-251
-		void shouldDeleteCompletedEventsBefore() {
+        @Test
+            // GH-251
+        void shouldDeleteCompletedEventsBefore() {
 
-			assumeFalse(properties.isDeleteCompletion());
+            assumeFalse(properties.isDeleteCompletion());
 
-			var testEvent1 = new TestEvent("abc");
-			var serializedEvent1 = "{\"eventId\":\"abc\"}";
-			var testEvent2 = new TestEvent("def");
-			var serializedEvent2 = "{\"eventId\":\"def\"}";
+            var testEvent1 = new TestEvent("abc");
+            var serializedEvent1 = "{\"eventId\":\"abc\"}";
+            var testEvent2 = new TestEvent("def");
+            var serializedEvent2 = "{\"eventId\":\"def\"}";
 
-			when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-			when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+            when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+            when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+            when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+            when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
 
-			repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
-			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+            repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+            repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
 
-			var now = Instant.now();
+            var now = Instant.now();
 
-			repository.markCompleted(testEvent1, TARGET_IDENTIFIER, now.minusSeconds(30));
-			repository.markCompleted(testEvent2, TARGET_IDENTIFIER, now);
+            repository.markCompleted(testEvent1, TARGET_IDENTIFIER, now.minusSeconds(30));
+            repository.markCompleted(testEvent2, TARGET_IDENTIFIER, now);
 
-			repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
+            repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
 
-			var table = properties.isArchiveCompletion() ? archiveTable() : table();
+            var table = properties.isArchiveCompletion() ? archiveTable() : table();
 
-			assertThat(operations.query("SELECT * FROM " + table, (rs, __) -> rs.getString("SERIALIZED_EVENT")))
-					.hasSize(1).element(0).isEqualTo(serializedEvent2);
-		}
+            assertThat(operations.query("SELECT * FROM " + table, (rs, __) -> rs.getString("SERIALIZED_EVENT")))
+                    .hasSize(1).element(0).isEqualTo(serializedEvent2);
+        }
 
-		@Test // GH-294
-		void deletesPublicationsByIdentifier() {
+        @Test
+            // GH-294
+        void deletesPublicationsByIdentifier() {
 
-			var first = createPublication(new TestEvent("first"));
-			var second = createPublication(new TestEvent("second"));
-			var third = createPublication(new TestEvent("third"));
+            var first = createPublication(new TestEvent("first"));
+            var second = createPublication(new TestEvent("second"));
+            var third = createPublication(new TestEvent("third"));
 
-			repository.deletePublications(List.of(first.getIdentifier(), second.getIdentifier()));
+            repository.deletePublications(List.of(first.getIdentifier(), second.getIdentifier()));
 
-			assertThat(repository.findIncompletePublications())
-					.hasSize(1)
-					.element(0)
-					.matches(it -> it.getIdentifier().equals(third.getIdentifier()))
-					.matches(it -> it.getEvent().equals(third.getEvent()));
-		}
+            assertThat(repository.findIncompletePublications())
+                    .hasSize(1)
+                    .element(0)
+                    .matches(it -> it.getIdentifier().equals(third.getIdentifier()))
+                    .matches(it -> it.getEvent().equals(third.getEvent()));
+        }
 
-		@Test // GH-294
-		void findsPublicationsOlderThanReference() throws Exception {
+        @Test
+            // GH-294
+        void findsPublicationsOlderThanReference() throws Exception {
 
-			var first = createPublication(new TestEvent("first"));
+            var first = createPublication(new TestEvent("first"));
 
-			Thread.sleep(100);
+            Thread.sleep(100);
 
-			var now = Instant.now();
-			var second = createPublication(new TestEvent("second"));
+            var now = Instant.now();
+            var second = createPublication(new TestEvent("second"));
 
-			assertThat(repository.findIncompletePublications())
-					.extracting(TargetEventPublication::getIdentifier)
-					.containsExactly(first.getIdentifier(), second.getIdentifier());
+            assertThat(repository.findIncompletePublications())
+                    .extracting(TargetEventPublication::getIdentifier)
+                    .containsExactly(first.getIdentifier(), second.getIdentifier());
 
-			assertThat(repository.findIncompletePublicationsPublishedBefore(now))
-					.hasSize(1)
-					.element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
-		}
+            assertThat(repository.findIncompletePublicationsPublishedBefore(now))
+                    .hasSize(1)
+                    .element(0).extracting(TargetEventPublication::getIdentifier).isEqualTo(first.getIdentifier());
+        }
 
-		@Test // GH-451
-		void findsCompletedPublications() {
+        @Test
+            // GH-451
+        void findsCompletedPublications() {
 
-			var event = new TestEvent("first");
-			var publication = createPublication(event);
+            var event = new TestEvent("first");
+            var publication = createPublication(event);
 
-			repository.markCompleted(publication, Instant.now());
+            repository.markCompleted(publication, Instant.now());
 
-			if (properties.isDeleteCompletion()) {
+            if (properties.isDeleteCompletion()) {
 
-				assertThat(repository.findCompletedPublications()).isEmpty();
-				assertThat(repository.findIncompletePublications()).isEmpty();
+                assertThat(repository.findCompletedPublications()).isEmpty();
+                assertThat(repository.findIncompletePublications()).isEmpty();
 
-			} else {
+            } else {
 
-				assertThat(repository.findCompletedPublications())
-						.hasSize(1)
-						.element(0)
-						.extracting(TargetEventPublication::getEvent)
-						.isEqualTo(event);
-			}
-		}
+                assertThat(repository.findCompletedPublications())
+                        .hasSize(1)
+                        .element(0)
+                        .extracting(TargetEventPublication::getEvent)
+                        .isEqualTo(event);
+            }
+        }
 
-		@Test // GH-258
-		void marksPublicationAsCompletedById() {
+        @Test
+            // GH-258
+        void marksPublicationAsCompletedById() {
 
-			var event = new TestEvent("first");
-			var publication = createPublication(event);
+            var event = new TestEvent("first");
+            var publication = createPublication(event);
 
-			repository.markCompleted(publication.getIdentifier(), Instant.now());
+            repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-			assertThat(repository.findIncompletePublications()).isEmpty();
+            assertThat(repository.findIncompletePublications()).isEmpty();
 
-			if (properties.isDeleteCompletion()) {
+            if (properties.isDeleteCompletion()) {
 
-				assertThat(repository.findCompletedPublications()).isEmpty();
+                assertThat(repository.findCompletedPublications()).isEmpty();
 
-			} else {
+            } else {
 
-				assertThat(repository.findCompletedPublications())
-						.extracting(TargetEventPublication::getIdentifier)
-						.containsExactly(publication.getIdentifier());
-			}
+                assertThat(repository.findCompletedPublications())
+                        .extracting(TargetEventPublication::getIdentifier)
+                        .containsExactly(publication.getIdentifier());
+            }
 
-			if (properties.isArchiveCompletion()) {
-				assertThat(operations.queryForObject("SELECT COUNT(*) FROM " + archiveTable(), int.class)).isOne();
-			}
-		}
+            if (properties.isArchiveCompletion()) {
+                assertThat(operations.queryForObject("SELECT COUNT(*) FROM " + archiveTable(), int.class)).isOne();
+            }
+        }
 
-		@Test // GH-753
-		void returnsSameEventInstanceFromPublication() {
+        @Test
+            // GH-753
+        void returnsSameEventInstanceFromPublication() {
 
-			// An event not implementing equals(…) / hashCode()
-			var event = new Sample();
+            // An event not implementing equals(…) / hashCode()
+            var event = new Sample();
 
-			// Serialize to whatever
-			doReturn("sample").when(serializer).serialize(event);
+            // Serialize to whatever
+            doReturn("sample").when(serializer).serialize(event);
 
-			// Return fresh instances for every deserialization attempt
-			doAnswer(__ -> new Sample()).when(serializer).deserialize("sample", Sample.class);
+            // Return fresh instances for every deserialization attempt
+            doAnswer(__ -> new Sample()).when(serializer).deserialize("sample", Sample.class);
 
-			repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+            repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
 
-			var publication = repository.findIncompletePublications().get(0);
+            var publication = repository.findIncompletePublications().get(0);
 
-			assertThat(publication.getEvent()).isSameAs(publication.getEvent());
-		}
+            assertThat(publication.getEvent()).isSameAs(publication.getEvent());
+        }
 
-		String table() {
-			return "EVENT_PUBLICATION";
-		}
 
-		String archiveTable() { return table() + "_ARCHIVE"; }
+        @Test
+            // GH-294
+        void findsPublicationsThatFailedOnce() {
 
-		private TargetEventPublication createPublication(Object event) {
+            var first = createPublication(new TestEvent("first"));
+            Instant now = Instant.now();
+            IllegalStateException reason = new IllegalStateException("failed once");
+            var entry = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(now, reason);
+            doReturn(entry.toString()).when(serializer).serialize(entry);
+            doReturn(entry).when(serializer).deserialize(entry.toString(), entry.getClass());
 
-			var token = event.toString();
+            repository.markFailed(first.getIdentifier(), now, reason);
+
+            assertThat(repository.findIncompletePublications())
+                    .extracting(TargetEventPublication::getFailedAttempts)
+                    .containsExactly(List.of(entry));
+
+        }
+
+        String table() {
+            return "EVENT_PUBLICATION";
+        }
+
+        String failedInfoTable() {
+            return "EVENT_FAILED_EVENT_INFO";
+        }
+
+        String archiveTable() {
+            return table() + "_ARCHIVE";
+        }
+
+        private TargetEventPublication createPublication(Object event) {
+
+            var token = event.toString();
 
 			doReturn(token).when(serializer).serialize(event);
 			doReturn(event).when(serializer).deserialize(token, event.getClass());
 
-			return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
-		}
-	}
+            return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+        }
+    }
 
-	@JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
-	static abstract class WithNoDefinedSchemaName extends TestBase {}
+    @JdbcTest(properties = "spring.modulith.events.jdbc.schema-initialization.enabled=true")
+    static abstract class WithNoDefinedSchemaName extends TestBase {
+    }
 
-	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
-			"spring.modulith.events.jdbc.schema=test" })
-	static abstract class WithDefinedSchemaName extends TestBase {
+    @JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
+            "spring.modulith.events.jdbc.schema=test"})
+    static abstract class WithDefinedSchemaName extends TestBase {
 
-		@Override
-		String table() {
-			return "test." + super.table();
-		}
-	}
+        @Override
+        String table() {
+            return "test." + super.table();
+        }
+    }
 
-	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
-			"spring.modulith.events.jdbc.schema=" })
-	static abstract class WithEmptySchemaName extends TestBase {}
+    @JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
+            "spring.modulith.events.jdbc.schema="})
+    static abstract class WithEmptySchemaName extends TestBase {
+    }
 
-	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
-			CompletionMode.PROPERTY + "=DELETE" })
-	static abstract class WithDeleteCompletion extends TestBase {}
+    @JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
+            CompletionMode.PROPERTY + "=DELETE"})
+    static abstract class WithDeleteCompletion extends TestBase {
+    }
 
-	@JdbcTest(properties = { "spring.modulith.events.jdbc.schema-initialization.enabled=true",
-			CompletionMode.PROPERTY + "=ARCHIVE" })
-	static abstract class WithArchiveCompletion extends TestBase {
+    @JdbcTest(properties = {"spring.modulith.events.jdbc.schema-initialization.enabled=true",
+            CompletionMode.PROPERTY + "=ARCHIVE"})
+    static abstract class WithArchiveCompletion extends TestBase {
 
-		@Override
-		String archiveTable() {
-			return "EVENT_PUBLICATION_ARCHIVE";
-		}
-	}
+        @Override
+        String archiveTable() {
+            return "EVENT_PUBLICATION_ARCHIVE";
+        }
+    }
 
-	// HSQL
+    // HSQL
 
-	@WithHsql
-	class HsqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+    @WithHsql
+    class HsqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {
+    }
 
-	@WithHsql
-	class HsqlWithDefinedSchemaName extends WithDefinedSchemaName {}
+    @WithHsql
+    class HsqlWithDefinedSchemaName extends WithDefinedSchemaName {
+    }
 
-	@WithHsql
-	class HsqlWithEmptySchemaName extends WithEmptySchemaName {}
+    @WithHsql
+    class HsqlWithEmptySchemaName extends WithEmptySchemaName {
+    }
 
-	@WithHsql
-	class HsqlWithDeleteCoqmpletion extends WithDeleteCompletion {}
+    @WithHsql
+    class HsqlWithDeleteCoqmpletion extends WithDeleteCompletion {
+    }
 
-	@WithHsql
-	class HsqlWithArchiveCompletion extends WithArchiveCompletion {}
+    @WithHsql
+    class HsqlWithArchiveCompletion extends WithArchiveCompletion {
+    }
 
-	// H2
+    // H2
 
-	@WithH2
-	class H2WithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+    @WithH2
+    class H2WithNoDefinedSchemaName extends WithNoDefinedSchemaName {
 
-	@WithH2
-	class H2WithDefinedSchemaName extends WithDefinedSchemaName {}
+        // issue: https://github.com/h2database/h2database/issues/2065
+        @BeforeEach
+        void cleanUp() {
+            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
+        }
 
-	@WithH2
-	class H2WithEmptySchemaName extends WithEmptySchemaName {}
+        @AfterEach
+        void after() {
+            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
+        }
+    }
 
-	@WithH2
-	class H2WithDeleteCompletion extends WithDeleteCompletion {}
+    @WithH2
+    class H2WithDefinedSchemaName extends WithDefinedSchemaName {
+        @BeforeEach
+        void cleanUp() {
+            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
+        }
 
-	@WithH2
-	class H2WithArchiveCompletion extends WithArchiveCompletion {}
+        @AfterEach
+        void after() {
+            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
+        }
+    }
 
-	// Postgres
+    @WithH2
+    class H2WithEmptySchemaName extends WithEmptySchemaName {
+        @BeforeEach
+        void cleanUp() {
+            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
+        }
 
-	@WithPostgres
-	class PostgresWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+        @AfterEach
+        void after() {
+            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
+        }
+    }
 
-	@WithPostgres
-	class PostgresWithDefinedSchemaName extends WithDefinedSchemaName {}
+    @WithH2
+    class H2WithDeleteCompletion extends WithDeleteCompletion {
+        @BeforeEach
+        void cleanUp() {
+            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
+        }
 
-	@WithPostgres
-	class PostgresWithEmptySchemaName extends WithEmptySchemaName {}
+        @AfterEach
+        void after() {
+            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
+        }
+    }
 
-	@WithPostgres
-	class PostgresWithDeleteCompletion extends WithDeleteCompletion {}
+    @WithH2
+    class H2WithArchiveCompletion extends WithArchiveCompletion {
+        @BeforeEach
+        void cleanUp() {
+            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
+        }
 
-	@WithPostgres
-	class PostgresWithArchiveCompletion extends WithArchiveCompletion {}
+        @AfterEach
+        void after() {
+            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
+        }
+    }
 
-	// MySQL
+    // Postgres
 
-	@WithMySql
-	class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+    @WithPostgres
+    class PostgresWithNoDefinedSchemaName extends WithNoDefinedSchemaName {
+    }
 
-	@WithMySql
-	class MysqlWithDeleteCompletion extends WithDeleteCompletion {}
+    @WithPostgres
+    class PostgresWithDefinedSchemaName extends WithDefinedSchemaName {
+    }
 
-	@WithMySql
-	class MysqlWithArchiveCompletion extends WithArchiveCompletion {}
+    @WithPostgres
+    class PostgresWithEmptySchemaName extends WithEmptySchemaName {
+    }
 
-	// MariaDB
+    @WithPostgres
+    class PostgresWithDeleteCompletion extends WithDeleteCompletion {
+    }
 
-	@WithMariaDB
-	class MariaDBWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+    @WithPostgres
+    class PostgresWithArchiveCompletion extends WithArchiveCompletion {
+    }
 
-	@WithMariaDB
-	class MariaDBWithDeleteCompletion extends WithDeleteCompletion {}
+    // MySQL
 
-	@WithMariaDB
-	class MariaDBWithArchiveCompletion extends WithArchiveCompletion {}
+    @WithMySql
+    class MysqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {
+    }
 
-	// MSSQL
+    @WithMySql
+    class MysqlWithDeleteCompletion extends WithDeleteCompletion {
+    }
 
-	@WithMssql
-	class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+    @WithMySql
+    class MysqlWithArchiveCompletion extends WithArchiveCompletion {
+    }
 
-	@WithMssql
-	class MssqlWithDeleteCompletion extends WithDeleteCompletion {}
+    // MariaDB
 
-	@WithMssql
-	class MssqlWithArchiveCompletion extends WithArchiveCompletion {}
+    @WithMariaDB
+    class MariaDBWithNoDefinedSchemaName extends WithNoDefinedSchemaName {
+    }
 
-	// Oracle
+    @WithMariaDB
+    class MariaDBWithDeleteCompletion extends WithDeleteCompletion {
+    }
 
-	@WithOracle
-	class OracleWithNoDefinedSchemaName extends WithNoDefinedSchemaName {}
+    @WithMariaDB
+    class MariaDBWithArchiveCompletion extends WithArchiveCompletion {
+    }
 
-	@WithOracle
-	class OracleWithDeleteCompletion extends WithDeleteCompletion {}
+    // MSSQL
 
-	@WithOracle
-	class OracleWithArchiveCompletion extends WithArchiveCompletion {}
+    @WithMssql
+    class MssqlWithNoDefinedSchemaName extends WithNoDefinedSchemaName {
+    }
 
-	private record TestEvent(String eventId) {}
+    @WithMssql
+    class MssqlWithDeleteCompletion extends WithDeleteCompletion {
+    }
 
-	private static final class Sample {}
+    @WithMssql
+    class MssqlWithArchiveCompletion extends WithArchiveCompletion {
+    }
 
-	@Nested
-	@ActiveProfiles("h2")
-	@Testcontainers(disabledWithoutDocker = false)
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithH2 {}
+    // Oracle
 
-	@Nested
-	@ActiveProfiles("hsql")
-	@Testcontainers(disabledWithoutDocker = false)
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithHsql {}
+    @WithOracle
+    class OracleWithNoDefinedSchemaName extends WithNoDefinedSchemaName {
+    }
 
-	@Nested
-	@ActiveProfiles("mysql")
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithMySql {}
+    @WithOracle
+    class OracleWithDeleteCompletion extends WithDeleteCompletion {
+    }
 
-	@Nested
-	@ActiveProfiles("mariadb")
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithMariaDB {}
+    @WithOracle
+    class OracleWithArchiveCompletion extends WithArchiveCompletion {
+    }
 
-	@Nested
-	@ActiveProfiles("postgres")
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithPostgres {}
+    private record TestEvent(String eventId) {
+    }
 
-	@Nested
-	@ActiveProfiles("mssql")
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithMssql {}
+    private static final class Sample {
+    }
 
-	@Nested
-	@ActiveProfiles("oracle")
-	@Retention(RetentionPolicy.RUNTIME)
-	@interface WithOracle {}
+    @Nested
+    @ActiveProfiles("h2")
+    @Testcontainers(disabledWithoutDocker = false)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithH2 {
+    }
+
+    @Nested
+    @ActiveProfiles("hsql")
+    @Testcontainers(disabledWithoutDocker = false)
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithHsql {
+    }
+
+    @Nested
+    @ActiveProfiles("mysql")
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithMySql {
+    }
+
+    @Nested
+    @ActiveProfiles("mariadb")
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithMariaDB {
+    }
+
+    @Nested
+    @ActiveProfiles("postgres")
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithPostgres {
+    }
+
+    @Nested
+    @ActiveProfiles("mssql")
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithMssql {
+    }
+
+    @Nested
+    @ActiveProfiles("oracle")
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface WithOracle {
+    }
 }

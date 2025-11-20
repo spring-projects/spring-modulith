@@ -63,6 +63,15 @@ public class InMemoryEventPublicationRepository
 				.ifPresent(it -> it.markCompleted(completionDate));
 	}
 
+	@Override
+	public void markFailed(UUID identifier, Instant failedDate, Throwable exception) {
+
+		publications.stream()
+				.filter(it -> it.getIdentifier().equals(identifier))
+				.findFirst()
+				.ifPresent(it -> it.markFailed(failedDate, exception));
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markCompleted(java.util.UUID, java.time.Instant)

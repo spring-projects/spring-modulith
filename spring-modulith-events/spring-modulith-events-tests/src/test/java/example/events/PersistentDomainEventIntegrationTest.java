@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.EventListener;
 import org.springframework.core.env.MapPropertySource;
+import org.springframework.modulith.events.FailedAttemptInfo;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EnablePersistentDomainEvents;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
@@ -86,7 +87,14 @@ class PersistentDomainEventIntegrationTest {
 			// Resubmit failed publications
 			var incompletePublications = context.getBean(IncompleteEventPublications.class);
 
-			incompletePublications.resubmitIncompletePublications(__ -> true);
+			incompletePublications.resubmitIncompletePublications(e -> {
+				if (e.getFailedAttempts().size() > 10) {
+					return false;
+				}
+				return e.getFailedAttempts().stream()
+						.map(FailedAttemptInfo::getFailureReason)
+						.anyMatch(reason-> reason instanceof SomeOtherException);
+			});
 
 			Thread.sleep(200);
 
@@ -217,5 +225,12 @@ class PersistentDomainEventIntegrationTest {
 
 			throw new RuntimeException("Error!");
 		}
+	}
+
+	class SomeException extends RuntimeException {
+
+	}
+	class SomeOtherException extends RuntimeException {
+
 	}
 }

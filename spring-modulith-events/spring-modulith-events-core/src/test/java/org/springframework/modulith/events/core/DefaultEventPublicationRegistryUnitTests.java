@@ -66,9 +66,10 @@ class DefaultEventPublicationRegistryUnitTests {
 
 		var registry = createRegistry(Instant.now());
 		var identifier = PublicationTargetIdentifier.of("id");
+		var error = new IllegalArgumentException("some error");
 
 		var failedPublications = registry.store(new Object(), Stream.of(identifier)).stream()
-				.peek(registry::markFailed)
+				.peek(e -> registry.markFailed(e, error))
 				.toList();
 
 		// Failed completions are not present in the in progress ones

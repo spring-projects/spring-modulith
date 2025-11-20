@@ -16,12 +16,19 @@
 package org.springframework.modulith.events.core;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.lang.Nullable;
+import org.springframework.modulith.events.FailedAttemptInfo;
 import org.springframework.util.Assert;
+
+import static java.util.Collections.unmodifiableList;
 
 /**
  * Default {@link Completable} implementation.
@@ -36,6 +43,7 @@ class DefaultEventPublication implements TargetEventPublication {
 	private final Instant publicationDate;
 
 	private Optional<Instant> completionDate;
+	private List<FailedAttemptInfo> failedAttempts;
 
 	/**
 	 * Creates a new {@link DefaultEventPublication} for the given event and {@link PublicationTargetIdentifier}.
@@ -100,6 +108,11 @@ class DefaultEventPublication implements TargetEventPublication {
 		return completionDate;
 	}
 
+	@Override
+	public List<FailedAttemptInfo> getFailedAttempts() {
+		return failedAttempts == null ? List.of() : unmodifiableList(failedAttempts);
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.CompletableEventPublication#markCompleted(java.time.Instant)
@@ -107,6 +120,15 @@ class DefaultEventPublication implements TargetEventPublication {
 	@Override
 	public void markCompleted(Instant instant) {
 		this.completionDate = Optional.of(instant);
+	}
+
+
+	@Override
+	public void markFailed(Instant instant, Throwable exception) {
+		if (failedAttempts == null) {
+			failedAttempts = new ArrayList<>();
+		}
+		failedAttempts.add(new DefaultFailedAttemptInfo(instant, exception));
 	}
 
 	/*

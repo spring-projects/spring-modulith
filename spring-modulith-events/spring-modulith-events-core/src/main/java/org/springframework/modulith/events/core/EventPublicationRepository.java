@@ -66,6 +66,15 @@ public interface EventPublicationRepository {
 	void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate);
 
 	/**
+	 * Marks the publication for the given event and {@link PublicationTargetIdentifier} as failed.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @param exception cause of failing publication
+	 * @since 1.3
+	 */
+	void markFailed(UUID identifier, Instant failedDate, Throwable exception);
+
+	/**
 	 * Marks the publication with the given identifier completed at the given {@link Instant}.
 	 *
 	 * @param identifier must not be {@literal null}.

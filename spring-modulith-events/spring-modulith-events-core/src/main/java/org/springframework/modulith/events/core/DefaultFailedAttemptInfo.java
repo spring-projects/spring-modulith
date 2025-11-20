@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2017-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,27 +15,24 @@
  */
 package org.springframework.modulith.events.core;
 
+import org.springframework.modulith.events.FailedAttemptInfo;
+
 import java.time.Instant;
 
 /**
- * Internal interface to be able to mark {@link TargetEventPublication} instances as completed.
- *
- * @author Oliver Drotbohm
+ * Default {@link FailedAttemptInfo} implementation.
+ * @param publicationDate - when the event failed to be published
+ * @param exception - the reason of publication failure
  */
-interface Completable {
+record DefaultFailedAttemptInfo(Instant publicationDate, Throwable exception) implements FailedAttemptInfo {
 
-	/**
-	 * Marks the instance as completed at the given {@link Instant}.
-	 *
-	 * @param instant must not be {@literal null}.
-	 */
-	void markCompleted(Instant instant);
+    @Override
+    public Instant getPublicationDate() {
+        return publicationDate;
+    }
 
-	/**
-	 * Stores the reason why the publication failed
-	 *
-	 * @param instant must not be {@literal null}.
-	 * @param exception must not be {@literal null}.
-	 */
-	void markFailed(Instant instant, Throwable exception);
+    @Override
+    public Throwable getFailureReason() {
+        return exception;
+    }
 }

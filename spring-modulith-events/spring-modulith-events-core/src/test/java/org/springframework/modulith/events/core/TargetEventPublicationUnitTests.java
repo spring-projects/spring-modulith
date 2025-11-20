@@ -19,6 +19,8 @@ import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
+
 /**
  * @author Oliver Drotbohm
  * @author Björn Kieling
@@ -50,6 +52,7 @@ class TargetEventPublicationUnitTests {
 
 		assertThat(publication.isCompleted()).isFalse();
 		assertThat(publication.getCompletionDate()).isNotPresent();
+		assertThat(publication.getFailedAttempts()).isEmpty();
 	}
 
 	@Test // GH-1056
@@ -63,6 +66,24 @@ class TargetEventPublicationUnitTests {
 
 		assertThat(publication.isAssociatedWith(first, identifier)).isTrue();
 		assertThat(publication.isAssociatedWith(second, identifier)).isFalse();
+	}
+	@Test
+	void isFailedAttemptStored() {
+
+		var first = new SampleEvent("Foo");
+
+		var identifier = PublicationTargetIdentifier.of("id");
+		var publication = TargetEventPublication.of(first, identifier);
+
+		assertThat(publication.getFailedAttempts()).isEmpty();
+
+		Instant failedInstant = Instant.now();
+		IllegalStateException reason = new IllegalStateException("test");
+
+		publication.markFailed(failedInstant, reason);
+
+		assertThat(publication.getFailedAttempts())
+				.contains(new DefaultFailedAttemptInfo(failedInstant, reason));
 	}
 
 	record SampleEvent(String payload) {}

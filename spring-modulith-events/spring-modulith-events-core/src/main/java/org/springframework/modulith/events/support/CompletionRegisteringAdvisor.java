@@ -204,15 +204,15 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			return Ordered.HIGHEST_PRECEDENCE + 10;
 		}
 
-		private void handleFailure(Method method, Object event, Throwable o_O) {
+		private void handleFailure(Method method, Object event, Throwable exception) {
 
-			markFailed(method, event);
+			markFailed(method, event, exception);
 
 			if (LOG.isDebugEnabled()) {
-				LOG.debug("Invocation of listener {} failed. Leaving event publication uncompleted.", method, o_O);
+				LOG.debug("Invocation of listener {} failed. Leaving event publication uncompleted.", method, exception);
 			} else {
 				LOG.info("Invocation of listener {} failed with message {}. Leaving event publication uncompleted.",
-						method, o_O.getMessage());
+						method, exception.getMessage());
 			}
 		}
 
@@ -224,12 +224,12 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			registry.get().markCompleted(event, identifier);
 		}
 
-		private void markFailed(Method method, Object event) {
+		private void markFailed(Method method, Object event, Throwable exception) {
 
-			// Mark publication complete if the method is a transactional event listener.
+			// Mark publication failed if the method is a transactional event listener.
 			String adapterId = LISTENER_IDS.get(method);
 			PublicationTargetIdentifier identifier = PublicationTargetIdentifier.of(adapterId);
-			registry.get().markFailed(event, identifier);
+			registry.get().markFailed(event, identifier, exception);
 		}
 
 		@SuppressWarnings("null")

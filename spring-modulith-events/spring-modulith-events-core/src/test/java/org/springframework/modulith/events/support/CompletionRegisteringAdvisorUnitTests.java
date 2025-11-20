@@ -89,6 +89,22 @@ class CompletionRegisteringAdvisorUnitTests {
 		verify(registry).markCompleted(any(), any());
 	}
 
+	@Test
+	void marksLazilyComputedCompletableFutureAsFailed() throws Throwable {
+
+		var result = createProxyFor(bean).asyncWithResult(true);
+
+		assertThat(result.isDone()).isFalse();
+		verify(registry, never()).markFailed(any(), any(), any());
+		verify(registry, never()).markCompleted(any(), any());
+
+		Thread.sleep(500);
+
+		assertThat(result.isCompletedExceptionally()).isTrue();
+		verify(registry).markFailed(any(), any(), any());
+		verify(registry, never()).markCompleted(any(), any());
+	}
+
 	@Test // GH-483
 	void exposesResultForCompletableFuture() throws Exception {
 

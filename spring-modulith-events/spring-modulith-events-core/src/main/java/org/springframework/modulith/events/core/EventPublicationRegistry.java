@@ -73,9 +73,10 @@ public interface EventPublicationRegistry {
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param targetIdentifier must not be {@literal null}.
+	 * @param exception cause of failing publication
 	 * @since 1.3
 	 */
-	void markFailed(Object event, PublicationTargetIdentifier targetIdentifier);
+	void markFailed(Object event, PublicationTargetIdentifier targetIdentifier, Throwable exception);
 
 	/**
 	 * Deletes all completed {@link TargetEventPublication}s that have been completed before the given {@link Duration}.
