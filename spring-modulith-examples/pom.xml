@@ -27,7 +27,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<jmolecules.version>2025.0.1</jmolecules.version>
-		<spring-framework.version>7.0.0</spring-framework.version>
+		<spring-framework.version>7.0.1</spring-framework.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 
