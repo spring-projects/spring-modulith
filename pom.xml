@@ -47,7 +47,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>4.0.0-SNAPSHOT</spring-boot.version>
-		<spring-framework.version>7.0.0</spring-framework.version> <!-- For Javadoc links only -->
+		<spring-framework.version>7.0.1</spring-framework.version> <!-- For Javadoc links only -->
 		<testcontainers.version>2.0.2</testcontainers.version>
 		<structurizr.version>4.1.0</structurizr.version>
 		<micrometer-tracing.version>1.6.0</micrometer-tracing.version>
