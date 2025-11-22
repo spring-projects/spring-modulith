@@ -31,6 +31,7 @@ import org.springframework.context.event.EventListenerMethodProcessor;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
@@ -51,7 +52,8 @@ class PersistentApplicationEventMulticasterUnitTests {
 
 	@BeforeEach
 	void setUp() {
-		this.multicaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment);
+		this.multicaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment,
+				EventExternalizationConfiguration::disabled);
 	}
 
 	@Test // GH-240, GH-251
