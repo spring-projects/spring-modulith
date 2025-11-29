@@ -15,9 +15,27 @@
 			"name": "spring.modulith.test.reference-commit",
 			"type": "java.lang.String",
 			"description": "The hash of the commit to track back changes to. Usually set in a CI environment."
+		},
+		{
+			"name": "spring.modulith.test.on-no-changes",
+			"type": "java.lang.String",
+			"description": "Whether all tests or no tests should be executed when no class changes are detected."
 		}
 	],
 	"hints": [
+		{
+			"name": "spring.modulith.test.on-no-changes",
+			"values": [				
+				{
+					"value": "execute-all",
+					"description" : "Executes all tests."
+				},
+				{
+					"value": "execute-none",
+					"description" : "Executes no tests."
+				}
+			]
+		},
 		{
 			"name": "spring.modulith.test.file-modification-detector",
 			"values": [				
