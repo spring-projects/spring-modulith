@@ -59,7 +59,9 @@ class TestExecutionCondition {
 		}
 
 		if (!changes.hasClassChanges()) {
-			return enabled("No source file changes detected.");
+			return changes.skipTestsOnNoChanges()
+				? disabled("No source file changes detected — tests skipped due to configuration \"on-no-changes=execute-none\".")
+				: enabled("No source file changes detected — running full test suite due to default configuration.");
 		}
 
 		var changedClasses = changes.getChangedClasses();

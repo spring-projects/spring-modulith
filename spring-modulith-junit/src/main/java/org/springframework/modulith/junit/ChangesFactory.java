@@ -18,6 +18,7 @@ package org.springframework.modulith.junit;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.junit.Changes.OnNoChange;
 import org.springframework.modulith.junit.diff.FileModificationDetector;
 import org.springframework.util.Assert;
 
@@ -45,9 +46,11 @@ class ChangesFactory {
 			return Changes.NONE;
 		}
 
+		var onNoChangesConfig = OnNoChange.propertyConfig(environment.getProperty("spring.modulith.test.on-no-changes"));
+
 		// Determine detector
 		var detector = FileModificationDetector.getDetector(environment);
-		var result = Changes.of(detector.getModifiedFiles());
+		var result = Changes.of(detector.getModifiedFiles(), onNoChangesConfig);
 
 		if (log.isInfoEnabled()) {
 
