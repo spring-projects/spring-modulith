@@ -59,12 +59,10 @@ class TestExecutionCondition {
 		}
 
 		if (!changes.hasClassChanges()) {
-			var environment = new StandardEnvironment();
-			ConfigDataEnvironmentPostProcessor.applyTo(environment);
-
-			return "execute-none".equals(environment.getProperty("spring.modulith.test.on-no-changes"))
-				? disabled("No source file changes detected — tests skipped due to configuration \"on-no-changes=execute-none\".")
-				: enabled("No source file changes detected — running full test suite due to default configuration.");
+			return switch (changes.ON_NO_CHANGE) {
+				case  EXECUTE_ALL_TESTS -> enabled("No source file changes detected — running full test suite due to default configuration.");
+				case EXECUTE_NO_TESTS -> disabled("No source file changes detected — tests skipped due to configuration \"on-no-changes=execute-none\".");
+            };
 		}
 
 		var changedClasses = changes.getChangedClasses();
