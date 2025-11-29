@@ -21,6 +21,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
+import org.springframework.core.env.StandardEnvironment;
 import org.springframework.modulith.junit.diff.ModifiedFile;
 
 /**
@@ -33,7 +34,7 @@ class TestExecutionConditionUnitTests {
 	@Test // GH-1391
 	void fallsBackToEnabledTestIfMultipleMainClassesFound() {
 
-		var changes = Changes.of(Stream.of(new ModifiedFile("Foo.java")));
+		var changes = Changes.of(Stream.of(new ModifiedFile("Foo.java")), new StandardEnvironment());
 		var ctx = new TestExecutionCondition.ConditionContext(getClass(), changes);
 
 		assertThat(new TestExecutionCondition().evaluate(ctx).isDisabled()).isFalse();

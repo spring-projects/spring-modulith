@@ -47,7 +47,7 @@ class ChangesFactory {
 
 		// Determine detector
 		var detector = FileModificationDetector.getDetector(environment);
-		var result = Changes.of(detector.getModifiedFiles());
+		var result = Changes.of(detector.getModifiedFiles(), environment);
 
 		if (log.isInfoEnabled()) {
 
