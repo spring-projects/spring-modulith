@@ -23,6 +23,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.core.env.Environment;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.modulith.junit.Changes.OnNoChange;
 
 /**
  * Unit tests for {@link ChangesFactory}.
@@ -37,6 +38,39 @@ class ChangesFactoryUnitTests {
 		var environment = getEnvironment(Map.of("spring.modulith.test.skip-optimizations", "true"));
 
 		assertThat(ChangesFactory.getChanges(environment)).isEqualTo(Changes.NONE);
+		assertThat(ChangesFactory.getChanges(environment).skipTestsOnNoChanges()).isFalse();
+	}
+
+	@Test // GH-1438
+	void skipTestsOnNoChangesSetByProperty() {
+
+		var environment = getEnvironment(Map.of("spring.modulith.test.on-no-changes", OnNoChange.EXECUTE_NO_TESTS.value));
+
+		assertThat(ChangesFactory.getChanges(environment).hasClassChanges()).isFalse();
+		assertThat(ChangesFactory.getChanges(environment).skipTestsOnNoChanges()).isTrue();
+	}
+
+	@Test // GH-1438
+	void executeTestsOnNoChangesSetByProperty() {
+
+		var environment = getEnvironment(Map.of("spring.modulith.test.on-no-changes", OnNoChange.DEFAULT.value));
+
+		assertThat(ChangesFactory.getChanges(environment).hasClassChanges()).isFalse();
+		assertThat(ChangesFactory.getChanges(environment).skipTestsOnNoChanges()).isFalse();
+	}
+
+	@Test // GH-1438
+	void executeTestsByDefaultOrInvalidValue() {
+
+		var environment = getEnvironment(Map.of("spring.modulith.test.on-no-changes", "1"));
+
+		assertThat(ChangesFactory.getChanges(environment).hasClassChanges()).isFalse();
+		assertThat(ChangesFactory.getChanges(environment).skipTestsOnNoChanges()).isFalse();
+
+		environment = getEnvironment(Map.of());
+
+		assertThat(ChangesFactory.getChanges(environment).hasClassChanges()).isFalse();
+		assertThat(ChangesFactory.getChanges(environment).skipTestsOnNoChanges()).isFalse();
 	}
 
 	private Environment getEnvironment(Map<String, Object> properties) {

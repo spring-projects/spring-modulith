@@ -16,6 +16,7 @@
 package org.springframework.modulith.junit;
 
 import static java.util.stream.Collectors.*;
+import static org.springframework.modulith.junit.Changes.OnNoChange.EXECUTE_NO_TESTS;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -25,7 +26,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import org.springframework.core.env.Environment;
 import org.springframework.modulith.junit.Changes.Change;
 import org.springframework.modulith.junit.Changes.Change.OtherFileChange;
 import org.springframework.modulith.junit.Changes.Change.SourceChange;
@@ -43,22 +43,23 @@ import org.springframework.util.StringUtils;
  */
 public class Changes implements Iterable<Change> {
 
-	public static final Changes NONE = new Changes(Collections.emptySet(), OnNoChange.EXECUTE_NO_TESTS);
+	public static final Changes NONE = new Changes(Collections.emptySet(), OnNoChange.DEFAULT);
 
 	private final Collection<Change> changes;
-	final OnNoChange ON_NO_CHANGE;
+	private final OnNoChange onNoChangeConfig;
 
 	/**
 	 * Creates a new {@link Changes} instance from the given {@link Change}s.
 	 *
 	 * @param changes must not be {@literal null}.
 	 */
-	private Changes(Collection<Change> changes, OnNoChange onNoChange) {
+	private Changes(Collection<Change> changes, OnNoChange config) {
 
 		Assert.notNull(changes, "Changes must not be null!");
+		Assert.notNull(config, "OnNoChange must not be null!");
 
 		this.changes = changes;
-		this.ON_NO_CHANGE = onNoChange;
+		this.onNoChangeConfig = config;
 	}
 
 	/**
@@ -67,13 +68,11 @@ public class Changes implements Iterable<Change> {
 	 * @param files must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	static Changes of(Stream<ModifiedFile> files, Environment environment) {
+	static Changes of(Stream<ModifiedFile> files, OnNoChange config) {
 
 		Assert.notNull(files, "Modified files must not be null!");
 
-		var onNoChange = OnNoChange.evaluatePropertyTestOnNoChange(environment);
-
-		return files.map(Change::of).collect(collectingAndThen(toSet(), changes ->  new Changes(changes, onNoChange)));
+		return files.map(Change::of).collect(collectingAndThen(toSet(), changes ->  new Changes(changes, config)));
 	}
 
 	/**
@@ -91,6 +90,10 @@ public class Changes implements Iterable<Change> {
 
 	boolean hasClassChanges() {
 		return !getChangedClasses().isEmpty();
+	}
+
+	boolean skipTestsOnNoChanges() {
+		return onNoChangeConfig == EXECUTE_NO_TESTS;
 	}
 
 	boolean contains(Class<?> type) {
@@ -336,19 +339,17 @@ public class Changes implements Iterable<Change> {
 
 	enum OnNoChange {
 		EXECUTE_ALL_TESTS("execute-all"),
-		EXECUTE_NO_TESTS("execute-none"),;
+		EXECUTE_NO_TESTS("execute-none");
 
-		private final String value;
+		final String value;
+		static final OnNoChange DEFAULT = OnNoChange.EXECUTE_ALL_TESTS;
 
 		OnNoChange(String value) {
 			this.value = value;
 		}
 
-		public static OnNoChange evaluatePropertyTestOnNoChange(Environment environment) {
-			
-			Assert.notNull(environment, "Environment must not be null!");
-			
-			return EXECUTE_NO_TESTS.value.equals(environment.getProperty("spring.modulith.test.on-no-changes")) ? EXECUTE_NO_TESTS : EXECUTE_ALL_TESTS;
+		public static OnNoChange propertyConfig(String value) {
+			return EXECUTE_NO_TESTS.value.equals(value) ? EXECUTE_NO_TESTS : DEFAULT;
 		}
 	}
 }

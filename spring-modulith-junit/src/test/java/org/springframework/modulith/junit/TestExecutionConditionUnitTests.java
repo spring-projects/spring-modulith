@@ -21,7 +21,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.SpringBootConfiguration;
-import org.springframework.core.env.StandardEnvironment;
+import org.springframework.modulith.junit.Changes.OnNoChange;
 import org.springframework.modulith.junit.diff.ModifiedFile;
 
 /**
@@ -34,10 +34,19 @@ class TestExecutionConditionUnitTests {
 	@Test // GH-1391
 	void fallsBackToEnabledTestIfMultipleMainClassesFound() {
 
-		var changes = Changes.of(Stream.of(new ModifiedFile("Foo.java")), new StandardEnvironment());
+		var changes = Changes.of(Stream.of(new ModifiedFile("Foo.java")), OnNoChange.DEFAULT);
 		var ctx = new TestExecutionCondition.ConditionContext(getClass(), changes);
 
 		assertThat(new TestExecutionCondition().evaluate(ctx).isDisabled()).isFalse();
+	}
+
+	@Test // GH-1438
+	void disablesForNoClassChangesWithPropertyConfiguration() {
+
+		var changes = Changes.of(Stream.of( new ModifiedFile("README.md")), OnNoChange.propertyConfig(OnNoChange.EXECUTE_NO_TESTS.value));
+		var ctx = new TestExecutionCondition.ConditionContext(getClass(), changes);
+
+		assertThat(new TestExecutionCondition().evaluate(ctx).isDisabled()).isTrue();
 	}
 
 	@SpringBootConfiguration
