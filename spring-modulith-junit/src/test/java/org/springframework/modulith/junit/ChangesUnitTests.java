@@ -59,7 +59,8 @@ class ChangesUnitTests {
 				"pom.xml",
 
 				// Gradle
-				"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts");
+				"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts",
+                "libs.versions.toml");
 
 		return DynamicTest.stream(files, it -> it + " is considered build resource", it -> {
 
