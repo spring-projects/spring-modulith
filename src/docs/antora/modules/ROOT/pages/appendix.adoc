@@ -170,6 +170,10 @@ As the name suggests, `uncommitted-changes` will only consider changed files not
 `reference-commit` will consider all files changed since a given Git commit provided via `spring.modulith.test.reference-commit`, particularly useful CI environments in which that property could point to the commit hash of the last successful build.
 `default` detects all uncomitted changes and ones that have not been pushed to the current branch's tracking branch which is primarily useful for local development.
 
+|`spring.modulith.test.on-no-changes`
+|`execute-all`
+|Whether to execute (`execute-all`) or skip (`skip-all`) all tests in case no classpath or build resource changes have been detected.
+
 |`spring.modulith.test.reference-commit`
 |none
 |The commit hash of to which to calculate the set of changed files.

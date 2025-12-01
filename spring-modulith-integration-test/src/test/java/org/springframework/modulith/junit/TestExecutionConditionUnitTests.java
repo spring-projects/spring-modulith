@@ -90,7 +90,7 @@ class TestExecutionConditionUnitTests {
 
 	private void assertEnabled(Class<?> type, boolean expected, Stream<ModifiedFile> files) {
 
-		assertThat(condition.evaluate(new ConditionContext(type, Changes.of(files, OnNoChange.DEFAULT))))
+		assertThat(condition.evaluate(new ConditionContext(type, Changes.of(files, OnNoChange.EXECUTE_ALL))))
 				.extracting(ConditionEvaluationResult::isDisabled)
 				.isNotEqualTo(expected);
 	}

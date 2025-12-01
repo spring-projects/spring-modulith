@@ -26,6 +26,7 @@ import org.springframework.util.Assert;
  * Dedicated factory to create a {@link Changes} instance from an {@link Environment}.
  *
  * @author Oliver Drotbohm
+ * @author Valentin Bossi
  * @since 2.1
  */
 class ChangesFactory {
@@ -46,11 +47,11 @@ class ChangesFactory {
 			return Changes.NONE;
 		}
 
-		var onNoChangesConfig = OnNoChange.propertyConfig(environment.getProperty("spring.modulith.test.on-no-changes"));
+		var onNoChanges = OnNoChange.fromConfig(environment.getProperty("spring.modulith.test.on-no-changes"));
 
 		// Determine detector
 		var detector = FileModificationDetector.getDetector(environment);
-		var result = Changes.of(detector.getModifiedFiles(), onNoChangesConfig);
+		var result = Changes.of(detector.getModifiedFiles(), onNoChanges);
 
 		if (log.isInfoEnabled()) {
 

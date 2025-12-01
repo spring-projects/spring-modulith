@@ -37,6 +37,7 @@ import org.springframework.util.ClassUtils;
  * @author Lukas Dohmen
  * @author David Bilge
  * @author Oliver Drotbohm
+ * @author Valentin Bossi
  * @see ModulithExecutionCondition
  */
 class TestExecutionCondition {
@@ -59,9 +60,11 @@ class TestExecutionCondition {
 		}
 
 		if (!changes.hasClassChanges()) {
+
 			return changes.skipTestsOnNoChanges()
-				? disabled("No source file changes detected — tests skipped due to configuration \"on-no-changes=execute-none\".")
-				: enabled("No source file changes detected — running full test suite due to default configuration.");
+					? disabled(
+							"No source file changes detected — tests skipped due to configuration \"on-no-changes=execute-none\".")
+					: enabled("No source file changes detected — running full test suite due to default configuration.");
 		}
 
 		var changedClasses = changes.getChangedClasses();

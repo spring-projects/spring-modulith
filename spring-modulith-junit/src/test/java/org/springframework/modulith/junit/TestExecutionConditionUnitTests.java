@@ -28,13 +28,14 @@ import org.springframework.modulith.junit.diff.ModifiedFile;
  * Unit tests for {@link TestExecutionCondition}.
  *
  * @author Oliver Drotbohm
+ * @author Valentin Bossi
  */
 class TestExecutionConditionUnitTests {
 
 	@Test // GH-1391
 	void fallsBackToEnabledTestIfMultipleMainClassesFound() {
 
-		var changes = Changes.of(Stream.of(new ModifiedFile("Foo.java")), OnNoChange.DEFAULT);
+		var changes = Changes.of(Stream.of(new ModifiedFile("Foo.java")), OnNoChange.EXECUTE_ALL);
 		var ctx = new TestExecutionCondition.ConditionContext(getClass(), changes);
 
 		assertThat(new TestExecutionCondition().evaluate(ctx).isDisabled()).isFalse();
@@ -43,7 +44,7 @@ class TestExecutionConditionUnitTests {
 	@Test // GH-1438
 	void disablesForNoClassChangesWithPropertyConfiguration() {
 
-		var changes = Changes.of(Stream.of( new ModifiedFile("README.md")), OnNoChange.propertyConfig(OnNoChange.EXECUTE_NO_TESTS.value));
+		var changes = Changes.of(Stream.of(new ModifiedFile("README.md")), OnNoChange.SKIP_ALL);
 		var ctx = new TestExecutionCondition.ConditionContext(getClass(), changes);
 
 		assertThat(new TestExecutionCondition().evaluate(ctx).isDisabled()).isTrue();

@@ -16,7 +16,7 @@
 package org.springframework.modulith.junit;
 
 import static java.util.stream.Collectors.*;
-import static org.springframework.modulith.junit.Changes.OnNoChange.EXECUTE_NO_TESTS;
+import static org.springframework.modulith.junit.Changes.OnNoChange.*;
 
 import java.util.Collection;
 import java.util.Collections;
@@ -26,6 +26,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.junit.Changes.Change;
 import org.springframework.modulith.junit.Changes.Change.OtherFileChange;
 import org.springframework.modulith.junit.Changes.Change.SourceChange;
@@ -40,26 +41,27 @@ import org.springframework.util.StringUtils;
  * @author Lukas Dohmen
  * @author David Bilge
  * @author Oliver Drotbohm
+ * @author Valentin Bossi
  */
 public class Changes implements Iterable<Change> {
 
-	public static final Changes NONE = new Changes(Collections.emptySet(), OnNoChange.DEFAULT);
+	public static final Changes NONE = new Changes(Collections.emptySet(), OnNoChange.EXECUTE_ALL);
 
 	private final Collection<Change> changes;
-	private final OnNoChange onNoChangeConfig;
+	private final OnNoChange onNoChange;
 
 	/**
 	 * Creates a new {@link Changes} instance from the given {@link Change}s.
 	 *
 	 * @param changes must not be {@literal null}.
 	 */
-	private Changes(Collection<Change> changes, OnNoChange config) {
+	private Changes(Collection<Change> changes, OnNoChange onNoChange) {
 
 		Assert.notNull(changes, "Changes must not be null!");
-		Assert.notNull(config, "OnNoChange must not be null!");
+		Assert.notNull(onNoChange, "OnNoChange must not be null!");
 
 		this.changes = changes;
-		this.onNoChangeConfig = config;
+		this.onNoChange = onNoChange;
 	}
 
 	/**
@@ -68,11 +70,12 @@ public class Changes implements Iterable<Change> {
 	 * @param files must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	static Changes of(Stream<ModifiedFile> files, OnNoChange config) {
+	static Changes of(Stream<ModifiedFile> files, OnNoChange onNoChange) {
 
 		Assert.notNull(files, "Modified files must not be null!");
 
-		return files.map(Change::of).collect(collectingAndThen(toSet(), changes ->  new Changes(changes, config)));
+		return files.map(Change::of)
+				.collect(collectingAndThen(toSet(), changes -> new Changes(changes, onNoChange)));
 	}
 
 	/**
@@ -92,8 +95,13 @@ public class Changes implements Iterable<Change> {
 		return !getChangedClasses().isEmpty();
 	}
 
+	/**
+	 * Returns whether we should skip test execution in case of no changes.
+	 *
+	 * @since 2.1
+	 */
 	boolean skipTestsOnNoChanges() {
-		return onNoChangeConfig == EXECUTE_NO_TESTS;
+		return onNoChange == SKIP_ALL;
 	}
 
 	boolean contains(Class<?> type) {
@@ -337,19 +345,40 @@ public class Changes implements Iterable<Change> {
 		}
 	}
 
+	/**
+	 * Whether to either execute or skip all test in case no changes where detected.
+	 *
+	 * @author Valentin Bossi
+	 * @author Oliver Drotbohm
+	 * @since 2.1
+	 */
 	enum OnNoChange {
-		EXECUTE_ALL_TESTS("execute-all"),
-		EXECUTE_NO_TESTS("execute-none");
 
-		final String value;
-		static final OnNoChange DEFAULT = OnNoChange.EXECUTE_ALL_TESTS;
+		EXECUTE_ALL("execute-all"), SKIP_ALL("skip-all");
+
+		private final String value;
 
 		OnNoChange(String value) {
 			this.value = value;
 		}
 
-		public static OnNoChange propertyConfig(String value) {
-			return EXECUTE_NO_TESTS.value.equals(value) ? EXECUTE_NO_TESTS : DEFAULT;
+		/**
+		 * Creates a new {@link OnNoChange} from the given configuration value.
+		 *
+		 * @param value can be {@literal null}
+		 * @return will never be {@literal null}.
+		 */
+		public static OnNoChange fromConfig(@Nullable String value) {
+
+			if (value == null) {
+				return OnNoChange.EXECUTE_ALL;
+			}
+
+			return Stream.of(OnNoChange.values())
+					.filter(it -> it.value.equalsIgnoreCase(value))
+					.findFirst()
+					.orElseThrow(() -> new IllegalArgumentException("Invalid OnNoChange value! Needs to be any of %s!"
+							.formatted(Stream.of(OnNoChange.values()).map(it -> it.value).toList())));
 		}
 	}
 }

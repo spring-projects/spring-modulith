@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
-import org.springframework.core.env.StandardEnvironment;
 import org.springframework.modulith.junit.Changes.Change.JavaSourceChange;
 import org.springframework.modulith.junit.Changes.Change.JavaTestSourceChange;
 import org.springframework.modulith.junit.Changes.Change.KotlinSourceChange;
@@ -37,6 +36,7 @@ import org.springframework.modulith.junit.diff.ModifiedFile;
  * @author Lukas Dohmen
  * @author David Bilge
  * @author Oliver Drotbohm
+ * @author Valentin Bossi
  */
 class ChangesUnitTests {
 
@@ -83,7 +83,7 @@ class ChangesUnitTests {
 				.map(ModifiedFile::new);
 
 		// when
-		var result = Changes.of(modifiedFilePaths, OnNoChange.DEFAULT);
+		var result = Changes.of(modifiedFilePaths, OnNoChange.EXECUTE_ALL);
 
 		// then
 		assertThat(result.hasClasspathResourceChange()).isTrue();
