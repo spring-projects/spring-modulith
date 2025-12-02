@@ -42,6 +42,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
+import org.springframework.boot.system.JavaVersion;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
@@ -49,6 +50,7 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.SpringFactoriesLoader;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
@@ -200,12 +202,33 @@ class SpringModulithRuntimeAutoConfiguration {
 			Supplier<ApplicationModules> supplier = () -> initializeApplicationModules(applicationMainClass);
 
 			this.modules = executor == null
-					? CompletableFuture.supplyAsync(supplier)
+					? withFallbackExecutor(supplier)
 					: CompletableFuture.supplyAsync(supplier, executor);
+
 		}
 
 		CompletableFuture<ApplicationModules> getApplicationModules() {
 			return modules;
+		}
+
+		/**
+		 * We didn't get an {@link Executor} instance handed in, so asynchronously execute the supplier through a Spring
+		 * {@link SimpleAsyncTaskExecutor} to make sure we see the right {@link ClassLoader} during the execution.
+		 *
+		 * @param <T>
+		 * @param supplier
+		 * @return
+		 */
+		private static <T> CompletableFuture<T> withFallbackExecutor(Supplier<T> supplier) {
+
+			var fallback = new SimpleAsyncTaskExecutor();
+
+			if (JavaVersion.getJavaVersion().isEqualOrNewerThan(JavaVersion.TWENTY_ONE)) {
+				fallback.setVirtualThreads(true);
+			}
+
+			return fallback.submitCompletable(supplier::get)
+					.whenComplete((m, t) -> fallback.close());
 		}
 
 		static ApplicationModules initializeApplicationModules(Class<?> applicationMainClass) {
