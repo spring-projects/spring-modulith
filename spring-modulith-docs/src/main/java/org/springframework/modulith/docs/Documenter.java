@@ -441,8 +441,8 @@ public class Documenter {
 		return new StringBuilder() //
 
 				.append(startTable("%autowidth.stretch, cols=\"h,a\""))
-				.append(addTableRow("Base package", asciidoctor.toInlineCode(module.getBasePackage().getName()), options))
 				.append(addTableRow("Description", asciidoctor.renderModuleDescription(module), options))
+				.append(addTableRow("Base package", asciidoctor.toInlineCode(module.getBasePackage().getName()), options))
 
 				// Spring components
 				.append(addTableRow("Spring components", asciidoctor.renderSpringBeans(module, options), options)) //

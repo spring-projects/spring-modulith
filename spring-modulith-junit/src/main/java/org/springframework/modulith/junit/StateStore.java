@@ -18,11 +18,8 @@ package org.springframework.modulith.junit;
 import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ExtensionContext.Namespace;
 import org.junit.jupiter.api.extension.ExtensionContext.Store;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.config.ConfigDataEnvironmentPostProcessor;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.modulith.junit.diff.FileModificationDetector;
 import org.springframework.util.Assert;
 
 /**
@@ -31,8 +28,6 @@ import org.springframework.util.Assert;
  * @author Oliver Drotbohm
  */
 class StateStore {
-
-	private static final Logger log = LoggerFactory.getLogger(StateStore.class);
 
 	private final Store store;
 
@@ -55,30 +50,13 @@ class StateStore {
 	 */
 	Changes getChanges() {
 
-		return (Changes) store.getOrComputeIfAbsent("changed-files", s -> {
+		return (Changes) store.computeIfAbsent("changed-files", __ -> {
 
 			// Lookup configuration
 			var environment = new StandardEnvironment();
 			ConfigDataEnvironmentPostProcessor.applyTo(environment);
 
-			if (Boolean.TRUE == environment.getProperty("spring.modulith.test.skip-optimizations", Boolean.class)) {
-				return Changes.NONE;
-			}
-
-			// Determine detector
-			var detector = FileModificationDetector.getDetector(environment);
-			var result = Changes.of(detector.getModifiedFiles());
-
-			if (log.isInfoEnabled()) {
-
-				log.trace("Detected changes:");
-				log.trace("-----------------");
-
-				result.forEach(it -> log.info(it.toString()));
-			}
-
-			// Obtain changes
-			return Changes.of(detector.getModifiedFiles());
+			return ChangesFactory.getChanges(environment);
 		});
 	}
 }

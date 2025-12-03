@@ -408,7 +408,10 @@ The optimization will back off optimizing the execution under the following circ
 * The test execution originates from an IDE as we assume the execution is triggered explicitly.
 * The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle(.kts)`, `gradle.properties`, and `settings.gradle(.kts)`).
 * The set of changes contains a change to any classpath resource.
-* The project does not contain a change at all (typical in a CI build).
+* The project does not contain a change at all.
+
+If no classpath or build resource changes are detected we will execute all tests by default.
+This can be customized by setting the xref:appendix.adoc#configuration-properties[`spring.modulith.test.on-no-changes` property] to `skip-all`.
 
 To optimize the execution in a CI environment, you need to populate the xref:appendix.adoc#configuration-properties[`spring.modulith.test.reference-commit` property] pointing to the commit of the last successful build and make sure that the build checks out all commits up to the reference one.
 The algorithm detecting changes to application modules will then consider all files changed in that delta.

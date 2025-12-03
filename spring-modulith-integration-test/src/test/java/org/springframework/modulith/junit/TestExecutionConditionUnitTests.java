@@ -22,6 +22,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ConditionEvaluationResult;
+import org.springframework.modulith.junit.Changes.OnNoChange;
 import org.springframework.modulith.junit.TestExecutionCondition.ConditionContext;
 import org.springframework.modulith.junit.diff.ModifiedFile;
 
@@ -89,7 +90,7 @@ class TestExecutionConditionUnitTests {
 
 	private void assertEnabled(Class<?> type, boolean expected, Stream<ModifiedFile> files) {
 
-		assertThat(condition.evaluate(new ConditionContext(type, Changes.of(files))))
+		assertThat(condition.evaluate(new ConditionContext(type, Changes.of(files, OnNoChange.EXECUTE_ALL))))
 				.extracting(ConditionEvaluationResult::isDisabled)
 				.isNotEqualTo(expected);
 	}

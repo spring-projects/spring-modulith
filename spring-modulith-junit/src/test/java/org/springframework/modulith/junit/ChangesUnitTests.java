@@ -27,6 +27,7 @@ import org.springframework.modulith.junit.Changes.Change.JavaTestSourceChange;
 import org.springframework.modulith.junit.Changes.Change.KotlinSourceChange;
 import org.springframework.modulith.junit.Changes.Change.KotlinTestSourceChange;
 import org.springframework.modulith.junit.Changes.Change.OtherFileChange;
+import org.springframework.modulith.junit.Changes.OnNoChange;
 import org.springframework.modulith.junit.diff.ModifiedFile;
 
 /**
@@ -35,6 +36,7 @@ import org.springframework.modulith.junit.diff.ModifiedFile;
  * @author Lukas Dohmen
  * @author David Bilge
  * @author Oliver Drotbohm
+ * @author Valentin Bossi
  */
 class ChangesUnitTests {
 
@@ -81,7 +83,7 @@ class ChangesUnitTests {
 				.map(ModifiedFile::new);
 
 		// when
-		var result = Changes.of(modifiedFilePaths);
+		var result = Changes.of(modifiedFilePaths, OnNoChange.EXECUTE_ALL);
 
 		// then
 		assertThat(result.hasClasspathResourceChange()).isTrue();
