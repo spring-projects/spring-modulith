@@ -15,12 +15,17 @@
  */
 package org.springframework.modulith.docs;
 
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.modulith.core.config.StrategyLookup;
-
-import java.util.Map;
-import java.util.function.Supplier;
+import org.springframework.beans.BeanUtils;
+import org.springframework.boot.context.config.ConfigDataEnvironmentPostProcessor;
+import org.springframework.core.env.StandardEnvironment;
+import org.springframework.core.io.DefaultResourceLoader;
+import org.springframework.core.io.support.SpringFactoriesLoader;
+import org.springframework.util.ClassUtils;
+import org.springframework.util.StringUtils;
 
 /**
  * A factory for the {@link DocumentationSource} to be used when generating documentation.
@@ -46,16 +51,61 @@ class DocumentationSourceLookup {
 	 */
 	static DocumentationSource getDocumentationSource() {
 
-		Map<String, Supplier<DocumentationSource>> predefinedStrategies = Map.of(
-				"spring-modulith", DocumentationSourceLookup::getSpringModulithDocumentationSource);
+		var environment = new StandardEnvironment();
+		ConfigDataEnvironmentPostProcessor.applyTo(environment,
+				new DefaultResourceLoader(DocumentationSourceLookup.class.getClassLoader()), null);
 
-		var lookup = new StrategyLookup<>(
-				DOCUMENTATION_SOURCE_PROPERTY,
-				DocumentationSource.class,
-				predefinedStrategies,
-				DocumentationSourceLookup::getDefaultDocumentationSource);
+		var configuredSource = environment.getProperty(DOCUMENTATION_SOURCE_PROPERTY, String.class);
 
-		return lookup.lookup();
+		// Nothing configured? Use SpringFactoriesLoader or fallback
+		if (!StringUtils.hasText(configuredSource)) {
+			return lookupViaSpringFactoriesOrFallback();
+		}
+
+		// Check predefined strategy
+		if ("spring-modulith".equals(configuredSource)) {
+			return getSpringModulithDocumentationSource();
+		}
+
+		// Try to load configured value as class
+		try {
+
+			var sourceClass = ClassUtils.forName(configuredSource, DocumentationSource.class.getClassLoader());
+			return BeanUtils.instantiateClass(sourceClass, DocumentationSource.class);
+
+		} catch (ClassNotFoundException | LinkageError o_O) {
+			throw new IllegalStateException("Unable to load documentation source class: " + configuredSource, o_O);
+		}
+	}
+
+	/**
+	 * Attempts to load documentation source via {@link SpringFactoriesLoader} (deprecated), falling back to the default
+	 * source if none found.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	private static DocumentationSource lookupViaSpringFactoriesOrFallback() {
+
+		List<DocumentationSource> loadFactories = SpringFactoriesLoader.loadFactories(DocumentationSource.class,
+				DocumentationSource.class.getClassLoader());
+
+		var size = loadFactories.size();
+
+		if (size == 0) {
+			return getDefaultDocumentationSource();
+		}
+
+		if (size > 1) {
+			throw new IllegalStateException(
+					"Multiple documentation sources configured via spring.factories. Only one supported! %s"
+							.formatted(loadFactories));
+		}
+
+		LOG.warn(
+				"Configuring documentation source via spring.factories is deprecated! Please configure {} instead.",
+				DOCUMENTATION_SOURCE_PROPERTY);
+
+		return loadFactories.get(0);
 	}
 
 	/**
