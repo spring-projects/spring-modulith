@@ -10,3 +10,15 @@ CREATE TABLE IF NOT EXISTS event_publication
 );
 CREATE INDEX IF NOT EXISTS event_publication_serialized_event_hash_idx ON event_publication USING hash(serialized_event);
 CREATE INDEX IF NOT EXISTS event_publication_by_completion_date_idx ON event_publication (completion_date);
+CREATE TABLE IF NOT EXISTS EVENT_FAILED_ATTEMPT_INFO
+(
+  EVENT_ID               UUID NOT NULL,
+  FAILED_DATE  TIMESTAMP(9) WITH TIME ZONE,
+  SERIALIZED_REASON VARCHAR(4000) NOT NULL,
+  REASON_TYPE       VARCHAR(512) NOT NULL,
+    CONSTRAINT FK_FAILED_EVENT_INFO_EVENT
+        FOREIGN KEY (EVENT_ID)
+        REFERENCES EVENT_PUBLICATION(ID)
+        ON DELETE CASCADE
+
+);
