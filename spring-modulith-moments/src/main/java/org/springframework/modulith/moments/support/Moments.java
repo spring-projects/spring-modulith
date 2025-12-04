@@ -123,6 +123,13 @@ public class Moments implements Now {
 		return this;
 	}
 
+	Moments reset() {
+
+		this.shift = Duration.ZERO;
+
+		return this;
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see org.springframework.modulith.moments.support.Now#now()
