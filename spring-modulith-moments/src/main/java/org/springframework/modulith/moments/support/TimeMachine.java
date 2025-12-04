@@ -59,4 +59,13 @@ public class TimeMachine extends Moments {
 	public Moments shiftBy(Duration duration) {
 		return super.shiftBy(duration);
 	}
+
+	/**
+	 * @see org.springframework.modulith.moments.support.Moments#reset()
+	 * @since 2.0.1
+	 */
+	@Override
+	public Moments reset() {
+		return super.reset();
+	}
 }

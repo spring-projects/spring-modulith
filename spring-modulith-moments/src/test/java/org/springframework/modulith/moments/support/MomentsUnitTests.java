@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
 
+import org.assertj.core.data.TemporalUnitOffset;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
@@ -46,6 +47,8 @@ import org.springframework.modulith.moments.support.MomentsProperties.Granularit
  * @author Oliver Drotbohm
  */
 class MomentsUnitTests {
+
+	static final TemporalUnitOffset ACCEPTABLE_OFFSET = within(50, ChronoUnit.MILLIS);
 
 	ApplicationEventPublisher events = mock(ApplicationEventPublisher.class);
 	Clock clock = Clock.systemUTC();
@@ -180,7 +183,20 @@ class MomentsUnitTests {
 		var instant = hourly.instant();
 		var now = hourly.now();
 
-		assertThat(LocalDateTime.ofInstant(instant, ZoneOffset.UTC)).isCloseTo(now, within(50, ChronoUnit.MILLIS));
+		assertThat(LocalDateTime.ofInstant(instant, ZoneOffset.UTC)).isCloseTo(now, ACCEPTABLE_OFFSET);
+	}
+
+	@Test // GH-1490
+	void resettingWipesShift() {
+
+		var now = hourly.instant();
+		var afterShift = hourly.shiftBy(Duration.ofMinutes(1)).instant();
+
+		assertThat(now.plus(Duration.ofMinutes(1))).isCloseTo(afterShift, ACCEPTABLE_OFFSET);
+
+		var afterReset = hourly.reset().instant();
+
+		assertThat(afterReset).isCloseTo(now, ACCEPTABLE_OFFSET);
 	}
 
 	private Duration getNumberOfDaysForThreeMonth(LocalDate date) {
