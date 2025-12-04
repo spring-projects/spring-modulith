@@ -314,7 +314,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
         var databaseId = uuidToDatabase(identifier);
         var reason = serializer.serialize(exception);
-        this.operations.update(sqlStatementInsertFailed, databaseId, failedDate,
+        this.operations.update(sqlStatementInsertFailed, databaseId,  Timestamp.from(failedDate),
                 reason, exception.getClass().getName());
     }
 
