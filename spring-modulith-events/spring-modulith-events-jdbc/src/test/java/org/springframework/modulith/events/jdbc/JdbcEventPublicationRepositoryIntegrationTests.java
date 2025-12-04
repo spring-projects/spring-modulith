@@ -82,11 +82,10 @@ class JdbcEventPublicationRepositoryIntegrationTests {
         @BeforeEach
         void cleanUp() {
 
-            operations.execute("TRUNCATE TABLE " + failedInfoTable());
-            operations.execute("TRUNCATE TABLE " + table());
+            operations.execute("DELETE FROM " + table());
 
             if (properties.isArchiveCompletion()) {
-                operations.execute("TRUNCATE TABLE " + archiveTable());
+                operations.execute("DELETE FROM " + archiveTable());
             }
         }
 
@@ -417,14 +416,38 @@ class JdbcEventPublicationRepositoryIntegrationTests {
             Instant now = Instant.now();
             IllegalStateException reason = new IllegalStateException("failed once");
             var entry = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(now, reason);
-            doReturn(entry.toString()).when(serializer).serialize(entry);
-            doReturn(entry).when(serializer).deserialize(entry.toString(), entry.getClass());
+            doReturn(reason.toString()).when(serializer).serialize(reason);
+            doReturn(reason).when(serializer).deserialize(reason.toString(), reason.getClass());
 
             repository.markFailed(first.getIdentifier(), now, reason);
 
             assertThat(repository.findIncompletePublications())
                     .extracting(TargetEventPublication::getFailedAttempts)
                     .containsExactly(List.of(entry));
+
+        }
+
+        @Test
+            // GH-294
+        void findsPublicationsThatFailedTwice() {
+
+            var first = createPublication(new TestEvent("first"));
+            Instant now = Instant.now();
+            IllegalStateException reason1 = new IllegalStateException("failed once");
+            IllegalStateException reason2 = new IllegalStateException("failed second time");
+            var entry1 = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(now, reason1);
+            var entry2 = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(now, reason2);
+            doReturn(reason1.toString()).when(serializer).serialize(reason1);
+            doReturn(reason2.toString()).when(serializer).serialize(reason2);
+            doReturn(reason1).when(serializer).deserialize(reason1.toString(), reason1.getClass());
+            doReturn(reason2).when(serializer).deserialize(reason2.toString(), reason2.getClass());
+
+            repository.markFailed(first.getIdentifier(), now, reason1);
+            repository.markFailed(first.getIdentifier(), now, reason2);
+
+            assertThat(repository.findIncompletePublications())
+                    .extracting(TargetEventPublication::getFailedAttempts)
+                    .containsExactly(List.of(entry1, entry2));
 
         }
 
@@ -515,65 +538,31 @@ class JdbcEventPublicationRepositoryIntegrationTests {
         // issue: https://github.com/h2database/h2database/issues/2065
         @BeforeEach
         void cleanUp() {
+            super.cleanUp();
             operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
         }
 
         @AfterEach
         void after() {
+            super.cleanUp();
             operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
         }
     }
 
     @WithH2
     class H2WithDefinedSchemaName extends WithDefinedSchemaName {
-        @BeforeEach
-        void cleanUp() {
-            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
-        }
-
-        @AfterEach
-        void after() {
-            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
-        }
     }
 
     @WithH2
     class H2WithEmptySchemaName extends WithEmptySchemaName {
-        @BeforeEach
-        void cleanUp() {
-            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
-        }
-
-        @AfterEach
-        void after() {
-            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
-        }
     }
 
     @WithH2
     class H2WithDeleteCompletion extends WithDeleteCompletion {
-        @BeforeEach
-        void cleanUp() {
-            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
-        }
-
-        @AfterEach
-        void after() {
-            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
-        }
     }
 
     @WithH2
     class H2WithArchiveCompletion extends WithArchiveCompletion {
-        @BeforeEach
-        void cleanUp() {
-            operations.execute("SET REFERENTIAL_INTEGRITY FALSE;");
-        }
-
-        @AfterEach
-        void after() {
-            operations.execute("SET REFERENTIAL_INTEGRITY TRUE;");
-        }
     }
 
     // Postgres
