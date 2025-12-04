@@ -227,7 +227,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 
         var schema = settings.getSchema();
         var table = ObjectUtils.isEmpty(schema) ? "EVENT_PUBLICATION" : schema + ".EVENT_PUBLICATION";
-        var failedAttemptInfoTable = ObjectUtils.isEmpty(schema) ? "EVENT_FAILED_EVENT_INFO" : schema + ".EVENT_FAILED_EVENT_INFO";
+        var failedAttemptInfoTable = ObjectUtils.isEmpty(schema) ? "EVENT_FAILED_ATTEMPT_INFO" : schema + ".EVENT_FAILED_ATTEMPT_INFO";
         var completedTable = settings.isArchiveCompletion() ? table + "_ARCHIVE" : table;
 
         this.sqlStatementInsert = SQL_STATEMENT_INSERT.formatted(table);

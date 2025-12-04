@@ -456,7 +456,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
         }
 
         String failedInfoTable() {
-            return "EVENT_FAILED_EVENT_INFO";
+            return "EVENT_FAILED_ATTEMPT_INFO";
         }
 
         String archiveTable() {
