@@ -432,18 +432,19 @@ class JdbcEventPublicationRepositoryIntegrationTests {
         void findsPublicationsThatFailedTwice() {
 
             var first = createPublication(new TestEvent("first"));
-            Instant now = Instant.now();
+            Instant firstTry = Instant.now().minusSeconds(10);
+            Instant secondTry = Instant.now().minusSeconds(5);
             IllegalStateException reason1 = new IllegalStateException("failed once");
             IllegalStateException reason2 = new IllegalStateException("failed second time");
-            var entry1 = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(now, reason1);
-            var entry2 = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(now, reason2);
+            var entry1 = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(firstTry, reason1);
+            var entry2 = new JdbcEventPublicationRepository.JdbcFailedAttemptInfo(secondTry, reason2);
             doReturn(reason1.toString()).when(serializer).serialize(reason1);
             doReturn(reason2.toString()).when(serializer).serialize(reason2);
             doReturn(reason1).when(serializer).deserialize(reason1.toString(), reason1.getClass());
             doReturn(reason2).when(serializer).deserialize(reason2.toString(), reason2.getClass());
 
-            repository.markFailed(first.getIdentifier(), now, reason1);
-            repository.markFailed(first.getIdentifier(), now, reason2);
+            repository.markFailed(first.getIdentifier(), firstTry, reason1);
+            repository.markFailed(first.getIdentifier(), secondTry, reason2);
 
             assertThat(repository.findIncompletePublications())
                     .extracting(TargetEventPublication::getFailedAttempts)

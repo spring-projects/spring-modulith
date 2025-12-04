@@ -81,7 +81,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
             FROM %s e
             LEFT JOIN %s f on f.EVENT_ID = e.ID
             WHERE COMPLETION_DATE IS NULL
-            ORDER BY PUBLICATION_DATE ASC
+            ORDER BY e.PUBLICATION_DATE ASC, f.FAILED_DATE
             """;
 
     private static final String SQL_STATEMENT_FIND_UNCOMPLETED_BEFORE = """
@@ -92,7 +92,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
             WHERE
             		e.COMPLETION_DATE IS NULL
             		AND e.PUBLICATION_DATE < ?
-            ORDER BY e.PUBLICATION_DATE ASC
+            ORDER BY e.PUBLICATION_DATE ASC, f.FAILED_DATE
             """;
 
     private static final String SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID = """
