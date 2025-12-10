@@ -33,10 +33,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
@@ -68,7 +70,7 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 	static abstract class TestBase {
 
 		@Autowired JdbcOperations operations;
-		@Autowired JdbcEventPublicationRepository repository;
+		@Autowired EventPublicationRepository repository;
 		@Autowired JdbcRepositorySettings properties;
 
 		@MockitoBean EventSerializer serializer;
@@ -82,6 +84,11 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			if (properties.isArchiveCompletion()) {
 				operations.execute("TRUNCATE TABLE " + archiveTable());
 			}
+		}
+
+		@Test // GH-1493
+		void createsJdkProxyForRepository() {
+			assertThat(AopUtils.isJdkDynamicProxy(repository)).isTrue();
 		}
 
 		@Test // GH-3
