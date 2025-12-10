@@ -37,7 +37,7 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
-import org.springframework.modulith.core.JavaPackage;
+import org.springframework.modulith.core.JavaPackages;
 import org.springframework.modulith.core.PackageName;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.util.Assert;
@@ -72,7 +72,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	private final ApplicationModules modules;
 	private final List<ApplicationModule> extraIncludes;
 
-	private final Supplier<List<JavaPackage>> basePackages;
+	private final Supplier<JavaPackages> basePackages;
 	private final Supplier<List<ApplicationModule>> dependencies;
 	private final Supplier<List<ApplicationModule>> includedModules;
 
@@ -93,7 +93,8 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 			var intermediate = Stream.concat(moduleBasePackages, extraPackages);
 
-			return Stream.concat(intermediate, sharedBasePackages).distinct().toList();
+			return Stream.concat(intermediate, sharedBasePackages).distinct()
+					.collect(Collectors.collectingAndThen(Collectors.toList(), JavaPackages::new));
 		});
 
 		this.dependencies = SingletonSupplier.of(() -> {
@@ -150,8 +151,8 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	 *
 	 * @return
 	 */
-	public Stream<String> getBasePackages() {
-		return basePackages.get().stream().map(JavaPackage::getName);
+	public JavaPackages getBasePackages() {
+		return basePackages.get();
 	}
 
 	public boolean includes(String className) {
@@ -276,14 +277,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	}
 
 	private boolean isLocatedInRootPackageOrContainedInBasePackages(String className) {
-
-		if (modules.withinRootPackages(className)) {
-			return true;
-		}
-
-		var candidate = PackageName.ofType(className);
-
-		return basePackages.get().stream().map(JavaPackage::getPackageName).anyMatch(it -> it.contains(candidate));
+		return modules.withinRootPackages(className) || basePackages.get().couldContain(className);
 	}
 
 	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation,

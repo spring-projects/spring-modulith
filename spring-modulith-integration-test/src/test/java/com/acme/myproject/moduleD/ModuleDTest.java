@@ -18,10 +18,15 @@ package com.acme.myproject.moduleD;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.util.MockUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.context.annotation.Bean;
 
 import com.acme.myproject.NonVerifyingModuleTest;
+import com.acme.myproject.moduleE.AnotherServiceComponentE;
 import com.acme.myproject.moduleE.ServiceComponentE;
 
 /**
@@ -35,5 +40,22 @@ public class ModuleDTest {
 	@Test // GH-320
 	void dropsManuallyDeclaredBeanOfNonIncludedModule() {
 		assertThat(context.getBeanNamesForType(ServiceComponentE.class)).isEmpty();
+	}
+
+	@Test // GH-1489
+	void considersBeanFromTestConfiguration() {
+
+		assertThat(context.getBean(AnotherServiceComponentE.class))
+				.extracting(MockUtil::isMock)
+				.isEqualTo(true);
+	}
+
+	@TestConfiguration
+	static class TestConfig {
+
+		@Bean
+		AnotherServiceComponentE mock() {
+			return Mockito.mock(AnotherServiceComponentE.class);
+		}
 	}
 }
