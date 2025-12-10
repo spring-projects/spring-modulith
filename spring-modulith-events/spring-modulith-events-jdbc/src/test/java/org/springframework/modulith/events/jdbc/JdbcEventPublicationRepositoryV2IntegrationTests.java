@@ -33,11 +33,13 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcOperations;
 import org.springframework.modulith.events.EventPublication.Status;
+import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -68,7 +70,7 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 	static abstract class TestBase {
 
 		@Autowired JdbcOperations operations;
-		@Autowired JdbcEventPublicationRepositoryV2 repository;
+		@Autowired EventPublicationRepository repository;
 		@Autowired JdbcRepositorySettings properties;
 
 		@MockitoBean EventSerializer serializer;
@@ -82,6 +84,11 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 			if (properties.isArchiveCompletion()) {
 				operations.execute("TRUNCATE TABLE " + archiveTable());
 			}
+		}
+
+		@Test // GH-1493, GH-1518
+		void createsJdkProxyForRepository() {
+			assertThat(AopUtils.isJdkDynamicProxy(repository)).isTrue();
 		}
 
 		@Test // GH-3

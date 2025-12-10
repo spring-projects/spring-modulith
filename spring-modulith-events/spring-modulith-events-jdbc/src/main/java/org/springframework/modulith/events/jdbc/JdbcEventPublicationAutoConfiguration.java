@@ -25,6 +25,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.ProxyType;
+import org.springframework.context.annotation.Proxyable;
 import org.springframework.core.env.Environment;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -60,6 +62,7 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	}
 
 	@Bean
+	@Proxyable(ProxyType.INTERFACES)
 	EventPublicationRepository jdbcEventPublicationRepository(JdbcTemplate jdbcTemplate,
 			EventSerializer serializer, JdbcRepositorySettings settings) {
 
