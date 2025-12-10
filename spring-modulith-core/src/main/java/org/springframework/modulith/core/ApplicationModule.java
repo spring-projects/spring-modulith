@@ -348,6 +348,23 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
+	 * Returns whether the module could contain the type independent of the actual types backing the current instance. The
+	 * mismatch usually comes from the distinction between production and test code. A module set up from the former would
+	 * not contain a test type within its package space. This method in contrast would acknowledge that the test type
+	 * logically belongs to the module, too.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @see JavaPackage#couldContain(Class)
+	 * @since 1.4.6, 2.0.1
+	 */
+	public boolean couldContain(Class<?> type) {
+
+		Assert.notNull(type, "Class<?> must not be null!");
+
+		return contains(type) || !exclusions.couldContain(type) && basePackage.couldContain(type);
+	}
+
+	/**
 	 * Returns the {@link JavaClass} for the given candidate simple or fully-qualified type name.
 	 *
 	 * @param candidate must not be {@literal null} or empty.

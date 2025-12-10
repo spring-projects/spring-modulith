@@ -28,9 +28,9 @@ import org.springframework.util.Assert;
  * A collection of {@link JavaPackage}s.
  *
  * @author Oliver Drotbohm
- * @since 1.3
+ * @since 1.3, public since 1.4.6, 2.0.1
  */
-class JavaPackages implements Iterable<JavaPackage> {
+public class JavaPackages implements Iterable<JavaPackage> {
 
 	public static JavaPackages NONE = new JavaPackages(Collections.emptyList());
 
@@ -41,7 +41,7 @@ class JavaPackages implements Iterable<JavaPackage> {
 	 *
 	 * @param packages must not be {@literal null}.
 	 */
-	JavaPackages(Collection<JavaPackage> packages) {
+	public JavaPackages(Collection<JavaPackage> packages) {
 
 		Assert.notNull(packages, "Packages must not be null!");
 
@@ -75,7 +75,7 @@ class JavaPackages implements Iterable<JavaPackage> {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	Stream<JavaPackage> stream() {
+	public Stream<JavaPackage> stream() {
 		return packages.stream();
 	}
 
@@ -93,6 +93,53 @@ class JavaPackages implements Iterable<JavaPackage> {
 		return new JavaPackages(stream()
 				.filter(pkg::isParentPackageOf)
 				.toList());
+	}
+
+	public boolean contains(JavaPackage pkg) {
+		return packages.contains(pkg);
+	}
+
+	/**
+	 * Returns whether any of the packages contains the given type.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @since 1.4.6, 2.0.1
+	 */
+	boolean contains(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return stream().anyMatch(it -> it.contains(type));
+	}
+
+	/**
+	 * Returns whether any of the the packages could contain the type independent of the actual types backing the current
+	 * instance.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @see JavaPackage#couldContain(Class)
+	 * @since 1.4.6, 2.0.1
+	 */
+	public boolean couldContain(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return stream().anyMatch(it -> it.couldContain(type));
+	}
+
+	/**
+	 * Returns whether any of the the packages could contain the type independent of the actual types backing the current
+	 * instance.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @see JavaPackage#couldContain(String)
+	 * @since 1.4.6, 2.0.1
+	 */
+	public boolean couldContain(String type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return stream().anyMatch(it -> it.couldContain(type));
 	}
 
 	/*
