@@ -15,7 +15,9 @@
  */
 package org.springframework.modulith.test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -29,10 +31,12 @@ import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.beans.factory.support.BeanDefinitionRegistry;
 import org.springframework.beans.factory.support.BeanDefinitionRegistryPostProcessor;
+import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
-import org.springframework.modulith.core.JavaPackage;
+import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.test.context.ContextConfigurationAttributes;
 import org.springframework.test.context.ContextCustomizer;
 import org.springframework.test.context.ContextCustomizerFactory;
@@ -238,31 +242,36 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 
 			for (String name : registry.getBeanDefinitionNames()) {
 
+				if (include(name, modules, factory)) {
+					continue;
+				}
+
 				var type = factory.getType(name, false);
-				var module = modules.getModuleByType(type)
-						.filter(Predicate.not(ApplicationModule::isRootModule));
 
-				// Not a module type -> pass
-				if (module.isEmpty()) {
-					continue;
+				if (type != null) {
+					LOGGER.trace(
+							"Dropping bean definition {} for type {} as it is not included in an application module to be bootstrapped!",
+							name, type.getName());
 				}
-
-				var packagesIncludedInTestRun = execution.getBasePackages().toList();
-
-				// A type of a module bootstrapped -> pass
-				if (module.map(ApplicationModule::getBasePackage)
-						.map(JavaPackage::getName)
-						.filter(packagesIncludedInTestRun::contains).isPresent()) {
-					continue;
-				}
-
-				LOGGER.trace(
-						"Dropping bean definition {} for type {} as it is not included in an application module to be bootstrapped!",
-						name, type.getName());
 
 				// Remove bean definition from bootstrap
 				registry.removeBeanDefinition(name);
 			}
+		}
+
+		private boolean include(String beanDefinitionName, ApplicationModules modules,
+				ConfigurableListableBeanFactory factory) {
+
+			var types = getTypeOrTestConfigurationFactoryBean(beanDefinitionName, factory);
+
+			var result = modules.stream()
+					.filter(Predicate.not(ApplicationModule::isRootModule))
+					.filter(it -> types.stream().anyMatch(type -> it.couldContain(type)))
+					.map(ApplicationModule::getBasePackage)
+					.map(execution.getBasePackages()::contains)
+					.toList();
+
+			return result.isEmpty() || result.contains(true);
 		}
 
 		/*
@@ -271,5 +280,42 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		 */
 		@Override
 		public void postProcessBeanFactory(ConfigurableListableBeanFactory beanFactory) throws BeansException {}
+
+		/**
+		 * Returns the type of the {@link org.springframework.beans.factory.config.BeanDefinition} of the given name and
+		 * optionally its factory bean's type if annotated with {@link TestConfiguration}.
+		 *
+		 * @param beanDefinitionName must not be {@literal null} or empty.
+		 * @param factory must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		private static Collection<Class<?>> getTypeOrTestConfigurationFactoryBean(String beanDefinitionName,
+				ConfigurableListableBeanFactory factory) {
+
+			var result = new ArrayList<Class<?>>();
+			var type = factory.getType(beanDefinitionName, false);
+
+			if (type != null) {
+				result.add(type);
+			}
+
+			var factoryName = factory.getBeanDefinition(beanDefinitionName).getFactoryBeanName();
+
+			if (factoryName == null) {
+				return result;
+			}
+
+			var factoryType = factory.getType(factoryName, false);
+
+			if (factoryType == null) {
+				return result;
+			}
+
+			if (AnnotatedElementUtils.hasAnnotation(factoryType, TestConfiguration.class)) {
+				result.add(factoryType);
+			}
+
+			return result;
+		}
 	}
 }

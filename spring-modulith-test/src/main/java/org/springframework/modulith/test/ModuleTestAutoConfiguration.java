@@ -29,6 +29,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportBeanDefinitionRegistrar;
 import org.springframework.core.Ordered;
 import org.springframework.core.type.AnnotationMetadata;
+import org.springframework.modulith.core.JavaPackage;
 import org.springframework.util.StringUtils;
 
 /**
@@ -58,7 +59,7 @@ class ModuleTestAutoConfiguration {
 		public void registerBeanDefinitions(AnnotationMetadata importingClassMetadata, BeanDefinitionRegistry registry) {
 
 			var execution = ((BeanFactory) registry).getBean(ModuleTestExecution.class);
-			var basePackages = execution.getBasePackages().toList();
+			var basePackages = execution.getBasePackages().stream().map(JavaPackage::getName).toList();
 
 			LOGGER.info("Re-configuring auto-configuration and entity scan packages to: {}.",
 					StringUtils.collectionToDelimitedString(basePackages, ", "));
