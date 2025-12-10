@@ -244,6 +244,19 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 	 * Return whether the {@link JavaPackage} contains the given type.
 	 *
 	 * @param type must not be {@literal null}.
+	 * @since 1.4.6, 2.0.1
+	 */
+	public boolean contains(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return classes.contains(type);
+	}
+
+	/**
+	 * Return whether the {@link JavaPackage} contains the given type.
+	 *
+	 * @param type must not be {@literal null}.
 	 */
 	public boolean contains(JavaClass type) {
 
@@ -262,6 +275,38 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 		Assert.hasText(typeName, "Type name must not be null or empty!");
 
 		return classes.contains(typeName);
+	}
+
+	/**
+	 * Returns whether the packages could contain the type independent of the actual types backing the current instance.
+	 * The mismatch usually comes from the distinction between production and test code. A {@link JavaPackage} set up from
+	 * the former would not contain a test type within the same package. This method in contrast would acknowledge that
+	 * the test type logically belongs to the package.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @since 1.4.6, 2.0.1
+	 */
+	public boolean couldContain(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return name.contains(PackageName.ofType(type.getName()));
+	}
+
+	/**
+	 * Returns whether the packages could contain the type independent of the actual types backing the current instance.
+	 * The mismatch usually comes from the distinction between production and test code. A {@link JavaPackage} set up from
+	 * the former would not contain a test type within the same package. This method in contrast would acknowledge that
+	 * the test type logically belongs to the package.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @since 1.4.6, 2.0.1
+	 */
+	public boolean couldContain(String type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
+		return name.contains(PackageName.ofType(type));
 	}
 
 	/**
