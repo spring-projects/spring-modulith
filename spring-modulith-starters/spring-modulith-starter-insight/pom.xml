@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-starters</artifactId>
-		<version>1.4.6</version>
+		<version>1.4.7-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -21,14 +21,14 @@
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-actuator</artifactId>
-			<version>1.4.6</version>
+			<version>1.4.7-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-observability</artifactId>
-			<version>1.4.6</version>
+			<version>1.4.7-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
