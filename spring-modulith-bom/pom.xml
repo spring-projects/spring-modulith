@@ -13,7 +13,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith</artifactId>
-		<version>2.0.1-SNAPSHOT</version>
+		<version>2.0.1</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -22,142 +22,142 @@
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-actuator</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-api</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-apt</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-core</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-docs</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-amqp</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-api</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-core</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jackson</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jdbc</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jms</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-jpa</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-kafka</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-messaging</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-mongodb</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-tests</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-junit</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-moments</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-observability</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-runtime</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-core</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-insight</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-jdbc</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-jpa</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-mongodb</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-neo4j</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-starter-test</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-test</artifactId>
-				<version>2.0.1-SNAPSHOT</version>
+				<version>2.0.1</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
