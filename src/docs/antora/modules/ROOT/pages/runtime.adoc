@@ -121,6 +121,6 @@ With that in place we will customize the Flyway setup as follows:
 These migrations are also set up to a baseline version of 0 and set up to baseline on migrate.
 - Migration locations ending in a wildcard will not be customized.
 
-Note, that he version numbers used in migration scripts are now effectively scoped to the application module and should not use global ordering.
+Note, that the version numbers used in migration scripts are now effectively scoped to the application module and should not use global ordering.
 
 By selecting which folder to place the migration files in, you can differentiate migrations always to be run from ones that will only get executed for the corresponding module. The application module test integration will only execute the default migration and the ones for modules included in the test run.
