@@ -600,12 +600,13 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		var listenerId = rs.getString("LISTENER_ID");
 		var serializedEvent = rs.getString("SERIALIZED_EVENT");
 		var status = getStatusFrom(rs);
-		var lastResubmissionDate = rs.getTimestamp("LAST_RESUBMISSION_DATE").toInstant();
+		var lastResubmissionDate = rs.getTimestamp("LAST_RESUBMISSION_DATE");
 		var completionAttempts = rs.getInt("COMPLETION_ATTEMPTS");
 
 		return new JdbcEventPublication(id, publicationDate, listenerId,
 				() -> serializer.deserialize(serializedEvent, eventClass),
-				completionDate == null ? null : completionDate.toInstant(), status, lastResubmissionDate, completionAttempts);
+				completionDate == null ? null : completionDate.toInstant(), status,
+				lastResubmissionDate == null ? null : lastResubmissionDate.toInstant(), completionAttempts);
 	}
 
 	private static @Nullable Status getStatusFrom(ResultSet rs) {
