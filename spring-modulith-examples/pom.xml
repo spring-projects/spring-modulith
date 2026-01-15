@@ -22,6 +22,7 @@
 		<module>spring-modulith-example-epr-neo4j</module>
 		<module>spring-modulith-example-full</module>
 		<module>spring-modulith-example-kafka</module>
+		<module>spring-modulith-example-outbox</module>
 	</modules>
 
 	<properties>

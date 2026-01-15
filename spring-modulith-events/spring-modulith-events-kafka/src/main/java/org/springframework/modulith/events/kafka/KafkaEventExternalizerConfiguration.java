@@ -15,6 +15,12 @@
  */
 package org.springframework.modulith.events.kafka;
 
+import io.namastack.outbox.handler.OutboxHandler;
+
+import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
+
+import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullUnmarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +38,10 @@ import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
+import org.springframework.modulith.events.outbox.ExternalizationMode;
+import org.springframework.modulith.events.outbox.OutboxEventTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
@@ -51,19 +60,43 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 		matchIfMissing = true)
 class KafkaEventExternalizerConfiguration {
 
-	private static final Logger logger = LoggerFactory.getLogger(KafkaEventExternalizerConfiguration.class);
+	private static final Logger logger = LoggerFactory.getLogger(
+			KafkaEventExternalizerConfiguration.class);
 
 	@Bean
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module_listener", matchIfMissing = true)
 	@NullUnmarked
-	DelegatingEventExternalizer kafkaEventExternalizer(EventExternalizationConfiguration configuration,
-			KafkaOperations<Object, Object> operations, BeanFactory factory) {
+	DelegatingEventExternalizer kafkaEventExternalizer(
+			EventExternalizationConfiguration configuration,
+			KafkaOperations<@NonNull Object, @NonNull Object> operations, BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization to Kafka…");
+
+		return new DelegatingEventExternalizer(configuration,
+				createKafkaTransport(configuration, operations, factory));
+	}
+
+	@Bean
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+	@NullUnmarked
+	OutboxHandler kafkaOutboxExternalizer(EventExternalizationConfiguration configuration,
+			KafkaOperations<@NonNull Object, @NonNull Object> operations, BeanFactory factory) {
+
+		logger.debug("Registering domain event outbox externalization to Kafka…");
+
+		return new OutboxEventTransport(configuration,
+				createKafkaTransport(configuration, operations, factory));
+	}
+
+	private BiFunction<RoutingTarget, Object, CompletableFuture<?>> createKafkaTransport(
+			EventExternalizationConfiguration configuration,
+			KafkaOperations<Object, Object> operations,
+			BeanFactory factory) {
 
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
-		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
+		return (target, payload) -> {
 
 			var routing = BrokerRouting.of(target, context);
 
@@ -77,6 +110,6 @@ class KafkaEventExternalizerConfiguration {
 					.build();
 
 			return operations.send(message);
-		});
+		};
 	}
 }
