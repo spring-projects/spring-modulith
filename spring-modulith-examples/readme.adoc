@@ -11,3 +11,4 @@ It also shows the Event Publication Registry working and how it keeps track of t
 Finally, it shows how to write integration tests using the `Scenario` APIs in `OrderIntegrationTests`.
 * `spring-modulith-example-epr-jdbc` -- shows the Event Publication Registry working on top of Spring Data JDBC (in `ApplicationIntegrationTests`).
 * `spring-modulith-example-epr-mongodb` -- shows the Event Publication Registry working on top of MongoDB (in `ApplicationIntegrationTests`).
+* `spring-modulith-example-outbox` -- shows the outbox pattern for event externalization, where events are persisted to an outbox table within the same transaction and later processed asynchronously.
