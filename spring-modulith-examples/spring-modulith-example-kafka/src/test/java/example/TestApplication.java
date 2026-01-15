@@ -21,6 +21,8 @@ import static org.mockito.Mockito.*;
 import example.order.Order;
 import example.order.OrderManagement;
 
+import java.util.concurrent.CompletableFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
@@ -49,7 +51,7 @@ public class TestApplication {
 
 			logger.info("Sending message {}.", invocation.getArguments()[0]);
 
-			return null;
+			return CompletableFuture.completedFuture(null);
 		});
 
 		return mock;
