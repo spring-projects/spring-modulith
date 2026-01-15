@@ -20,7 +20,6 @@ import io.namastack.outbox.handler.OutboxHandler;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.NullUnmarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -60,15 +59,12 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 		matchIfMissing = true)
 class KafkaEventExternalizerConfiguration {
 
-	private static final Logger logger = LoggerFactory.getLogger(
-			KafkaEventExternalizerConfiguration.class);
+	private static final Logger logger = LoggerFactory.getLogger(KafkaEventExternalizerConfiguration.class);
 
 	@Bean
-	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module_listener", matchIfMissing = true)
-	@NullUnmarked
-	DelegatingEventExternalizer kafkaEventExternalizer(
-			EventExternalizationConfiguration configuration,
-			KafkaOperations<@NonNull Object, @NonNull Object> operations, BeanFactory factory) {
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
+	DelegatingEventExternalizer kafkaEventExternalizer(EventExternalizationConfiguration configuration,
+			KafkaOperations<?, ?> operations, BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization to Kafka…");
 
@@ -76,21 +72,24 @@ class KafkaEventExternalizerConfiguration {
 				createKafkaTransport(configuration, operations, factory));
 	}
 
-	@Bean
-	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
-	@NullUnmarked
-	OutboxHandler kafkaOutboxExternalizer(EventExternalizationConfiguration configuration,
-			KafkaOperations<@NonNull Object, @NonNull Object> operations, BeanFactory factory) {
+	@ConditionalOnClass(OutboxHandler.class)
+	static class NamastackOutboxAutoConfiguration {
 
-		logger.debug("Registering domain event outbox externalization to Kafka…");
+		@Bean
+		@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+		OutboxHandler kafkaOutboxExternalizer(EventExternalizationConfiguration configuration,
+				KafkaOperations<?, ?> operations, BeanFactory factory) {
 
-		return new OutboxEventTransport(configuration,
-				createKafkaTransport(configuration, operations, factory));
+			logger.debug("Registering domain event outbox externalization to Kafka…");
+
+			return new OutboxEventTransport(configuration,
+					createKafkaTransport(configuration, operations, factory));
+		}
 	}
 
-	private BiFunction<RoutingTarget, Object, CompletableFuture<?>> createKafkaTransport(
-			EventExternalizationConfiguration configuration,
-			KafkaOperations<Object, Object> operations,
+	@NullUnmarked // Until https://github.com/spring-projects/spring-framework/issues/36157 is resolved
+	private static BiFunction<RoutingTarget, Object, CompletableFuture<?>> createKafkaTransport(
+			EventExternalizationConfiguration configuration, KafkaOperations<?, ?> operations,
 			BeanFactory factory) {
 
 		var context = new StandardEvaluationContext();
