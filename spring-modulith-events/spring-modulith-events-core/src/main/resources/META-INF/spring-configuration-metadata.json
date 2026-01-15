@@ -34,7 +34,7 @@
 			"name": "spring.modulith.events.externalization.mode",
 			"type": "org.springframework.modulith.events.outbox.ExternalizationMode",
 			"description": "The mode of event externalization. MODULE_LISTENER sends events after transaction commit, OUTBOX persists events to an outbox table for later processing.",
-			"defaultValue": "module_listener"
+			"defaultValue": "module-listener"
 		},
 		{
 			"name": "spring.modulith.events.completion-mode",
