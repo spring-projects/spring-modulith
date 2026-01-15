@@ -1,0 +1,37 @@
+= Spring Modulith -- Outbox event externalization example
+
+This example shows how domain events can be externalized using the outbox pattern.
+Events are persisted to an outbox table within the same transaction as the business operation and later processed asynchronously.
+The key steps are:
+
+1. Add the `spring-modulith-events-kafka` dependency to the project (`runtime` scope is sufficient).
+2. Add the `spring-modulith-events-api` dependency to annotate the event types to be externalized automatically with `@Externalized` (see `OrderCompleted`).
+3. Add the `namastack-outbox-starter-jpa` dependency for the outbox infrastructure.
+4. Set `spring.modulith.events.externalization.mode=outbox` in `application.properties`.
+
+`TestApplication` (in `src/test/java`) declares a mock `KafkaOperations` instance so that we do not need an actual Kafka instance running for the sample.
+It also enables the outbox processing via `@EnableOutbox` and `@EnableScheduling`.
+Running the test application using `./mvnw spring-boot:test-run` should show the following output.
+
+[source]
+----
+14:53:40.959 D -     main : Configuring event externalization to export events annotated with @Externalized in packages: [example, ...] <1>
+…
+14:53:42.225 D -     main : Registering domain event outbox externalization to Kafka… <2>
+14:53:42.227 D -     main : Registering domain event externalization via outbox… <3>
+…
+14:53:42.247 I -     main : Triggering order completion… <4>
+14:53:42.251 D -     main : Scheduling event of type example.order.OrderCompleted to outbox for target order.OrderCompleted. <5>
+…
+14:53:44.494 D - eduler-1 : Found 1 record keys to process <6>
+…
+14:53:44.767 D - eduler-1 : Finished processing 1 record keys <7>
+----
+<1> On application bootstrap, the event externalization configuration is set up to export events annotated with `@Externalized`.
+<2> The `OutboxEventTransport` is registered as the Kafka outbox handler for transporting events from the outbox to Kafka.
+<3> The `OutboxEventRecorder` is registered to listen for domain events to be externalized via the outbox pattern.
+<4> Once started, the application's `main` method invokes a business method on the `OrderManagement` that ultimately results in the publication of an `OrderCompleted` event.
+That event is annotated with Spring Modulith's `@Externalized` and thus qualifies for externalization.
+<5> The `OutboxEventRecorder` synchronously persists the event to the outbox table within the same transaction as the business operation.
+<6> The outbox processor asynchronously picks up the event from the outbox table.
+<7> The event is successfully transported to Kafka via the `OutboxEventTransport`.
