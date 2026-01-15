@@ -56,6 +56,13 @@
 			<optional>true</optional>
 		</dependency>
 
+		<dependency>
+			<groupId>io.namastack</groupId>
+			<artifactId>namastack-outbox-api</artifactId>
+			<version>1.0.0-RC1</version>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- Testing -->
 
 		<dependency>
