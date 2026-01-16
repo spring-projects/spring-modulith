@@ -50,7 +50,7 @@ import org.springframework.util.Assert;
 @Repository
 class JpaEventPublicationRepository implements EventPublicationRepository {
 
-	private static String BY_EVENT_AND_LISTENER_ID = """
+	private static final String BY_EVENT_AND_LISTENER_ID = """
 			select p
 			from DefaultJpaEventPublication p
 			where
@@ -59,16 +59,17 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				and p.completionDate is null
 			""";
 
-	private static String COMPLETE = """
+	private static final String COMPLETE = """
 			select p
 			from %s p
 			where
 				p.completionDate is not null
+				and p.status = org.springframework.modulith.events.EventPublication$Status.COMPLETED
 			order by
 				p.publicationDate asc
 			""";
 
-	private static String INCOMPLETE = """
+	private static final String INCOMPLETE = """
 			select p
 			from DefaultJpaEventPublication p
 			where
@@ -77,7 +78,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 				p.publicationDate asc
 			""";
 
-	private static String INCOMPLETE_BEFORE = """
+	private static final String INCOMPLETE_BEFORE = """
 			select p
 			from DefaultJpaEventPublication p
 			where
@@ -89,7 +90,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private static final String MARK_COMPLETED_BY_EVENT_AND_LISTENER_ID = """
 			update DefaultJpaEventPublication p
-			   set p.completionDate = ?3
+			   set p.status = org.springframework.modulith.events.EventPublication$Status.COMPLETED,
+			       p.completionDate = ?3
 			 where p.serializedEvent = ?1
 			   and p.listenerId = ?2
 			   and p.completionDate is null
@@ -613,7 +615,9 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		 */
 		@Override
 		public void markCompleted(Instant instant) {
+
 			this.publication.completionDate = instant;
+			this.publication.status = Status.COMPLETED;
 		}
 
 		/*
@@ -631,7 +635,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		 */
 		@Override
 		public int getCompletionAttempts() {
-			return 1;
+			return publication.completionAttempts;
 		}
 
 		/*
@@ -640,7 +644,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		 */
 		@Override
 		public @Nullable Instant getLastResubmissionDate() {
-			return null;
+			return publication.lastResubmissionDate;
 		}
 
 		/*

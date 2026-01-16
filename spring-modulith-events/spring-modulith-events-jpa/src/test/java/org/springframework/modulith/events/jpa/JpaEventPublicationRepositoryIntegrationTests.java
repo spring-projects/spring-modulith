@@ -17,7 +17,6 @@ package org.springframework.modulith.events.jpa;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
-import static org.mockito.Mockito.*;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
@@ -26,7 +25,10 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 import javax.sql.DataSource;
@@ -69,15 +71,14 @@ import org.springframework.transaction.annotation.Transactional;
 class JpaEventPublicationRepositoryIntegrationTests {
 
 	private static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
-	private static final EventSerializer eventSerializer = mock(EventSerializer.class);
 
 	@Configuration
 	@Import(JpaEventPublicationConfiguration.class)
 	static class TestConfig {
 
 		@Bean
-		EventSerializer eventSerializer() {
-			return eventSerializer;
+		TestEventSerializer eventSerializer() {
+			return new TestEventSerializer();
 		}
 
 		// Database
@@ -118,6 +119,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		@Autowired EntityManager em;
 		@Autowired Environment environment;
 		@Autowired DataSource dataSource;
+		@Autowired TestEventSerializer serializer;
 
 		CompletionMode completionMode;
 
@@ -149,13 +151,10 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		}
 
 		@Test
-		void persistsJpaEventPublication() {
+		void completesEventPublication() {
 
 			var testEvent = new TestEvent("abc");
-			var serializedEvent = "{\"eventId\":\"abc\"}";
-
-			when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
-			when(eventSerializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+			serializer.registerSerialization(testEvent, "{\"eventId\":\"abc\"}");
 
 			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
 
@@ -172,13 +171,34 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			assertThat(repository.findIncompletePublications()).isEmpty();
 		}
 
+		@Test // GH-1521
+		void completesEventPublicationByEventAndTarget() {
+
+			var testEvent = serializer.registerSerialization(new TestEvent("abc"));
+			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
+
+			var eventPublications = repository.findIncompletePublications();
+
+			assertThat(eventPublications).hasSize(1);
+			assertThat(eventPublications.get(0).getEvent()).isEqualTo(publication.getEvent());
+			assertThat(eventPublications.get(0).getTargetIdentifier()).isEqualTo(publication.getTargetIdentifier());
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+					.isPresent();
+
+			repository.markCompleted(publication.getEvent(), publication.getTargetIdentifier(), Instant.now());
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (completionMode != CompletionMode.DELETE) {
+				assertThat(repository.findCompletedPublications()).extracting(TargetEventPublication::getIdentifier)
+						.contains(publication.getIdentifier());
+			}
+		}
+
 		@Test // GH-25
 		void shouldTolerateEmptyResult() {
 
-			var testEvent = new TestEvent("id");
-			var serializedEvent = "{\"eventId\":\"id\"}";
-
-			when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
+			var testEvent = serializer.registerSerialization(new TestEvent("id"));
 
 			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
 					.isEmpty();
@@ -187,11 +207,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		@Test // GH-25
 		void shouldNotReturnCompletedEvents() {
 
-			TestEvent testEvent = new TestEvent("abc");
-			String serializedEvent = "{\"eventId\":\"abc\"}";
-
-			when(eventSerializer.serialize(testEvent)).thenReturn(serializedEvent);
-			when(eventSerializer.deserialize(serializedEvent, TestEvent.class)).thenReturn(testEvent);
+			var testEvent = serializer.registerSerialization(new TestEvent("abc"));
 
 			var publication = TargetEventPublication.of(testEvent, TARGET_IDENTIFIER);
 
@@ -206,15 +222,10 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		@Test // GH-20
 		void shouldDeleteCompletedEvents() {
 
-			var testEvent1 = new TestEvent("abc");
-			var serializedEvent1 = "{\"eventId\":\"abc\"}";
-			var testEvent2 = new TestEvent("def");
-			var serializedEvent2 = "{\"eventId\":\"def\"}";
+			var testEvent1 = serializer.registerSerialization(new TestEvent("abc"));
 
-			when(eventSerializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-			when(eventSerializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-			when(eventSerializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-			when(eventSerializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+			var serializedEvent2 = "foobar";
+			var testEvent2 = serializer.registerSerialization(new TestEvent("def"), serializedEvent2);
 
 			repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
 			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
@@ -247,15 +258,10 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			assumeFalse(completionMode == CompletionMode.DELETE);
 
-			var testEvent1 = new TestEvent("abc");
-			var serializedEvent1 = "{\"eventId\":\"abc\"}";
-			var testEvent2 = new TestEvent("def");
-			var serializedEvent2 = "{\"eventId\":\"def\"}";
+			var testEvent1 = serializer.registerSerialization(new TestEvent("abc"));
 
-			when(eventSerializer.serialize(testEvent1)).thenReturn(serializedEvent1);
-			when(eventSerializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
-			when(eventSerializer.serialize(testEvent2)).thenReturn(serializedEvent2);
-			when(eventSerializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+			var serializedEvent2 = "foobar";
+			var testEvent2 = serializer.registerSerialization(new TestEvent("def"), serializedEvent2);
 
 			repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
 			repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
@@ -452,10 +458,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 		private TargetEventPublication createPublication(Object event) {
 
-			var token = event.toString();
-
-			doReturn(token).when(eventSerializer).serialize(event);
-			doReturn(event).when(eventSerializer).deserialize(token, event.getClass());
+			serializer.registerSerialization(event);
 
 			return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
 		}
@@ -494,4 +497,43 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	@Nested
 	@TestPropertySource(properties = CompletionMode.PROPERTY + "=ARCHIVE")
 	class WithArchiveCompletionTests extends TestBase {}
+
+	private static class TestEventSerializer implements EventSerializer {
+
+		private final Map<Object, String> serializations = new HashMap<>();
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.core.EventSerializer#deserialize(java.lang.Object, java.lang.Class)
+		 */
+		@Override
+		public <T> T deserialize(Object serialized, Class<T> type) {
+
+			return serializations.entrySet().stream()
+					.filter(it -> it.getValue().equals(serialized) && type.isInstance(it.getKey()))
+					.map(Entry::getKey)
+					.findFirst()
+					.map(type::cast)
+					.orElseThrow();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.events.core.EventSerializer#serialize(java.lang.Object)
+		 */
+		@Override
+		public Object serialize(Object event) {
+			return serializations.get(event);
+		}
+
+		<T> T registerSerialization(T event) {
+			return registerSerialization(event, event.toString());
+		}
+
+		<T> T registerSerialization(T event, String serialization) {
+
+			this.serializations.put(event, serialization);
+			return event;
+		}
+	}
 }
