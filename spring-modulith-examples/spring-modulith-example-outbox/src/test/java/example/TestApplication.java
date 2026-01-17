@@ -20,7 +20,6 @@ import static org.mockito.Mockito.*;
 
 import example.order.Order;
 import example.order.OrderManagement;
-import io.namastack.outbox.annotation.EnableOutbox;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -37,7 +36,6 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 /**
  * @author Roland Beisel
  */
-@EnableOutbox
 @EnableScheduling
 @SpringBootApplication
 public class TestApplication {
