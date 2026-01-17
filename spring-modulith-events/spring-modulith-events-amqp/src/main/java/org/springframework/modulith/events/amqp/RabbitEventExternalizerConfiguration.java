@@ -15,7 +15,10 @@
  */
 package org.springframework.modulith.events.amqp;
 
+import io.namastack.outbox.handler.OutboxHandler;
+
 import java.util.concurrent.CompletableFuture;
+import java.util.function.BiFunction;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +33,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
+import org.springframework.modulith.events.outbox.ExternalizationMode;
+import org.springframework.modulith.events.outbox.OutboxEventTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
@@ -51,15 +57,39 @@ class RabbitEventExternalizerConfiguration {
 	private static final Logger logger = LoggerFactory.getLogger(RabbitEventExternalizerConfiguration.class);
 
 	@Bean
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
 	DelegatingEventExternalizer rabbitEventExternalizer(EventExternalizationConfiguration configuration,
 			RabbitMessageOperations operations, BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization to RabbitMQ…");
 
+		return new DelegatingEventExternalizer(configuration,
+				createRabbitTransport(configuration, operations, factory));
+	}
+
+	@ConditionalOnClass(OutboxHandler.class)
+	static class NamastackOutboxAutoConfiguration {
+
+		@Bean
+		@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+		OutboxHandler rabbitOutboxExternalizer(EventExternalizationConfiguration configuration,
+				RabbitMessageOperations operations, BeanFactory factory) {
+
+			logger.debug("Registering domain event outbox externalization to RabbitMQ…");
+
+			return new OutboxEventTransport(configuration,
+					createRabbitTransport(configuration, operations, factory));
+		}
+	}
+
+	private static BiFunction<RoutingTarget, Object, CompletableFuture<?>> createRabbitTransport(
+			EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
+			BeanFactory factory) {
+
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
-		return new DelegatingEventExternalizer(configuration, (target, payload) -> {
+		return (target, payload) -> {
 
 			var routing = BrokerRouting.of(target, context);
 			var headers = configuration.getHeadersFor(payload);
@@ -67,6 +97,6 @@ class RabbitEventExternalizerConfiguration {
 			operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
 
 			return CompletableFuture.completedFuture(null);
-		});
+		};
 	}
 }
