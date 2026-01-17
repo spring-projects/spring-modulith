@@ -1,3 +1,4 @@
 org.springframework.modulith.events.config.EventPublicationAutoConfiguration
 org.springframework.modulith.events.config.EventExternalizationAutoConfiguration
+org.springframework.modulith.events.outbox.OutboxModeValidationConfiguration
 org.springframework.modulith.events.outbox.OutboxEventRecorderAutoConfiguration
