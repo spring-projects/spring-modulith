@@ -35,15 +35,6 @@ import org.springframework.modulith.core.ArchitecturallyEvidentType;
 public interface ObservedModule {
 
 	/**
-	 * Returns the name of the application module.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.3, use {@link #getIdentifier()} instead.
-	 */
-	@Deprecated(forRemoval = true)
-	String getName();
-
-	/**
 	 * Returns the {@link ApplicationModuleIdentifier} of the underlying module.
 	 *
 	 * @return will never be {@literal null}.

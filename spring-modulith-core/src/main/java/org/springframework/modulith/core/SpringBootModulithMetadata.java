@@ -16,7 +16,6 @@
 package org.springframework.modulith.core;
 
 import java.lang.annotation.Annotation;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -93,26 +92,8 @@ class SpringBootModulithMetadata implements ModulithMetadata {
 	 * @see org.springframework.modulith.model.ModulithMetadata#getModulithSource()
 	 */
 	@Override
-	public Object getModulithSource() {
-		return getSource();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.model.ModulithMetadata#getModulithSource()
-	 */
-	@Override
 	public Object getSource() {
 		return source;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.model.ModulithMetadata#getAdditionalPackages()
-	 */
-	@Override
-	public List<String> getAdditionalPackages() {
-		return Collections.emptyList();
 	}
 
 	/*
@@ -122,15 +103,6 @@ class SpringBootModulithMetadata implements ModulithMetadata {
 	@Override
 	public boolean useFullyQualifiedModuleNames() {
 		return false;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.model.ModulithMetadata#getSharedModuleNames()
-	 */
-	@Override
-	public Stream<String> getSharedModuleNames() {
-		return Stream.empty();
 	}
 
 	/*

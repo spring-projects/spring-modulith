@@ -111,7 +111,8 @@ public class ObservedModuleType {
 			return false;
 		}
 
-		return type.getReferenceTypes()
+		return type.getReferenceMethods()
+				.flatMap(it -> it.getReferenceTypes().stream())
 				.flatMap(it -> modules
 						.getModuleByType(it)
 						.map(Stream::of)

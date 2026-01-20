@@ -21,6 +21,7 @@ import org.assertj.core.api.InstanceOfAssertFactories;
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleDependencies;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModules.Filters;
 import org.springframework.modulith.core.DependencyType;
@@ -98,7 +99,8 @@ public class ModulithTest {
 
 		assertThat(modules.getModuleByName("moduleD")).hasValueSatisfying(it -> {
 			assertThat(it.getBootstrapDependencies(modules))
-					.map(ApplicationModule::getName)
+					.map(ApplicationModule::getIdentifier)
+					.map(ApplicationModuleIdentifier::toString)
 					.doesNotContain("moduleA");
 		});
 	}

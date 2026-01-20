@@ -77,16 +77,6 @@ public interface EventPublication {
 	/**
 	 * Returns whether the publication of the event has completed.
 	 *
-	 * @deprecated since 1.3, use {@link #isCompleted()} instead.
-	 */
-	@Deprecated
-	default boolean isPublicationCompleted() {
-		return isCompleted();
-	}
-
-	/**
-	 * Returns whether the publication of the event has completed.
-	 *
 	 * @since 1.3
 	 */
 	default boolean isCompleted() {

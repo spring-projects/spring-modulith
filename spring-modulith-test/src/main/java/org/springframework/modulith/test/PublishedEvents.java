@@ -112,35 +112,8 @@ public interface PublishedEvents extends TypedEvents {
 		 *          must not be {@literal null}.
 		 * @param value the value expected as outcome of the mapping step, can be {@literal null}.
 		 * @return will never be {@literal null}.
-		 * @deprecated use {@link #matchingValue(Function, Object)} instead.
-		 */
-		@Deprecated(since = "2.0", forRemoval = true)
-		<S> TypedPublishedEvents<T> matching(Function<T, S> mapper, @Nullable S value);
-
-		/**
-		 * Returns all {@link TypedPublishedEvents} that match the given value after applying the given mapping step.
-		 *
-		 * @param <S> the intermediate type to apply the {@link Predicate} on
-		 * @param mapper the mapping step to extract a part of the original event subject to verify against the given value,
-		 *          must not be {@literal null}.
-		 * @param value the value expected as outcome of the mapping step, can be {@literal null}.
-		 * @return will never be {@literal null}.
 		 * @since 2.0
 		 */
 		<S> TypedPublishedEvents<T> matchingValue(Function<T, S> mapper, @Nullable S value);
-
-		/**
-		 * Returns all {@link TypedPublishedEvents} that match the given predicate after applying the given mapping step.
-		 *
-		 * @param <S> the intermediate type to apply the {@link Predicate} on
-		 * @param mapper the mapping step to extract a part of the original event subject to test for the {@link Predicate}.
-		 * @param predicate the {@link Predicate} to apply on the value extracted.
-		 * @return will never be {@literal null}.
-		 * @deprecated since 0.3, use {@link #matching(Function, Predicate)} instead.
-		 */
-		@Deprecated(forRemoval = true, since = "0.3")
-		default <S> TypedPublishedEvents<T> matchingMapped(Function<T, S> mapper, Predicate<? super S> predicate) {
-			return matching(mapper, predicate);
-		}
 	}
 }

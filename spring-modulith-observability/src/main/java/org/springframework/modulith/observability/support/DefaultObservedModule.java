@@ -52,15 +52,6 @@ class DefaultObservedModule implements ObservedModule {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.observability.ObservedModule#getName()
-	 */
-	@Override
-	public String getName() {
-		return getIdentifier().toString();
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see org.springframework.modulith.observability.ObservedModule#getIdentifier()
 	 */
 	@Override

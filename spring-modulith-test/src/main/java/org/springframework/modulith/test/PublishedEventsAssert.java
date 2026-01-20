@@ -124,12 +124,27 @@ public class PublishedEventsAssert extends AbstractAssert<PublishedEventsAssert,
 		 * @param function the extractor function, must not be {@literal null}.
 		 * @param value the expected value, can be {@literal null}.
 		 * @return will never be {@literal null}.
+		 * @deprecated since 2.1, use {@link #matchingValue(Function, Object)} instead. To be removed in 2.2.
 		 */
+		@Deprecated(since = "2.1", forRemoval = true)
 		public <S> PublishedEventAssert<T> matching(Function<T, S> function, @Nullable S value) {
+			return matchingValue(function, value);
+		}
+
+		/**
+		 * Asserts that at least one event exists for which the value extracted by the given {@link Function} matches the
+		 * given one.
+		 *
+		 * @param <S> the type of the value to be matched
+		 * @param function the extractor function, must not be {@literal null}.
+		 * @param value the expected value, can be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		public <S> PublishedEventAssert<T> matchingValue(Function<T, S> function, @Nullable S value) {
 
 			Assert.notNull(function, "Function must not be null!");
 
-			assertThat(events.matching(function, value)).isNotEmpty();
+			assertThat(events.matchingValue(function, value)).isNotEmpty();
 
 			return this;
 		}

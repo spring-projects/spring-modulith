@@ -752,15 +752,6 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.events.CompletableEventPublication#isPublicationCompleted()
-		 */
-		@Override
-		public boolean isPublicationCompleted() {
-			return completionDate != null;
-		}
-
-		/*
-		 * (non-Javadoc)
 		 * @see org.springframework.modulith.events.Completable#markCompleted(java.time.Instant)
 		 */
 		@Override

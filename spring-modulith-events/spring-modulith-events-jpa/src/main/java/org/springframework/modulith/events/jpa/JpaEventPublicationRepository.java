@@ -602,15 +602,6 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.events.CompletableEventPublication#isPublicationCompleted()
-		 */
-		@Override
-		public boolean isPublicationCompleted() {
-			return publication.completionDate != null;
-		}
-
-		/*
-		 * (non-Javadoc)
 		 * @see org.springframework.modulith.events.Completable#markCompleted(java.time.Instant)
 		 */
 		@Override

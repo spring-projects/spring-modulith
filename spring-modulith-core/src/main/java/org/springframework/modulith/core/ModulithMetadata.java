@@ -89,27 +89,8 @@ public interface ModulithMetadata {
 	 * Returns the source of the Spring Modulith setup. Either a type or a package.
 	 *
 	 * @return will never be {@literal null}.
-	 * @deprecated use {@link #getSource()} instead.
-	 */
-	@Deprecated(forRemoval = true)
-	Object getModulithSource();
-
-	/**
-	 * Returns the source of the Spring Modulith setup. Either a type or a package.
-	 *
-	 * @return will never be {@literal null}.
 	 */
 	Object getSource();
-
-	/**
-	 * Returns the names of the packages that are supposed to be considered modulith base packages, i.e. for which to
-	 * consider all direct sub-packages modules by default.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.2, rather use {@link #getBasePackages()} that includes all packages already.
-	 */
-	@Deprecated
-	List<String> getAdditionalPackages();
 
 	/**
 	 * Whether to use fully-qualified module names, i.e. rather use the fully-qualified package name instead of the local
@@ -118,15 +99,6 @@ public interface ModulithMetadata {
 	 * @return
 	 */
 	boolean useFullyQualifiedModuleNames();
-
-	/**
-	 * Returns the name of shared modules, i.e. modules that are supposed to always be included in bootstraps.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.3, use {@link #getSharedModuleIdentifiers()} instead.
-	 */
-	@Deprecated
-	Stream<String> getSharedModuleNames();
 
 	/**
 	 * Returns the {@link ApplicationModuleIdentifier}s of shared modules, i.e. modules that are supposed to always be

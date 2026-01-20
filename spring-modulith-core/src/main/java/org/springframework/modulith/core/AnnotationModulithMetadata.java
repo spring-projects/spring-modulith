@@ -76,26 +76,8 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 	 * @see org.springframework.modulith.model.ModulithMetadata#getModulithSource()
 	 */
 	@Override
-	public Object getModulithSource() {
-		return getSource();
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.model.ModulithMetadata#getModulithSource()
-	 */
-	@Override
 	public Object getSource() {
 		return modulithType;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.model.ModulithMetadata#getAdditionalPackages()
-	 */
-	@Override
-	public List<String> getAdditionalPackages() {
-		return Arrays.asList(annotation.additionalPackages());
 	}
 
 	/*
@@ -109,20 +91,11 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.model.ModulithMetadata#getSharedModuleNames()
-	 */
-	@Override
-	public Stream<String> getSharedModuleNames() {
-		return Arrays.stream(annotation.sharedModules());
-	}
-
-	/*
-	 * (non-Javadoc)
 	 * @see org.springframework.modulith.core.ModulithMetadata#getSharedModuleIdentifiers()
 	 */
 	@Override
 	public Stream<ApplicationModuleIdentifier> getSharedModuleIdentifiers() {
-		return getSharedModuleNames().map(ApplicationModuleIdentifier::of);
+		return Arrays.stream(annotation.sharedModules()).map(ApplicationModuleIdentifier::of);
 	}
 
 	/*

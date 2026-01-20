@@ -104,11 +104,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 * @param ignored must not be {@literal null}.
 	 * @param useFullyQualifiedModuleNames can be {@literal null}.
 	 * @param option must not be {@literal null}.
-	 * @deprecated since 1.2, for removal in 1.3. Use {@link ApplicationModules(ModulithMetadata, DescribedPredicate,
-	 *             ImportOption)} instead and set up {@link ModulithMetadata} to contain the packages you want to use.
 	 */
-	@Deprecated(forRemoval = true)
-	protected ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
+	private ApplicationModules(ModulithMetadata metadata, Collection<String> packages,
 			DescribedPredicate<? super JavaClass> ignored, boolean useFullyQualifiedModuleNames, ImportOption option) {
 
 		Assert.notNull(metadata, "ModulithMetadata must not be null!");
@@ -281,17 +278,6 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	 */
 	public static ApplicationModules of(String javaPackage, ImportOption options) {
 		return of(CacheKey.of(javaPackage, alwaysFalse(), options));
-	}
-
-	/**
-	 * Returns the source of the {@link ApplicationModules}. Either a main application class or a package name.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated use {@link #getSource()} instead
-	 */
-	@Deprecated(forRemoval = true)
-	public Object getModulithSource() {
-		return metadata.getSource();
 	}
 
 	/**

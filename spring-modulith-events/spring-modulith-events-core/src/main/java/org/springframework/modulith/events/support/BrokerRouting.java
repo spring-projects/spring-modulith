@@ -61,25 +61,15 @@ public class BrokerRouting {
 	}
 
 	/**
-	 * Returns the actual routing target.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.3, call {@link #getTarget(Object)} instead.
-	 */
-	@Deprecated
-	public String getTarget() {
-		return target.getTarget();
-	}
-
-	/**
-	 * Returns the actual routing target for the given event.
+	 * Returns the actual routing target for the given event. The default implementation will ignore the given parameter.
+	 * Sub-types might choose to consider it, though.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 * @since 1.3
 	 */
 	public String getTarget(Object event) {
-		return getTarget();
+		return target.getTarget();
 	}
 
 	/**
@@ -125,15 +115,6 @@ public class BrokerRouting {
 			this.keyExpression = target.getKey() == null ? null : PARSER.parseExpression(target.getKey(), CONTEXT);
 			this.targetExpression = PARSER.parseExpression(target.getTarget(), CONTEXT);
 			this.context = context;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.events.support.BrokerRouting#getTarget()
-		 */
-		@Override
-		public String getTarget() {
-			return getTarget(null);
 		}
 
 		/*

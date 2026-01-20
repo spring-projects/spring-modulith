@@ -125,21 +125,6 @@ public class Documenter {
 	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} and output folder.
 	 *
 	 * @param modules must not be {@literal null}.
-	 * @param outputFolder must not be {@literal null} or empty.
-	 * @deprecated use {@link Documenter(ApplicationModules, Options)} instead.
-	 */
-	@Deprecated(forRemoval = true)
-	public Documenter(ApplicationModules modules, String outputFolder) {
-
-		this(modules, Options.defaults().withOutputFolder(outputFolder));
-
-		Assert.hasText(outputFolder, "Output folder must not be null or empty!");
-	}
-
-	/**
-	 * Creates a new {@link Documenter} for the given {@link ApplicationModules} and output folder.
-	 *
-	 * @param modules must not be {@literal null}.
 	 * @param options must not be {@literal null}.
 	 * @since 1.2
 	 */
@@ -1144,18 +1129,6 @@ public class Documenter {
 				this.name = name;
 				this.predicate = predicate;
 				this.description = description;
-			}
-
-			/**
-			 * Creates a {@link Grouping} with the given name.
-			 *
-			 * @param name must not be {@literal null} or empty.
-			 * @return will never be {@literal null}.
-			 * @deprecated no replacement as a name-only {@link Grouping} doesn't make any sense in the first place.
-			 */
-			@Deprecated
-			public static Grouping of(String name) {
-				return new Grouping(name, __ -> false, null);
 			}
 
 			/**

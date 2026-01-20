@@ -58,7 +58,7 @@ class ApplicationModulesIntegrationTest {
 
 		assertThat(modules.getModuleByName("moduleB")).hasValueSatisfying(it -> {
 			assertThat(it.getBootstrapDependencies(modules)).anySatisfy(dep -> {
-				assertThat(dep.getName()).isEqualTo("moduleA");
+				assertThat(dep.getIdentifier()).isEqualTo(ApplicationModuleIdentifier.of("moduleA"));
 			});
 		});
 	}
@@ -140,7 +140,7 @@ class ApplicationModulesIntegrationTest {
 
 			assertThatExceptionOfType(Violations.class) //
 					.isThrownBy(() -> it.verifyDependencies(modules)) //
-					.withMessageContaining(it.getName());
+					.withMessageContaining(it.getIdentifier().toString());
 		});
 	}
 
@@ -156,9 +156,9 @@ class ApplicationModulesIntegrationTest {
 
 		ApplicationModules fromPackage = ApplicationModules.of(Application.class.getPackage().getName());
 
-		assertThat(fromPackage.stream().map(ApplicationModule::getName)) //
+		assertThat(fromPackage.stream().map(ApplicationModule::getIdentifier)) //
 				.containsExactlyInAnyOrderElementsOf(
-						modules.stream().map(ApplicationModule::getName).toList());
+						modules.stream().map(ApplicationModule::getIdentifier).toList());
 	}
 
 	@Test // #102
@@ -207,8 +207,8 @@ class ApplicationModulesIntegrationTest {
 					.extracting(SpringBean::getFullyQualifiedTypeName)
 					.containsExactly(SampleValidator.class.getName());
 
-			assertThat(it.getBootstrapDependencies(modules).map(ApplicationModule::getName))
-					.containsExactly("moduleA");
+			assertThat(it.getBootstrapDependencies(modules).map(ApplicationModule::getIdentifier))
+					.containsExactly(ApplicationModuleIdentifier.of("moduleA"));
 		});
 	}
 
@@ -267,7 +267,8 @@ class ApplicationModulesIntegrationTest {
 		assertThat(modules.getModuleByName("moduleC")).hasValueSatisfying(it -> {
 
 			assertThat(it.getAllDependencies(modules).uniqueModules())
-					.extracting(ApplicationModule::getName)
+					.extracting(ApplicationModule::getIdentifier)
+					.extracting(ApplicationModuleIdentifier::toString)
 					.containsExactlyInAnyOrder("moduleB", "moduleA");
 		});
 	}

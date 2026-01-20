@@ -34,6 +34,7 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.EventListener;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.repository.reactive.ReactiveCrudRepository;
+import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.SpringAwareArchitecturallyEvidentType;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.SpringDataAwareArchitecturallyEvidentType;
 import org.springframework.stereotype.Repository;
@@ -166,9 +167,9 @@ class ArchitecturallyEvidentTypeUnitTest {
 
 		JavaClass listenerType = classes.getRequiredClass(SomeEventListener.class);
 
-		assertThat(ArchitecturallyEvidentType.of(listenerType, classes).getReferenceTypes()) //
-				.extracting(JavaClass::getFullName) //
-				.containsExactly(Object.class.getName(), String.class.getName());
+		assertThat(ArchitecturallyEvidentType.of(listenerType, classes).getReferenceMethods()) //
+				.flatExtracting(ReferenceMethod::getReferenceTypes)
+				.containsOnly(Object.class, String.class);
 	}
 
 	@Test
@@ -176,9 +177,9 @@ class ArchitecturallyEvidentTypeUnitTest {
 
 		JavaClass listenerType = classes.getRequiredClass(ImplementingEventListener.class);
 
-		assertThat(ArchitecturallyEvidentType.of(listenerType, classes).getReferenceTypes()) //
-				.extracting(JavaClass::getFullName) //
-				.containsExactly(ApplicationReadyEvent.class.getName());
+		assertThat(ArchitecturallyEvidentType.of(listenerType, classes).getReferenceMethods()) //
+				.flatExtracting(ReferenceMethod::getReferenceTypes)
+				.containsExactly(ApplicationReadyEvent.class);
 	}
 
 	@Test

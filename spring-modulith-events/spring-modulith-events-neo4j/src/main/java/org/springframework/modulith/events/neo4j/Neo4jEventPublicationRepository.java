@@ -627,11 +627,6 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 		}
 
 		@Override
-		public boolean isPublicationCompleted() {
-			return delegate.completionDate != null;
-		}
-
-		@Override
 		public Status getStatus() {
 			return delegate.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
 		}

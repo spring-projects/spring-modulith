@@ -143,15 +143,6 @@ class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<App
 
 		/*
 		 * (non-Javadoc)
-		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matching(java.util.function.Function, java.lang.Object)
-		 */
-		@Override
-		public <S> TypedPublishedEvents<T> matching(Function<T, S> mapper, @Nullable S value) {
-			return matching(mapper, (Predicate<S>) it -> Objects.equals(it, value));
-		}
-
-		/*
-		 * (non-Javadoc)
 		 * @see org.springframework.modulith.test.PublishedEvents.TypedPublishedEvents#matchingValue(java.util.function.Function, java.lang.Object)
 		 */
 		@Override

@@ -55,17 +55,6 @@ public class BuildSystemUtils {
 	}
 
 	/**
-	 * Returns the path to the folder containing test classes.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.4.4, 2.0. Use {@link #pointsToTestTarget(String)} instead.
-	 */
-	@Deprecated(since = "1.4.4, 2.0", forRemoval = true)
-	public static String getTestTarget() {
-		return isMaven() ? "target/test-classes" : "build/classes/java/test";
-	}
-
-	/**
 	 * Returns whether the given path points to a resource in the test target folder.
 	 *
 	 * @param path must not be {@literal null} or empty.

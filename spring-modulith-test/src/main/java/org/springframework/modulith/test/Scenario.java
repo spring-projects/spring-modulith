@@ -561,7 +561,7 @@ public class Scenario {
 			 */
 			@CheckReturnValue
 			public <S> EventResult<E> matchingMappedValue(Function<E, S> extractor, @Nullable S value) {
-				return new EventResult<E>(type, createOrAdd(it -> it.matching(extractor, value)), previousResult);
+				return new EventResult<E>(type, createOrAdd(it -> it.matchingValue(extractor, value)), previousResult);
 			}
 
 			/**

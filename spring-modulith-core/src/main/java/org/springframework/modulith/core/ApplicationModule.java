@@ -131,17 +131,6 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	}
 
 	/**
-	 * Returns the logical name of the module.
-	 *
-	 * @return will never be {@literal null} or empty.
-	 * @deprecated since 1.3, use {@link #getIdentifier()} instead.
-	 */
-	@Deprecated
-	public String getName() {
-		return getIdentifier().toString();
-	}
-
-	/**
 	 * Returns the logical identifier of the module.
 	 *
 	 * @return will never be {@literal null}.
@@ -159,19 +148,6 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	public String getDisplayName() {
 		return information.getDisplayName()
 				.orElseGet(() -> StringUtils.capitalize(basePackage.getLocalName()));
-	}
-
-	/**
-	 * Returns {@link AllowedDependencies} of the current {@link ApplicationModule}.
-	 *
-	 * @param modules must not be {@literal null}.
-	 * @param type must not be {@literal null}.
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.3. Use {@link #getDirectDependencies(ApplicationModules, DependencyType...)} instead.
-	 */
-	@Deprecated
-	public ApplicationModuleDependencies getDependencies(ApplicationModules modules, DependencyType... type) {
-		return getDirectDependencies(modules, type);
 	}
 
 	/**

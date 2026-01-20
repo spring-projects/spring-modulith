@@ -22,11 +22,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -151,18 +149,6 @@ public abstract class ArchitecturallyEvidentType {
 		return false;
 	}
 
-	/**
-	 * Returns other types that are interesting in the context of the current {@link ArchitecturallyEvidentType}. For
-	 * example, for an event listener this might be the event types the particular listener is interested in.
-	 *
-	 * @return will never be {@literal null}.
-	 * @deprecated since 1.3.2, no replacement.
-	 */
-	@Deprecated(forRemoval = true)
-	public Stream<JavaClass> getReferenceTypes() {
-		return Stream.empty();
-	}
-
 	public Stream<ReferenceMethod> getReferenceMethods() {
 		return Stream.empty();
 	}
@@ -174,23 +160,6 @@ public abstract class ArchitecturallyEvidentType {
 	@Override
 	public String toString() {
 		return type.getFullName();
-	}
-
-	private static Stream<JavaClass> distinctByName(Stream<JavaClass> types) {
-
-		Set<String> names = new HashSet<>();
-
-		return types.flatMap(it -> {
-
-			if (names.contains(it.getFullName())) {
-				return Stream.empty();
-			} else {
-
-				names.add(it.getFullName());
-
-				return Stream.of(it);
-			}
-		});
 	}
 
 	static class SpringAwareArchitecturallyEvidentType extends ArchitecturallyEvidentType {
@@ -283,24 +252,6 @@ public abstract class ArchitecturallyEvidentType {
 		@Override
 		public boolean isInjectable() {
 			return injectable || SpringTypes.isComponent().test(getType()) || super.isInjectable();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ArchitecturallyEvidentType#getOtherTypeReferences()
-		 */
-		@Override
-		public Stream<JavaClass> getReferenceTypes() {
-
-			if (isEventListener()) {
-
-				return distinctByName(getType().getMethods().stream() //
-						.filter(IS_EVENT_LISTENER) //
-						.flatMap(it -> it.getRawParameterTypes().stream()))
-								.sorted(Comparator.comparing(JavaClass::getSimpleName));
-			}
-
-			return super.getReferenceTypes();
 		}
 
 		/*
@@ -463,7 +414,6 @@ public abstract class ArchitecturallyEvidentType {
 		private final Supplier<Boolean> isAggregateRoot, isRepository, isEntity, isService, isController,
 				isEventListener, isConfigurationProperties, isInjectable, isValueObject;
 
-		private final Supplier<Collection<JavaClass>> referenceTypes;
 		private final Supplier<Collection<ReferenceMethod>> referenceMethods;
 
 		DelegatingType(JavaClass type, Supplier<Boolean> isAggregateRoot,
@@ -472,7 +422,6 @@ public abstract class ArchitecturallyEvidentType {
 				Supplier<Boolean> isConfigurationProperties,
 				Supplier<Boolean> isInjectable,
 				Supplier<Boolean> isValueObject,
-				Supplier<Collection<JavaClass>> referenceTypes,
 				Supplier<Collection<ReferenceMethod>> referenceMethods) {
 
 			super(type);
@@ -486,7 +435,6 @@ public abstract class ArchitecturallyEvidentType {
 			this.isConfigurationProperties = isConfigurationProperties;
 			this.isInjectable = isInjectable;
 			this.isValueObject = isValueObject;
-			this.referenceTypes = referenceTypes;
 			this.referenceMethods = referenceMethods;
 		}
 
@@ -518,16 +466,12 @@ public abstract class ArchitecturallyEvidentType {
 			var isValueObject = SingletonSupplier
 					.of(() -> types.stream().anyMatch(ArchitecturallyEvidentType::isValueObject));
 
-			Supplier<Collection<JavaClass>> referenceTypes = SingletonSupplier.of(() -> types.stream() //
-					.flatMap(ArchitecturallyEvidentType::getReferenceTypes) //
-					.toList());
-
 			Supplier<Collection<ReferenceMethod>> referenceMethods = SingletonSupplier.of(() -> types.stream() //
 					.flatMap(ArchitecturallyEvidentType::getReferenceMethods) //
 					.toList());
 
 			return new DelegatingType(type, isAggregateRoot, isRepository, isEntity, isService, isController,
-					isEventListener, isConfigurationProperties, isInjectable, isValueObject, referenceTypes, referenceMethods);
+					isEventListener, isConfigurationProperties, isInjectable, isValueObject, referenceMethods);
 		}
 
 		/*
@@ -611,15 +555,6 @@ public abstract class ArchitecturallyEvidentType {
 		@Override
 		public boolean isValueObject() {
 			return isValueObject.get();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.modulith.model.ArchitecturallyEvidentType#getOtherTypeReferences()
-		 */
-		@Override
-		public Stream<JavaClass> getReferenceTypes() {
-			return distinctByName(referenceTypes.get().stream());
 		}
 
 		/*

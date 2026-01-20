@@ -398,11 +398,6 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		}
 
 		@Override
-		public boolean isPublicationCompleted() {
-			return publication.completionDate != null;
-		}
-
-		@Override
 		public void markCompleted(Instant instant) {
 			this.publication.markCompleted(instant);
 		}
