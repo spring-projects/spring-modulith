@@ -19,10 +19,10 @@ jobs:
         - '3.3.12'
         - '3.4.11'
         - '3.4.12-SNAPSHOT'
-        - '3.5.7'
-        - '3.5.8-SNAPSHOT'
+        - '3.5.10'
+        - '3.5.11-SNAPSHOT'
         jmolecules:
-        - '2025.0.0'
+        - '2025.0.2'
 
     name: Build ${{ matrix.branch }} against Boot ${{ matrix.boot }} / jMolecules ${{ matrix.jmolecules }}
     runs-on: ubuntu-latest
