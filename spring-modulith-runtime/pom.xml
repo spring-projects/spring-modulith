@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith</artifactId>
-		<version>1.4.7</version>
+		<version>1.4.8-SNAPSHOT</version>
 	</parent>
 
 	<name>Spring Modulith - Runtime support</name>
