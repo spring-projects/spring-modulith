@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events.namastack;
 
 import io.namastack.outbox.Outbox;
 
@@ -31,9 +31,8 @@ import org.springframework.modulith.events.config.EventExternalizationAutoConfig
 /**
  * Auto-configuration to set up an {@link OutboxEventRecorder} to externalize events via the outbox.
  * <p>
- * This configuration is activated when {@code spring.modulith.events.externalization.mode} is set
- * to {@code outbox}. Events are persisted to an outbox table within the same transaction as the
- * business operation.
+ * This configuration is activated when {@code spring.modulith.events.externalization.mode} is set to {@code outbox}.
+ * Events are persisted to an outbox table within the same transaction as the business operation.
  *
  * @author Roland Beisel
  * @since 2.1
@@ -43,16 +42,15 @@ import org.springframework.modulith.events.config.EventExternalizationAutoConfig
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
 @ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
 @ConditionalOnBean(Outbox.class)
-class OutboxEventRecorderAutoConfiguration {
+class NamastackOutboxEventRecorderAutoConfiguration {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(OutboxEventRecorderAutoConfiguration.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(NamastackOutboxEventRecorderAutoConfiguration.class);
 
 	@Bean
-	OutboxEventRecorder outboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox) {
+	NamastackOutboxEventRecorder outboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox) {
 
 		LOGGER.debug("Registering domain event externalization via outbox…");
 
-		return new OutboxEventRecorder(configuration, outbox);
+		return new NamastackOutboxEventRecorder(configuration, outbox);
 	}
 }
-

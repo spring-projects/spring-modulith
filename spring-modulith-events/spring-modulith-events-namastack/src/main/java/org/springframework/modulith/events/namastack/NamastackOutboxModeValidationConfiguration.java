@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events.namastack;
 
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -23,8 +23,8 @@ import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.util.ClassUtils;
 
 /**
- * Validation configuration that fails fast if externalization mode is set to {@code outbox} but
- * Namastack Outbox is not on the classpath.
+ * Validation configuration that fails fast if externalization mode is set to {@code outbox} but Namastack Outbox is not
+ * on the classpath.
  * <p>
  * This prevents silent failures where events would be configured for outbox externalization but no
  * {@code OutboxHandler} would be registered to actually transport them.
@@ -33,9 +33,9 @@ import org.springframework.util.ClassUtils;
  * @since 2.1
  */
 @AutoConfiguration
-@AutoConfigureBefore(OutboxEventRecorderAutoConfiguration.class)
+@AutoConfigureBefore(NamastackOutboxEventRecorderAutoConfiguration.class)
 @ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
-class OutboxModeValidationConfiguration implements InitializingBean {
+class NamastackOutboxModeValidationConfiguration implements InitializingBean {
 
 	private static final String OUTBOX_CLASS = "io.namastack.outbox.Outbox";
 

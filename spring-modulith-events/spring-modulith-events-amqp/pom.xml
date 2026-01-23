@@ -35,6 +35,13 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-events-namastack</artifactId>
+			<version>${project.version}</version>
+			<optional>true</optional>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.amqp</groupId>
 			<artifactId>spring-amqp</artifactId>
 		</dependency>
@@ -60,13 +67,6 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-databind</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-		<dependency>
-			<groupId>io.namastack</groupId>
-			<artifactId>namastack-outbox-api</artifactId>
-			<version>1.0.0-RC2</version>
 			<optional>true</optional>
 		</dependency>
 

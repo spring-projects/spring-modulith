@@ -96,6 +96,11 @@
 			</dependency>
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
+				<artifactId>spring-modulith-events-namastack</artifactId>
+				<version>2.1.0-SNAPSHOT</version>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-events-tests</artifactId>
 				<version>2.1.0-SNAPSHOT</version>
 			</dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events.namastack;
+
+import io.namastack.outbox.handler.OutboxHandler;
+import io.namastack.outbox.handler.OutboxRecordMetadata;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
-
-import io.namastack.outbox.handler.OutboxHandler;
-import io.namastack.outbox.handler.OutboxRecordMetadata;
 
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.RoutingTarget;
@@ -29,28 +29,28 @@ import org.springframework.util.Assert;
 /**
  * An {@link OutboxHandler} that transports events from the outbox to an external target.
  * <p>
- * This handler is invoked by the outbox processor to externalize events that were
- * previously recorded in the outbox table. It uses the configured transport function
- * to deliver events to their target destination (e.g., message broker, email, SMS).
+ * This handler is invoked by the outbox processor to externalize events that were previously recorded in the outbox
+ * table. It uses the configured transport function to deliver events to their target destination (e.g., message broker,
+ * email, SMS).
  *
  * @author Roland Beisel
  * @since 2.1
  * @see OutboxHandler
  * @see EventExternalizationConfiguration
  */
-public class OutboxEventTransport implements OutboxHandler {
+public class NamastackOutboxEventTransport implements OutboxHandler {
 
 	private final EventExternalizationConfiguration configuration;
 	private final BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport;
 
 	/**
-	 * Creates a new {@link OutboxEventTransport} for the given {@link EventExternalizationConfiguration}
-	 * and transport function.
+	 * Creates a new {@link OutboxEventTransport} for the given {@link EventExternalizationConfiguration} and transport
+	 * function.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
 	 */
-	public OutboxEventTransport(EventExternalizationConfiguration configuration,
+	public NamastackOutboxEventTransport(EventExternalizationConfiguration configuration,
 			BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport) {
 
 		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
@@ -61,8 +61,8 @@ public class OutboxEventTransport implements OutboxHandler {
 	}
 
 	/**
-	 * Handles an outbox event by determining its routing target and transporting it
-	 * to the external target using the configured transport function.
+	 * Handles an outbox event by determining its routing target and transporting it to the external target using the
+	 * configured transport function.
 	 *
 	 * @param event the event payload to transport
 	 * @param metadata the outbox record metadata
