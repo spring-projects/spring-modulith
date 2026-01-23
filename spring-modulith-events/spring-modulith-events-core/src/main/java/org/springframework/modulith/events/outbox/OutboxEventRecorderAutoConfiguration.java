@@ -25,6 +25,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 
 /**
