@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events;
 
 import org.springframework.core.env.Environment;
 import org.springframework.util.Assert;
