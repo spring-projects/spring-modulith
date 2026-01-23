@@ -67,6 +67,7 @@ class RabbitEventExternalizerConfiguration {
 				createRabbitTransport(configuration, operations, factory));
 	}
 
+	@AutoConfiguration
 	@ConditionalOnClass(OutboxHandler.class)
 	static class NamastackOutboxAutoConfiguration {
 

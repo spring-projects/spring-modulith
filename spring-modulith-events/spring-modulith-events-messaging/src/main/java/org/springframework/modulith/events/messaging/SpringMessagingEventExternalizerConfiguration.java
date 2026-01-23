@@ -69,6 +69,7 @@ class SpringMessagingEventExternalizerConfiguration {
 				createMessagingTransport(configuration, factory));
 	}
 
+	@AutoConfiguration
 	@ConditionalOnClass(OutboxHandler.class)
 	static class NamastackOutboxAutoConfiguration {
 
