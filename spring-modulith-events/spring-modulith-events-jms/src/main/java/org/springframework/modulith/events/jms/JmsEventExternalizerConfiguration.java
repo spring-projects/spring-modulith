@@ -67,6 +67,7 @@ class JmsEventExternalizerConfiguration {
 				createJmsTransport(operations, serializer, factory));
 	}
 
+	@AutoConfiguration
 	@ConditionalOnClass(OutboxHandler.class)
 	static class NamastackOutboxAutoConfiguration {
 
