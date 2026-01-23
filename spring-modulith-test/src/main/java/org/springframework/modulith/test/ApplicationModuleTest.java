@@ -22,17 +22,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import org.junit.jupiter.api.TestInstance;
-import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.springframework.boot.autoconfigure.ImportAutoConfiguration;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
-import org.springframework.boot.test.context.filter.annotation.TypeExcludeFilters;
 import org.springframework.core.annotation.AliasFor;
 import org.springframework.modulith.core.DependencyDepth;
-import org.springframework.test.context.TestConstructor;
-import org.springframework.test.context.TestConstructor.AutowireMode;
 
 /**
  * Bootstraps the module containing the package of the test class annotated with {@link ApplicationModuleTest}. Will
@@ -48,18 +41,14 @@ import org.springframework.test.context.TestConstructor.AutowireMode;
 @Documented
 @Inherited
 @Retention(RetentionPolicy.RUNTIME)
+@ModuleSlicing
 @SpringBootTest
-@TypeExcludeFilters(ModuleTypeExcludeFilter.class)
-@ImportAutoConfiguration(ModuleTestAutoConfiguration.class)
-@ExtendWith({ PublishedEventsParameterResolver.class, ScenarioParameterResolver.class })
-@TestInstance(Lifecycle.PER_CLASS)
-@TestConstructor(autowireMode = AutowireMode.ALL)
 public @interface ApplicationModuleTest {
 
-	@AliasFor("mode")
+	@AliasFor(annotation = ModuleSlicing.class, attribute = "value")
 	BootstrapMode value() default BootstrapMode.STANDALONE;
 
-	@AliasFor("value")
+	@AliasFor(annotation = ModuleSlicing.class, attribute = "mode")
 	BootstrapMode mode() default BootstrapMode.STANDALONE;
 
 	/**
@@ -67,6 +56,7 @@ public @interface ApplicationModuleTest {
 	 *
 	 * @return
 	 */
+	@AliasFor(annotation = ModuleSlicing.class, attribute = "verifyAutomatically")
 	boolean verifyAutomatically() default true;
 
 	/**
@@ -74,6 +64,7 @@ public @interface ApplicationModuleTest {
 	 *
 	 * @return
 	 */
+	@AliasFor(annotation = ModuleSlicing.class, attribute = "extraIncludes")
 	String[] extraIncludes() default {};
 
 	/**
@@ -83,6 +74,7 @@ public @interface ApplicationModuleTest {
 	 * @return will never be {@literal null}.
 	 * @since 1.3
 	 */
+	@AliasFor(annotation = ModuleSlicing.class, attribute = "module")
 	String module() default "";
 
 	/**

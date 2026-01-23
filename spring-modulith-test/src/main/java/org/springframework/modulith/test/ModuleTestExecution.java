@@ -41,7 +41,6 @@ import org.springframework.modulith.core.JavaPackages;
 import org.springframework.modulith.core.PackageName;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
 import org.springframework.util.Assert;
-import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;
 
@@ -76,7 +75,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 	private final Supplier<List<ApplicationModule>> dependencies;
 	private final Supplier<List<ApplicationModule>> includedModules;
 
-	private ModuleTestExecution(ApplicationModuleTest annotation, ApplicationModules modules, ApplicationModule module) {
+	private ModuleTestExecution(ModuleSlicing annotation, ApplicationModules modules, ApplicationModule module) {
 
 		this.key = new Key(module.getBasePackage().getName(), annotation);
 		this.modules = modules;
@@ -124,15 +123,19 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		return SingletonSupplier.of(() -> {
 
-			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
+			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ModuleSlicing.class);
+			var moduleTestAnnotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
 
 			if (annotation == null) {
 				throw new IllegalStateException(
-						"%s not found on %s!".formatted(ApplicationModuleTest.class.getName(), type.getName()));
+						"%s not found on %s!".formatted(ModuleSlicing.class.getName(), type.getName()));
 			}
 
 			var packageName = PackageName.ofType(type).toString();
-			var modules = BOOTSTRAP.of(findSpringBootApplicationByClasses(annotation, type));
+			var classes = moduleTestAnnotation != null
+					? List.of(moduleTestAnnotation.classes())
+					: List.of(annotation.classes());
+			var modules = BOOTSTRAP.of(findSpringBootApplicationByClasses(type, classes));
 			var moduleName = annotation.module();
 
 			var module = StringUtils.hasText(moduleName)
@@ -280,7 +283,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		return modules.withinRootPackages(className) || basePackages.get().couldContain(className);
 	}
 
-	private static Stream<ApplicationModule> getExtraModules(ApplicationModuleTest annotation,
+	private static Stream<ApplicationModule> getExtraModules(ModuleSlicing annotation,
 			ApplicationModules modules) {
 
 		return Arrays.stream(annotation.extraIncludes()) //
@@ -288,16 +291,16 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 				.flatMap(Optional::stream);
 	}
 
-	private static Class<?> findSpringBootApplicationByClasses(ApplicationModuleTest annotation,
-			Class<?> testClass) {
+	private static Class<?> findSpringBootApplicationByClasses(Class<?> testClass, List<Class<?>> additionalTypes) {
 
-		var types = ObjectUtils.addObjectToArray(annotation.classes(), testClass);
+		var candidates = new ArrayList<>(additionalTypes);
+		candidates.add(testClass);
 
-		return Arrays.stream(types)
+		return candidates.stream()
 				.<Class<?>> map(ModuleTestExecution::lookupSpringBootApplicationAnnotation)
 				.findFirst()
 				.orElseThrow(() -> new IllegalStateException("Couldn't find @SpringBootApplication traversing %s."
-						.formatted(Arrays.stream(types).map(Class::getName).collect(Collectors.joining(", ")))));
+						.formatted(candidates.stream().map(Class::getName).collect(Collectors.joining(", ")))));
 	}
 
 	private static Class<?> lookupSpringBootApplicationAnnotation(Class<?> clazz) {
@@ -306,5 +309,5 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 				it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromClass(clazz));
 	}
 
-	private static record Key(String moduleBasePackage, ApplicationModuleTest annotation) {}
+	private static record Key(String moduleBasePackage, ModuleSlicing annotation) {}
 }

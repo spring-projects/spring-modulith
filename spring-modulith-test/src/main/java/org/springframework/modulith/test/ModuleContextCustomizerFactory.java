@@ -58,7 +58,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	public @Nullable ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
-		var moduleTest = TestContextAnnotationUtils.findAnnotationDescriptor(testClass, ApplicationModuleTest.class);
+		var moduleTest = TestContextAnnotationUtils.findAnnotationDescriptor(testClass, ModuleSlicing.class);
 
 		return moduleTest == null ? null : new ModuleContextCustomizer(moduleTest.getRootDeclaringClass());
 	}
