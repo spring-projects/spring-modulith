@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events.namastack;
 
 import static org.assertj.core.api.Assertions.*;
 
@@ -35,7 +35,7 @@ import org.springframework.modulith.events.core.EventPublicationRegistry;
  * @author Oliver Drotbohm
  * @since 2.1
  */
-class OutboxMulticasterDisablerIntegrationTests {
+class NamastackOutboxMulticasterDisablerIntegrationTests {
 
 	@Test // GH-1517
 	void registersDefaultingPropertySourceIfOutboxIsPresent() {

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events.namastack;
 
 import java.util.Map;
 
@@ -31,7 +31,7 @@ import org.springframework.util.ClassUtils;
  * @soundtrack Ed Sheeran - Drive (https://www.youtube.com/watch?v=yfANlm8mhwM)
  * @since 2.1
  */
-class OutboxMulticasterDisabler implements EnvironmentPostProcessor {
+class NamastackOutboxMulticasterDisabler implements EnvironmentPostProcessor {
 
 	/*
 	 * (non-Javadoc)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2025 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.outbox;
+package org.springframework.modulith.events.namastack;
 
 import io.namastack.outbox.Outbox;
 
@@ -26,31 +26,30 @@ import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.util.Assert;
 
 /**
- * An {@link ApplicationListener} that listens to all {@link PayloadApplicationEvent}s and schedules
- * externalized events to an {@link Outbox} for later processing. This listener operates synchronously
- * within the same transaction as the event publisher, ensuring the outbox record is committed or
- * rolled back together with the business operation.
+ * An {@link ApplicationListener} that listens to all {@link PayloadApplicationEvent}s and schedules externalized events
+ * to an {@link Outbox} for later processing. This listener operates synchronously within the same transaction as the
+ * event publisher, ensuring the outbox record is committed or rolled back together with the business operation.
  *
  * @author Roland Beisel
  * @since 2.1
  * @see Outbox
  * @see EventExternalizationConfiguration
  */
-class OutboxEventRecorder implements ApplicationListener<PayloadApplicationEvent<?>> {
+class NamastackOutboxEventRecorder implements ApplicationListener<PayloadApplicationEvent<?>> {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(OutboxEventRecorder.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(NamastackOutboxEventRecorder.class);
 
 	private final EventExternalizationConfiguration configuration;
 	private final Outbox outbox;
 
 	/**
-	 * Creates a new {@link OutboxEventRecorder} for the given {@link EventExternalizationConfiguration}
-	 * and {@link Outbox}.
+	 * Creates a new {@link OutboxEventRecorder} for the given {@link EventExternalizationConfiguration} and
+	 * {@link Outbox}.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param outbox must not be {@literal null}.
 	 */
-	OutboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox) {
+	NamastackOutboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox) {
 
 		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
 		Assert.notNull(outbox, "Outbox must not be null!");
@@ -60,8 +59,8 @@ class OutboxEventRecorder implements ApplicationListener<PayloadApplicationEvent
 	}
 
 	/**
-	 * Handles incoming application events by checking if they should be externalized
-	 * and scheduling them to the outbox within the current transaction.
+	 * Handles incoming application events by checking if they should be externalized and scheduling them to the outbox
+	 * within the current transaction.
 	 *
 	 * @param event the payload application event to process
 	 */
