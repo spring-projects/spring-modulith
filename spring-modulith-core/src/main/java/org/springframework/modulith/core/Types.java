@@ -226,8 +226,9 @@ public class Types {
 		}
 
 		static DescribedPredicate<JavaClass> isSpringDataRepository() {
-			return is(assignableTo(SpringDataTypes.REPOSITORY)) //
-					.or(isAnnotatedWith(SpringDataTypes.AT_REPOSITORY_DEFINITION));
+
+			return isInterface().and(is(assignableTo(SpringDataTypes.REPOSITORY)) //
+					.or(isAnnotatedWith(SpringDataTypes.AT_REPOSITORY_DEFINITION)));
 		}
 	}
 
@@ -252,6 +253,23 @@ public class Types {
 				return pkg.isMetaAnnotatedWith(type)
 						|| pkg.getClasses().stream()
 								.anyMatch(it -> it.isMetaAnnotatedWith(PackageInfo.class) && it.isMetaAnnotatedWith(type));
+			}
+		};
+	}
+
+	/**
+	 * A {@link DescribedPredicate} matching only interfaces.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 2.1, 2.0.3, 1.4.8
+	 */
+	static DescribedPredicate<JavaClass> isInterface() {
+
+		return new DescribedPredicate<>("is an interface") {
+
+			@Override
+			public boolean test(JavaClass t) {
+				return t.isInterface();
 			}
 		};
 	}
