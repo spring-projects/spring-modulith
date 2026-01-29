@@ -107,7 +107,7 @@ class ArchitecturallyEvidentTypeUnitTest {
 		assertThat(type.isAggregateRoot()).isFalse();
 	}
 
-	@Test
+	@Test // GH-1, GH-1541
 	void considersEntityAnAggregateRootIfTheresARepositoryForIt() {
 
 		Map<Class<?>, Boolean> parameters = new HashMap<Class<?>, Boolean>();
@@ -234,6 +234,9 @@ class ArchitecturallyEvidentTypeUnitTest {
 	// Spring Data
 
 	interface SampleRepository extends CrudRepository<SampleEntity, UUID> {}
+
+	// GH-1541
+	abstract class IntermediateImplementation implements CrudRepository<SampleEntity, UUID> {}
 
 	// GH-187
 	interface ReactiveSampleRepository extends ReactiveCrudRepository<SampleEntity, UUID> {}
