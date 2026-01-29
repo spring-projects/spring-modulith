@@ -26,6 +26,8 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.core.task.TaskDecorator;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.Assert;
 
@@ -38,6 +40,7 @@ class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCa
 
 	private final Function<ExtensionContext, ApplicationContext> lookup;
 	private @Nullable ThreadBoundApplicationListenerAdapter listener;
+	private @Nullable PropagateDelegateFromMainThreadTaskDecorator delegatePropagator;
 
 	PublishedEventsParameterResolver() {
 		this(ctx -> SpringExtension.getApplicationContext(ctx));
@@ -79,6 +82,9 @@ class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCa
 		if (listener != null) {
 			listener.registerDelegate(publishedEvents);
 		}
+		if (delegatePropagator != null) {
+			delegatePropagator.publishedEventsListener = publishedEvents;
+		}
 
 		return publishedEvents;
 	}
@@ -106,6 +112,12 @@ class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCa
 
 					return adapter;
 				});
+
+		delegatePropagator = new PropagateDelegateFromMainThreadTaskDecorator(listener);
+		ThreadPoolTaskExecutor taskExecutor = context.getBeanProvider(ThreadPoolTaskExecutor.class).getIfAvailable();
+		if (taskExecutor != null) {
+			taskExecutor.setTaskDecorator(delegatePropagator);
+		}
 	}
 
 	/*
@@ -163,6 +175,33 @@ class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCa
 			if (listener != null) {
 				listener.onApplicationEvent(event);
 			}
+		}
+	}
+
+	private static final class PropagateDelegateFromMainThreadTaskDecorator implements TaskDecorator {
+		private final ThreadBoundApplicationListenerAdapter adapter;
+		@Nullable
+		private ApplicationListener<ApplicationEvent> publishedEventsListener;
+
+		PropagateDelegateFromMainThreadTaskDecorator(ThreadBoundApplicationListenerAdapter adapter) {
+			this.adapter = adapter;
+		}
+
+		@Override
+		public Runnable decorate(Runnable task) {
+			return () -> {
+				if (publishedEventsListener == null) {
+					task.run();
+					return;
+				}
+				ApplicationListener<ApplicationEvent> previous = adapter.delegate.get();
+				try {
+					adapter.delegate.set(publishedEventsListener);
+					task.run();
+				} finally {
+					adapter.delegate.set(previous);
+				}
+			};
 		}
 	}
 }
