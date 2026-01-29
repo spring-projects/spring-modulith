@@ -68,6 +68,10 @@ import org.springframework.util.StringUtils;
 public class SpringModulithProcessor implements Processor {
 
 	private static final Collection<String> JAVADOC_TAGS = Set.of("@param", "@return", "@author", "@since", "@see");
+
+	private static final String KAPT_SLASH_BUILD_GENERATED_SOURCE = asPath("", "build", "generated", "source");
+	private static final String KAPT_SLASH_TARGET_GENERATED_SOURCES = asPath("", "target", "generated-sources");
+
 	static final String JSON_LOCATION;
 
 	private Elements elements;
@@ -332,12 +336,16 @@ public class SpringModulithProcessor implements Processor {
 		if (kapt != null) {
 
 			// Strip Gradle or Maven suffixes
-			var index = kapt.indexOf("/build/generated/source");
-			index = index == -1 ? kapt.indexOf("/target/generated-sources") : index;
+			var index = kapt.indexOf(KAPT_SLASH_BUILD_GENERATED_SOURCE);
+			index = index == -1 ? kapt.indexOf(KAPT_SLASH_TARGET_GENERATED_SOURCES) : index;
 
 			return Path.of(kapt.substring(0, index));
 		}
 
 		return Path.of(".");
+	}
+
+	private static String asPath(String... segments) {
+		return Stream.of(segments).collect(Collectors.joining(File.separator));
 	}
 }
