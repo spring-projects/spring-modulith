@@ -24,11 +24,15 @@ import example.TestConfiguration;
 import lombok.RequiredArgsConstructor;
 
 import org.awaitility.Awaitility;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 
 /**
  * Integration tests for {@link PublishedEvents}.
@@ -38,10 +42,22 @@ import org.springframework.context.ApplicationEventPublisher;
 @RequiredArgsConstructor
 @ExtendWith(PublishedEventsExtension.class)
 @SpringBootTest(classes = TestConfiguration.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class PublishedEventsIntegrationTests {
 
 	@Autowired ApplicationEventPublisher publisher;
 	@Autowired AsyncEventListener listener;
+	@Autowired ThreadPoolTaskExecutor taskExecutor;
+
+	@Test // #1513
+	@Order(1)
+	void initializeTaskThreadsBeforePublishedEventsAreInitialized() {
+		for (int i = 0; i < 20; ++i) {
+			taskExecutor.execute(() -> {
+				// no op
+			});
+		}
+	}
 
 	@Test // #116
 	void capturesEventsTriggeredByAsyncEventListeners(PublishedEvents events) {
