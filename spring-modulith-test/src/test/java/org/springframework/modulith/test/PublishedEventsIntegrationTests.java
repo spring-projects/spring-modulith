@@ -60,6 +60,7 @@ class PublishedEventsIntegrationTests {
 	}
 
 	@Test // #116
+	@Order(2)
 	void capturesEventsTriggeredByAsyncEventListeners(PublishedEvents events) {
 
 		assertThatNoException().isThrownBy(() -> {
