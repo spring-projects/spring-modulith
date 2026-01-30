@@ -22,7 +22,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 
+import org.jspecify.annotations.Nullable;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.util.Assert;
 
@@ -38,10 +42,11 @@ import org.springframework.util.Assert;
  * @see OutboxHandler
  * @see EventExternalizationConfiguration
  */
-public class NamastackOutboxEventTransport implements OutboxHandler {
+public class NamastackOutboxEventTransport implements OutboxHandler, ApplicationEventPublisherAware {
 
 	private final EventExternalizationConfiguration configuration;
 	private final BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport;
+	private @Nullable ApplicationEventPublisher events;
 
 	/**
 	 * Creates a new {@link OutboxEventTransport} for the given {@link EventExternalizationConfiguration} and transport
@@ -60,6 +65,15 @@ public class NamastackOutboxEventTransport implements OutboxHandler {
 		this.transport = transport;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.context.ApplicationEventPublisherAware#setApplicationEventPublisher(org.springframework.context.ApplicationEventPublisher)
+	 */
+	@Override
+	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
+		this.events = applicationEventPublisher;
+	}
+
 	/**
 	 * Handles an outbox event by determining its routing target and transporting it to the external target using the
 	 * configured transport function.
@@ -71,9 +85,16 @@ public class NamastackOutboxEventTransport implements OutboxHandler {
 	public void handle(Object event, OutboxRecordMetadata metadata) {
 
 		var target = configuration.determineTarget(event);
+		var mapped = configuration.map(event);
 
 		try {
-			transport.apply(target, event).get();
+
+			var result = transport.apply(target, event).get();
+
+			if (events != null) {
+				events.publishEvent(new EventExternalized<>(event, mapped, target, result));
+			}
+
 		} catch (InterruptedException | ExecutionException e) {
 			throw new RuntimeException("Failed to transport event to " + target.getTarget(), e);
 		}
