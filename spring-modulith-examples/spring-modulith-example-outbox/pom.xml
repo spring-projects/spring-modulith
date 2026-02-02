@@ -30,13 +30,12 @@
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-kafka</artifactId>
+			<artifactId>spring-modulith-starter-namastack</artifactId>
 		</dependency>
 
 		<dependency>
-			<groupId>io.namastack</groupId>
-			<artifactId>namastack-outbox-starter-jpa</artifactId>
-			<version>1.0.0-RC2</version>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-events-kafka</artifactId>
 		</dependency>
 
 		<!-- jMolecules -->

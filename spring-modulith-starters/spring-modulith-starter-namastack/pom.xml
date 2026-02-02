@@ -1,0 +1,48 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<parent>
+		<groupId>org.springframework.modulith</groupId>
+		<artifactId>spring-modulith-starters</artifactId>
+		<version>2.1.0-SNAPSHOT</version>
+	</parent>
+
+	<artifactId>spring-modulith-starter-namastack</artifactId>
+	<name>Spring Modulith - Starters - Starter Namastack (JDBC)</name>
+
+	<properties>
+		<module.name>spring.modulith.starter.namastack</module.name>
+	</properties>
+
+	<dependencies>
+
+		<!-- Events -->
+
+		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-events-api</artifactId>
+			<version>2.1.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-events-core</artifactId>
+			<version>2.1.0-SNAPSHOT</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-events-namastack</artifactId>
+			<version>2.1.0-SNAPSHOT</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>io.namastack</groupId>
+			<artifactId>namastack-outbox-starter-jdbc</artifactId>
+			<version>${namastack-outbox.version}</version>
+			<scope>runtime</scope>
+		</dependency>
+	</dependencies>
+
+</project>

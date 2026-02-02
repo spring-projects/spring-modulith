@@ -43,7 +43,8 @@ class NamastackOutboxMulticasterDisabler implements EnvironmentPostProcessor {
 		if (ClassUtils.isPresent("io.namastack.outbox.Outbox", application.getClassLoader())) {
 
 			environment.getPropertySources()
-					.addLast(new MapPropertySource("Outbox defaults", Map.of("outbox.multicaster.enabled", false)));
+					.addLast(new MapPropertySource("Namastack outbox defaults",
+							Map.of("namastack.outbox.multicaster.enabled", false)));
 		}
 	}
 }
