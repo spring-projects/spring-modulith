@@ -21,6 +21,7 @@
 		<module>spring-modulith-starter-mongodb</module>
 		<module>spring-modulith-starter-neo4j</module>
 		<module>spring-modulith-starter-test</module>
+		<module>spring-modulith-starter-namastack</module>
 	</modules>
 
 	<build>

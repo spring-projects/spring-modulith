@@ -46,7 +46,7 @@ class NamastackOutboxMulticasterDisablerIntegrationTests {
 		assertThat(source)
 				.extracting(PropertySource::getName)
 				.element(source.size() - 2) // last custom property source
-				.isEqualTo("Outbox defaults");
+				.isEqualTo("Namastack outbox defaults");
 	}
 
 	@Test // GH-1517
@@ -57,7 +57,7 @@ class NamastackOutboxMulticasterDisablerIntegrationTests {
 
 		assertThat(source)
 				.extracting(PropertySource::getName)
-				.doesNotContain("Outbox defaults");
+				.doesNotContain("Namastack outbox defaults");
 	}
 
 	private static ConfigurableApplicationContext createApplicationContext(ClassLoader classLoader) {
