@@ -29,7 +29,7 @@ enum ModulithMetrics implements MeterDocumentation {
 	/**
 	 * Counter for the events.
 	 */
-	EVENTS {
+	ALL_EVENTS {
 
 		/*
 		 * (non-Javadoc)
@@ -72,6 +72,21 @@ enum ModulithMetrics implements MeterDocumentation {
 			@Override
 			public String asString() {
 				return "event.type";
+			}
+		},
+
+		/**
+		 * Name of the module.
+		 */
+		MODULE_KEY {
+
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.common.docs.KeyName#asString()
+			 */
+			@Override
+			public String asString() {
+				return "module.key";
 			}
 		},
 

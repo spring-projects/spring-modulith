@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
@@ -100,12 +101,16 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 
 		if (registry != null) {
 
-			Counter.builder(ModulithMetrics.EVENTS.getName()) //
-					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), payloadType.getSimpleName()) //
-					.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
-					.register(registry).increment();
+			var overallTotal = Counter.builder(ModulithMetrics.ALL_EVENTS.getName()) //
+					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), payloadType.getSimpleName());
+			var individualEvent = factory.createCounterBuilder(payload);
 
-			factory.createCounterBuilder(payload).register(registry).increment();
+			Stream.of(overallTotal, individualEvent).forEach(it -> {
+
+				it.tags(ModulithMetrics.LowKeys.MODULE_KEY.name().toLowerCase(), moduleByType.getIdentifier().toString()) //
+						.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
+						.register(registry).increment();
+			});
 		}
 
 		var observation = observationRegistry.get().getCurrentObservation();
