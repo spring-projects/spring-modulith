@@ -27,7 +27,13 @@
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-observability</artifactId>
+			<artifactId>spring-modulith-observability-api</artifactId>
+			<version>2.1.0-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-observability-core</artifactId>
 			<version>2.1.0-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
