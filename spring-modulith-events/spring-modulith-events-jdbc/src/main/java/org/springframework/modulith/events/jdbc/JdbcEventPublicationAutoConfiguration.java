@@ -20,6 +20,7 @@ import java.sql.DatabaseMetaData;
 import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -72,14 +73,6 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 		};
 	}
 
-	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.events.jdbc.schema-initialization.enabled", havingValue = "true")
-	DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
-			DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcRepositorySettings settings) {
-
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
-	}
-
 	private static String fromDataSource(DataSource dataSource) {
 
 		String name = null;
@@ -94,5 +87,28 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 		}
 
 		return name == null ? "UNKNOWN" : name;
+	}
+
+	/**
+	 * JDBC schema initialization auto-configuration.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	@AutoConfiguration(afterName = {
+			"org.springframework.boot.flyway.autoconfigure.FlywayAutoConfiguration",
+			"org.springframework.boot.liquibase.autoconfigure.LiquibaseAutoConfiguration"
+	})
+	@ConditionalOnProperty(
+			name = "spring.modulith.events.jdbc.schema-initialization.enabled",
+			havingValue = "true",
+			matchIfMissing = true)
+	static class JdbcEventPublicationSchemaCreationAutoConfiguration {
+
+		@Bean
+		DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
+				DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcRepositorySettings settings) {
+
+			return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
+		}
 	}
 }

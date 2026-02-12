@@ -302,7 +302,8 @@ To actually write the event publication log, Spring Modulith exposes an `EventPu
 You select the persistence technology to be used by adding the corresponding JAR to your Spring Modulith application.
 We have prepared dedicated xref:events.adoc#starters[starters] to ease that task.
 
-The JDBC-based implementation can create a dedicated table for the event publication log when the respective configuration property (`spring.modulith.events.jdbc.schema-initialization.enabled`) is set to `true`.
+The JDBC-based implementation will create a dedicated table for the event publication log unless the respective configuration property (`spring.modulith.events.jdbc.schema-initialization.enabled`) is set to `false`.
+The schema creation will of course also back off if the required tables already exist, for example if created via database migration tools such as Flyway or Liquibase.
 For details, please consult the xref:appendix.adoc#schemas[schema overview] in the appendix.
 
 [[publication-registry.serialization]]

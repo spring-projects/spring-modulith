@@ -84,7 +84,7 @@ For details, see xref:events.adoc#publication-registry.completion[Event Publicat
 |Whether to serialize event externalization to brokers.
 
 |`spring.modulith.events.jdbc.schema-initialization.enabled`
-|`false`
+|`true`
 |Whether to initialize the JDBC event publication schema.
 
 |`spring.modulith.events.jdbc.schema`

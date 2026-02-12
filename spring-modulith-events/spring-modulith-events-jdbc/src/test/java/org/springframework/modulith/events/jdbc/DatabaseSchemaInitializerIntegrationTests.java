@@ -21,6 +21,8 @@ import static org.mockito.Mockito.*;
 
 import java.util.Optional;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -91,17 +93,17 @@ class DatabaseSchemaInitializerIntegrationTests {
 	@JdbcTest
 	class InitializationDisabledByDefault extends TestBase {
 
-		@MockitoSpyBean JdbcOperations operations;
+		@MockitoSpyBean DataSource dataSource;
 		@Autowired Optional<DatabaseSchemaInitializer> initializer;
 
 		@Test // GH-3
-		void doesNotRegisterAnInitializerBean() {
-			assertThat(initializer).isEmpty();
+		void registerAnInitializerBeanByDefault() {
+			assertThat(initializer).isPresent();
 		}
 
 		@Test // GH-3
-		void shouldNotCreateDatabaseSchemaOnStartUp() {
-			verify(operations, never()).execute(anyString());
+		void createsDatabaseSchemaOnStartUp() throws Exception {
+			verify(dataSource, atLeast(1)).getConnection();
 		}
 	}
 
