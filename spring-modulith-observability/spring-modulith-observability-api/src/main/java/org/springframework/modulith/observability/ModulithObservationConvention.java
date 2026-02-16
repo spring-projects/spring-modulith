@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.support;
+package org.springframework.modulith.observability;
 
 import io.micrometer.observation.Observation.Context;
 import io.micrometer.observation.ObservationConvention;

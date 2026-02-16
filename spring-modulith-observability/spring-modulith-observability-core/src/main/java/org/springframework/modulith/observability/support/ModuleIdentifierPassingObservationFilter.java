@@ -21,14 +21,16 @@ import io.micrometer.observation.ObservationFilter;
 
 import java.util.Objects;
 
+import org.springframework.modulith.observability.ModulithObservations;
+
 /**
- * Ensures that {@link ModulithObservations.LowKeys#MODULE_KEY} gets propagated from parent to child.
+ * Ensures that {@link ModulithObservations.LowKeys#MODULE_IDENTIFIER} gets propagated from parent to child.
  *
  * @author Marcin Grzejszczak
  * @author Oliver Drotbohm
  * @since 1.4
  */
-public class ModulePassingObservationFilter implements ObservationFilter {
+public class ModuleIdentifierPassingObservationFilter implements ObservationFilter {
 
 	/*
 	 * (non-Javadoc)
@@ -39,7 +41,7 @@ public class ModulePassingObservationFilter implements ObservationFilter {
 
 		if (isModuleKeyValueAbsentInCurrent(context) && isModuleKeyValuePresentInParent(context)) {
 
-			var moduleKey = ModulithObservations.LowKeys.MODULE_KEY;
+			var moduleKey = ModulithObservations.LowKeys.MODULE_IDENTIFIER;
 			var parent = Objects.requireNonNull(context.getParentObservation());
 			var moduleValue = Objects.requireNonNull(parent.getContextView()
 					.getLowCardinalityKeyValue(moduleKey.asString()));
@@ -51,7 +53,7 @@ public class ModulePassingObservationFilter implements ObservationFilter {
 	}
 
 	private static boolean isModuleKeyValueAbsentInCurrent(ContextView context) {
-		return context.getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.asString()) == null;
+		return context.getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_IDENTIFIER.asString()) == null;
 	}
 
 	private static boolean isModuleKeyValuePresentInParent(ContextView context) {
@@ -60,6 +62,6 @@ public class ModulePassingObservationFilter implements ObservationFilter {
 
 		return parentObservation != null
 				&& parentObservation.getContextView()
-						.getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_KEY.asString()) != null;
+						.getLowCardinalityKeyValue(ModulithObservations.LowKeys.MODULE_IDENTIFIER.asString()) != null;
 	}
 }

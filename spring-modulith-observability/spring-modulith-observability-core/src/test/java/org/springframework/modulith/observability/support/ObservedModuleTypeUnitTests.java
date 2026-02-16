@@ -26,8 +26,8 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.core.Types;
+import org.springframework.modulith.observability.ObservedModuleType;
 import org.springframework.modulith.observability.support.DefaultObservedModule;
-import org.springframework.modulith.observability.support.ObservedModuleType;
 import org.springframework.modulith.test.TestApplicationModules;
 import org.springframework.util.ReflectionUtils;
 

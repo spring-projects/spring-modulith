@@ -13,30 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.support;
+package org.springframework.modulith.observability;
 
 import io.micrometer.common.docs.KeyName;
-import io.micrometer.observation.Observation;
-import io.micrometer.observation.Observation.Context;
 import io.micrometer.observation.Observation.Event;
-import io.micrometer.observation.ObservationConvention;
 import io.micrometer.observation.docs.ObservationDocumentation;
 
-enum ModulithObservations implements ObservationDocumentation {
+public enum ModulithObservations implements ObservationDocumentation {
 
 	/**
 	 * Observation related to entering a module.
 	 */
 	MODULE_ENTRY {
-
-		/*
-		 * (non-Javadoc)
-		 * @see io.micrometer.observation.docs.ObservationDocumentation#getDefaultConvention()
-		 */
-		@Override
-		public Class<? extends ObservationConvention<? extends Context>> getDefaultConvention() {
-			return DefaultModulithObservationConvention.class;
-		}
 
 		/*
 		 * (non-Javadoc)
@@ -61,17 +49,17 @@ enum ModulithObservations implements ObservationDocumentation {
 		 * @see io.micrometer.observation.docs.ObservationDocumentation#getEvents()
 		 */
 		@Override
-		public Observation.Event[] getEvents() {
-			return Events.values();
+		public Event[] getEvents() {
+			return new Event[0];
 		}
 	};
 
-	enum LowKeys implements KeyName {
+	public enum LowKeys implements KeyName {
 
 		/**
-		 * Name of the module.
+		 * The identifier of the module.
 		 */
-		MODULE_KEY {
+		MODULE_IDENTIFIER {
 
 			/*
 			 * (non-Javadoc)
@@ -79,7 +67,22 @@ enum ModulithObservations implements ObservationDocumentation {
 			 */
 			@Override
 			public String asString() {
-				return "module.key";
+				return "module.identifier";
+			}
+		},
+
+		/**
+		 * Name of the module.
+		 */
+		MODULE_NAME {
+
+			/*
+			 * (non-Javadoc)
+			 * @see io.micrometer.common.docs.KeyName#asString()
+			 */
+			@Override
+			public String asString() {
+				return "module.name";
 			}
 		},
 
@@ -99,7 +102,7 @@ enum ModulithObservations implements ObservationDocumentation {
 		}
 	}
 
-	enum HighKeys implements KeyName {
+	public enum HighKeys implements KeyName {
 		/**
 		 * Method executed on a module.
 		 */
@@ -107,57 +110,6 @@ enum ModulithObservations implements ObservationDocumentation {
 			@Override
 			public String asString() {
 				return "module.method";
-			}
-		}
-	}
-
-	enum Events implements Event {
-
-		/**
-		 * Published when an event is sent successfully.
-		 */
-		EVENT_PUBLICATION_SUCCESS {
-
-			/*
-			 * (non-Javadoc)
-			 * @see io.micrometer.observation.Observation.Event#getName()
-			 */
-			@Override
-			public String getName() {
-				return "event.publication.success";
-			}
-
-			/*
-			 * (non-Javadoc)
-			 * @see io.micrometer.observation.Observation.Event#getContextualName()
-			 */
-			@Override
-			public String getContextualName() {
-				return "event.publication.success";
-			}
-		},
-
-		/**
-		 * Published when an event is sent with a failure.
-		 */
-		EVENT_PUBLICATION_FAILURE {
-
-			/*
-			 * (non-Javadoc)
-			 * @see io.micrometer.observation.Observation.Event#getName()
-			 */
-			@Override
-			public String getName() {
-				return "event.publication.failure";
-			}
-
-			/*
-			 * (non-Javadoc)
-			 * @see io.micrometer.observation.Observation.Event#getContextualName()
-			 */
-			@Override
-			public String getContextualName() {
-				return "event.publication.failure";
 			}
 		}
 	}

@@ -31,6 +31,7 @@ import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
+import org.springframework.modulith.observability.ModulithObservationConvention;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -43,6 +44,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<ObservationRegistry> observationRegistry;
+	private final Supplier<ModulithObservationConvention> convention;
 	private final Environment environment;
 
 	/**
@@ -54,13 +56,17 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 	 * @param environment must not be {@literal null}.
 	 */
 	public SpringDataRestModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistry, Environment environment) {
+			Supplier<ObservationRegistry> observationRegistry, Supplier<ModulithObservationConvention> convention,
+			Environment environment) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
 		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+		Assert.notNull(convention, "ModulithObservationConvention must not be null!");
+		Assert.notNull(environment, "Environment must not be null!");
 
 		this.runtime = runtime;
 		this.observationRegistry = observationRegistry;
+		this.convention = convention;
 		this.environment = environment;
 	}
 
@@ -77,7 +83,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 			return bean;
 		}
 
-		var interceptor = new DataRestControllerInterceptor(runtime, observationRegistry, environment);
+		var interceptor = new DataRestControllerInterceptor(runtime, observationRegistry, convention, environment);
 		var advisor = new DefaultPointcutAdvisor(interceptor);
 
 		return addAdvisor(bean, advisor, it -> it.setProxyTargetClass(true));
@@ -87,6 +93,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 
 		private final Supplier<ApplicationModules> modules;
 		private final Supplier<ObservationRegistry> observationRegistry;
+		private final Supplier<ModulithObservationConvention> convention;
 		private final Environment environment;
 
 		/**
@@ -97,15 +104,17 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 		 * @param environment must not be {@literal null}.
 		 */
 		private DataRestControllerInterceptor(Supplier<ApplicationModules> modules,
-				Supplier<ObservationRegistry> observationRegistry,
+				Supplier<ObservationRegistry> observationRegistry, Supplier<ModulithObservationConvention> convention,
 				Environment environment) {
 
 			Assert.notNull(modules, "ApplicationModules must not be null!");
 			Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+			Assert.notNull(convention, "ModulithObservationConvention must not be null!");
 			Assert.notNull(environment, "Environment must not be null!");
 
 			this.modules = modules;
 			this.observationRegistry = observationRegistry;
+			this.convention = convention;
 			this.environment = environment;
 		}
 
@@ -124,7 +133,8 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 
 			var observed = new DefaultObservedModule(module);
 
-			return ModuleEntryInterceptor.of(observed, observationRegistry.get(), environment).invoke(invocation);
+			return ModuleEntryInterceptor.of(observed, observationRegistry.get(), convention.get(), environment)
+					.invoke(invocation);
 		}
 
 		@Nullable

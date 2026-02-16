@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.support;
-
-import java.lang.reflect.Method;
+package org.springframework.modulith.observability;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
@@ -24,7 +22,6 @@ import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 
 import com.tngtech.archunit.core.domain.JavaClass;
-import org.springframework.modulith.core.ArchitecturallyEvidentType;
 
 /**
  * Information about observed module.
@@ -55,6 +52,15 @@ public interface ObservedModule {
 	 * @return
 	 */
 	String getInvokedMethod(MethodInvocation invocation);
+
+	/**
+	 * Produces a formatted {@link String} for the given {@link MethodInvocation}.
+	 *
+	 * @param invocation must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.1
+	 */
+	String format(MethodInvocation invocation);
 
 	/**
 	 * Returns whether the {@link ObservedModule} exposes the given {@link JavaClass}.

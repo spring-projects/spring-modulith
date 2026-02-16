@@ -17,8 +17,9 @@ package org.springframework.modulith.observability.support;
 
 import io.micrometer.common.KeyValues;
 
-import org.springframework.modulith.observability.support.ModulithObservations.HighKeys;
-import org.springframework.modulith.observability.support.ModulithObservations.LowKeys;
+import org.jspecify.annotations.NonNull;
+import org.springframework.modulith.observability.ModulithContext;
+import org.springframework.modulith.observability.ModulithObservationConvention;
 
 /**
  * Default implementation of {@link ModulithObservationConvention}.
@@ -27,7 +28,9 @@ import org.springframework.modulith.observability.support.ModulithObservations.L
  * @author Oliver Drotbohm
  * @since 1.4
  */
-class DefaultModulithObservationConvention implements ModulithObservationConvention {
+public class DefaultModulithObservationConvention implements ModulithObservationConvention {
+
+	public static final DefaultModulithObservationConvention INSTANCE = new DefaultModulithObservationConvention();
 
 	/*
 	 * (non-Javadoc)
@@ -35,12 +38,7 @@ class DefaultModulithObservationConvention implements ModulithObservationConvent
 	 */
 	@Override
 	public KeyValues getLowCardinalityKeyValues(ModulithContext context) {
-
-		var keyValues = KeyValues.of(LowKeys.MODULE_KEY.withValue(context.getModule().getIdentifier().toString()));
-
-		return isEventListener(context)
-				? keyValues.and(LowKeys.INVOCATION_TYPE.withValue("event-listener"))
-				: keyValues;
+		return context.getLowCardinalityValues();
 	}
 
 	/*
@@ -50,10 +48,7 @@ class DefaultModulithObservationConvention implements ModulithObservationConvent
 	 */
 	@Override
 	public KeyValues getHighCardinalityKeyValues(ModulithContext context) {
-
-		var method = context.getInvocation().getMethod();
-
-		return KeyValues.of(HighKeys.MODULE_METHOD.withValue(method.getName()));
+		return context.getHighCardinalityKeyValues();
 	}
 
 	/*
@@ -61,8 +56,8 @@ class DefaultModulithObservationConvention implements ModulithObservationConvent
 	 * @see io.micrometer.observation.ObservationConvention#getName()
 	 */
 	@Override
-	public String getName() {
-		return "module.requests";
+	public @NonNull String getName() {
+		return ModulithContext.DEFAULT_CONVENTION_NAME;
 	}
 
 	/*
@@ -70,16 +65,7 @@ class DefaultModulithObservationConvention implements ModulithObservationConvent
 	 * @see io.micrometer.observation.ObservationConvention#getContextualName(io.micrometer.observation.Observation.Context)
 	 */
 	@Override
-	public String getContextualName(ModulithContext context) {
-		return "[" + context.getApplicationName() + "] " + context.getModule().getDisplayName();
-	}
-
-	private boolean isEventListener(ModulithContext context) {
-
-		try {
-			return context.getModule().isEventListenerInvocation(context.getInvocation());
-		} catch (Exception e) {
-			return false;
-		}
+	public @NonNull String getContextualName(ModulithContext context) {
+		return context.getContextualName();
 	}
 }

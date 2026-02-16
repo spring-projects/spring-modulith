@@ -22,27 +22,34 @@ import io.micrometer.core.instrument.Meter.Id;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 
+import java.io.Serializable;
 import java.util.function.Consumer;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
+import org.springframework.modulith.observability.ModulithMetrics;
 
 /**
  * Unit tests for {@link CrossModuleEventCounterFactory}.
  *
  * @author Oliver Drotbohm
  */
-class CrossModuleEventCounterFactoryUnitTests {
+class ModuleEventCounterFactoryUnitTests {
 
 	MeterRegistry registry = new SimpleMeterRegistry();
-	CrossModuleEventCounterFactory factory = new CrossModuleEventCounterFactory();
+	ModuleEventCounterFactory factory = new ModuleEventCounterFactory();
+	ApplicationModuleIdentifier identifier = ApplicationModuleIdentifier.of("someModule");
 
 	@Test // GH-1068
 	void appliesCustomization() {
 
 		factory.customize(SampleEvent.class, (__, builder) -> builder.tag("key", "value"));
 
-		assertCounter(new SampleEvent(), it -> {
-			assertThat(it.getName()).isEqualTo(SampleEvent.class.getSimpleName());
+		var event = new SampleEvent();
+		var observedEvent = new ObservedModuleEvent(identifier, event);
+
+		assertCounter(event, it -> {
+			assertThat(it.getName()).isEqualTo(observedEvent.getEventCounterName());
 			assertThat(it.getTag("key")).isNotNull();
 		});
 	}
@@ -50,11 +57,19 @@ class CrossModuleEventCounterFactoryUnitTests {
 	@Test // GH-1068
 	void usesCreatorAndCustomizer() {
 
-		factory.customize(Object.class, __ -> Counter.builder("Object"));
+		factory.customize(Serializable.class, __ -> Counter.builder("Serializable"));
 		factory.customize(SampleEvent.class, __ -> Counter.builder("name"));
 		factory.customize(SampleEvent.class, (__, builder) -> builder.tag("key", "value"));
 		factory.customize(Object.class, (__, builder) -> builder.tag("key", "value2"));
 		factory.customize(OtherSampleEvent.class, (__, builder) -> builder.tag("key2", "value3"));
+
+		assertCounter(new DefaultEvent(), it -> {
+
+			var expected = "%s.%s.%s".formatted(ModulithMetrics.ALL_EVENTS.getName(), identifier,
+					DefaultEvent.class.getSimpleName());
+
+			assertThat(it.getName()).isEqualTo(expected);
+		});
 
 		assertCounter(new SampleEvent(), it -> {
 			assertThat(it.getName()).isEqualTo("name");
@@ -63,17 +78,22 @@ class CrossModuleEventCounterFactoryUnitTests {
 		});
 
 		assertCounter(new OtherSampleEvent(), it -> {
-			assertThat(it.getName()).isEqualTo("Object");
+			assertThat(it.getName()).isEqualTo("Serializable");
 			assertThat(it.getTag("key")).isEqualTo("value2");
 			assertThat(it.getTag("key2")).isEqualTo("value3");
 		});
 	}
 
 	private void assertCounter(Object event, Consumer<Id> assertions) {
-		assertions.accept(factory.createCounterBuilder(event).register(registry).getId());
+
+		var observedEvent = new ObservedModuleEvent(identifier, event);
+
+		assertions.accept(factory.createCounterBuilder(observedEvent).register(registry).getId());
 	}
+
+	static class DefaultEvent {}
 
 	static class SampleEvent {}
 
-	static class OtherSampleEvent {}
+	static class OtherSampleEvent implements Serializable {}
 }

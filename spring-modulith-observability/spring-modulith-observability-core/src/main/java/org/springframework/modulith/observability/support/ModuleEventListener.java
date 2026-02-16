@@ -17,8 +17,6 @@ package org.springframework.modulith.observability.support;
 
 import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.observation.Observation.Event;
-import io.micrometer.observation.ObservationRegistry;
 
 import java.util.Map;
 import java.util.Optional;
@@ -30,7 +28,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.observability.support.ModulithObservations.Events;
+import org.springframework.modulith.observability.ModulithMetrics;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -40,9 +38,8 @@ import org.springframework.util.Assert;
 public class ModuleEventListener implements ApplicationListener<ApplicationEvent> {
 
 	private final ApplicationModulesRuntime runtime;
-	private final Supplier<ObservationRegistry> observationRegistry;
 	private final Supplier<MeterRegistry> meterRegistry;
-	private final CrossModuleEventCounterFactory factory;
+	private final ModuleEventCounterFactory factory;
 
 	private final Map<Class<?>, Optional<ApplicationModule>> modulesByType;
 
@@ -51,21 +48,17 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 	 * {@link ObservationRegistry} and {@link MeterRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
-	 * @param observationRegistrySupplier must not be {@literal null}.
 	 * @param meterRegistrySupplier must not be {@literal null}.
 	 * @param counterFactory must not be {@literal null}.
 	 */
-	public ModuleEventListener(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistrySupplier, Supplier<MeterRegistry> meterRegistrySupplier,
-			CrossModuleEventCounterFactory counterFactory) {
+	public ModuleEventListener(ApplicationModulesRuntime runtime, Supplier<MeterRegistry> meterRegistrySupplier,
+			ModuleEventCounterFactory counterFactory) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
-		Assert.notNull(observationRegistrySupplier, "ObservationRegistry must not be null!");
 		Assert.notNull(meterRegistrySupplier, "MeterRegistry must not be null!");
 		Assert.notNull(counterFactory, "ModulithEventCounterFactory must not be null!");
 
 		this.runtime = runtime;
-		this.observationRegistry = observationRegistrySupplier;
 		this.meterRegistry = meterRegistrySupplier;
 		this.factory = counterFactory;
 
@@ -90,10 +83,10 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 			return;
 		}
 
-		var moduleByType = modulesByType.computeIfAbsent(payloadType, it -> runtime.get().getModuleByType(it))
+		var module = modulesByType.computeIfAbsent(payloadType, it -> runtime.get().getModuleByType(it))
 				.orElse(null);
 
-		if (moduleByType == null) {
+		if (module == null) {
 			return;
 		}
 
@@ -101,24 +94,19 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 
 		if (registry != null) {
 
+			var moduleEvent = new ObservedModuleEvent(module.getIdentifier(), payload);
+
 			var overallTotal = Counter.builder(ModulithMetrics.ALL_EVENTS.getName()) //
-					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), payloadType.getSimpleName());
-			var individualEvent = factory.createCounterBuilder(payload);
+					.tags(ModulithMetrics.LowKeys.EVENT_TYPE.name().toLowerCase(), moduleEvent.getEventReference());
+
+			var individualEvent = factory.createCounterBuilder(moduleEvent);
 
 			Stream.of(overallTotal, individualEvent).forEach(it -> {
 
-				it.tags(ModulithMetrics.LowKeys.MODULE_KEY.name().toLowerCase(), moduleByType.getIdentifier().toString()) //
-						.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), moduleByType.getDisplayName()) //
+				it.tags(ModulithMetrics.LowKeys.MODULE_IDENTIFIER.name().toLowerCase(), module.getIdentifier().toString()) //
+						.tags(ModulithMetrics.LowKeys.MODULE_NAME.name().toLowerCase(), module.getDisplayName()) //
 						.register(registry).increment();
 			});
 		}
-
-		var observation = observationRegistry.get().getCurrentObservation();
-
-		if (observation == null) {
-			return;
-		}
-
-		observation.event(Event.of(Events.EVENT_PUBLICATION_SUCCESS.getName(), "Published " + payloadType.getName()));
 	}
 }

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.support;
+package org.springframework.modulith.observability;
 
 import io.micrometer.common.docs.KeyName;
 import io.micrometer.core.instrument.Meter;
@@ -24,7 +24,7 @@ import io.micrometer.core.instrument.docs.MeterDocumentation;
  * @author Oliver Drotbohm
  * @since 1.4
  */
-enum ModulithMetrics implements MeterDocumentation {
+public enum ModulithMetrics implements MeterDocumentation {
 
 	/**
 	 * Counter for the events.
@@ -37,7 +37,7 @@ enum ModulithMetrics implements MeterDocumentation {
 		 */
 		@Override
 		public String getName() {
-			return "modulith.events.processed";
+			return "module.events.published";
 		}
 
 		/*
@@ -59,7 +59,8 @@ enum ModulithMetrics implements MeterDocumentation {
 		}
 	};
 
-	enum LowKeys implements KeyName {
+	public enum LowKeys implements KeyName {
+
 		/**
 		 * Type of the emitted event.
 		 */
@@ -71,14 +72,14 @@ enum ModulithMetrics implements MeterDocumentation {
 			 */
 			@Override
 			public String asString() {
-				return "event.type";
+				return "module.event.type";
 			}
 		},
 
 		/**
-		 * Name of the module.
+		 * The identifier of the module.
 		 */
-		MODULE_KEY {
+		MODULE_IDENTIFIER {
 
 			/*
 			 * (non-Javadoc)
@@ -86,7 +87,7 @@ enum ModulithMetrics implements MeterDocumentation {
 			 */
 			@Override
 			public String asString() {
-				return "module.key";
+				return "module.identifier";
 			}
 		},
 

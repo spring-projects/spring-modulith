@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.observability.support;
 
-import io.micrometer.core.instrument.Counter;
 import io.micrometer.core.instrument.Counter.Builder;
 
 import java.util.Comparator;
@@ -37,7 +36,10 @@ import org.springframework.util.Assert;
  * @author Marcin Grzejszczak
  * @since 1.4
  */
-public class CrossModuleEventCounterFactory implements ModulithEventMetrics {
+public class ModuleEventCounterFactory implements ModulithEventMetrics {
+
+	private static final ModulithMetricsCustomizer DEFAULT = new ModulithMetricsCustomizer(Object.class,
+			ObservedModuleEvent::createBuilder);
 
 	private final SortedSet<ModulithMetricsCustomizer> customizers = new TreeSet<>();
 	private final SortedSet<ModulithMetricsCustomizer> creators = new TreeSet<>();
@@ -48,17 +50,15 @@ public class CrossModuleEventCounterFactory implements ModulithEventMetrics {
 	 * @param event must not be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
-	Builder createCounterBuilder(Object event) {
+	Builder createCounterBuilder(ObservedModuleEvent event) {
 
 		Assert.notNull(event, "Event must not be null!");
 
-		// Use most specific creator (default order as defined in ModulithMetricsCustomizer)
-		var creator = creators.stream()
+		var builder = creators.stream()
 				.filter(it -> it.supports(event))
 				.findFirst()
-				.orElse(ModulithMetricsCustomizer.DEFAULT);
-
-		var builder = creator.createBuilder(event);
+				.orElse(DEFAULT)
+				.createBuilder(event);
 
 		return customizers.stream()
 				.sorted(Comparator.reverseOrder()) // Inverted order (most specific last)
@@ -74,7 +74,8 @@ public class CrossModuleEventCounterFactory implements ModulithEventMetrics {
 	@Override
 	public <T> ModulithEventMetrics customize(Class<T> type, Function<T, Builder> factory) {
 
-		creators.add(new ModulithMetricsCustomizer(type, (Function<Object, Builder>) factory));
+		creators.add(new ModulithMetricsCustomizer(type, event -> factory.apply((T) event.getEvent())));
+
 		return this;
 	}
 
@@ -84,51 +85,46 @@ public class CrossModuleEventCounterFactory implements ModulithEventMetrics {
 	 */
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T> CrossModuleEventCounterFactory customize(Class<T> type, BiConsumer<T, Builder> consumer) {
+	public <T> ModuleEventCounterFactory customize(Class<T> type, BiConsumer<T, Builder> consumer) {
 
 		customizers.add(new ModulithMetricsCustomizer(type, (BiConsumer<Object, Builder>) consumer));
+
 		return this;
 	}
 
 	private static class ModulithMetricsCustomizer implements Comparable<ModulithMetricsCustomizer> {
 
-		private static final BiConsumer<Object, Builder> NO_OP = (event, builder) -> {};
-		private static final Function<Object, Builder> DEFAULT_FACTORY = event -> Counter
-				.builder(event.getClass().getSimpleName());
-
-		public static final ModulithMetricsCustomizer DEFAULT = new ModulithMetricsCustomizer(Object.class, NO_OP);
-
 		private final Class<?> type;
-		private final Function<Object, Builder> creator;
+		private final Function<ObservedModuleEvent, Builder> creator;
 		private final BiFunction<Object, Builder, Builder> customizer;
 
-		public ModulithMetricsCustomizer(Class<?> type, Function<Object, Builder> creator) {
+		ModulithMetricsCustomizer(Class<?> type, Function<ObservedModuleEvent, Builder> creator) {
 
 			this.type = type;
 			this.creator = creator;
 			this.customizer = (event, builder) -> builder;
 		}
 
-		public ModulithMetricsCustomizer(Class<?> type, BiConsumer<Object, Builder> creator) {
+		ModulithMetricsCustomizer(Class<?> type, BiConsumer<Object, Builder> customizer) {
 
 			this.type = type;
-			this.creator = DEFAULT_FACTORY;
+			this.creator = ObservedModuleEvent::createBuilder;
 			this.customizer = (event, builder) -> {
-				creator.accept(event, builder);
+				customizer.accept(event, builder);
 				return builder;
 			};
 		}
 
-		public Builder createBuilder(Object event) {
+		Builder createBuilder(ObservedModuleEvent event) {
 			return creator.apply(event);
 		}
 
-		public boolean supports(Object event) {
-			return type.isInstance(event);
+		boolean supports(ObservedModuleEvent event) {
+			return event.hasEventOfType(type);
 		}
 
-		public Builder augment(Object event, Builder builder) {
-			return customizer.apply(event, builder);
+		Builder augment(ObservedModuleEvent event, Builder builder) {
+			return customizer.apply(event.getEvent(), builder);
 		}
 
 		/*

@@ -19,6 +19,8 @@ import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.observation.ObservationFilter;
 import io.micrometer.observation.ObservationRegistry;
 
+import java.util.function.Supplier;
+
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -31,11 +33,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
 import org.springframework.modulith.observability.ModulithEventMetricsCustomizer;
-import org.springframework.modulith.observability.support.CrossModuleEventCounterFactory;
-import org.springframework.modulith.observability.support.LocalServiceRenamingSpanFilter;
+import org.springframework.modulith.observability.ModulithObservationConvention;
+import org.springframework.modulith.observability.support.DefaultModulithObservationConvention;
+import org.springframework.modulith.observability.support.ModuleEventCounterFactory;
 import org.springframework.modulith.observability.support.ModuleEventListener;
+import org.springframework.modulith.observability.support.ModuleIdentifierPassingObservationFilter;
 import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
-import org.springframework.modulith.observability.support.ModulePassingObservationFilter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
@@ -47,16 +50,21 @@ class ModuleObservabilityAutoConfiguration {
 
 	@Bean
 	static ModuleObservabilityBeanPostProcessor moduleTracingBeanPostProcessor(ApplicationModulesRuntime runtime,
-			ObjectProvider<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory,
+			ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<ModulithObservationConvention> convention,
+			ConfigurableListableBeanFactory factory,
 			Environment environment) {
-		return new ModuleObservabilityBeanPostProcessor(runtime, observationRegistry::getObject, factory, environment);
+
+		Supplier<ModulithObservationConvention> defaulted = () -> convention
+				.getIfAvailable(() -> DefaultModulithObservationConvention.INSTANCE);
+
+		return new ModuleObservabilityBeanPostProcessor(runtime, observationRegistry::getObject, defaulted, factory,
+				environment);
 	}
 
 	@Bean
 	static ModuleEventListener tracingModuleEventListener(ApplicationModulesRuntime runtime,
-			ObjectProvider<ObservationRegistry> observationRegistry, ObjectProvider<MeterRegistry> meterRegistry,
-			CrossModuleEventCounterFactory configurer) {
-		return new ModuleEventListener(runtime, observationRegistry::getObject, meterRegistry::getObject, configurer);
+			ObjectProvider<MeterRegistry> meterRegistry, ModuleEventCounterFactory configurer) {
+		return new ModuleEventListener(runtime, meterRegistry::getObject, configurer);
 	}
 
 	// TODO: Have a custom thread pool for modulith
@@ -74,18 +82,13 @@ class ModuleObservabilityAutoConfiguration {
 
 	@Bean
 	ObservationFilter modulePassingObservationFilter() {
-		return new ModulePassingObservationFilter();
+		return new ModuleIdentifierPassingObservationFilter();
 	}
 
 	@Bean
-	LocalServiceRenamingSpanFilter localServiceRenamingSpanFilter() {
-		return new LocalServiceRenamingSpanFilter();
-	}
+	ModuleEventCounterFactory modulithEventCounterFactory(ObjectProvider<ModulithEventMetricsCustomizer> customizer) {
 
-	@Bean
-	CrossModuleEventCounterFactory modulithEventCounterFactory(ObjectProvider<ModulithEventMetricsCustomizer> customizer) {
-
-		var factory = new CrossModuleEventCounterFactory();
+		var factory = new ModuleEventCounterFactory();
 
 		customizer.stream().forEach(it -> it.customize(factory));
 

@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.support;
+package org.springframework.modulith.observability;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -59,7 +59,7 @@ public class ObservedModuleType {
 	 * @param module must not be {@literal null}.
 	 * @param type must not be {@literal null}.
 	 */
-	ObservedModuleType(ApplicationModules modules, ObservedModule module, ArchitecturallyEvidentType type) {
+	public ObservedModuleType(ApplicationModules modules, ObservedModule module, ArchitecturallyEvidentType type) {
 
 		Assert.notNull(modules, "ApplicationModules must not be null!");
 		Assert.notNull(module, "ObservedModule must not be null!");

@@ -21,12 +21,14 @@ import static org.mockito.Mockito.*;
 
 import example.sample.SampleProperties;
 
+import java.util.function.Supplier;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.annotation.RabbitListenerAnnotationBeanPostProcessor;
 import org.springframework.beans.factory.support.DefaultListableBeanFactory;
 import org.springframework.beans.factory.support.RootBeanDefinition;
 import org.springframework.mock.env.MockEnvironment;
-import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
+import org.springframework.modulith.observability.ModulithObservationConvention;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 
 /**
@@ -36,6 +38,8 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
  * @author Marcin Grzejszczak
  */
 class ModuleObservabilityBeanPostProcessorUnitTests {
+
+	Supplier<ModulithObservationConvention> convention = () -> DefaultModulithObservationConvention.INSTANCE;
 
 	@Test // GH-498
 	void doesNotProxyConfiguationProperties() {
@@ -47,7 +51,8 @@ class ModuleObservabilityBeanPostProcessorUnitTests {
 		doReturn(SampleProperties.class).when(mock).getUserClass(any(), any());
 		doReturn(true).when(mock).isApplicationClass(any());
 
-		var processor = new ModuleObservabilityBeanPostProcessor(mock, () -> null, beanFactory, new MockEnvironment());
+		var processor = new ModuleObservabilityBeanPostProcessor(mock, () -> null, convention, beanFactory,
+				new MockEnvironment());
 
 		var bean = new SampleProperties();
 		var result = processor.postProcessAfterInitialization(bean, "properties");
@@ -60,7 +65,7 @@ class ModuleObservabilityBeanPostProcessorUnitTests {
 
 		var rabbitProcessor = new RabbitListenerAnnotationBeanPostProcessor();
 		var tracingProcessor = new ModuleObservabilityBeanPostProcessor(mock(ApplicationModulesRuntime.class), () -> null,
-				new DefaultListableBeanFactory(), new MockEnvironment());
+				convention, new DefaultListableBeanFactory(), new MockEnvironment());
 
 		assertThat(rabbitProcessor.getOrder()).isGreaterThan(tracingProcessor.getOrder());
 

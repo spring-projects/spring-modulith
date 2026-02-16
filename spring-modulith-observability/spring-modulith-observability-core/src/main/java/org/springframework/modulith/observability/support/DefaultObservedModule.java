@@ -17,24 +17,41 @@ package org.springframework.modulith.observability.support;
 
 import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.Map;
+import java.util.Objects;
+import java.util.StringJoiner;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
 import org.springframework.aop.ProxyMethodInvocation;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.support.AopUtils;
+import org.springframework.core.ResolvableType;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
 import org.springframework.modulith.core.FormattableType;
+import org.springframework.modulith.core.FormattableType.NonModuleTypeAbbreviation;
 import org.springframework.modulith.core.SpringBean;
+import org.springframework.modulith.observability.ObservedModule;
+import org.springframework.modulith.observability.ObservedModuleType;
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
 
+/**
+ * Default implementation for {@link ObservedModule}.
+ *
+ * @author Oliver Drotbohm
+ */
 class DefaultObservedModule implements ObservedModule {
+
+	private static final Map<Key, String> FORMATTED = new ConcurrentHashMap<>();
 
 	private final ApplicationModule module;
 
@@ -75,6 +92,73 @@ class DefaultObservedModule implements ObservedModule {
 	@Override
 	public String getInvokedMethod(MethodInvocation invocation) {
 		return toString(findModuleLocalMethod(invocation), module);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.observability.support.ObservedModule#format(org.aopalliance.intercept.MethodInvocation)
+	 */
+	@Override
+	public String format(MethodInvocation invocation) {
+
+		var key = new Key(getUserType(invocation), invocation.getMethod());
+
+		return Objects.requireNonNull(FORMATTED.computeIfAbsent(key, it -> {
+
+			var method = it.method();
+			var type = it.type();
+			var abbreviatedType = FormattableType.of(type).getAbbreviatedFullName(module);
+
+			var parameterTypes = method.getParameterTypes();
+			var joiner = new StringJoiner(", ", "(", ")");
+
+			for (int i = 0; i < parameterTypes.length; i++) {
+
+				// Always abbreviate non-module types
+				joiner.add(render(ResolvableType.forMethodParameter(method, i, type)));
+			}
+
+			var parameters = joiner.toString();
+
+			return abbreviatedType + "." + method.getName() + (parameters.isEmpty() ? "()" : parameters);
+		}));
+	}
+
+	private String render(ResolvableType type) {
+
+		String formatted = FormattableType.of(type.resolve()).getAbbreviatedFullName(module,
+				NonModuleTypeAbbreviation.ABBREVIATED);
+
+		if (!type.hasGenerics()) {
+			return formatted;
+		}
+
+		return formatted + Stream.of(type.getGenerics())
+				.map(this::render)
+				.collect(Collectors.joining(", ", "<", ">"));
+	}
+
+	private Class<?> getUserType(MethodInvocation invocation) {
+
+		var target = invocation instanceof ProxyMethodInvocation proxy
+				? proxy.getProxy()
+				: invocation.getThis();
+
+		var type = AopUtils.getTargetClass(target);
+
+		// Application code target
+		if (module.contains(type)) {
+			return type;
+		}
+
+		if (!(target instanceof Advised advised)) {
+			return type;
+		}
+
+		return Stream.of(advised.getProxiedInterfaces())
+				.filter(module::contains)
+				.findFirst()
+				.orElse(type);
 	}
 
 	/*
@@ -127,13 +211,20 @@ class DefaultObservedModule implements ObservedModule {
 	public boolean isEventListenerInvocation(MethodInvocation invocation) {
 
 		var method = findModuleLocalMethod(invocation);
-		var type = module.getArchitecturallyEvidentType(method.getDeclaringClass());
 
-		return type.isEventListener()
-				&& type.getReferenceMethods()
-						.map(ReferenceMethod::getMethod)
-						.map(JavaMethod::reflect)
-						.anyMatch(method::equals);
+		try {
+
+			var type = module.getArchitecturallyEvidentType(method.getDeclaringClass());
+
+			return type.isEventListener()
+					&& type.getReferenceMethods()
+							.map(ReferenceMethod::getMethod)
+							.map(JavaMethod::reflect)
+							.anyMatch(method::equals);
+
+		} catch (IllegalArgumentException o_O) {
+			return false;
+		}
 	}
 
 	private Method findModuleLocalMethod(MethodInvocation invocation) {
@@ -181,4 +272,6 @@ class DefaultObservedModule implements ObservedModule {
 
 		return typeName + "." + method.getName() + "(…)";
 	}
+
+	private record Key(Class<?> type, Method method) {}
 }

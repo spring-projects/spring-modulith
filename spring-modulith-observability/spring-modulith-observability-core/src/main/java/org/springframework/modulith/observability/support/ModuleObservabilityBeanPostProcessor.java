@@ -35,6 +35,9 @@ import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.observability.ModulithObservationConvention;
+import org.springframework.modulith.observability.ObservedModule;
+import org.springframework.modulith.observability.ObservedModuleType;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.util.Assert;
 
@@ -47,10 +50,9 @@ import org.springframework.util.Assert;
 public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySupport
 		implements BeanPostProcessor, Ordered {
 
-	public static final String MODULE_BAGGAGE_KEY = "org.springframework.modulith.module";
-
 	private final ApplicationModulesRuntime runtime;
 	private final Supplier<ObservationRegistry> observationRegistry;
+	private final Supplier<ModulithObservationConvention> convention;
 	private final Map<String, Advisor> advisors;
 	private final ConfigurableListableBeanFactory factory;
 	private final Environment environment;
@@ -65,16 +67,18 @@ public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySup
 	 * @param environment must not be {@literal null}.
 	 */
 	public ModuleObservabilityBeanPostProcessor(ApplicationModulesRuntime runtime,
-			Supplier<ObservationRegistry> observationRegistry, ConfigurableListableBeanFactory factory,
-			Environment environment) {
+			Supplier<ObservationRegistry> observationRegistry, Supplier<ModulithObservationConvention> convention,
+			ConfigurableListableBeanFactory factory, Environment environment) {
 
 		Assert.notNull(runtime, "ApplicationModulesRuntime must not be null!");
 		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+		Assert.notNull(convention, "ModulithObservationConvention must not be null!");
 		Assert.notNull(factory, "BeanFactory must not be null!");
 		Assert.notNull(environment, "Environment must not be null!");
 
 		this.runtime = runtime;
 		this.observationRegistry = observationRegistry;
+		this.convention = convention;
 		this.advisors = new HashMap<>();
 		this.factory = factory;
 		this.environment = environment;
@@ -142,7 +146,7 @@ public class ModuleObservabilityBeanPostProcessor extends ModuleObservabilitySup
 
 		return advisors.computeIfAbsent(module.getIdentifier().toString(), __ -> {
 			return new ApplicationModuleObservingAdvisor(type,
-					ModuleEntryInterceptor.of(module, observationRegistry.get(), environment));
+					ModuleEntryInterceptor.of(module, observationRegistry.get(), convention.get(), environment));
 		});
 	}
 

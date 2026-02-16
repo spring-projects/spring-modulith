@@ -29,9 +29,14 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
+import org.springframework.http.server.observation.ServerRequestObservationContext;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
-import org.springframework.modulith.observability.support.ModulithObservations.LowKeys;
+import org.springframework.modulith.observability.ModulithContext;
+import org.springframework.modulith.observability.ModulithObservationConvention;
+import org.springframework.modulith.observability.ModulithObservations.LowKeys;
+import org.springframework.modulith.observability.ObservedModule;
 import org.springframework.util.Assert;
+import org.springframework.util.ClassUtils;
 
 /**
  * {@link MethodInterceptor} to create {@link Observation}s.
@@ -42,59 +47,41 @@ import org.springframework.util.Assert;
 class ModuleEntryInterceptor implements MethodInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
-	private static Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new HashMap<>();
-
-	private static final ModulithObservationConvention DEFAULT = new DefaultModulithObservationConvention();
+	private static final Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new HashMap<>();
 
 	private final ObservedModule module;
 	private final ObservationRegistry observationRegistry;
-	private final @Nullable ModulithObservationConvention customModulithObservationConvention;
+	private final ModulithObservationConvention convention;
 	private final Environment environment;
 
 	/**
-	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule} and {@link ObservationRegistry}.
+	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule}, {@link ObservationRegistry},
+	 * {@link ModulithObservationConvention} and environment.
 	 *
 	 * @param module must not be {@literal null}.
 	 * @param observationRegistry must not be {@literal null}.
+	 * @param convention must not be {@literal null}.
 	 * @param environment must not be {@literal null}.
 	 */
 	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry,
-			Environment environment) {
-		this(module, observationRegistry, null, environment);
-	}
-
-	/**
-	 * Creates a new {@link ModuleEntryInterceptor} for the given {@link ObservedModule}, {@link ObservationRegistry} and
-	 * {@link ModulithObservationConvention}.
-	 *
-	 * @param module must not be {@literal null}.
-	 * @param observationRegistry must not be {@literal null}.
-	 * @param custom can be {@literal null}.
-	 * @param environment must not be {@literal null}.
-	 */
-	private ModuleEntryInterceptor(ObservedModule module, ObservationRegistry observationRegistry,
-			@Nullable ModulithObservationConvention custom, Environment environment) {
+			ModulithObservationConvention convention, Environment environment) {
 
 		Assert.notNull(module, "ObservedModule must not be null!");
 		Assert.notNull(observationRegistry, "ObservationRegistry must not be null!");
+		Assert.notNull(convention, "ModulithObservationConvention must not be null!");
 
 		this.module = module;
 		this.observationRegistry = observationRegistry;
-		this.customModulithObservationConvention = custom;
+		this.convention = convention;
 		this.environment = environment;
 	}
 
 	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
-			Environment environment) {
-		return of(module, observationRegistry, null, environment);
-	}
-
-	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
 			@Nullable ModulithObservationConvention custom, Environment environment) {
 
-		return CACHE.computeIfAbsent(module.getIdentifier(), __ -> {
+		return Objects.requireNonNull(CACHE.computeIfAbsent(module.getIdentifier(), __ -> {
 			return new ModuleEntryInterceptor(module, observationRegistry, custom, environment);
-		});
+		}));
 	}
 
 	/*
@@ -102,7 +89,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	 * @see org.aopalliance.intercept.MethodInterceptor#invoke(org.aopalliance.intercept.MethodInvocation)
 	 */
 	@Override
-	public @Nullable Object invoke(MethodInvocation invocation) throws Throwable {
+	public Object invoke(MethodInvocation invocation) throws Throwable {
 
 		var moduleIdentifier = module.getIdentifier();
 		var currentObservation = observationRegistry.getCurrentObservation();
@@ -110,7 +97,8 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 		if (currentObservation != null) {
 
-			var moduleKey = currentObservation.getContextView().getLowCardinalityKeyValue(LowKeys.MODULE_KEY.asString());
+			var moduleKey = currentObservation.getContextView()
+					.getLowCardinalityKeyValue(LowKeys.MODULE_IDENTIFIER.asString());
 			currentModule = moduleKey != null ? moduleKey.getValue() : null;
 		}
 
@@ -119,25 +107,24 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 			return invocation.proceed();
 		}
 
-		var invokedMethod = module.getInvokedMethod(invocation);
-
-		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), invokedMethod);
+		LOGGER.trace("Entering {} via {}.", module.getDisplayName(), module.format(invocation));
 
 		var modulithContext = new ModulithContext(module, invocation, environment);
-		var observation = Observation.createNotStarted(customModulithObservationConvention, DEFAULT,
+
+		if (ModuleValuesToRequestPropagator.SPRING_WEB_PRESENT) {
+			ModuleValuesToRequestPropagator.propagateFirstModuleToRoot(currentObservation, modulithContext);
+		}
+
+		var observation = Observation.createNotStarted(convention, DefaultModulithObservationConvention.INSTANCE,
 				() -> modulithContext, observationRegistry);
 
 		try (Scope scope = observation.start().openScope()) {
 
-			var proceed = invocation.proceed();
-			observation.event(ModulithObservations.Events.EVENT_PUBLICATION_SUCCESS);
-
-			return proceed;
+			return invocation.proceed();
 
 		} catch (Exception ex) {
 
 			observation.error(ex);
-			observation.event(ModulithObservations.Events.EVENT_PUBLICATION_FAILURE);
 
 			throw ex;
 
@@ -145,6 +132,30 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 
 			LOGGER.trace("Leaving {}", module.getDisplayName());
 			observation.stop();
+		}
+	}
+
+	private static class ModuleValuesToRequestPropagator {
+
+		static boolean SPRING_WEB_PRESENT = ClassUtils.isPresent(
+				"org.springframework.http.server.observation.ServerRequestObservationContext",
+				ModuleValuesToRequestPropagator.class.getClassLoader());
+
+		static void propagateFirstModuleToRoot(@Nullable Observation observation, ModulithContext context) {
+
+			if (observation == null) {
+				return;
+			}
+
+			var parent = observation.getContext().getParentObservation();
+
+			if (parent != null) {
+				return;
+			}
+
+			if (observation.getContext() instanceof ServerRequestObservationContext request) {
+				request.addLowCardinalityKeyValues(context.getLowCardinalityValues());
+			}
 		}
 	}
 }

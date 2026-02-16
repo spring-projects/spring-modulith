@@ -28,7 +28,6 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor;
 import org.springframework.modulith.observability.support.ModuleObservabilityBeanPostProcessor.ApplicationModuleObservingAdvisor;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
@@ -72,7 +71,7 @@ class ModuleObservabilityBeanPostProcessorIntegrationTests {
 					runtime);
 
 			return new ModuleObservabilityBeanPostProcessor(modulesRuntime, () -> ObservationRegistry.NOOP,
-					context.getBeanFactory(), context.getEnvironment());
+					() -> DefaultModulithObservationConvention.INSTANCE, context.getBeanFactory(), context.getEnvironment());
 		}
 	}
 

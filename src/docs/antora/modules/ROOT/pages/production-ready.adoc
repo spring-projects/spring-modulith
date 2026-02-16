@@ -39,7 +39,7 @@ Find more information on that in https://docs.spring.io/spring-boot/docs/current
 == [[observability.actuator]]Application Module Actuator
 
 The application module structure can be exposed as Spring Boot actuator.
-To enable the actuator, add the `spring-modulith-actuator` dependency to the project:
+To enable the actuator, add the `spring-modulith-actuator` dependency to the project, unless you already declared the `spring-modulith-starter-insight` as described xref:production-ready.adoc#production-ready[above]:
 
 .Using the Spring Modulith actuator support
 [tabs]
@@ -152,8 +152,8 @@ An example module arrangement would look like this:
 == [[observability]]Observing Application Modules
 :imagesdir: images
 
-The interaction between application modules can be intercepted to create Micrometer spans to ultimately end up in traces you can visualize in tools like https://zipkin.io/[Zipkin].
-To activate the instrumentation add the following runtime dependency to your project:
+The interaction between application modules can be intercepted to create Micrometer spans to ultimately end up in traces you can visualize in tools like https://zipkin.io/[Zipkin] or https://grafana.com/[Grafana].
+To activate the instrumentation add the following runtime dependency to your project, unless you already declared the `spring-modulith-starter-insight` as described xref:production-ready.adoc#production-ready[above]:
 
 .Using the Spring Modulith observability support
 [tabs]
@@ -164,7 +164,7 @@ Maven::
 ----
 <dependency>
   <groupId>org.springframework.modulith</groupId>
-  <artifactId>spring-modulith-observability</artifactId>
+  <artifactId>spring-modulith-observability-core</artifactId>
   <version>{projectVersion}</version>
   <scope>runtime</scope>
 </dependency>
@@ -175,10 +175,12 @@ Gradle::
 [source, subs="+attributes", role="secondary"]
 ----
 dependencies {
-  runtimeOnly 'org.springframework.modulith:spring-modulith-observability:{projectVersion}'
+  runtimeOnly 'org.springframework.modulith:spring-modulith-observability-core:{projectVersion}'
 }
 ----
 ======
+
+In case you would like to customize metrics created for application event publications, you will also need to declare the `spring-modulith-observability-api` artifact in compile scope.
 
 NOTE: You will have to configure additional infrastructure dependencies depending on the tooling you want to pipe the observability metadata in.
 For details, please check the corresponding https://docs.spring.io/spring-boot/docs/current/reference/htmlsingle/#actuator.micrometer-tracing[Spring Boot documentation] on which dependencies to include for your setup.
@@ -191,3 +193,87 @@ image::observability.png[]
 
 In this particular case, triggering the payment changes the state of the order which then causes an order completion event being triggered.
 This gets picked up asynchronously by the engine that triggers another state change on the order, works for a couple of seconds and triggers the final state change on the order in turn.
+
+[[observability-spans]]
+==== Module Entry Span
+
+.Tag Keys
+|===
+|Name | Description
+|`module.identifier`|The identifier of the module.
+|`module.invocation-type`|Type of invocation ("event listener" or "bean").
+|`module.method`|Method executed on a module.
+|`module.name`|Name of the module.
+|===
+
+[[observability-metrics]]
+=== Observability Metrics
+
+Spring Modulith registers data for all domain events published in the application in the form of two metrics.
+
+- `module.events.published` – a counter summarizing all event publications.
+- `module.events.published.$moduleIdentifier.$simpleEventTypeName` - a counter for the individual event that can be further enriched with domain-specific values.
+
+[[observability-metrics-all-events]]
+==== The All Events Metric
+
+.Low cardinality Keys
+[cols="a,a"]
+|===
+|Name | Description
+|`module.event.type`|Type of the emitted event.
+|`module.identifier`|The identifier of the module.
+|`module.name`|Name of the module.
+|===
+
+[[observability-metrics-individual-events]]
+==== The Individual Events Metric
+
+.Low cardinality Keys
+[cols="a,a"]
+|===
+|Name | Description
+|`module.identifier`|The identifier of the module.
+|`module.name`|Name of the module.
+|===
+
+Additional tags can be added to the invidual events metrics by implementing a `ModulithEventMetricsCustomizer`.
+
+[source, java]
+----
+@Configuration
+class ObservabilityConfiguration {
+
+  @Bean
+  ModulithEventMetricsCustomizer modulithEventMetricsCustomizer() {
+
+    return metrics -> {
+
+      metrics.customize(MyCustomDomainEvent.class, (event, it) -> {
+        it.tags("someTag", event.getValue());
+      });
+    };
+  }
+}
+----
+
+Note how we are able to refer to the individual domain events by type and can translate values of the particular event into a value on the metric.
+
+[[observability-conventions]]
+==== Conventions
+
+The metrics created by Spring Modulith can be customized by providing a `ModulithObservationConvention` as bean in your application.
+
+[source, java]
+----
+@Configuration
+class ObservabilityConfiguration {
+
+  @Bean
+  ModulithObservationConvention observationConvention() {
+    return new CustomModulithObservationConvention();
+  }
+}
+----
+
+Our default implementation delegates all calls to methods on `ModulithContext`.

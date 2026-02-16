@@ -13,13 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.observability.support;
+package org.springframework.modulith.observability;
 
+import io.micrometer.common.KeyValue;
+import io.micrometer.common.KeyValues;
 import io.micrometer.observation.Observation.Context;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.observability.ModulithObservations.HighKeys;
+import org.springframework.modulith.observability.ModulithObservations.LowKeys;
 import org.springframework.util.Assert;
 
 /**
@@ -30,6 +34,8 @@ import org.springframework.util.Assert;
  * @since 1.4
  */
 public class ModulithContext extends Context {
+
+	public static final String DEFAULT_CONVENTION_NAME = "module.invocations";
 
 	private final ObservedModule module;
 	private final MethodInvocation invocation;
@@ -64,5 +70,30 @@ public class ModulithContext extends Context {
 
 	public @Nullable String getApplicationName() {
 		return applicationName;
+	}
+
+	public KeyValues getLowCardinalityValues() {
+
+		return KeyValues.of(KeyValue.of(LowKeys.MODULE_IDENTIFIER, module.getIdentifier().toString()))
+				.and(KeyValue.of(LowKeys.MODULE_NAME, module.getDisplayName()))
+				.and(KeyValue.of(LowKeys.INVOCATION_TYPE, getInvocationType()));
+	}
+
+	public KeyValues getHighCardinalityValues() {
+		return KeyValues.of(HighKeys.MODULE_METHOD.withValue(invocation.getMethod().getName()));
+	}
+
+	/*
+	 *
+	 * (non-Javadoc)
+	 * @see io.micrometer.observation.Observation.Context#getContextualName()
+	 */
+	@Override
+	public String getContextualName() {
+		return module.getDisplayName() + " > " + module.format(invocation);
+	}
+
+	private String getInvocationType() {
+		return module.isEventListenerInvocation(invocation) ? "event-listener" : "bean";
 	}
 }
