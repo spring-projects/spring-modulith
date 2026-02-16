@@ -46,7 +46,7 @@ public interface ObservedModule {
 	String getDisplayName();
 
 	/**
-	 * Returns the name of the actually invoked {@link Method}.
+	 * Returns the name of the actually invoked {@link java.lang.reflect.Method}.
 	 *
 	 * @param invocation must not be {@literal null}.
 	 * @return

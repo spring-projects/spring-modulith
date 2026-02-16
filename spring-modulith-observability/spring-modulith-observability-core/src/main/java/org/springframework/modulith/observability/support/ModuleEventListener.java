@@ -45,7 +45,7 @@ public class ModuleEventListener implements ApplicationListener<ApplicationEvent
 
 	/**
 	 * Creates a new {@link ModuleEventListener} for the given {@link ApplicationModulesRuntime} and
-	 * {@link ObservationRegistry} and {@link MeterRegistry}.
+	 * {@link MeterRegistry}.
 	 *
 	 * @param runtime must not be {@literal null}.
 	 * @param meterRegistrySupplier must not be {@literal null}.

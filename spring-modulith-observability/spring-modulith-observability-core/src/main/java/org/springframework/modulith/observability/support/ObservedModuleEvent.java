@@ -22,7 +22,7 @@ import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.observability.ModulithMetrics;
 
 /**
- * An observed event associated with the {@link ApplicationModule} it originates from.
+ * An observed event associated with the {@link org.springframework.modulith.core.ApplicationModule} it originates from.
  *
  * @author Oliver Drotbohm
  * @since 2.1

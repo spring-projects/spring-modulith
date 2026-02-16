@@ -28,9 +28,9 @@ import org.springframework.modulith.observability.ModulithEventMetrics;
 import org.springframework.util.Assert;
 
 /**
- * A factory to create {@link Builder} instances for {@link Counter}s eventually. Target for dependency injection via
- * the {@link org.springframework.modulith.observability.ModulithEventMetricsCustomizer} interface to allow users to
- * augment the counters with additional information.
+ * A factory to create {@link Builder} instances for {@link io.micrometer.core.instrument.Counter}s eventually. Target
+ * for dependency injection via the {@link org.springframework.modulith.observability.ModulithEventMetricsCustomizer}
+ * interface to allow users to augment the counters with additional information.
  *
  * @author Oliver Drotbohm
  * @author Marcin Grzejszczak
