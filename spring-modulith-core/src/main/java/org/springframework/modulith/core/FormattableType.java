@@ -136,6 +136,19 @@ public class FormattableType {
 	 * @return will never be {@literal null}.
 	 */
 	public String getAbbreviatedFullName(@Nullable ApplicationModule module) {
+		return getAbbreviatedFullName(module, NonModuleTypeAbbreviation.FULL_NAME);
+	}
+
+	/**
+	 * Returns the abbreviated full name of the type abbreviating only the part of the given {@link ApplicationModule}'s
+	 * base package.
+	 *
+	 * @param module can be {@literal null}.
+	 * @param abbreviation must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.1
+	 */
+	public String getAbbreviatedFullName(@Nullable ApplicationModule module, NonModuleTypeAbbreviation abbreviation) {
 
 		if (module == null) {
 			return getAbbreviatedFullName();
@@ -154,13 +167,36 @@ public class FormattableType {
 		}
 
 		if (!typePackageName.startsWith(basePackageName)) {
-			return getFullName();
+
+			return switch (abbreviation) {
+				case FULL_NAME -> getFullName();
+				case ABBREVIATED -> getAbbreviatedFullName();
+			};
 		}
 
 		return abbreviate(basePackageName) //
 				.concat(typePackageName.substring(basePackageName.length())) //
 				.concat(".") //
 				.concat(ClassUtils.getShortName(type));
+	}
+
+	/**
+	 * How to handle types that are not contained in an {@link ApplicationModule}.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 2.1
+	 */
+	public enum NonModuleTypeAbbreviation {
+
+		/**
+		 * Render full name.
+		 */
+		FULL_NAME,
+
+		/**
+		 * Abbreviate the package name.
+		 */
+		ABBREVIATED;
 	}
 
 	/**
