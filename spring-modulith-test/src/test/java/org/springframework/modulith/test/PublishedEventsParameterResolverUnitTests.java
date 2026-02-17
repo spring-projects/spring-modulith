@@ -22,13 +22,16 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtensionContext;
 import org.junit.jupiter.api.extension.ParameterContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -43,7 +46,7 @@ class PublishedEventsParameterResolverUnitTests {
 	@Test
 	void supportsPublishedEventsType() throws Exception {
 
-		PublishedEventsParameterResolver resolver = new PublishedEventsParameterResolver(__ -> context);
+		var resolver = new PublishedEventsParameterResolver(__ -> context);
 
 		assertThat(resolver.supportsParameter(getParameterContext(PublishedEvents.class), null)).isTrue();
 		assertThat(resolver.supportsParameter(getParameterContext(AssertablePublishedEvents.class), null)).isTrue();
@@ -53,7 +56,14 @@ class PublishedEventsParameterResolverUnitTests {
 	@Test
 	void createsThreadBoundPublishedEvents() throws Exception {
 
-		PublishedEventsParameterResolver resolver = new PublishedEventsParameterResolver(__ -> context);
+		var resolver = new PublishedEventsParameterResolver(__ -> {
+
+			context.getEnvironment().getPropertySources().addFirst(
+					new MapPropertySource("test", Map.of("spring.modulith.test.thread-bound-published-events", "true")));
+
+			return context;
+		});
+
 		context.refresh();
 
 		Map<String, PublishedEvents> allEvents = new ConcurrentHashMap<>();
@@ -78,13 +88,40 @@ class PublishedEventsParameterResolverUnitTests {
 		latch.await(50, TimeUnit.MILLISECONDS);
 
 		keys.forEach(it -> {
-			assertThat(allEvents.get(it).ofType(String.class)).containsExactly(it);
+			assertThat(allEvents.get(it))
+					.isNotNull()
+					.satisfies(events -> assertThat(events.ofType(String.class))
+							.containsExactly(it));
 		});
 	}
 
-	private static ParameterContext getParameterContext(Class<?> type) {
+	@Test // GH-1564
+	void createsPublishedEventsPerMethod() {
 
-		Method method = ReflectionUtils.findMethod(Methods.class, "with", type);
+		var resolver = new PublishedEventsParameterResolver(__ -> context);
+
+		var firstContext = getParameterContext(PublishedEvents.class);
+		var secondContext = getParameterContext(PublishedEvents.class, "with2");
+
+		var firstMock = mock(ExtensionContext.class);
+		doReturn(UUID.randomUUID().toString()).when(firstMock).getUniqueId();
+
+		var secondMock = mock(ExtensionContext.class);
+		doReturn(UUID.randomUUID().toString()).when(secondMock).getUniqueId();
+
+		var resolved = resolver.resolveParameter(firstContext, firstMock);
+
+		assertThat(resolved).isInstanceOf(PublishedEvents.class);
+		assertThat(resolver.resolveParameter(secondContext, secondMock)).isNotSameAs(resolved);
+	}
+
+	private static ParameterContext getParameterContext(Class<?> type) {
+		return getParameterContext(type, "with");
+	}
+
+	private static ParameterContext getParameterContext(Class<?> type, String name) {
+
+		Method method = ReflectionUtils.findMethod(Methods.class, name, type);
 
 		ParameterContext context = mock(ParameterContext.class);
 		doReturn(method.getParameters()[0]).when(context).getParameter();
@@ -95,6 +132,8 @@ class PublishedEventsParameterResolverUnitTests {
 	interface Methods {
 
 		void with(PublishedEvents events);
+
+		void with2(PublishedEvents events);
 
 		void with(Object object);
 

@@ -15,7 +15,10 @@
  */
 package org.springframework.modulith.test;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.extension.AfterEachCallback;
@@ -26,6 +29,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.modulith.test.PublishedEventsFactory.PublishedEventsListenerAdapter;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.util.Assert;
 
@@ -37,7 +41,8 @@ import org.springframework.util.Assert;
 class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCallback {
 
 	private final Function<ExtensionContext, ApplicationContext> lookup;
-	private @Nullable ThreadBoundApplicationListenerAdapter listener;
+
+	private @Nullable InternalPublishedEventsFactory factory;
 
 	PublishedEventsParameterResolver() {
 		this(ctx -> SpringExtension.getApplicationContext(ctx));
@@ -70,53 +75,136 @@ class PublishedEventsParameterResolver implements ParameterResolver, AfterEachCa
 	 * @see org.junit.jupiter.api.extension.ParameterResolver#resolveParameter(org.junit.jupiter.api.extension.ParameterContext, org.junit.jupiter.api.extension.ExtensionContext)
 	 */
 	@Override
-	public PublishedEvents resolveParameter(ParameterContext parameterContext, ExtensionContext extensionContext) {
+	public PublishedEvents resolveParameter(ParameterContext parameterContext, ExtensionContext context) {
 
-		var publishedEvents = PublishedEventsFactory.createPublishedEvents();
-
-		initializeListener(extensionContext);
-
-		if (listener != null) {
-			listener.registerDelegate(publishedEvents);
+		if (factory != null) {
+			return factory.createPublishedEvents(context);
 		}
 
-		return publishedEvents;
+		var applicationContext = lookup.apply(context);
+		var environment = applicationContext.getEnvironment();
+
+		var threadBound = environment.getProperty("spring.modulith.test.thread-bound-published-events", Boolean.class,
+				false);
+
+		this.factory = threadBound
+				? new ThreadBoundPublishedEventsFactory()
+				: detectOrCreate(SingletonPublishedEventsFactory.class, SingletonPublishedEventsFactory::new, context);
+
+		return factory.createPublishedEvents(context);
 	}
 
-	private void initializeListener(ExtensionContext extensionContext) {
+	/**
+	 * Looks up the bean of the given type if present or creates one through the given factory and registers it as
+	 * application listener in the {@link ApplicationContext} backing the {@link ExtensionContext}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	private <T extends ApplicationListener<ApplicationEvent>> T detectOrCreate(Class<T> type,
+			Supplier<? extends T> factory, ExtensionContext extensionContext) {
 
-		if (listener != null) {
-			return;
-		}
-
-		ApplicationContext context = lookup.apply(extensionContext);
+		var context = lookup.apply(extensionContext);
 
 		if (!(context instanceof AbstractApplicationContext aac)) {
 			throw new IllegalStateException();
 		}
 
-		listener = aac.getApplicationListeners().stream()
-				.filter(ThreadBoundApplicationListenerAdapter.class::isInstance)
-				.map(ThreadBoundApplicationListenerAdapter.class::cast)
+		return aac.getApplicationListeners().stream()
+				.filter(type::isInstance)
+				.map(type::cast)
 				.findFirst()
 				.orElseGet(() -> {
 
-					var adapter = new ThreadBoundApplicationListenerAdapter();
-					aac.addApplicationListener(adapter);
+					var events = factory.get();
+					aac.addApplicationListener(events);
 
-					return adapter;
+					return events;
 				});
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.junit.jupiter.api.extension.AfterEachCallback#afterEach(org.junit.jupiter.api.extension.ExtensionContext)
-	 */
+	private interface InternalPublishedEventsFactory extends AfterEachCallback {
+
+		PublishedEvents createPublishedEvents(ExtensionContext context);
+
+		@Override
+		default void afterEach(ExtensionContext context) {}
+	}
+
+	private class ThreadBoundPublishedEventsFactory implements InternalPublishedEventsFactory {
+
+		private @Nullable ThreadBoundApplicationListenerAdapter listener;
+
+		public PublishedEvents createPublishedEvents(ExtensionContext context) {
+
+			var publishedEvents = PublishedEventsFactory.createPublishedEvents();
+
+			initializeListener(context);
+
+			if (listener != null) {
+				listener.registerDelegate(publishedEvents);
+			}
+
+			return publishedEvents;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.test.PublishedEventsParameterResolver.InternalPublishedEventsFactory#afterEach(org.junit.jupiter.api.extension.ExtensionContext)
+		 */
+		@Override
+		public void afterEach(ExtensionContext context) {
+
+			if (listener != null) {
+				listener.unregisterDelegate();
+			}
+		}
+
+		private void initializeListener(ExtensionContext extensionContext) {
+
+			if (listener != null) {
+				return;
+			}
+
+			this.listener = detectOrCreate(ThreadBoundApplicationListenerAdapter.class,
+					ThreadBoundApplicationListenerAdapter::new,
+					extensionContext);
+		}
+	}
+
+	private class SingletonPublishedEventsFactory
+			implements InternalPublishedEventsFactory, ApplicationListener<ApplicationEvent> {
+
+		private final Map<String, PublishedEventsListenerAdapter> events = new ConcurrentHashMap<>();
+
+		public PublishedEvents createPublishedEvents(ExtensionContext context) {
+			return events.computeIfAbsent(context.getUniqueId(), __ -> PublishedEventsFactory.createPublishedEvents());
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
+		 */
+		@Override
+		public void onApplicationEvent(ApplicationEvent event) {
+			events.values().forEach(it -> it.onApplicationEvent(event));
+		}
+
+		/*
+		 *
+		 * (non-Javadoc)
+		 * @see org.springframework.modulith.test.PublishedEventsParameterResolver.InternalPublishedEventsFactory#afterEach(org.junit.jupiter.api.extension.ExtensionContext)
+		 */
+		@Override
+		public void afterEach(ExtensionContext context) {
+			events.remove(context.getUniqueId());
+		}
+	}
+
 	@Override
 	public void afterEach(ExtensionContext context) {
 
-		if (listener != null) {
-			listener.unregisterDelegate();
+		if (factory != null) {
+			factory.afterEach(context);
 		}
 	}
 

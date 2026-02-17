@@ -44,8 +44,9 @@ class PublishedEventsFactory {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	@SuppressWarnings("unchecked")
-	static <T extends PublishedEvents & ApplicationListener<ApplicationEvent>> T createPublishedEvents() {
-		return (T) (isAssertJPresent() ? new DefaultAssertablePublishedEvents() : new DefaultPublishedEvents());
+	static PublishedEventsListenerAdapter createPublishedEvents() {
+		return isAssertJPresent() ? new DefaultAssertablePublishedEvents() : new DefaultPublishedEvents();
 	}
+
+	public interface PublishedEventsListenerAdapter extends PublishedEvents, ApplicationListener<ApplicationEvent> {}
 }

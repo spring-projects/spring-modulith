@@ -16,7 +16,7 @@
 package org.springframework.modulith.test;
 
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
+import org.springframework.modulith.test.PublishedEventsFactory.PublishedEventsListenerAdapter;
 import org.springframework.util.Assert;
 
 /**
@@ -24,7 +24,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-class DefaultAssertablePublishedEvents implements AssertablePublishedEvents, ApplicationListener<ApplicationEvent> {
+class DefaultAssertablePublishedEvents implements AssertablePublishedEvents, PublishedEventsListenerAdapter {
 
 	private final DefaultPublishedEvents delegate;
 

@@ -28,8 +28,8 @@ import java.util.stream.Stream;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.modulith.test.PublishedEventsFactory.PublishedEventsListenerAdapter;
 import org.springframework.util.Assert;
 
 /**
@@ -37,7 +37,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  */
-class DefaultPublishedEvents implements PublishedEvents, ApplicationListener<ApplicationEvent> {
+class DefaultPublishedEvents implements PublishedEventsListenerAdapter {
 
 	private final List<Object> events;
 

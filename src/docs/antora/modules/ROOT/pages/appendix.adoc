@@ -179,6 +179,10 @@ As the name suggests, `uncommitted-changes` will only consider changed files not
 |The commit hash of to which to calculate the set of changed files.
 Usually propagated in CI environments to consider all changes since the last successful build.
 
+|`spring.modulith.test.thread-bound-published-events`
+|false
+|Whether a `Scenario` or `PublishedEvents` instance is supposed to be thread-bound, i.e. whether it's supposed to only see events for the thread executing the test and all child threads spawned from that.
+
 |===
 
 [appendix]
