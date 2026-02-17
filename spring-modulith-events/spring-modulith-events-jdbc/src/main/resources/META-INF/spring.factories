@@ -1,0 +1,2 @@
+org.springframework.boot.sql.init.dependency.DatabaseInitializerDetector=\
+  org.springframework.modulith.events.jdbc.ModulithDatabaseInitializerDetector

@@ -25,7 +25,6 @@ import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.core.io.ResourceLoader;
-import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.modulith.events.jdbc.JdbcConfigurationProperties.SchemaInitialization;
 import org.springframework.modulith.events.support.CompletionMode;
 
@@ -39,7 +38,6 @@ class DatabaseSchemaInitializerUnitTests {
 
 	@Mock DataSource dataSource;
 	@Mock ResourceLoader resourceLoader;
-	@Mock JdbcTemplate jdbcTemplate;
 
 	// GH-685
 	@ParameterizedTest
@@ -72,7 +70,7 @@ class DatabaseSchemaInitializerUnitTests {
 
 		var settings = new JdbcRepositorySettings(type, CompletionMode.UPDATE, properties);
 
-		return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
+		return new DatabaseSchemaInitializer(dataSource, resourceLoader, settings);
 	}
 
 	private static JdbcConfigurationProperties withSchema(String schema) {

@@ -106,9 +106,9 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 
 		@Bean
 		DatabaseSchemaInitializer databaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader,
-				DatabaseType databaseType, JdbcTemplate jdbcTemplate, JdbcRepositorySettings settings) {
+				DatabaseType databaseType, JdbcRepositorySettings settings) {
 
-			return new DatabaseSchemaInitializer(dataSource, resourceLoader, jdbcTemplate, settings);
+			return new DatabaseSchemaInitializer(dataSource, resourceLoader, settings);
 		}
 	}
 }

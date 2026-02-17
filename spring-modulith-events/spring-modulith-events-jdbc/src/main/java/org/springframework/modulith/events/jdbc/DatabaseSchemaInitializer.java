@@ -23,6 +23,7 @@ import javax.sql.DataSource;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.core.io.ResourceLoader;
 import org.springframework.jdbc.core.JdbcOperations;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 
 /**
@@ -40,12 +41,11 @@ class DatabaseSchemaInitializer implements InitializingBean {
 	private final JdbcOperations jdbcOperations;
 	private final JdbcRepositorySettings settings;
 
-	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, JdbcOperations jdbcOperations,
-			JdbcRepositorySettings settings) {
+	DatabaseSchemaInitializer(DataSource dataSource, ResourceLoader resourceLoader, JdbcRepositorySettings settings) {
 
 		this.dataSource = dataSource;
 		this.resourceLoader = resourceLoader;
-		this.jdbcOperations = jdbcOperations;
+		this.jdbcOperations = new JdbcTemplate(dataSource);
 		this.settings = settings;
 	}
 
