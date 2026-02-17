@@ -41,6 +41,9 @@ import org.springframework.modulith.events.config.EventExternalizationAutoConfig
 @AutoConfiguration
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
 @ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+@ConditionalOnProperty(name = "spring.modulith.events.externalization.enabled",
+		havingValue = "true",
+		matchIfMissing = true)
 @ConditionalOnBean(Outbox.class)
 class NamastackOutboxEventRecorderAutoConfiguration {
 
