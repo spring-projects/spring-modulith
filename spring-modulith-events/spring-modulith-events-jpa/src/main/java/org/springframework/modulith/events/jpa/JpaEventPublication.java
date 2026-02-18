@@ -45,10 +45,10 @@ import org.springframework.util.Assert;
 public abstract class JpaEventPublication {
 
 	final @Id @Column(length = 16) UUID id;
-	final Instant publicationDate;
-	final String listenerId;
-	final String serializedEvent;
-	final Class<?> eventType;
+	final @Column(nullable = false) Instant publicationDate;
+	final @Column(nullable = false) String listenerId;
+	final @Column(nullable = false) String serializedEvent;
+	final @Column(nullable = false) Class<?> eventType;
 
 	protected @Nullable Instant completionDate;
 	protected @Nullable Instant lastResubmissionDate;
