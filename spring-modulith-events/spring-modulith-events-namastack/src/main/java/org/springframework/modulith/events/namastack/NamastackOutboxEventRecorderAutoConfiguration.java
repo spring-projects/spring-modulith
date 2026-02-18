@@ -29,7 +29,7 @@ import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 
 /**
- * Auto-configuration to set up an {@link OutboxEventRecorder} to externalize events via the outbox.
+ * Auto-configuration to set up an {@link NamastackOutboxEventRecorder} to externalize events via the outbox.
  * <p>
  * This configuration is activated when {@code spring.modulith.events.externalization.mode} is set to {@code outbox}.
  * Events are persisted to an outbox table within the same transaction as the business operation.

@@ -43,7 +43,7 @@ class NamastackOutboxEventRecorder implements ApplicationListener<PayloadApplica
 	private final Outbox outbox;
 
 	/**
-	 * Creates a new {@link OutboxEventRecorder} for the given {@link EventExternalizationConfiguration} and
+	 * Creates a new {@link NamastackOutboxEventRecorder} for the given {@link EventExternalizationConfiguration} and
 	 * {@link Outbox}.
 	 *
 	 * @param configuration must not be {@literal null}.

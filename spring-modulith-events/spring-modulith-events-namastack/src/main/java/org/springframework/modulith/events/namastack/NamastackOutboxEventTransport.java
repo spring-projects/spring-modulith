@@ -49,8 +49,8 @@ public class NamastackOutboxEventTransport implements OutboxHandler, Application
 	private @Nullable ApplicationEventPublisher events;
 
 	/**
-	 * Creates a new {@link OutboxEventTransport} for the given {@link EventExternalizationConfiguration} and transport
-	 * function.
+	 * Creates a new {@link NamastackOutboxEventTransport} for the given {@link EventExternalizationConfiguration} and
+	 * transport function.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
