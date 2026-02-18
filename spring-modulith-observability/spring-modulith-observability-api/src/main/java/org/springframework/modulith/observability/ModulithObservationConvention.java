@@ -15,8 +15,11 @@
  */
 package org.springframework.modulith.observability;
 
+import io.micrometer.common.KeyValues;
 import io.micrometer.observation.Observation.Context;
 import io.micrometer.observation.ObservationConvention;
+
+import org.jspecify.annotations.NonNull;
 
 /**
  * {@link ObservationConvention} for {@link ModulithContext}.
@@ -33,5 +36,42 @@ public interface ModulithObservationConvention extends ObservationConvention<Mod
 	@Override
 	default boolean supportsContext(Context context) {
 		return context instanceof ModulithContext;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see io.micrometer.observation.ObservationConvention#getLowCardinalityKeyValues(io.micrometer.observation.Observation.Context)
+	 */
+	@Override
+	default public KeyValues getLowCardinalityKeyValues(ModulithContext context) {
+		return context.getLowCardinalityValues();
+	}
+
+	/*
+	 *
+	 * (non-Javadoc)
+	 * @see io.micrometer.observation.ObservationConvention#getHighCardinalityKeyValues(io.micrometer.observation.Observation.Context)
+	 */
+	@Override
+	default public KeyValues getHighCardinalityKeyValues(ModulithContext context) {
+		return context.getHighCardinalityKeyValues();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see io.micrometer.observation.ObservationConvention#getName()
+	 */
+	@Override
+	default public @NonNull String getName() {
+		return ModulithContext.DEFAULT_CONVENTION_NAME;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see io.micrometer.observation.ObservationConvention#getContextualName(io.micrometer.observation.Observation.Context)
+	 */
+	@Override
+	default public @NonNull String getContextualName(ModulithContext context) {
+		return context.getContextualName();
 	}
 }
