@@ -43,6 +43,7 @@
 		<flapdoodle-mongodb.version>4.20.0</flapdoodle-mongodb.version>
 		<jgit.version>7.5.0.202512021534-r</jgit.version>
 		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
+		<json-unit-assertj.version>5.1.0</json-unit-assertj.version>
 		<nullaway.version>0.13.0</nullaway.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

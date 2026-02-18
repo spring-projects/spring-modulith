@@ -1,1 +1,2 @@
 org.springframework.modulith.moments.autoconfigure.MomentsAutoConfiguration
+org.springframework.modulith.moments.autoconfigure.MomentsJacksonAutoConfiguration
