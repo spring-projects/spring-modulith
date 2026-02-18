@@ -57,7 +57,7 @@
 		{
 			"name": "spring.modulith.events.staleness.published",
 			"type": "java.time.Duration",
-			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#PROCESSING} will be considered stale.",
+			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#PUBLISHED} will be considered stale.",
 			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
 		},
 		{
