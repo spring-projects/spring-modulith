@@ -79,6 +79,14 @@ For details, see xref:events.adoc#publication-registry.completion[Event Publicat
 |`true`
 |Whether to enable event externalization.
 
+|`spring.modulith.events.externalization.mode`
+|`module-listener`
+|The mode of event externalization. See xref:events.adoc#externalization[Event externalizazion] for details.
+The following values are supported:
+
+* `module-listener` (default) -- Events are externalized through an `@ApplicationModuleListener`.
+* `outbox` -- Events are externalized through an actual outbox implementation.
+
 |`spring.modulith.events.externalization.serialize-externalization`
 |`false`
 |Whether to serialize event externalization to brokers.
