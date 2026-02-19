@@ -211,6 +211,74 @@ Automatic re-publication of the events can be enabled via the xref:appendix.adoc
 .The transactional event listener arrangement after execution
 image::event-publication-registry-end.png[]
 
+[[publication-registry.lifecycle]]
+=== Event Publication Lifecycle (since 2.0)
+
+Spring Modulith 2.0 introduces a dedicated lifecycle for event publications so that you can distinguish publications that are about to be processed, currently in progress, completed, or failed.
+That makes it easier to resubmit only failed publications and to recover from crashes without incorrectly treating in-progress ones as failed.
+
+[[publication-registry.lifecycle.states]]
+==== Publication states
+
+Each event publication has a `EventPublication.Status`:
+
+* `PUBLISHED` – The publication was stored and is waiting to be processed (or is about to be picked up).
+* `PROCESSING` – A listener has claimed the publication and is executing. The interceptor around the listener sets this before invoking the listener and sets it to `COMPLETED` or `FAILED` when the listener returns.
+* `COMPLETED` – The listener finished successfully. A completion date is set (unless the completion xref:events.adoc#publication-registry.completion[mode is `DELETE`]).
+* `FAILED` – The listener threw an exception, or the publication was marked failed by the staleness mechanism (see <<publication-registry.lifecycle.staleness>>).
+* `RESUBMITTED` – A previously failed publication was resubmitted and is again pending processing.
+
+[plantuml, event-publication-lifecycle, format='svg']
+....
+@startuml
+state PUBLISHED
+state PROCESSING
+state COMPLETED
+state FAILED
+state RESUBMITTED
+
+[*] -right-> PUBLISHED : event stored
+PUBLISHED -down-> PROCESSING : listener picks up
+PROCESSING -right-> COMPLETED : success
+PROCESSING -down-> FAILED : exception
+FAILED -left-> RESUBMITTED : resubmit
+RESUBMITTED -right-> PROCESSING : resubmission triggered
+@enduml
+....
+
+[[publication-registry.lifecycle.details]]
+==== Publication details
+
+In addition to the status, each publication tracks:
+
+* _Last resubmission date_ – When the publication was last resubmitted (if ever). Exposed via `EventPublication.getLastResubmissionDate()`.
+* _Completion attempts_ – How often the listener was invoked (including the current run). Incremented when moving to `PROCESSING`, so a crash during the listener still leaves the attempt count updated. Exposed via `EventPublication.getCompletionAttempts()`.
+
+These allow you to implement policies such as "resubmit only if failed longer than X" or "stop after N attempts" using the resubmission APIs and options.
+
+[[publication-registry.lifecycle.staleness]]
+==== Event Publication Staleness and Automatic Marking as Failed
+
+Publications can remain in `PUBLISHED`, `PROCESSING`, or `RESUBMITTED` if the application crashes or a listener hangs.
+So that they can be treated as failed and resubmitted (or ignored), you can configure after which duration each of these states is considered _stale_. Stale publications are periodically marked as `FAILED` by a background task.
+
+Spring Modulith provides a _Staleness Monitor_ (since 2.0) that runs as a scheduled task at a configurable interval.
+When any of the staleness durations is set to a non-zero value, the monitor is active: on each run it finds event publications in `PUBLISHED`, `PROCESSING`, or `RESUBMITTED` that are older than the corresponding duration and marks them as `FAILED`. That allows recovery (e.g. via `FailedEventPublications.resubmit(…)`) or other handling of publications that would otherwise remain stuck.
+You customize it via the xref:appendix.adoc#configuration-properties[`spring.modulith.events.staleness` configuration properties].
+If all of `published`, `processing`, and `resubmitted` are zero (default), the Staleness Monitor does not register the scheduled task and no automatic marking as failed occurs.
+
+[[publication-registry.lifecycle.failed-and-resubmission]]
+==== Failed publications and resubmission
+
+The registry lets you work explicitly with failed publications:
+
+* _FailedEventPublications_ (since 2.0) – Use the bean of this type to resubmit only failed publications: `resubmit(ResubmissionOptions)`.
+* _ResubmissionOptions_ – Control how resubmission works: batch size, maximum in-flight, minimum age of the publication, and an optional filter (e.g. by event type or `completionAttempts`). Create with `ResubmissionOptions.defaults()` and customize with `withBatchSize(…)`, `withMinAge(…)`, `withFilter(…)`, etc.
+
+Resubmission changes the status from `FAILED` to `RESUBMITTED` and updates the last resubmission date; when a listener is about to run, the publication moves to `PROCESSING` and the completion attempt count is incremented.
+
+For "incomplete" publications in general (including failed and, depending on configuration, stale ones), the existing `IncompleteEventPublications` API still applies; as of 2.0 it supports `resubmitIncompletePublications(ResubmissionOptions)` in addition to the predicate- and duration-based overloads.
+
 [[publication-registry.starters]]
 === Spring Boot Event Registry Starters
 
@@ -272,10 +340,11 @@ dependencies {
 ----
 ======
 
-This artifact contains two primary abstractions that are available to application code as Spring Beans:
+This artifact contains primary abstractions that are available to application code as Spring Beans:
 
 * `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older than a given duration (for example, 1 minute).
-* `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate or older than a given `Duration` relative to the original publishing date.
+* `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate, older than a given `Duration` relative to the original publishing date, or matching custom criteria via `resubmitIncompletePublications(ResubmissionOptions)` (since 2.0).
+* `FailedEventPublications` (since 2.0) -- This interface allows resubmitting only failed event publications via `resubmit(ResubmissionOptions)`, as described in <<publication-registry.lifecycle.failed-and-resubmission>>.
 
 [[publication-registry.completion]]
 === Event Publication Completion
