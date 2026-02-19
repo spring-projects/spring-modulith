@@ -35,6 +35,7 @@ import java.util.stream.StreamSupport;
 import org.jspecify.annotations.Nullable;
 import org.springframework.aot.generate.Generated;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.function.SingletonSupplier;
@@ -119,8 +120,15 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.metadata = metadata;
 		var importer = new ClassFileImporter() //
 				.withImportOption(option);
+		var loader = SpringFactoriesLoader.forResourceLocation(ApplicationModuleSourceContributions.LOCATION,
+				ApplicationModules.class.getClassLoader());
+		var factories = loader.load(ApplicationModuleSourceFactory.class);
+		var allPackages = Stream.concat(packages.stream(), factories.stream().flatMap(it -> it.getRootPackages().stream()))
+				.distinct()
+				.toList();
+
 		this.allClasses = importer //
-				.importPackages(packages) //
+				.importPackages(allPackages) //
 				.that(not(excluded));
 
 		Assert.notEmpty(allClasses, () -> "No classes found in packages %s!".formatted(packages));
@@ -128,8 +136,8 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		Classes classes = Classes.of(allClasses);
 		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
 
-		var contributions = ApplicationModuleSourceContributions.of(
-				pkgs -> importer.importPackages(pkgs).that(not(excluded)), strategy, useFullyQualifiedModuleNames);
+		var contributions = ApplicationModuleSourceContributions.of(factories,
+				pkgs -> filterByPackages(allClasses, pkgs), strategy, useFullyQualifiedModuleNames);
 
 		var directSources = packages.stream() //
 				.distinct()
@@ -163,6 +171,22 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 		this.sharedModules = Collections.emptySet();
 		this.orderedNames = topologicallyOrderIdentifiers(this);
+	}
+
+	private static JavaClasses filterByPackages(JavaClasses source, Collection<String> packages) {
+
+		Assert.notNull(source, "Source JavaClasses must not be null!");
+		Assert.notNull(packages, "Packages must not be null!");
+
+		if (packages.isEmpty()) {
+			return source.that(alwaysFalse());
+		}
+
+		var filters = packages.stream()
+				.map(it -> it + "..")
+				.toArray(String[]::new);
+
+		return source.that(resideInAnyPackage(filters));
 	}
 
 	/**

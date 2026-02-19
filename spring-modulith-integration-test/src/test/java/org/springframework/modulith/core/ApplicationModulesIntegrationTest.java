@@ -17,6 +17,8 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import contributed.detected.DetectedContribution;
+import contributed.enumerated.EnumeratedContribution;
 import example.declared.first.First;
 import example.declared.fourth.Fourth;
 import example.declared.second.Second;
@@ -255,6 +257,26 @@ class ApplicationModulesIntegrationTest {
 
 			assertThat(modules.getModuleByName("detected")).isNotEmpty();
 			assertThat(modules.getModuleByName("enumerated")).isNotEmpty();
+
+		} finally {
+			ApplicationModuleSourceContributions.LOCATION = location;
+		}
+	}
+
+	@Test // GH-1554
+	void doesNotFailCycleDetectionForContributedApplicationModules() {
+
+		var location = ApplicationModuleSourceContributions.LOCATION;
+
+		ApplicationModuleSourceContributions.LOCATION = "META-INF/spring-test.factories";
+
+		try {
+
+			var modules = org.springframework.modulith.test.TestUtils.createApplicationModules(Application.class);
+
+			assertThat(modules.contains(DetectedContribution.class)).isTrue();
+			assertThat(modules.contains(EnumeratedContribution.class)).isTrue();
+			assertThatNoException().isThrownBy(modules::detectViolations);
 
 		} finally {
 			ApplicationModuleSourceContributions.LOCATION = location;

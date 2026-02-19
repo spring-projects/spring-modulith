@@ -56,6 +56,12 @@ class ApplicationModuleSourceContributions {
 				defaultStrategy, useFullyQualifiedModuleNames);
 	}
 
+	static ApplicationModuleSourceContributions of(List<? extends ApplicationModuleSourceFactory> factories,
+			Function<Collection<String>, JavaClasses> importer,
+			ApplicationModuleDetectionStrategy defaultStrategy, boolean useFullyQualifiedModuleNames) {
+		return new ApplicationModuleSourceContributions(factories, importer, defaultStrategy, useFullyQualifiedModuleNames);
+	}
+
 	/**
 	 * Creates a new {@link ApplicationModuleSourceContributions} for the given {@link ApplicationModuleSourceFactory}s,
 	 * importer function, default {@link ApplicationModuleDetectionStrategy} and whether to use fully-qualified module
