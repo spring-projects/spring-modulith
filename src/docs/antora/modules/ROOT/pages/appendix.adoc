@@ -126,7 +126,7 @@ Usually not recommended in multi-instance deployments as other instances might s
 
 |`spring.modulith.events.staleness.check-interval`
 |`Duration.ofMinutes(1)`
-|The interval in which we should check for stale event publications.
+|The interval at which the xref:events.adoc#publication-registry.lifecycle.staleness[Staleness Monitor] runs to mark stale event publications as failed.
 
 |`spring.modulith.events.staleness.processing`
 |`Duration.ZERO`
