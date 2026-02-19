@@ -39,10 +39,9 @@ class ApplicationModuleSourceContributions {
 	private final boolean useFullyQualifiedModuleNames;
 
 	/**
-	 * Creates a new {@link ApplicationModuleSourceContributions} for the given importer function, default
+	 * Creates a new {@link ApplicationModuleSourceContributions} for the given default
 	 * {@link ApplicationModuleDetectionStrategy} and whether to use fully-qualified module names.
 	 *
-	 * @param importer must not be {@literal null}.
 	 * @param defaultStrategy must not be {@literal null}.
 	 * @param useFullyQualifiedModuleNames whether to use fully-qualified module names.
 	 */
@@ -57,11 +56,9 @@ class ApplicationModuleSourceContributions {
 
 	/**
 	 * Creates a new {@link ApplicationModuleSourceContributions} for the given {@link ApplicationModuleSourceFactory}s,
-	 * importer function, default {@link ApplicationModuleDetectionStrategy} and whether to use fully-qualified module
-	 * names.
+	 * default {@link ApplicationModuleDetectionStrategy} and whether to use fully-qualified module names.
 	 *
 	 * @param factories must not be {@literal null}.
-	 * @param importer must not be {@literal null}.
 	 * @param defaultStrategy must not be {@literal null}.
 	 * @param useFullyQualifiedModuleNames whether to use fully-qualified module names.
 	 */
