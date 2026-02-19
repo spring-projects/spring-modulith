@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-events</artifactId>
-		<version>2.0.3-SNAPSHOT</version>
+		<version>2.0.3</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -158,4 +158,8 @@
 		</dependency>
 
 	</dependencies>
+
+  <scm>
+    <tag>2.0.3</tag>
+  </scm>
 </project>
