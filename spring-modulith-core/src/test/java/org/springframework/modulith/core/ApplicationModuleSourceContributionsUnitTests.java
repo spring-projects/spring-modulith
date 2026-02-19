@@ -41,10 +41,10 @@ class ApplicationModuleSourceContributionsUnitTests {
 		var importer = new ClassFileImporter().withImportOption(new ImportOption.OnlyIncludeTests());
 		var strategy = ApplicationModuleDetectionStrategy.directSubPackage();
 
-		var contributions = new ApplicationModuleSourceContributions(factories, importer::importPackages, strategy, false);
+		var contributions = new ApplicationModuleSourceContributions(factories, strategy, false);
 
 		assertThat(contributions.getRootPackages()).contains("contributed");
-		assertThat(contributions.getSources())
+		assertThat(contributions.getSources(Classes.of(importer.importPackages("contributed"))))
 				.extracting(ApplicationModuleSource::getModuleBasePackage)
 				.extracting(JavaPackage::getName)
 				.containsExactlyInAnyOrder("contributed.detected", "contributed.enumerated");

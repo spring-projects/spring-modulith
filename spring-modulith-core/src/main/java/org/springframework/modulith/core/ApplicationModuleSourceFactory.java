@@ -27,7 +27,8 @@ import org.jspecify.annotations.Nullable;
  * directly via {@link #getModuleBasePackages()} and {@link #getApplicationModuleSources(Function, boolean)} or via
  * provided {@link #getRootPackages()} and subsequent resolution via
  * {@link #getApplicationModuleSources(JavaPackage, ApplicationModuleDetectionStrategy, boolean)} for each of the
- * packages provided. <br>
+ * packages provided. Implementations would need to be registered in {@code META-INF/spring.factories} for the
+ * {@code org.springframework.modulith.core.ApplicationModuleSourceFactory} key.<br>
  * The following snippet would register {@link ApplicationModuleSource}s for {@code com.acme.foo} and
  * {@code com.acme.bar} directly:
  *

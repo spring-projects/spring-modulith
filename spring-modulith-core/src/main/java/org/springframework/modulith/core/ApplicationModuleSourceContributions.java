@@ -16,14 +16,11 @@
 package org.springframework.modulith.core;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.springframework.core.io.support.SpringFactoriesLoader;
-
-import com.tngtech.archunit.core.domain.JavaClasses;
 
 /**
  * Lookup of external {@link ApplicationModuleSource} contributions via {@link ApplicationModuleSourceFactory}
@@ -37,7 +34,9 @@ class ApplicationModuleSourceContributions {
 	static String LOCATION = SpringFactoriesLoader.FACTORIES_RESOURCE_LOCATION;
 
 	private final List<String> rootPackages;
-	private final List<ApplicationModuleSource> sources;
+	private final List<? extends ApplicationModuleSourceFactory> factories;
+	private final ApplicationModuleDetectionStrategy defaultStrategy;
+	private final boolean useFullyQualifiedModuleNames;
 
 	/**
 	 * Creates a new {@link ApplicationModuleSourceContributions} for the given importer function, default
@@ -47,13 +46,13 @@ class ApplicationModuleSourceContributions {
 	 * @param defaultStrategy must not be {@literal null}.
 	 * @param useFullyQualifiedModuleNames whether to use fully-qualified module names.
 	 */
-	public static ApplicationModuleSourceContributions of(Function<Collection<String>, JavaClasses> importer,
-			ApplicationModuleDetectionStrategy defaultStrategy, boolean useFullyQualifiedModuleNames) {
+	public static ApplicationModuleSourceContributions of(ApplicationModuleDetectionStrategy defaultStrategy,
+			boolean useFullyQualifiedModuleNames) {
 
 		var loader = SpringFactoriesLoader.forResourceLocation(LOCATION, ApplicationModules.class.getClassLoader());
 
-		return new ApplicationModuleSourceContributions(loader.load(ApplicationModuleSourceFactory.class), importer,
-				defaultStrategy, useFullyQualifiedModuleNames);
+		return new ApplicationModuleSourceContributions(loader.load(ApplicationModuleSourceFactory.class), defaultStrategy,
+				useFullyQualifiedModuleNames);
 	}
 
 	/**
@@ -67,49 +66,48 @@ class ApplicationModuleSourceContributions {
 	 * @param useFullyQualifiedModuleNames whether to use fully-qualified module names.
 	 */
 	ApplicationModuleSourceContributions(List<? extends ApplicationModuleSourceFactory> factories,
-			Function<Collection<String>, JavaClasses> importer,
 			ApplicationModuleDetectionStrategy defaultStrategy, boolean useFullyQualifiedModuleNames) {
 
-		this.rootPackages = new ArrayList<>();
-		this.sources = new ArrayList<>();
+		this.rootPackages = factories.stream().flatMap(it -> it.getRootPackages().stream()).toList();
+		this.factories = factories;
+		this.defaultStrategy = defaultStrategy;
+		this.useFullyQualifiedModuleNames = useFullyQualifiedModuleNames;
+	}
 
-		factories.forEach(factory -> {
+	/**
+	 * @return will never be {@literal null}.
+	 */
+	public List<String> getRootPackages() {
+		return rootPackages;
+	}
+
+	/**
+	 * @return will never be {@literal null}.
+	 */
+	public Stream<ApplicationModuleSource> getSources(Classes classes) {
+
+		Function<String, JavaPackage> packageFactory = it -> JavaPackage.of(classes, it);
+
+		return factories.stream().flatMap(factory -> {
 
 			var contributedPackages = factory.getRootPackages();
 			var factoryStrategy = factory.getApplicationModuleDetectionStrategy();
-			var classes = importer.apply(contributedPackages);
 			var strategy = factoryStrategy == null ? defaultStrategy : factoryStrategy;
 
 			// Add discovered ApplicationModuleSources
 
-			rootPackages.addAll(contributedPackages);
+			var result = new ArrayList<ApplicationModuleSource>();
 
 			contributedPackages.stream()
-					.map(it -> JavaPackage.of(Classes.of(classes), it))
+					.map(packageFactory)
 					.flatMap(it -> factory.getApplicationModuleSources(it, strategy, useFullyQualifiedModuleNames))
-					.forEach(this.sources::add);
+					.forEach(result::add);
 
 			// Add enumerated ApplicationModuleSources
 
-			Function<String, JavaPackage> packageRegistrar = it -> {
-				return JavaPackage.of(Classes.of(importer.apply(List.of(it))), it);
-			};
+			factory.getApplicationModuleSources(packageFactory, useFullyQualifiedModuleNames).forEach(result::add);
 
-			factory.getApplicationModuleSources(packageRegistrar, useFullyQualifiedModuleNames).forEach(this.sources::add);
+			return result.stream();
 		});
-	}
-
-	/**
-	 * @return will never be {@literal null}.
-	 */
-	public Stream<String> getRootPackages() {
-		return rootPackages.stream();
-	}
-
-	/**
-	 * @return will never be {@literal null}.
-	 */
-	public Stream<ApplicationModuleSource> getSources() {
-		return sources.stream();
 	}
 }
