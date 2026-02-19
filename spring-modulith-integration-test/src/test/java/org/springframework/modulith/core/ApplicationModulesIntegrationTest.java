@@ -17,6 +17,8 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import contributed.detected.DetectedContribution;
+import contributed.enumerated.EnumeratedContribution;
 import example.declared.first.First;
 import example.declared.fourth.Fourth;
 import example.declared.second.Second;
@@ -242,7 +244,7 @@ class ApplicationModulesIntegrationTest {
 		assertThatIllegalArgumentException().isThrownBy(() -> ApplicationModules.of("non.existant"));
 	}
 
-	@Test // GH-613
+	@Test // GH-613, GH-1554
 	void detectsContributedApplicationModules() {
 
 		var location = ApplicationModuleSourceContributions.LOCATION;
@@ -254,7 +256,10 @@ class ApplicationModulesIntegrationTest {
 			var modules = org.springframework.modulith.test.TestUtils.createApplicationModules(Application.class);
 
 			assertThat(modules.getModuleByName("detected")).isNotEmpty();
+			assertThat(modules.contains(DetectedContribution.class));
+
 			assertThat(modules.getModuleByName("enumerated")).isNotEmpty();
+			assertThat(modules.contains(EnumeratedContribution.class));
 
 		} finally {
 			ApplicationModuleSourceContributions.LOCATION = location;

@@ -119,24 +119,27 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 		this.metadata = metadata;
 		var importer = new ClassFileImporter() //
 				.withImportOption(option);
+
+		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
+
+		var contributions = ApplicationModuleSourceContributions.of(strategy, useFullyQualifiedModuleNames);
+
+		var packagesToImport = new ArrayList<>(packages);
+		packagesToImport.addAll(contributions.getRootPackages());
+
 		this.allClasses = importer //
-				.importPackages(packages) //
+				.importPackages(packagesToImport) //
 				.that(not(excluded));
 
 		Assert.notEmpty(allClasses, () -> "No classes found in packages %s!".formatted(packages));
-
 		Classes classes = Classes.of(allClasses);
-		var strategy = ApplicationModuleDetectionStrategyLookup.getStrategy();
-
-		var contributions = ApplicationModuleSourceContributions.of(
-				pkgs -> importer.importPackages(pkgs).that(not(excluded)), strategy, useFullyQualifiedModuleNames);
 
 		var directSources = packages.stream() //
 				.distinct()
 				.map(it -> JavaPackage.of(classes, it))
 				.flatMap(it -> ApplicationModuleSource.from(it, strategy, useFullyQualifiedModuleNames));
 
-		var sources = Stream.concat(directSources, contributions.getSources())
+		var sources = Stream.concat(directSources, contributions.getSources(classes))
 				.distinct()
 				.collect(Collectors.toUnmodifiableSet());
 
@@ -152,7 +155,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				})
 				.collect(toMap(ApplicationModule::getIdentifier, Function.identity()));
 
-		this.rootPackages = Stream.concat(packages.stream(), contributions.getRootPackages()) //
+		this.rootPackages = packagesToImport.stream() //
 				.distinct()
 				.map(it -> JavaPackage.of(classes, it).toSingle()) //
 				.toList();
