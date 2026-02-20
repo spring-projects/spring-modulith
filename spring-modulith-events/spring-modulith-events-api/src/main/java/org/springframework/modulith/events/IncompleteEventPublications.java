@@ -16,6 +16,7 @@
 package org.springframework.modulith.events;
 
 import java.time.Duration;
+import java.util.Collection;
 import java.util.function.Predicate;
 
 /**
@@ -25,6 +26,13 @@ import java.util.function.Predicate;
  * @since 1.1
  */
 public interface IncompleteEventPublications {
+
+	/**
+	 * Returns all {@link EventPublication}s that have not been completed.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	Collection<? extends EventPublication> findAll();
 
 	/**
 	 * Triggers the re-submission of events for which incomplete {@link EventPublication}s are registered. Note, that this
