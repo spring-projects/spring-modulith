@@ -58,7 +58,7 @@ class MomentsJacksonAutoConfiguration {
 		return new MomentsJacksonModule();
 	}
 
-	private static class MomentsJacksonModule extends SimpleModule {
+	static class MomentsJacksonModule extends SimpleModule {
 
 		private static final long serialVersionUID = -824557128527147067L;
 
