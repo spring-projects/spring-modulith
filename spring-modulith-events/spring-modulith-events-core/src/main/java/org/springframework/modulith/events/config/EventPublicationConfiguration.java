@@ -24,6 +24,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
@@ -51,10 +52,12 @@ class EventPublicationConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	static PersistentApplicationEventMulticaster applicationEventMulticaster(
-			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment) {
+			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment,
+			ObjectProvider<EventExternalizationConfiguration> externalizationConfiguration) {
 
 		return new PersistentApplicationEventMulticaster(() -> eventPublicationRegistry.getObject(),
-				() -> environment.getObject());
+				() -> environment.getObject(),
+				() -> externalizationConfiguration.getIfAvailable(EventExternalizationConfiguration::disabled));
 	}
 
 	@Bean

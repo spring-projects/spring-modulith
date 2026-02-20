@@ -39,6 +39,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
@@ -74,9 +75,11 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRegistry.class)
 	static PersistentApplicationEventMulticaster applicationEventMulticaster(
-			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment) {
+			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment,
+			ObjectProvider<EventExternalizationConfiguration> externalizationConfiguration) {
 
-		return EventPublicationConfiguration.applicationEventMulticaster(eventPublicationRegistry, environment);
+		return EventPublicationConfiguration.applicationEventMulticaster(eventPublicationRegistry, environment,
+				externalizationConfiguration);
 	}
 
 	@Bean
