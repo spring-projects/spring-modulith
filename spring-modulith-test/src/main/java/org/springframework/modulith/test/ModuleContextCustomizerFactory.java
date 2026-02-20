@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2026 the original author or authors.
+ * Copyright 2018-2025 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package org.springframework.modulith.test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -58,7 +60,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 	public @Nullable ContextCustomizer createContextCustomizer(Class<?> testClass,
 			List<ContextConfigurationAttributes> configAttributes) {
 
-		var moduleTest = TestContextAnnotationUtils.findAnnotationDescriptor(testClass, ModuleSlicing.class);
+		var moduleTest = TestContextAnnotationUtils.findAnnotationDescriptor(testClass, ApplicationModuleTest.class);
 
 		return moduleTest == null ? null : new ModuleContextCustomizer(moduleTest.getRootDeclaringClass());
 	}
@@ -215,6 +217,7 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 		private static final Logger LOGGER = LoggerFactory.getLogger(ModuleTestExecutionBeanDefinitionSelector.class);
 
 		private final ModuleTestExecution execution;
+		private final Set<String> candidatesForRemoval = new HashSet<>();
 
 		/**
 		 * Creates a new {@link ModuleTestExecutionBeanDefinitionSelector} for the given {@link ModuleTestExecution}.
@@ -258,8 +261,10 @@ class ModuleContextCustomizerFactory implements ContextCustomizerFactory {
 						name, type.getName());
 
 				// Remove bean definition from bootstrap
-				registry.removeBeanDefinition(name);
+				candidatesForRemoval.add(name);
 			}
+
+			candidatesForRemoval.forEach(registry::removeBeanDefinition);
 		}
 
 		private boolean include(String beanDefinitionName, ApplicationModules modules,
