@@ -54,7 +54,7 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.discoverNamedInterfaces(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "ontype");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "domain", "spi", "kpi", "internal", "ontype");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME, RootType.class);
 		assertInterfaceContains(interfaces, "api", ApiType.class, AnnotatedNamedInterfaceType.class);
@@ -82,7 +82,8 @@ class NamedInterfacesUnitTests {
 		var interfaces = NamedInterfaces.forOpen(javaPackage);
 
 		assertThat(interfaces).map(NamedInterface::getName)
-				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi", "kpi", "internal", "nestedNi", "ontype");
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "domain", "spi", "kpi", "internal", "nestedNi",
+						"ontype");
 
 		assertInterfaceContains(interfaces, NamedInterface.UNNAMED_NAME,
 				RootType.class, Internal.class, InNested.class, InNestedA.class, InNestedB.class, InNestedBFirst.class,
@@ -154,6 +155,17 @@ class NamedInterfacesUnitTests {
 		assertThat(result).hasSize(2)
 				.extracting(NamedInterface::getName)
 				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api");
+	}
+
+	@Test // GH-1598
+	void mergesNamedInterfacesWithTheSameName() {
+
+		var pkg = TestUtils.getPackage("example.ni.cluttered");
+		var result = NamedInterfaces.discoverNamedInterfaces(pkg);
+
+		assertThat(result).hasSize(2)
+				.extracting(NamedInterface::getName)
+				.containsExactly(NamedInterface.UNNAMED_NAME, "domain");
 	}
 
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {

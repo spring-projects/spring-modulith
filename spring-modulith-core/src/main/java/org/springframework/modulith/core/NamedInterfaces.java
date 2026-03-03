@@ -118,8 +118,8 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		return basePackage //
 				.getSubPackagesAnnotatedWith(org.springframework.modulith.NamedInterface.class) //
-				.flatMap(it -> NamedInterface.of(it).stream()) //
-				.collect(Collectors.collectingAndThen(Collectors.toList(), NamedInterfaces::of));
+				.map(it -> NamedInterfaces.of(NamedInterface.of(it)))
+				.reduce(NamedInterfaces.NONE, NamedInterfaces::and);
 	}
 
 	/**
@@ -229,12 +229,19 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 
 		Assert.notNull(others, "Other NamedInterfaces must not be null!");
 
-		var namedInterfaces = new ArrayList<NamedInterface>();
-		var unmergedInterfaces = new ArrayList<>(this.namedInterfaces);
-
 		if (!others.iterator().hasNext()) {
 			return this;
 		}
+
+		var namedInterfaces = new ArrayList<NamedInterface>();
+
+		if (this.namedInterfaces.isEmpty()) {
+
+			others.forEach(namedInterfaces::add);
+			return new NamedInterfaces(namedInterfaces);
+		}
+
+		var unmergedInterfaces = new ArrayList<>(this.namedInterfaces);
 
 		for (NamedInterface candidate : others) {
 
