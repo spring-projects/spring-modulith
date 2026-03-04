@@ -8,6 +8,7 @@ json-unit-assertj=JSON Unit AssertJ
 lombok=Lombok
 micrometer-tracing=Micrometer Tracing
 mongodb=MongoDB
+namastack-outbox=Namastack Outbox
 spring-framework=Spring Framework
 structurizr=Structurizr
 testcontainers=Testcontainers
