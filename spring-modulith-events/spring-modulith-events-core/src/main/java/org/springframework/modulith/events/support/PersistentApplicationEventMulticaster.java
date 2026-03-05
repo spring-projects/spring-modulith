@@ -37,6 +37,7 @@ import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.FailedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
@@ -47,6 +48,7 @@ import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 
 /**
@@ -58,6 +60,7 @@ import org.springframework.util.Assert;
  * for incomplete publications.
  *
  * @author Oliver Drotbohm
+ * @author Yunho Jung
  * @see CompletionRegisteringAdvisor
  */
 public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
@@ -70,6 +73,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 	private final @NonNull Supplier<EventPublicationRegistry> registry;
 	private final @NonNull Supplier<Environment> environment;
+	private final @NonNull Supplier<EventExternalizationConfiguration> externalizationConfiguration;
 
 	/**
 	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
@@ -79,12 +83,27 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	 */
 	public PersistentApplicationEventMulticaster(Supplier<EventPublicationRegistry> registry,
 			Supplier<Environment> environment) {
+		this(registry, environment, EventExternalizationConfiguration::disabled);
+	}
+
+	/**
+	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
+	 *
+	 * @param registry must not be {@literal null}.
+	 * @param environment must not be {@literal null}.
+	 * @param externalizationConfiguration must not be {@literal null}.
+	 */
+	public PersistentApplicationEventMulticaster(Supplier<EventPublicationRegistry> registry,
+			Supplier<Environment> environment,
+			Supplier<EventExternalizationConfiguration> externalizationConfiguration) {
 
 		Assert.notNull(registry, "EventPublicationRegistry must not be null!");
 		Assert.notNull(environment, "Environment must not be null!");
+		Assert.notNull(externalizationConfiguration, "EventExternalizationConfiguration must not be null!");
 
 		this.registry = registry;
 		this.environment = environment;
+		this.externalizationConfiguration = externalizationConfiguration;
 	}
 
 	/*
@@ -111,8 +130,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			return;
 		}
 
-		new TransactionalEventListeners(listeners)
-				.ifPresent(it -> storePublications(it, getEventToPersist(event)));
+		var eventToPersist = getEventToPersist(event);
+		var transactionalListeners = new TransactionalEventListeners(listeners);
+
+		// Detect events configured for externalization published outside transaction context
+		detectEventPublishedOutsideTransaction(transactionalListeners, eventToPersist);
+
+		transactionalListeners.ifPresent(it -> storePublications(it, eventToPersist));
 
 		for (ApplicationListener listener : listeners) {
 			listener.onApplicationEvent(event);
@@ -274,6 +298,39 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	}
 
 	/**
+	 * Detects if an event selected for externalization is published outside a transaction context.
+	 * If detected, logs a warning message to help developers identify the problem.
+	 *
+	 * @param transactionalListeners must not be {@literal null}.
+	 * @param event must not be {@literal null}.
+	 */
+	private void detectEventPublishedOutsideTransaction(TransactionalEventListeners transactionalListeners,
+			Object event) {
+
+		// Transaction is active, no problem
+		if (TransactionSynchronizationManager.isActualTransactionActive()) {
+			return;
+		}
+
+		// No transactional listeners, nothing to check
+		if (!transactionalListeners.hasListeners()) {
+			return;
+		}
+
+		// Check if the event is configured for externalization
+		var config = externalizationConfiguration.get();
+		if (!config.supports(event)) {
+			return;
+		}
+
+		// Issue a warning log hinting at the problem
+		LOGGER.warn(
+				"Event of type {} is configured for externalization but was published outside an active transaction. "
+						+ "It will neither be persisted nor externalized. Consider publishing from a @Transactional method.",
+				event.getClass().getName());
+	}
+
+	/**
 	 * First-class collection to work with transactional event listeners, i.e. {@link ApplicationListener} instances that
 	 * implement {@link TransactionalApplicationListener}.
 	 *
@@ -357,6 +414,11 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 					.ifPresent(callback);
 		}
 
+		/**
+		 * Returns whether there are any transactional event listeners.
+		 *
+		 * @return whether listeners exist.
+		 */
 		public boolean hasListeners() {
 			return !listeners.isEmpty();
 		}
