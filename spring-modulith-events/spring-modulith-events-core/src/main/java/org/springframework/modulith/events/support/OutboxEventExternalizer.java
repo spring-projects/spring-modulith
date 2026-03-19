@@ -13,16 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.namastack;
-
-import io.namastack.outbox.handler.OutboxHandler;
-import io.namastack.outbox.handler.OutboxRecordMetadata;
+package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiFunction;
 
 import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
@@ -38,11 +37,13 @@ import org.springframework.util.Assert;
  * email, SMS).
  *
  * @author Roland Beisel
+ * @author Oliver Drotbohm
  * @since 2.1
- * @see OutboxHandler
  * @see EventExternalizationConfiguration
  */
-public class NamastackOutboxEventTransport implements OutboxHandler, ApplicationEventPublisherAware {
+public class OutboxEventExternalizer implements ApplicationEventPublisherAware {
+
+	private static final Logger logger = LoggerFactory.getLogger(OutboxEventExternalizer.class);
 
 	private final EventExternalizationConfiguration configuration;
 	private final BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport;
@@ -55,7 +56,7 @@ public class NamastackOutboxEventTransport implements OutboxHandler, Application
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
 	 */
-	public NamastackOutboxEventTransport(EventExternalizationConfiguration configuration,
+	public OutboxEventExternalizer(EventExternalizationConfiguration configuration,
 			BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport) {
 
 		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
@@ -81,11 +82,16 @@ public class NamastackOutboxEventTransport implements OutboxHandler, Application
 	 * @param event the event payload to transport
 	 * @param metadata the outbox record metadata
 	 */
-	@Override
-	public void handle(Object event, OutboxRecordMetadata metadata) {
+	public void handle(Object event) {
 
 		var target = configuration.determineTarget(event);
 		var mapped = configuration.map(event);
+
+		if (logger.isTraceEnabled()) {
+			logger.trace("Externalizing event of type {} to {}, payload: {}).", event.getClass(), target, mapped);
+		} else if (logger.isDebugEnabled()) {
+			logger.debug("Externalizing event of type {} to {}.", event.getClass(), target);
+		}
 
 		try {
 

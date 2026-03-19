@@ -36,9 +36,9 @@ import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
-import org.springframework.modulith.events.namastack.NamastackOutboxEventTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.OutboxEventExternalizer;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to a Spring Messaging
@@ -80,8 +80,10 @@ class SpringMessagingEventExternalizerConfiguration {
 
 			logger.debug("Registering domain event outbox externalization for Spring Messaging…");
 
-			return new NamastackOutboxEventTransport(configuration,
+			var externalizer = new OutboxEventExternalizer(configuration,
 					createMessagingTransport(configuration, factory));
+
+			return (payload, metadata) -> externalizer.handle(payload);
 		}
 	}
 

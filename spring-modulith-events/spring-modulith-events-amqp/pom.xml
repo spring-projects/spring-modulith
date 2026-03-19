@@ -35,9 +35,9 @@
 		</dependency>
 
 		<dependency>
-			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-namastack</artifactId>
-			<version>${project.version}</version>
+			<groupId>io.namastack</groupId>
+			<artifactId>namastack-outbox-api</artifactId>
+			<version>${namastack-outbox.version}</version>
 			<optional>true</optional>
 		</dependency>
 

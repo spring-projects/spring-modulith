@@ -36,9 +36,9 @@ import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
-import org.springframework.modulith.events.namastack.NamastackOutboxEventTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.OutboxEventExternalizer;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to RabbitMQ.
@@ -78,8 +78,10 @@ class RabbitEventExternalizerConfiguration {
 
 			logger.debug("Registering domain event outbox externalization to RabbitMQ…");
 
-			return new NamastackOutboxEventTransport(configuration,
+			var externalizer = new OutboxEventExternalizer(configuration,
 					createRabbitTransport(configuration, operations, factory));
+
+			return (payload, metadata) -> externalizer.handle(payload);
 		}
 	}
 

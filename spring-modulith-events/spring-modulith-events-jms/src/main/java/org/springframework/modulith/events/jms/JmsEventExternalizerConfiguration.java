@@ -36,9 +36,9 @@ import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.core.EventSerializer;
-import org.springframework.modulith.events.namastack.NamastackOutboxEventTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.OutboxEventExternalizer;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to JMS.
@@ -78,7 +78,10 @@ class JmsEventExternalizerConfiguration {
 
 			logger.debug("Registering domain event outbox externalization to JMS…");
 
-			return new NamastackOutboxEventTransport(configuration, createJmsTransport(operations, serializer, factory));
+			var externalizer = new OutboxEventExternalizer(configuration,
+					createJmsTransport(operations, serializer, factory));
+
+			return (event, metadata) -> externalizer.handle(event);
 		}
 	}
 
