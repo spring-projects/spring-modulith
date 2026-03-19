@@ -4,7 +4,7 @@
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.0.3</version>
+		<version>4.0.4</version>
 		<relativePath />
 	</parent>
 
@@ -27,7 +27,7 @@
 	<properties>
 		<java.version>17</java.version>
 		<jmolecules.version>2025.0.2</jmolecules.version>
-		<spring-framework.version>7.0.3</spring-framework.version>
+		<spring-framework.version>7.0.6</spring-framework.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 	</properties>
 
