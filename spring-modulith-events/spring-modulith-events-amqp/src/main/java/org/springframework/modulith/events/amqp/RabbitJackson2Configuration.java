@@ -17,11 +17,11 @@ package org.springframework.modulith.events.amqp;
 
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.boot.amqp.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.rabbitmq.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.context.annotation.Bean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -41,6 +41,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 		matchIfMissing = true)
 class RabbitJackson2Configuration {
 
+	@Deprecated
 	@Bean
 	@ConditionalOnBean(ObjectMapper.class)
 	RabbitTemplateCustomizer rabbitTemplateCustomizer(ObjectMapper mapper) {
