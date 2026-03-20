@@ -22,25 +22,37 @@ import static org.mockito.Mockito.*;
 import java.util.List;
 import java.util.Map;
 
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.event.ApplicationEventMulticaster;
+import org.springframework.context.event.EventListener;
 import org.springframework.context.event.EventListenerMethodProcessor;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
+import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionalEventListenerFactory;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+
+import ch.qos.logback.classic.Level;
+import ch.qos.logback.classic.Logger;
+import ch.qos.logback.classic.spi.ILoggingEvent;
+import ch.qos.logback.core.read.ListAppender;
 
 /**
  * Unit tests for {@link PersistentApplicationEventMulticaster}.
  *
  * @author Oliver Drotbohm
+ * @author Yunho Jung
  */
 class PersistentApplicationEventMulticasterUnitTests {
 
@@ -51,7 +63,13 @@ class PersistentApplicationEventMulticasterUnitTests {
 
 	@BeforeEach
 	void setUp() {
-		this.multicaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment);
+		this.multicaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment,
+				EventExternalizationConfiguration::disabled);
+	}
+
+	@AfterEach
+	void cleanUp() {
+		TransactionSynchronizationManager.setActualTransactionActive(false);
 	}
 
 	@Test // GH-240, GH-251
@@ -115,6 +133,92 @@ class PersistentApplicationEventMulticasterUnitTests {
 				.element(0).isEqualTo(afterCommitListener);
 	}
 
+	@Test // GH-1123
+	void warnsWhenExternalizationEventPublishedOutsideTransaction() {
+
+		var config = EventExternalizationConfiguration.externalizing()
+				.select(__ -> true)
+				.build();
+		var testMulticaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment, () -> config);
+
+		var appender = startLogCapture();
+
+		try (var ctx = newContextWith(testMulticaster, TransactionalListener.class)) {
+
+			ctx.publishEvent(new SampleEvent(true));
+
+			assertThat(appender.list)
+					.filteredOn(event -> event.getLevel() == Level.WARN)
+					.extracting(ILoggingEvent::getFormattedMessage)
+					.anyMatch(msg -> msg.contains("externalization"));
+		} finally {
+			stopLogCapture(appender);
+		}
+	}
+
+	@Test // GH-1123
+	void doesNotWarnWhenEventPublishedInsideTransaction() {
+
+		var config = EventExternalizationConfiguration.externalizing()
+				.select(__ -> true)
+				.build();
+		var testMulticaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment, () -> config);
+
+		var appender = startLogCapture();
+
+		try (var ctx = newContextWith(testMulticaster, TransactionalListener.class)) {
+
+			TransactionSynchronizationManager.setActualTransactionActive(true);
+
+			ctx.publishEvent(new SampleEvent(true));
+
+			assertThat(appender.list)
+					.filteredOn(event -> event.getLevel() == Level.WARN)
+					.isEmpty();
+		} finally {
+			stopLogCapture(appender);
+		}
+	}
+
+	@Test // GH-1123
+	void doesNotWarnForNonExternalizationEvent() {
+
+		var appender = startLogCapture();
+
+		try (var ctx = newContextWith(multicaster, TransactionalListener.class)) {
+
+			ctx.publishEvent(new SampleEvent(true));
+
+			assertThat(appender.list)
+					.filteredOn(event -> event.getLevel() == Level.WARN)
+					.isEmpty();
+		} finally {
+			stopLogCapture(appender);
+		}
+	}
+
+	@Test // GH-1123
+	void doesNotWarnWhenNoTransactionalListeners() {
+
+		var config = EventExternalizationConfiguration.externalizing()
+				.select(__ -> true)
+				.build();
+		var testMulticaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment, () -> config);
+
+		var appender = startLogCapture();
+
+		try (var ctx = newContextWith(testMulticaster, NonTransactionalListener.class)) {
+
+			ctx.publishEvent(new SampleEvent(true));
+
+			assertThat(appender.list)
+					.filteredOn(event -> event.getLevel() == Level.WARN)
+					.isEmpty();
+		} finally {
+			stopLogCapture(appender);
+		}
+	}
+
 	private void assertListenerSelected(SampleEvent event, boolean expected) {
 
 		var listeners = multicaster.getApplicationListeners(new PayloadApplicationEvent<>(this, event),
@@ -123,10 +227,58 @@ class PersistentApplicationEventMulticasterUnitTests {
 		assertThat(listeners).hasSize(expected ? 1 : 0);
 	}
 
+	private static AnnotationConfigApplicationContext newContextWith(
+			PersistentApplicationEventMulticaster multicaster, Class<?> listenerType) {
+
+		var ctx = new AnnotationConfigApplicationContext();
+
+		ctx.addBeanFactoryPostProcessor(new EventListenerMethodProcessor());
+		ctx.registerBean("transactionalEventListenerFactory", TransactionalEventListenerFactory.class);
+		ctx.registerBean("applicationEventMulticaster", ApplicationEventMulticaster.class, () -> multicaster);
+		ctx.registerBean("listener", listenerType);
+		ctx.refresh();
+
+		return ctx;
+	}
+
+	private static ListAppender<ILoggingEvent> startLogCapture() {
+
+		var logger = (Logger) LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
+		logger.setLevel(Level.DEBUG);
+
+		var appender = new ListAppender<ILoggingEvent>();
+		appender.start();
+		logger.addAppender(appender);
+
+		return appender;
+	}
+
+	private static void stopLogCapture(ListAppender<ILoggingEvent> appender) {
+
+		var logger = (Logger) LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
+		logger.setLevel(null);
+		logger.detachAppender(appender);
+		appender.stop();
+	}
+
 	@Component
 	static class ConditionalListener {
 
 		@TransactionalEventListener(condition = "#event.supported")
+		void on(SampleEvent event) {}
+	}
+
+	@Component
+	static class TransactionalListener {
+
+		@TransactionalEventListener
+		void on(SampleEvent event) {}
+	}
+
+	@Component
+	static class NonTransactionalListener {
+
+		@EventListener
 		void on(SampleEvent event) {}
 	}
 
