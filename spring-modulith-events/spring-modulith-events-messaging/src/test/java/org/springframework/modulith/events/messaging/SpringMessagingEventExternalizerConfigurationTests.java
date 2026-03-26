@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2026 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,53 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.springframework.modulith.events.amqp;
+package org.springframework.modulith.events.messaging;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.handler.OutboxHandler;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
-import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
-import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
- * Integration tests for {@link RabbitEventExternalizerConfiguration}.
+ * Unit tests for {@link SpringMessagingEventExternalizerConfiguration}.
  *
  * @author Oliver Drotbohm
- * @since 1.1
  */
-class RabbitEventExternalizerConfigurationIntegrationTests {
+class SpringMessagingEventExternalizerConfigurationTests {
 
 	static final EventExternalizationConfiguration EXTERNALIZATION_ENABLED = EventExternalizationConfiguration
 			.defaults("org").build();
-
-	@Test // GH-342
-	void registersExternalizerByDefault() {
-
-		basicSetup()
-				.run(ctxt -> {
-					assertThat(ctxt).hasSingleBean(DelegatingEventExternalizer.class);
-				});
-	}
-
-	@Test // GH-342
-	void disablesExternalizationIfConfigured() {
-
-		basicSetup()
-				.withPropertyValues("spring.modulith.events.externalization.enabled=false")
-				.run(ctxt -> {
-					assertThat(ctxt).doesNotHaveBean(DelegatingEventExternalizer.class);
-				});
-	}
 
 	@Test
 	void configuresNamastackOutboxHandlerIfPresent() {
@@ -101,20 +78,15 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
-	private ApplicationContextRunner basicSetup() {
-
-		return basicSetup(null);
-	}
-
 	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration configuration,
 			String... excluded) {
 
 		var defaulted = configuration == null ? EventExternalizationConfiguration.disabled() : configuration;
 
 		var runner = new ApplicationContextRunner()
-				.withConfiguration(AutoConfigurations.of(RabbitEventExternalizerConfiguration.class))
-				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
-				.withBean(RabbitMessageOperations.class, () -> mock(RabbitMessageOperations.class));
+				.withConfiguration(
+						AutoConfigurations.of(SpringMessagingEventExternalizerConfiguration.class))
+				.withBean(EventExternalizationConfiguration.class, () -> defaulted);
 
 		if (excluded.length > 0) {
 			runner = runner.withClassLoader(new FilteredClassLoader(excluded));

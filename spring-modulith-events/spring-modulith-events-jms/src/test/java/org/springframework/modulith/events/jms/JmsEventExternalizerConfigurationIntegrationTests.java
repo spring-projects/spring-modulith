@@ -18,12 +18,18 @@ package org.springframework.modulith.events.jms;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import io.namastack.outbox.handler.OutboxHandler;
+
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jms.core.JmsOperations;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.core.EventSerializer;
+import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
@@ -33,6 +39,9 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
  * @since 1.1
  */
 class JmsEventExternalizerConfigurationIntegrationTests {
+
+	static final EventExternalizationConfiguration EXTERNALIZATION_ENABLED = EventExternalizationConfiguration
+			.defaults("org").build();
 
 	@Test // GH-342
 	void registersExternalizerByDefault() {
@@ -53,13 +62,67 @@ class JmsEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
+	@Test
+	void configuresNamastackOutboxHandlerIfPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).hasSingleBean(OutboxHandler.class);
+				});
+	}
+
+	@Test
+	void doesNotConfigureNamastackOutboxHandlerIfNotPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED, "io.namastack")
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).doesNotHaveBean(OutboxHandler.class);
+				});
+	}
+
+	@Test
+	void configuresJobRunrOutboxHandlerIfPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).hasSingleBean(JobRunrExternalizationTransport.class);
+				});
+	}
+
+	@Test
+	void doesNotConfigureJobRunrOutboxHandlerIfNotPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED, "org.jobrunr")
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).doesNotHaveBean(JobRunrExternalizationTransport.class);
+				});
+	}
+
 	private ApplicationContextRunner basicSetup() {
 
-		return new ApplicationContextRunner()
+		return basicSetup(null);
+	}
+
+	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration configuration,
+			String... excluded) {
+
+		var defaulted = configuration == null ? EventExternalizationConfiguration.disabled() : configuration;
+
+		var runner = new ApplicationContextRunner()
 				.withConfiguration(
 						AutoConfigurations.of(JmsEventExternalizerConfiguration.class))
-				.withBean(EventExternalizationConfiguration.class, () -> EventExternalizationConfiguration.disabled())
+				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
 				.withBean(EventSerializer.class, () -> mock(EventSerializer.class))
 				.withBean(JmsOperations.class, () -> mock(JmsOperations.class));
+
+		if (excluded.length > 0) {
+			runner = runner.withClassLoader(new FilteredClassLoader(excluded));
+		}
+
+		return runner;
 	}
 }

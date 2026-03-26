@@ -30,11 +30,6 @@
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-starter-namastack</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-events-kafka</artifactId>
 		</dependency>
 
@@ -46,5 +41,28 @@
 		</dependency>
 
 	</dependencies>
+	
+	<profiles>
+		<profile>
+			<id>namastack</id>
+			<dependencies>
+				<dependency>
+					<groupId>org.springframework.modulith</groupId>
+					<artifactId>spring-modulith-starter-namastack</artifactId>
+					<scope>runtime</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+		<profile>
+			<id>jobrunr</id>
+			<dependencies>
+				<dependency>
+					<groupId>org.springframework.modulith</groupId>
+					<artifactId>spring-modulith-starter-jobrunr</artifactId>
+					<scope>runtime</scope>
+				</dependency>
+			</dependencies>
+		</profile>
+	</profiles>
 
 </project>

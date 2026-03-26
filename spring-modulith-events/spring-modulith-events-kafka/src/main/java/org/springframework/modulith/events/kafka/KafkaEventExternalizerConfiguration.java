@@ -19,7 +19,9 @@ import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
+import org.jobrunr.scheduling.JobScheduler;
 import org.jspecify.annotations.NullUnmarked;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,9 +42,11 @@ import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
+import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizer;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to Kafka.
@@ -73,20 +77,43 @@ class KafkaEventExternalizerConfiguration {
 	}
 
 	@AutoConfiguration
-	@ConditionalOnClass(OutboxHandler.class)
-	static class NamastackOutboxAutoConfiguration {
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+	static class KafkaOutboxConfiguration {
 
-		@Bean
-		@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
-		OutboxHandler kafkaOutboxExternalizer(EventExternalizationConfiguration configuration,
+		private final Supplier<OutboxEventExternalizer> externalizer;
+
+		KafkaOutboxConfiguration(EventExternalizationConfiguration configuration,
 				KafkaOperations<?, ?> operations, BeanFactory factory) {
 
-			logger.debug("Registering domain event outbox externalization to Kafka…");
+			this.externalizer = SingletonSupplier.of(() -> new OutboxEventExternalizer(configuration,
+					createKafkaTransport(configuration, operations, factory)));
+		}
 
-			var externalizer = new OutboxEventExternalizer(configuration,
-					createKafkaTransport(configuration, operations, factory));
+		@AutoConfiguration
+		@ConditionalOnClass(OutboxHandler.class)
+		class NamastackOutboxAutoConfiguration {
 
-			return (payload, metadata) -> externalizer.handle(payload);
+			@Bean
+			OutboxHandler kafkaOutboxExternalizer(EventExternalizationConfiguration configuration,
+					KafkaOperations<?, ?> operations, BeanFactory factory) {
+
+				logger.debug("Registering Namastack domain event outbox externalization to Kafka.");
+
+				return (payload, metadata) -> externalizer.get().handle(payload);
+			}
+		}
+
+		@AutoConfiguration
+		@ConditionalOnClass({ JobScheduler.class, JobRunrExternalizationTransport.class })
+		class JobRunrOutboxAutoConfiguration {
+
+			@Bean
+			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
+
+				logger.debug("Registering JobRunr domain event outbox externalization to Kafka.");
+
+				return payload -> externalizer.get().handle(payload);
+			}
 		}
 	}
 
