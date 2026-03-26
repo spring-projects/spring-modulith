@@ -40,10 +40,10 @@
 			<version>${namastack-outbox.version}</version>
 			<optional>true</optional>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
-			<artifactId>spring-modulith-events-namastack</artifactId>
+			<artifactId>spring-modulith-events-jobrunr</artifactId>
 			<version>${project.version}</version>
 			<optional>true</optional>
 		</dependency>

@@ -22,6 +22,7 @@
 		<module>spring-modulith-starter-neo4j</module>
 		<module>spring-modulith-starter-test</module>
 		<module>spring-modulith-starter-namastack</module>
+		<module>spring-modulith-starter-jobrunr</module>
 	</modules>
 
 	<build>

@@ -1,4 +1,4 @@
-= Spring Modulith -- Outbox event externalization example
+= Spring Modulith -- Outbox Event Externalization Example
 
 This example shows how domain events can be externalized using the outbox pattern.
 Events are persisted to an outbox table within the same transaction as the business operation and later processed asynchronously.
@@ -6,12 +6,17 @@ The key steps are:
 
 1. Add the `spring-modulith-events-kafka` dependency to the project (`runtime` scope is sufficient).
 2. Add the `spring-modulith-events-api` dependency to annotate the event types to be externalized automatically with `@Externalized` (see `OrderCompleted`).
-3. Add the `namastack-outbox-starter-jpa` dependency for the outbox infrastructure.
+3. Add an outbox implementation to the project
+   - `spring-modulith-starter-namastack` for Namastack
+   - `spring-modulith-starter-jobrunr` for JobRunr
 4. Set `spring.modulith.events.externalization.mode=outbox` in `application.properties`.
 
 `TestApplication` (in `src/test/java`) declares a mock `KafkaOperations` instance so that we do not need an actual Kafka instance running for the sample.
 It also enables the outbox processing via `@EnableOutbox` and `@EnableScheduling`.
-Running the test application using `./mvnw spring-boot:test-run` should show the following output.
+
+== Namastack Support
+
+Running the test application using `./mvnw spring-boot:test-run -Pnamastack` should show the following output:
 
 [source]
 ----
@@ -35,3 +40,52 @@ That event is annotated with Spring Modulith's `@Externalized` and thus qualifie
 <5> The `OutboxEventRecorder` synchronously persists the event to the outbox table within the same transaction as the business operation.
 <6> The outbox processor asynchronously picks up the event from the outbox table.
 <7> The event is successfully transported to Kafka via the `OutboxEventTransport`.
+
+== JobRunr Support
+
+Running the test application using `./mvnw spring-boot:test-run --Pjobrunr` should show the following output:
+
+[source]
+----
+18:15:13.978 D -     main : Configuring event externalization to export events annotated with @Externalized in packages: [example]
+…
+18:15:14.479 I -     main : Creating JobRunr JsonMapper using Jackson 3
+18:15:14.507 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v000__create_migrations_table.sql}
+18:15:14.510 D -     main : Trying to lock migrations table...
+18:15:14.510 D -     main : Successfully locked the migrations table.
+18:15:14.510 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v001__create_job_table.sql}
+18:15:14.512 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v002__create_recurring_job_table.sql}
+18:15:14.513 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v003__create_background_job_server_table.sql}
+18:15:14.515 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v004__create_job_stats_view.sql}
+18:15:14.520 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v005__update_job_stats_view.sql}
+18:15:14.522 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v006__alter_table_jobs_add_recurringjob.sql}
+18:15:14.529 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v007__alter_table_backgroundjobserver_add_delete_config.sql}
+18:15:14.533 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v008__alter_table_jobs_increase_jobAsJson_size.sql}
+18:15:14.534 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/h2/migrations/v009__change_jobrunr_job_counters_to_jobrunr_metadata.sql}
+18:15:14.536 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/h2/migrations/v010__change_job_stats.sql}
+18:15:14.537 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v011__change_sqlserver_text_to_varchar.sql}
+18:15:14.537 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v012__change_oracle_alter_jobrunr_metadata_column_size.sql}
+18:15:14.538 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v013__alter_table_recurring_job_add_createdAt.sql}
+18:15:14.539 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v014__improve_job_stats.sql}
+18:15:14.540 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/common/migrations/v015__alter_table_backgroundjobserver_add_name.sql}
+18:15:14.541 I -     main : Running migration MigrationByPath{path=/org/jobrunr/storage/sql/h2/migrations/v016__alter_jobs_stats_add_awaiting_jobs.sql}
+18:15:14.543 D -     main : Removing lock on migrations table...
+18:15:14.543 D -     main : The lock has been removed from migrations table.
+…
+18:15:14.726 D -     main : Registering JobRunr domain event outbox externalization to Kafka.
+…
+18:15:14.750 I -     main : Triggering order completion…
+…
+18:15:15.767 D - r-pool-1 : Submitted BackgroundJobPerformer for job 019d304a-ffc8-7931-b6e8-a3cfeb56b2ef to executor service
+18:15:15.767 D - r-pool-1 : Found 1 enqueued jobs to process.
+…
+18:15:15.770 D - b-worker : Externalizing event of type class example.order.OrderCompleted to order.OrderCompleted.
+18:15:15.773 I - b-worker : Sending message GenericMessage [payload=OrderCompleted[orderId=OrderIdentifier[id=ca2a4c1a-e258-42cb-8d15-2cc79c6922ea]], headers={kafka_topic=order.OrderCompleted, id=95a5d720-f6b9-4a76-2a5a-2431d87e4a50, timestamp=1774631715772}].
+18:15:15.773 D - b-worker : Job(id=019d304a-ffc8-7931-b6e8-a3cfeb56b2ef, jobName='org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport.externalize(OrderCompleted[orderId=OrderIdentifier[id=ca2a4c1a-e258-42cb-8d15-2cc79c6922ea]])') processing succeeded
+18:15:15.775 D - b-worker : Can onboard 256 new work (occupiedWorkerCount = 0; workerCount = 256).
+18:15:15.776 D - b-worker : Found 0 enqueued jobs to process.
+…
+----
+
+See how the JobRunr infrastructure is bootstrapped and the JobRunr-based externalization to Kafka is enabled.
+The order completion is triggered, causing a job scheduled to be executed and eventually picked up by JobRunr for execution.

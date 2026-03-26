@@ -19,7 +19,9 @@ import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
+import java.util.function.Supplier;
 
+import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.BeanFactory;
@@ -36,9 +38,11 @@ import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
+import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizer;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to a Spring Messaging
@@ -70,20 +74,42 @@ class SpringMessagingEventExternalizerConfiguration {
 	}
 
 	@AutoConfiguration
-	@ConditionalOnClass(OutboxHandler.class)
-	static class NamastackOutboxAutoConfiguration {
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+	static class JmsOutboxConfiguration {
 
-		@Bean
-		@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
-		OutboxHandler springMessagingOutboxExternalizer(EventExternalizationConfiguration configuration,
+		private final Supplier<OutboxEventExternalizer> externalizer;
+
+		JmsOutboxConfiguration(EventExternalizationConfiguration configuration,
 				BeanFactory factory) {
 
-			logger.debug("Registering domain event outbox externalization for Spring Messaging…");
+			this.externalizer = SingletonSupplier.of(() -> new OutboxEventExternalizer(configuration,
+					createMessagingTransport(configuration, factory)));
+		}
 
-			var externalizer = new OutboxEventExternalizer(configuration,
-					createMessagingTransport(configuration, factory));
+		@AutoConfiguration
+		@ConditionalOnClass(OutboxHandler.class)
+		class NamastackOutboxAutoConfiguration {
 
-			return (payload, metadata) -> externalizer.handle(payload);
+			@Bean
+			OutboxHandler kafkaOutboxExternalizer() {
+
+				logger.debug("Registering Namastack domain event outbox externalization for Spring Messaging.");
+
+				return (payload, metadata) -> externalizer.get().handle(payload);
+			}
+		}
+
+		@AutoConfiguration
+		@ConditionalOnClass({ JobScheduler.class, JobRunrExternalizationTransport.class })
+		class JobRunrOutboxAutoConfiguration {
+
+			@Bean
+			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
+
+				logger.debug("Registering JobRunr domain event outbox externalization for Spring Messaging.");
+
+				return payload -> externalizer.get().handle(payload);
+			}
 		}
 	}
 

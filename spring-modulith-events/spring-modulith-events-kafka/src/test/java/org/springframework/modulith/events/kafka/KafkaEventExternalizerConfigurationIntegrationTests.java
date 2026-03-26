@@ -18,20 +18,24 @@ package org.springframework.modulith.events.kafka;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import io.namastack.outbox.handler.OutboxHandler;
+
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.Externalized;
+import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.DelegatingEventExternalizer;
 
 /**
@@ -42,7 +46,10 @@ import org.springframework.modulith.events.support.DelegatingEventExternalizer;
  */
 class KafkaEventExternalizerConfigurationIntegrationTests {
 
-	private KafkaOperations<?, ?> operations = mock(KafkaOperations.class);
+	static final EventExternalizationConfiguration EXTERNALIZATION_ENABLED = EventExternalizationConfiguration
+			.defaults("org").build();
+
+	KafkaOperations<?, ?> operations = mock(KafkaOperations.class);
 
 	@Test // GH-342
 	void registersExternalizerByDefault() {
@@ -87,6 +94,46 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		});
 	}
 
+	@Test // GH-1637
+	void configuresNamastackOutboxHandlerIfPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).hasSingleBean(OutboxHandler.class);
+				});
+	}
+
+	@Test // GH-1637
+	void doesNotConfigureNamastackOutboxHandlerIfNotPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED, "io.namastack")
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).doesNotHaveBean(OutboxHandler.class);
+				});
+	}
+
+	@Test // GH-1637
+	void configuresJobRunrOutboxHandlerIfPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).hasSingleBean(JobRunrExternalizationTransport.class);
+				});
+	}
+
+	@Test // GH-1637
+	void doesNotConfigureJobRunrOutboxHandlerIfNotPresent() {
+
+		basicSetup(EXTERNALIZATION_ENABLED, "org.jobrunr")
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+					assertThat(ctxt).doesNotHaveBean(JobRunrExternalizationTransport.class);
+				});
+	}
+
 	private void assertMessage(EventExternalizationConfiguration configuration, Consumer<Message<?>> assertions) {
 
 		basicSetup(configuration)
@@ -98,7 +145,6 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 					verify(operations).send(captor.capture());
 
 					assertions.accept(captor.getValue());
-
 				});
 	}
 
@@ -106,16 +152,21 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		return basicSetup(null);
 	}
 
-	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration config) {
+	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration config,
+			String... excluded) {
 
-		Supplier<EventExternalizationConfiguration> configProvider = () -> config == null
-				? EventExternalizationConfiguration.disabled()
-				: config;
+		var defaulted = config == null ? EventExternalizationConfiguration.disabled() : config;
 
-		return new ApplicationContextRunner()
+		var runner = new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(KafkaEventExternalizerConfiguration.class))
-				.withBean(EventExternalizationConfiguration.class, configProvider)
+				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
 				.withBean(KafkaOperations.class, () -> operations);
+
+		if (excluded.length > 0) {
+			runner = runner.withClassLoader(new FilteredClassLoader(excluded));
+		}
+
+		return runner;
 	}
 
 	@Externalized

@@ -407,8 +407,8 @@ class MyConfiguration {
 
 IMPORTANT: The following section describes the Spring Modulith-native event externalization that is based on a asynchronous event listener.
 While this is a pragmatic, simple solution, it lacks critical features developers might expect from actual outbox pattern implementations.
-Spring Modulith 2.1 introduced support event externalization through the https://outbox.namastack.io/[Namastack Outbox].
-See xref:events.adoc#externalization.namastack[the corresponding section] of the docs for details.
+Spring Modulith 2.1 introduced support event externalization through the https://outbox.namastack.io/[Namastack Outbox] and http://jobrunr.io/[JobRunr].
+See the corresponding section (xref:events.adoc#externalization.namastack[Namastack], xref:events.adoc#externalization.jobrunr[JobRunr]) of the docs for details.
 
 Some of the events exchanged between application modules might be interesting to external systems.
 Spring Modulith allows publishing selected events to a variety of message brokers.
@@ -598,7 +598,7 @@ As the broker might see a sudden spike in interactions, some interactions might 
 To prevent that, the interaction with the broker can be serialized so that only one event is sent out at a time by setting the `spring.modulith.events.externalization.serialize-externalization` property to `true`.
 
 [[externalization.namastack]]
-== Namastack Outbox support
+== Namastack Outbox Support
 
 If advanced outbox features are required, the event externalization can be delegated to the https://outbox.namastack.io/[Namastack Outbox].
 This feature is currently only availble for relational databases.
@@ -629,6 +629,38 @@ dependencies {
 
 To automatically delegate event externalization to Namastack, switch the `spring.modulith.events.externalization.mode` property to `outbox`.
 For more information on how to customize the way that the Namastack Outbox works in general, consult the Namastack https://outbox.namastack.io/[reference documentation].
+Find an https://github.com/spring-projects/spring-modulith/tree/main/spring-modulith-examples/spring-modulith-example-outbox[example] in our Github repository.
+
+[[externalization.jobrunr]]
+== JobRunr Outbox Support
+Similar to the xref:events.adoc#externalization.namastack[Namastack support] to externalize events we provide support for http://jobrunr.io/[JobRunr].
+To activate the feature, start by adding the Spring Modulith JobRunr starter to your project:
+
+.Declaring the Spring Modulith JobRunr starter
+[tabs]
+======
+Maven::
++
+[source, xml, role="primary"]
+----
+<dependency>
+  <groupId>org.springframework.modulith</groupId>
+  <artifactId>spring-modulith-starter-jobrunr</artifactId>
+</dependency>
+----
+
+Gradle::
++
+[source, role="secondary"]
+----
+dependencies {
+  implementation 'org.springframework.modulith:spring-modulith-starter-jobrunr'
+}
+----
+======
+
+To automatically delegate event externalization to JobRunr, switch the `spring.modulith.events.externalization.mode` property to `outbox`.
+For more information on how to JobRunr please consult its https://www.jobrunr.io/en/documentation/[reference documentation].
 Find an https://github.com/spring-projects/spring-modulith/tree/main/spring-modulith-examples/spring-modulith-example-outbox[example] in our Github repository.
 
 [[testing]]
