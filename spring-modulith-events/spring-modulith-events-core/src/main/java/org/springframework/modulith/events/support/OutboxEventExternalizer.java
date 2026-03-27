@@ -30,7 +30,7 @@ import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.util.Assert;
 
 /**
- * An {@link OutboxHandler} that transports events from the outbox to an external target.
+ * An {@link OutboxEventExternalizer} that transports events from the outbox to an external target.
  * <p>
  * This handler is invoked by the outbox processor to externalize events that were previously recorded in the outbox
  * table. It uses the configured transport function to deliver events to their target destination (e.g., message broker,
@@ -50,8 +50,8 @@ public class OutboxEventExternalizer implements ApplicationEventPublisherAware {
 	private @Nullable ApplicationEventPublisher events;
 
 	/**
-	 * Creates a new {@link NamastackOutboxEventTransport} for the given {@link EventExternalizationConfiguration} and
-	 * transport function.
+	 * Creates a new {@link OutboxEventExternalizer} for the given {@link EventExternalizationConfiguration} and transport
+	 * function.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
@@ -80,7 +80,6 @@ public class OutboxEventExternalizer implements ApplicationEventPublisherAware {
 	 * configured transport function.
 	 *
 	 * @param event the event payload to transport
-	 * @param metadata the outbox record metadata
 	 */
 	public void handle(Object event) {
 
