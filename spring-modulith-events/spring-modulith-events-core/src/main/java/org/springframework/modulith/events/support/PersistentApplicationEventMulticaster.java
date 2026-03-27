@@ -26,7 +26,6 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import org.jspecify.annotations.NonNull;
 import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,8 +74,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
 	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
 
-	private final @NonNull Supplier<EventPublicationRegistry> registry;
-	private final @NonNull Supplier<Environment> environment;
+	private final Supplier<EventPublicationRegistry> registry;
+	private final Supplier<Environment> environment;
 
 	/**
 	 * Creates a new {@link PersistentApplicationEventMulticaster} for the given {@link EventPublicationRegistry}.
@@ -205,15 +204,12 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		listeners.stream() //
 				.filter(it -> publication.isIdentifiedBy(PublicationTargetIdentifier.of(it.getListenerId()))) //
 				.findFirst() //
-				.map(it -> executeListenerWithCompletion(publication, it)) //
-				.orElseGet(() -> {
+				.ifPresentOrElse(it -> executeListenerWithCompletion(publication, it), () -> {
 
 					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} failed.",
 							publication.getTargetIdentifier(), publication.getIdentifier());
 
 					registry.get().markFailed(publication.getEvent(), publication.getTargetIdentifier());
-
-					return null;
 				});
 	}
 
