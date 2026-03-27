@@ -20,6 +20,7 @@ import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
@@ -52,6 +53,7 @@ import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
+import org.springframework.util.ConcurrentReferenceHashMap;
 import org.springframework.util.ReflectionUtils;
 import org.springframework.util.StringUtils;
 
@@ -74,6 +76,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
 	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
 
+	private final Map<ResolvableType, TransactionalEventListeners> listenerCache = new ConcurrentReferenceHashMap<>();
 	private final Supplier<EventPublicationRegistry> registry;
 	private final Supplier<Environment> environment;
 
@@ -117,7 +120,8 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			return;
 		}
 
-		new TransactionalEventListeners(listeners, environment)
+		listenerCache
+				.computeIfAbsent(type, __ -> new TransactionalEventListeners(listeners, environment))
 				.ifPresent(it -> storePublications(it, getEventToPersist(event)));
 
 		for (ApplicationListener listener : listeners) {
