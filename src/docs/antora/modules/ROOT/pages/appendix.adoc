@@ -119,6 +119,11 @@ The following values are supported:
 |`true`
 |Whether to enable JSON support for `RabbitTemplate`.
 
+|`spring.modulith.events.registry-trigger-annotation`
+|
+|The fully-qualified class name of an annotation that is supposed to trigger an entry in the Event Publication Registry.
+By default, all methods (meta-)annotated with `@TransactionalEventListener` are considered. Set this to `@ApplicationModuleListener` if you only want to create entries in the Event Publication registry for methods annotated with that.
+
 |`spring.modulith.events.republish-outstanding-events-on-restart`
 |`false`
 |Whether to republish outstanding event publications on restarts of the application.
