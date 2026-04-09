@@ -26,6 +26,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
@@ -33,7 +34,9 @@ import org.springframework.context.event.EventListenerFactory;
 import org.springframework.core.Ordered;
 import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.core.ConditionalEventListener;
+import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.transaction.event.TransactionalEventListenerFactory;
 
@@ -80,6 +83,14 @@ public class EventExternalizationAutoConfiguration {
 				Boolean.TRUE.equals(serialize) ? "serialized " : "", packages);
 
 		return configuration.build();
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
+	static OutboxEventExternalizerFactory outboxEventExternalizerFactory(EventExternalizationConfiguration configuration,
+			ApplicationEventPublisher publisher) {
+		return new OutboxEventExternalizerFactory(configuration, publisher);
 	}
 
 	/**

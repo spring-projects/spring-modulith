@@ -16,18 +16,9 @@
 package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.function.BiFunction;
 
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.ApplicationEventPublisherAware;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
-import org.springframework.modulith.events.EventExternalized;
-import org.springframework.modulith.events.RoutingTarget;
-import org.springframework.util.Assert;
 
 /**
  * An {@link OutboxEventExternalizer} that transports events from the outbox to an external target.
@@ -41,67 +32,37 @@ import org.springframework.util.Assert;
  * @since 2.1
  * @see EventExternalizationConfiguration
  */
-public class OutboxEventExternalizer implements ApplicationEventPublisherAware {
+public class OutboxEventExternalizer extends TransportAwareEventExternalizer {
 
-	private static final Logger logger = LoggerFactory.getLogger(OutboxEventExternalizer.class);
-
-	private final EventExternalizationConfiguration configuration;
-	private final BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport;
-	private @Nullable ApplicationEventPublisher events;
+	private final ApplicationEventPublisher events;
 
 	/**
 	 * Creates a new {@link OutboxEventExternalizer} for the given {@link EventExternalizationConfiguration} and transport
 	 * function.
 	 *
 	 * @param configuration must not be {@literal null}.
-	 * @param transport must not be {@literal null}.
+	 * @param publisher must not be {@literal null}.
 	 */
-	public OutboxEventExternalizer(EventExternalizationConfiguration configuration,
-			BiFunction<RoutingTarget, Object, CompletableFuture<?>> transport) {
+	public OutboxEventExternalizer(EventExternalizationConfiguration configuration, ApplicationEventPublisher publisher,
+			EventExternalizationTransport transport) {
 
-		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
-		Assert.notNull(transport, "Transport function must not be null!");
+		super(configuration, transport);
 
-		this.configuration = configuration;
-		this.transport = transport;
+		this.events = publisher;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.context.ApplicationEventPublisherAware#setApplicationEventPublisher(org.springframework.context.ApplicationEventPublisher)
+	 * @see org.springframework.modulith.events.support.EventExternalizerSupport#externalize(java.lang.Object)
 	 */
 	@Override
-	public void setApplicationEventPublisher(ApplicationEventPublisher applicationEventPublisher) {
-		this.events = applicationEventPublisher;
-	}
+	public CompletableFuture<?> externalize(Object event) {
 
-	/**
-	 * Handles an outbox event by determining its routing target and transporting it to the external target using the
-	 * configured transport function.
-	 *
-	 * @param event the event payload to transport
-	 */
-	public void handle(Object event) {
+		var result = super.externalize(event);
 
-		var target = configuration.determineTarget(event);
-		var mapped = configuration.map(event);
-
-		if (logger.isTraceEnabled()) {
-			logger.trace("Externalizing event of type {} to {}, payload: {}).", event.getClass(), target, mapped);
-		} else if (logger.isDebugEnabled()) {
-			logger.debug("Externalizing event of type {} to {}.", event.getClass(), target);
-		}
-
-		try {
-
-			var result = transport.apply(target, event).get();
-
-			if (events != null) {
-				events.publishEvent(new EventExternalized<>(event, mapped, target, result));
-			}
-
-		} catch (InterruptedException | ExecutionException e) {
-			throw new RuntimeException("Failed to transport event to " + target.getTarget(), e);
-		}
+		return result.thenApply(it -> {
+			events.publishEvent(it);
+			return it;
+		});
 	}
 }

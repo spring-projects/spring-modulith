@@ -18,8 +18,6 @@ package org.springframework.modulith.events.messaging;
 import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
@@ -36,13 +34,13 @@ import org.springframework.messaging.MessageChannel;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
-import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
-import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.EventExternalizationTransport;
+import org.springframework.modulith.events.support.EventExternalizerModuleListener;
 import org.springframework.modulith.events.support.OutboxEventExternalizer;
-import org.springframework.util.function.SingletonSupplier;
+import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to a Spring Messaging
@@ -64,26 +62,24 @@ class SpringMessagingEventExternalizerConfiguration {
 
 	@Bean
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
-	DelegatingEventExternalizer springMessagingEventExternalizer(EventExternalizationConfiguration configuration,
+	EventExternalizerModuleListener springMessagingEventExternalizer(EventExternalizationConfiguration configuration,
 			BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization for Spring Messaging…");
 
-		return new DelegatingEventExternalizer(configuration,
-				createMessagingTransport(configuration, factory));
+		return new EventExternalizerModuleListener(configuration, createMessagingTransport(configuration, factory));
 	}
 
 	@AutoConfiguration
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
-	static class JmsOutboxConfiguration {
+	static class SpringMessagingOutboxConfiguration {
 
-		private final Supplier<OutboxEventExternalizer> externalizer;
+		private final OutboxEventExternalizer externalizer;
 
-		JmsOutboxConfiguration(EventExternalizationConfiguration configuration,
-				BeanFactory factory) {
+		SpringMessagingOutboxConfiguration(EventExternalizationConfiguration configuration,
+				BeanFactory beanFactory, OutboxEventExternalizerFactory factory) {
 
-			this.externalizer = SingletonSupplier.of(() -> new OutboxEventExternalizer(configuration,
-					createMessagingTransport(configuration, factory)));
+			this.externalizer = factory.forTransport(createMessagingTransport(configuration, beanFactory));
 		}
 
 		@AutoConfiguration
@@ -91,11 +87,11 @@ class SpringMessagingEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler kafkaOutboxExternalizer() {
+			OutboxHandler namastackKafkaOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization for Spring Messaging.");
 
-				return (payload, metadata) -> externalizer.get().handle(payload);
+				return (payload, metadata) -> externalizer.externalize(payload);
 			}
 		}
 
@@ -104,22 +100,22 @@ class SpringMessagingEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
+			JobRunrExternalizationTransport jobRunrKafkaOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization for Spring Messaging.");
 
-				return payload -> externalizer.get().handle(payload);
+				return externalizer::externalize;
 			}
 		}
 	}
 
-	private static BiFunction<RoutingTarget, Object, CompletableFuture<?>> createMessagingTransport(
+	private static EventExternalizationTransport createMessagingTransport(
 			EventExternalizationConfiguration configuration, BeanFactory factory) {
 
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
-		return (target, payload) -> {
+		return (payload, target) -> {
 
 			var targetChannel = BrokerRouting.of(target, context).getTarget(payload);
 			var message = MessageBuilder

@@ -45,7 +45,7 @@ class DelegatingEventExternalizerUnitTests {
 	@Test // GH-859
 	void doesNotRequireATransactionForExternalization() throws Exception {
 
-		var method = DelegatingEventExternalizer.class.getMethod("externalize", Object.class);
+		var method = EventExternalizerModuleListener.class.getMethod("externalize", Object.class);
 		var annotation = AnnotatedElementUtils.getMergedAnnotation(method, Transactional.class);
 
 		assertThat(annotation.propagation()).isEqualTo(Propagation.SUPPORTS);
@@ -58,9 +58,9 @@ class DelegatingEventExternalizerUnitTests {
 		var events = Collections.synchronizedList(new ArrayList<String>());
 		var complete = new CountDownLatch(numberOfInvocations);
 		var counter = new AtomicInteger(0);
-		var mock = mock(Downstream.class);
+		var mock = mock(EventExternalizationTransport.class);
 
-		when(mock.someMethod(any(RoutingTarget.class), any(Object.class))).thenAnswer(invocation -> {
+		when(mock.externalize(any(Object.class), any(RoutingTarget.class))).thenAnswer(invocation -> {
 
 			var callNumber = counter.incrementAndGet();
 
@@ -69,6 +69,7 @@ class DelegatingEventExternalizerUnitTests {
 			return CompletableFuture.supplyAsync(() -> {
 
 				try {
+
 					// Simulate some work in the CompletableFuture
 					Thread.sleep(200);
 
@@ -87,7 +88,7 @@ class DelegatingEventExternalizerUnitTests {
 				.serializeExternalization(true)
 				.build();
 
-		var service = new DelegatingEventExternalizer(configuration, mock::someMethod);
+		var service = new EventExternalizerModuleListener(configuration, mock::externalize);
 
 		for (int i = 0; i < numberOfInvocations; i++) {
 
@@ -110,11 +111,7 @@ class DelegatingEventExternalizerUnitTests {
 
 		assertThat(events).containsExactly("CALL-1", "COMPLETE-1", "CALL-2", "COMPLETE-2", "CALL-3", "COMPLETE-3");
 
-		verify(mock, times(3)).someMethod(any(RoutingTarget.class), any(Object.class));
-	}
-
-	interface Downstream {
-		CompletableFuture<?> someMethod(RoutingTarget target, Object event);
+		verify(mock, times(3)).externalize(any(Object.class), any(RoutingTarget.class));
 	}
 
 	@Externalized

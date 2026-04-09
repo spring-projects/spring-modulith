@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2026 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,55 +16,38 @@
 package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
 
-import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.RoutingTarget;
-import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Propagation;
 import org.springframework.util.Assert;
 
 /**
- * An {@link EventExternalizationSupport} delegating to a {@link BiFunction} for the actual externalization. Note, that
- * this <em>needs</em> to be a {@link Component} to make sure it is considered an event listener, as without the
- * annotation Spring Framework would skip it as it lives in the {@code org.springframework} package.
+ * An {@link EventExternalizationSupport} delegating to a {@link EventExternalizationTransport} for the actual
+ * externalization.
  *
  * @author Oliver Drotbohm
- * @since 1.1
- * @deprecated since 2.1. Please use {@link EventExternalizerEventListener} instead.
+ * @since 2.1
+ * @soundtrack Roey Marquis II. - Shadows within - https://www.youtube.com/watch?v=XD_pC3XlOR4
  */
-@Component
-@Deprecated(since = "2.1", forRemoval = true)
-public class DelegatingEventExternalizer extends EventExternalizationSupport {
+abstract class TransportAwareEventExternalizer extends EventExternalizerSupport {
 
-	private final BiFunction<RoutingTarget, Object, CompletableFuture<?>> delegate;
+	private final EventExternalizationTransport transport;
 
 	/**
 	 * Creates a new {@link DelegatingEventExternalizer} for the given {@link EventExternalizationConfiguration} and
 	 * {@link BiFunction} implementing the actual externalization.
 	 *
 	 * @param configuration must not be {@literal null}.
-	 * @param delegate must not be {@literal null}.
+	 * @param transport must not be {@literal null}.
 	 */
-	public DelegatingEventExternalizer(EventExternalizationConfiguration configuration,
-			BiFunction<RoutingTarget, Object, CompletableFuture<?>> delegate) {
+	public TransportAwareEventExternalizer(EventExternalizationConfiguration configuration,
+			EventExternalizationTransport transport) {
 
 		super(configuration);
 
-		Assert.notNull(delegate, "BiConsumer must not be null!");
+		Assert.notNull(transport, "EventExternalizationTransport must not be null!");
 
-		this.delegate = delegate;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.support.EventExternalizationSupport#externalize(java.lang.Object)
-	 */
-	@Override
-	@ApplicationModuleListener(propagation = Propagation.SUPPORTS)
-	public CompletableFuture<?> externalize(Object event) {
-		return super.externalize(event);
+		this.transport = transport;
 	}
 
 	/*
@@ -76,7 +59,7 @@ public class DelegatingEventExternalizer extends EventExternalizationSupport {
 
 		try {
 
-			var result = delegate.apply(target, payload);
+			var result = transport.externalize(payload, target);
 
 			return result != null
 					? result

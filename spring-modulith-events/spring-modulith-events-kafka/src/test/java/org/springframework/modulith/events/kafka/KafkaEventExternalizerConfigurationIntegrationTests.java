@@ -21,6 +21,7 @@ import static org.mockito.Mockito.*;
 import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.Map;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import org.jspecify.annotations.Nullable;
@@ -33,10 +34,14 @@ import org.springframework.kafka.core.KafkaOperations;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.Externalized;
+import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
-import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.EventExternalizerModuleListener;
+import org.springframework.modulith.test.PublishedEvents;
+import org.springframework.modulith.test.PublishedEventsFactory;
 
 /**
  * Integration tests for {@link KafkaEventExternalizerConfiguration}.
@@ -56,7 +61,7 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 
 		basicSetup()
 				.run(ctxt -> {
-					assertThat(ctxt).hasSingleBean(DelegatingEventExternalizer.class);
+					assertThat(ctxt).hasSingleBean(EventExternalizerModuleListener.class);
 				});
 	}
 
@@ -66,7 +71,7 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		basicSetup()
 				.withPropertyValues("spring.modulith.events.externalization.enabled=false")
 				.run(ctxt -> {
-					assertThat(ctxt).doesNotHaveBean(DelegatingEventExternalizer.class);
+					assertThat(ctxt).doesNotHaveBean(EventExternalizerModuleListener.class);
 				});
 	}
 
@@ -134,12 +139,24 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
+	@Test // GH-1642
+	void publishesEventExternalizedAfterJobRunrExternalization() {
+
+		assertEventExternalizedPublished(JobRunrExternalizationTransport.class,
+				JobRunrExternalizationTransport::externalize);
+	}
+
+	@Test // GH-1642
+	void publishesEventExternalizedAfterNamastackExternalization() {
+		assertEventExternalizedPublished(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
+	}
+
 	private void assertMessage(EventExternalizationConfiguration configuration, Consumer<Message<?>> assertions) {
 
 		basicSetup(configuration)
 				.run(ctxt -> {
 
-					ctxt.getBean(DelegatingEventExternalizer.class).externalize(new Sample());
+					ctxt.getBean(EventExternalizerModuleListener.class).externalize(new Sample());
 
 					var captor = ArgumentCaptor.forClass(Message.class);
 					verify(operations).send(captor.capture());
@@ -158,7 +175,8 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		var defaulted = config == null ? EventExternalizationConfiguration.disabled() : config;
 
 		var runner = new ApplicationContextRunner()
-				.withConfiguration(AutoConfigurations.of(KafkaEventExternalizerConfiguration.class))
+				.withConfiguration(AutoConfigurations.of(KafkaEventExternalizerConfiguration.class,
+						EventExternalizationAutoConfiguration.class))
 				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
 				.withBean(KafkaOperations.class, () -> operations);
 
@@ -167,6 +185,25 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		}
 
 		return runner;
+	}
+
+	private <T> void assertEventExternalizedPublished(Class<T> transportType, BiConsumer<T, Object> consumer) {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withBean(PublishedEvents.class, PublishedEventsFactory::createPublishedEvents)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					var transport = ctxt.getBean(transportType);
+					var event = new Sample();
+
+					consumer.accept(transport, event);
+
+					var events = ctxt.getBean(PublishedEvents.class);
+
+					assertThat(events.ofType(EventExternalized.class)
+							.matching(it -> it.getEvent().equals(event))).hasSize(1);
+				});
 	}
 
 	@Externalized

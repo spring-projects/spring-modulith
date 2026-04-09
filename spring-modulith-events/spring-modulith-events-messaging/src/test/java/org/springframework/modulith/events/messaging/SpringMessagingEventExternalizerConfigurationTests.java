@@ -16,17 +16,26 @@
 package org.springframework.modulith.events.messaging;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.handler.OutboxHandler;
 
+import java.util.function.BiConsumer;
+
+import org.jmolecules.event.annotation.Externalized;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
+import org.springframework.messaging.MessageChannel;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.ExternalizationMode;
+import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
+import org.springframework.modulith.test.PublishedEvents;
+import org.springframework.modulith.test.PublishedEventsFactory;
 
 /**
  * Unit tests for {@link SpringMessagingEventExternalizerConfiguration}.
@@ -78,15 +87,48 @@ class SpringMessagingEventExternalizerConfigurationTests {
 				});
 	}
 
+	@Test // GH-1642
+	void publishesEventExternalizedAfterJobRunrExternalization() {
+
+		assertEventExternalizedPublished(JobRunrExternalizationTransport.class,
+				JobRunrExternalizationTransport::externalize);
+	}
+
+	@Test // GH-1642
+	void publishesEventExternalizedAfterNamastackExternalization() {
+		assertEventExternalizedPublished(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
+	}
+
+	private <T> void assertEventExternalizedPublished(Class<T> transportType, BiConsumer<T, Object> consumer) {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withBean(PublishedEvents.class, PublishedEventsFactory::createPublishedEvents)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					var transport = ctxt.getBean(transportType);
+					var event = new SampleEvent();
+
+					consumer.accept(transport, event);
+
+					var events = ctxt.getBean(PublishedEvents.class);
+
+					assertThat(events.ofType(EventExternalized.class)
+							.matching(it -> it.getEvent().equals(event))).hasSize(1);
+				});
+	}
+
 	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration configuration,
 			String... excluded) {
 
 		var defaulted = configuration == null ? EventExternalizationConfiguration.disabled() : configuration;
 
 		var runner = new ApplicationContextRunner()
-				.withConfiguration(
-						AutoConfigurations.of(SpringMessagingEventExternalizerConfiguration.class))
-				.withBean(EventExternalizationConfiguration.class, () -> defaulted);
+				.withConfiguration(AutoConfigurations.of(
+						SpringMessagingEventExternalizerConfiguration.class,
+						EventExternalizationAutoConfiguration.class))
+				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
+				.withBean("sampleChannel", MessageChannel.class, () -> mock(MessageChannel.class));
 
 		if (excluded.length > 0) {
 			runner = runner.withClassLoader(new FilteredClassLoader(excluded));
@@ -94,4 +136,7 @@ class SpringMessagingEventExternalizerConfigurationTests {
 
 		return runner;
 	}
+
+	@Externalized(target = "sampleChannel")
+	static class SampleEvent {}
 }

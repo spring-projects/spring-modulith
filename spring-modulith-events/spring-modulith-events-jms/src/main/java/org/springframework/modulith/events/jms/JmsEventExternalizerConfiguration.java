@@ -18,8 +18,6 @@ package org.springframework.modulith.events.jms;
 import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.function.BiFunction;
-import java.util.function.Supplier;
 
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
@@ -35,14 +33,14 @@ import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.jms.core.JmsOperations;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
-import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.core.EventSerializer;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
-import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.EventExternalizationTransport;
+import org.springframework.modulith.events.support.EventExternalizerModuleListener;
 import org.springframework.modulith.events.support.OutboxEventExternalizer;
-import org.springframework.util.function.SingletonSupplier;
+import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
  * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to JMS.
@@ -62,12 +60,12 @@ class JmsEventExternalizerConfiguration {
 
 	@Bean
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
-	DelegatingEventExternalizer jmsEventExternalizer(EventExternalizationConfiguration configuration,
+	EventExternalizerModuleListener jmsEventExternalizer(EventExternalizationConfiguration configuration,
 			JmsOperations operations, EventSerializer serializer, BeanFactory factory) {
 
 		logger.debug("Registering domain event externalization to JMS…");
 
-		return new DelegatingEventExternalizer(configuration,
+		return new EventExternalizerModuleListener(configuration,
 				createJmsTransport(operations, serializer, factory));
 	}
 
@@ -75,13 +73,12 @@ class JmsEventExternalizerConfiguration {
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
 	static class JmsOutboxConfiguration {
 
-		private final Supplier<OutboxEventExternalizer> externalizer;
+		private final OutboxEventExternalizer externalizer;
 
-		JmsOutboxConfiguration(EventExternalizationConfiguration configuration,
-				JmsOperations operations, EventSerializer serializer, BeanFactory factory) {
+		JmsOutboxConfiguration(JmsOperations operations, EventSerializer serializer, BeanFactory beanFactory,
+				OutboxEventExternalizerFactory factory) {
 
-			this.externalizer = SingletonSupplier.of(() -> new OutboxEventExternalizer(configuration,
-					createJmsTransport(operations, serializer, factory)));
+			this.externalizer = factory.forTransport(createJmsTransport(operations, serializer, beanFactory));
 		}
 
 		@AutoConfiguration
@@ -89,11 +86,11 @@ class JmsEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler kafkaOutboxExternalizer() {
+			OutboxHandler namastackJmsOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization to JMS.");
 
-				return (payload, metadata) -> externalizer.get().handle(payload);
+				return (payload, metadata) -> externalizer.externalize(payload);
 			}
 		}
 
@@ -102,22 +99,22 @@ class JmsEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
+			JobRunrExternalizationTransport jobRunrJmsOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization to JMS.");
 
-				return payload -> externalizer.get().handle(payload);
+				return externalizer::externalize;
 			}
 		}
 	}
 
-	private static BiFunction<RoutingTarget, Object, CompletableFuture<?>> createJmsTransport(
+	private static EventExternalizationTransport createJmsTransport(
 			JmsOperations operations, EventSerializer serializer, BeanFactory factory) {
 
 		var context = new StandardEvaluationContext();
 		context.setBeanResolver(new BeanFactoryResolver(factory));
 
-		return (target, payload) -> {
+		return (payload, target) -> {
 
 			var serialized = serializer.serialize(payload);
 			var routing = BrokerRouting.of(target, context);

@@ -20,6 +20,9 @@ import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.handler.OutboxHandler;
 
+import java.util.function.BiConsumer;
+
+import org.jmolecules.event.annotation.Externalized;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
@@ -27,9 +30,13 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.ExternalizationMode;
+import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
-import org.springframework.modulith.events.support.DelegatingEventExternalizer;
+import org.springframework.modulith.events.support.EventExternalizerModuleListener;
+import org.springframework.modulith.test.PublishedEvents;
+import org.springframework.modulith.test.PublishedEventsFactory;
 
 /**
  * Integration tests for {@link RabbitEventExternalizerConfiguration}.
@@ -47,7 +54,7 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 
 		basicSetup()
 				.run(ctxt -> {
-					assertThat(ctxt).hasSingleBean(DelegatingEventExternalizer.class);
+					assertThat(ctxt).hasSingleBean(EventExternalizerModuleListener.class);
 				});
 	}
 
@@ -57,7 +64,7 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 		basicSetup()
 				.withPropertyValues("spring.modulith.events.externalization.enabled=false")
 				.run(ctxt -> {
-					assertThat(ctxt).doesNotHaveBean(DelegatingEventExternalizer.class);
+					assertThat(ctxt).doesNotHaveBean(EventExternalizerModuleListener.class);
 				});
 	}
 
@@ -101,6 +108,18 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
+	@Test // GH-1642
+	void publishesEventExternalizedAfterJobRunrExternalization() {
+
+		assertEventExternalizedPublished(JobRunrExternalizationTransport.class,
+				JobRunrExternalizationTransport::externalize);
+	}
+
+	@Test // GH-1642
+	void publishesEventExternalizedAfterNamastackExternalization() {
+		assertEventExternalizedPublished(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
+	}
+
 	private ApplicationContextRunner basicSetup() {
 		return basicSetup(null);
 	}
@@ -111,7 +130,9 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 		var defaulted = configuration == null ? EventExternalizationConfiguration.disabled() : configuration;
 
 		var runner = new ApplicationContextRunner()
-				.withConfiguration(AutoConfigurations.of(RabbitEventExternalizerConfiguration.class))
+				.withConfiguration(AutoConfigurations.of(
+						RabbitEventExternalizerConfiguration.class,
+						EventExternalizationAutoConfiguration.class))
 				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
 				.withBean(RabbitMessageOperations.class, () -> mock(RabbitMessageOperations.class));
 
@@ -121,4 +142,26 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 
 		return runner;
 	}
+
+	private <T> void assertEventExternalizedPublished(Class<T> transportType, BiConsumer<T, Object> consumer) {
+
+		basicSetup(EXTERNALIZATION_ENABLED)
+				.withBean(PublishedEvents.class, PublishedEventsFactory::createPublishedEvents)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					var transport = ctxt.getBean(transportType);
+					var event = new SampleEvent();
+
+					consumer.accept(transport, event);
+
+					var events = ctxt.getBean(PublishedEvents.class);
+
+					assertThat(events.ofType(EventExternalized.class)
+							.matching(it -> it.getEvent().equals(event))).hasSize(1);
+				});
+	}
+
+	@Externalized
+	static class SampleEvent {}
 }

@@ -73,6 +73,13 @@
 		<!-- Testing -->
 
 		<dependency>
+			<groupId>org.springframework.modulith</groupId>
+			<artifactId>spring-modulith-test</artifactId>
+			<version>${project.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
 			<scope>test</scope>

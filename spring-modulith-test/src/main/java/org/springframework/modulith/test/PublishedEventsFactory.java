@@ -26,7 +26,7 @@ import org.springframework.util.ClassUtils;
  * @author Oliver Drotbohm
  * @since 1.4
  */
-class PublishedEventsFactory {
+public class PublishedEventsFactory {
 
 	private static final boolean ASSERT_J_PRESENT = ClassUtils.isPresent("org.assertj.core.api.Assert",
 			PublishedEventsParameterResolver.class.getClassLoader());
@@ -44,7 +44,7 @@ class PublishedEventsFactory {
 	 *
 	 * @return will never be {@literal null}.
 	 */
-	static PublishedEventsListenerAdapter createPublishedEvents() {
+	public static PublishedEventsListenerAdapter createPublishedEvents() {
 		return isAssertJPresent() ? new DefaultAssertablePublishedEvents() : new DefaultPublishedEvents();
 	}
 

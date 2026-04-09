@@ -1,5 +1,5 @@
 /*
- * Copyright 2023-2026 the original author or authors.
+ * Copyright 2026 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.RoutingTarget;
-import org.springframework.modulith.events.core.ConditionalEventListener;
 import org.springframework.util.Assert;
 
 /**
@@ -31,12 +30,12 @@ import org.springframework.util.Assert;
  * before handing off the ultimate message publication to {@link #externalize(Object, RoutingTarget)}.
  *
  * @author Oliver Drotbohm
- * @since 1.1
+ * @since 2.1
+ * @soundtrack Barbara Buchholz - Coyote - https://www.youtube.com/watch?v=1YYZVt3blQY
  */
-@Deprecated(since = "2.1", forRemoval = true)
-abstract class EventExternalizationSupport implements ConditionalEventListener {
+abstract class EventExternalizerSupport {
 
-	private static final Logger logger = LoggerFactory.getLogger(EventExternalizationSupport.class);
+	private static final Logger logger = LoggerFactory.getLogger(EventExternalizerSupport.class);
 
 	private final EventExternalizationConfiguration configuration;
 	private final Semaphore semaphore = new Semaphore(1);
@@ -46,20 +45,11 @@ abstract class EventExternalizationSupport implements ConditionalEventListener {
 	 *
 	 * @param configuration must not be {@literal null}.
 	 */
-	protected EventExternalizationSupport(EventExternalizationConfiguration configuration) {
+	protected EventExternalizerSupport(EventExternalizationConfiguration configuration) {
 
 		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
 
 		this.configuration = configuration;
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.ConditionalEventListener#supports(java.lang.Object)
-	 */
-	@Override
-	public boolean supports(Object event) {
-		return configuration.supports(event);
 	}
 
 	/**
