@@ -26,7 +26,6 @@ import java.util.concurrent.CompletableFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Primary;
 import org.springframework.kafka.core.KafkaOperations;
@@ -35,10 +34,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author Roland Beisel
+ * @author Oliver Drotbohm
  */
 @EnableScheduling
-@SpringBootApplication
-public class TestApplication {
+public class TestApplication extends Application {
 
 	private static final Logger logger = LoggerFactory.getLogger(TestApplication.class);
 
