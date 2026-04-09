@@ -17,6 +17,7 @@ package org.springframework.modulith.test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -296,11 +297,24 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 		var candidates = new ArrayList<>(additionalTypes);
 		candidates.add(testClass);
 
-		return candidates.stream()
-				.<Class<?>> map(ModuleTestExecution::lookupSpringBootApplicationAnnotation)
-				.findFirst()
+		return findClassAnnotatedWithAtSpringBoot(candidates)
+				.or(() -> scanForClassAnnotatedWithSpringBoot(candidates))
 				.orElseThrow(() -> new IllegalStateException("Couldn't find @SpringBootApplication traversing %s."
 						.formatted(candidates.stream().map(Class::getName).collect(Collectors.joining(", ")))));
+	}
+
+	private static Optional<Class<?>> findClassAnnotatedWithAtSpringBoot(Collection<Class<?>> candidates) {
+
+		return candidates.stream()
+				.filter(it -> AnnotatedElementUtils.hasAnnotation(it, SpringBootApplication.class))
+				.findFirst();
+	}
+
+	private static Optional<Class<?>> scanForClassAnnotatedWithSpringBoot(Collection<Class<?>> candidates) {
+
+		return candidates.stream()
+				.<Class<?>> map(ModuleTestExecution::lookupSpringBootApplicationAnnotation)
+				.findFirst();
 	}
 
 	private static Class<?> lookupSpringBootApplicationAnnotation(Class<?> clazz) {
