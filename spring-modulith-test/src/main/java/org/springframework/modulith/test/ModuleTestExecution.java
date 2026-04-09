@@ -293,11 +293,24 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		var types = ObjectUtils.addObjectToArray(annotation.classes(), testClass);
 
-		return Arrays.stream(types)
-				.<Class<?>> map(ModuleTestExecution::lookupSpringBootApplicationAnnotation)
-				.findFirst()
+		return findClassAnnotatedWithAtSpringBoot(types)
+				.or(() -> scanForClassAnnotatedWithSpringBoot(types))
 				.orElseThrow(() -> new IllegalStateException("Couldn't find @SpringBootApplication traversing %s."
 						.formatted(Arrays.stream(types).map(Class::getName).collect(Collectors.joining(", ")))));
+	}
+
+	private static Optional<Class<?>> findClassAnnotatedWithAtSpringBoot(Class<?>[] candidates) {
+
+		return Arrays.stream(candidates)
+				.filter(it -> AnnotatedElementUtils.hasAnnotation(it, SpringBootApplication.class))
+				.findFirst();
+	}
+
+	private static Optional<Class<?>> scanForClassAnnotatedWithSpringBoot(Class<?>[] candidates) {
+
+		return Arrays.stream(candidates)
+				.<Class<?>> map(ModuleTestExecution::lookupSpringBootApplicationAnnotation)
+				.findFirst();
 	}
 
 	private static Class<?> lookupSpringBootApplicationAnnotation(Class<?> clazz) {
