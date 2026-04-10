@@ -42,7 +42,7 @@ public class EventExternalizerModuleListener extends TransportAwareEventExternal
 	private final EventExternalizationConfiguration configuration;
 
 	/**
-	 * Creates a new {@link EventExternalizerEventListener} for the given {@link EventExternalizationConfiguration} and
+	 * Creates a new {@link EventExternalizerModuleListener} for the given {@link EventExternalizationConfiguration} and
 	 * {@link EventExternalizationTransport}.
 	 *
 	 * @param configuration must not be {@literal null}.

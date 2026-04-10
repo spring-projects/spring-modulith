@@ -43,8 +43,8 @@ import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
- * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to a Spring Messaging
- * {@link MessageChannel}.
+ * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
+ * externalize events to a Spring Messaging {@link MessageChannel}.
  *
  * @author Josh Long
  * @author Oliver Drotbohm

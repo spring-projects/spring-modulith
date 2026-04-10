@@ -32,7 +32,7 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  * @since 1.1
- * @deprecated since 2.1. Please use {@link EventExternalizerEventListener} instead.
+ * @deprecated since 2.1. Please use {@link EventExternalizerModuleListener} instead.
  */
 @Component
 @Deprecated(since = "2.1", forRemoval = true)

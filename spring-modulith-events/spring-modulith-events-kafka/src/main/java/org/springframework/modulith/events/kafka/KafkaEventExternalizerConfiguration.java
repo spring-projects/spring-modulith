@@ -45,7 +45,8 @@ import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
- * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to Kafka.
+ * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
+ * externalize events to Kafka.
  *
  * @author Oliver Drotbohm
  * @since 1.1

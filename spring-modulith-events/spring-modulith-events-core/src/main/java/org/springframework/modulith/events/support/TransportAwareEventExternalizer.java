@@ -35,7 +35,7 @@ abstract class TransportAwareEventExternalizer extends EventExternalizerSupport 
 
 	/**
 	 * Creates a new {@link DelegatingEventExternalizer} for the given {@link EventExternalizationConfiguration} and
-	 * {@link BiFunction} implementing the actual externalization.
+	 * {@link EventExternalizationTransport} implementing the actual externalization.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.

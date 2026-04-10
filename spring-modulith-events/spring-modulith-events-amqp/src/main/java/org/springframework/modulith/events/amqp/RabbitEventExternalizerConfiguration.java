@@ -42,7 +42,8 @@ import org.springframework.modulith.events.support.EventExternalizerModuleListen
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
- * Auto-configuration to set up a {@link DelegatingEventExternalizer} to externalize events to RabbitMQ.
+ * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
+ * externalize events to RabbitMQ.
  *
  * @author Oliver Drotbohm
  * @since 1.1
