@@ -248,7 +248,9 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			throw new IllegalArgumentException("Number of items to read needs to fit into an integer!");
 		}
 
-		return readMapped(defaultQuery(baseCriteria).limit((int) limit));
+		var query = defaultQuery(baseCriteria);
+
+		return readMapped(limit != -1 ? query.limit((int) limit) : query);
 	}
 
 	/*

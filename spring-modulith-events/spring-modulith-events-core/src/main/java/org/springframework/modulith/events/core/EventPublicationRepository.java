@@ -211,12 +211,17 @@ public interface EventPublicationRepository {
 
 	static class FailedCriteria {
 
-		public static FailedCriteria ALL = new FailedCriteria(-1, null);
+		public static final FailedCriteria ALL = new FailedCriteria(-1, null);
 
 		private final long maxItemsToRead;
 		private final @Nullable Instant publicationDateReference;
 
 		private FailedCriteria(long maxItemsToRead, @Nullable Instant publicationDateReference) {
+
+			Assert.isTrue(maxItemsToRead == -1 || maxItemsToRead > 0,
+					() -> "Maximum number of items to read must be -1 (unlimited) or positive, but was: %d!"
+							.formatted(maxItemsToRead));
+
 			this.maxItemsToRead = maxItemsToRead;
 			this.publicationDateReference = publicationDateReference;
 		}
@@ -237,13 +242,19 @@ public interface EventPublicationRepository {
 		}
 
 		/**
-		 * The number of {@link org.springframework.modulith.events.EventPublication}s to read. Return -1 to indicate you
-		 * want to read all items.
+		 * The number of {@link org.springframework.modulith.events.EventPublication}s to read. {@code -1} reads all
+		 * matching items (no limit); positive values cap how many rows are read. A limit of {@code 0} is not supported —
+		 * callers that have nothing to read should not invoke {@link #findFailedPublications(FailedCriteria)}.
+		 *
+		 * @return {@code -1} or a positive value
 		 */
 		public long getMaxItemsToRead() {
 			return maxItemsToRead;
 		}
 
+		/**
+		 * @param itemsToRead {@code -1} for no limit, or a positive value
+		 */
 		public FailedCriteria withItemsToRead(long itemsToRead) {
 			return new FailedCriteria(itemsToRead, publicationDateReference);
 		}
