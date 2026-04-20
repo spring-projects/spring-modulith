@@ -157,7 +157,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 			DELETE
 			FROM %s
 			WHERE
-					COMPLETION_DATE IS NOT NULL OR STATUS = 'PROCESSING'
+					COMPLETION_DATE IS NOT NULL OR STATUS IS NOT NULL AND STATUS = 'COMPLETED'
 			""";
 
 	private static final String SQL_STATEMENT_DELETE_COMPLETED_BEFORE = """
