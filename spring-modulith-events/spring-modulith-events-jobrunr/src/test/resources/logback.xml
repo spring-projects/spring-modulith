@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration debug="false">
+
+<!--	<property name="CONSOLE_LOG_PATTERN" value="%clr(%d{HH:mm:ss.SSS}){faint} %clr([%replace(%replace(%X{traceId:-}){'^(.{0,6}).*', '$1'}){'^$', ' none '}]){magenta} %clr(%1.-1level){green} - %8.8t : %m%n%wEx" />-->
+
+	<statusListener class="ch.qos.logback.core.status.NopStatusListener" />
+
+	<include resource="org/springframework/boot/logging/logback/defaults.xml" />
+	<include resource="org/springframework/boot/logging/logback/console-appender.xml" />
+
+	<root level="INFO">
+		<appender-ref ref="CONSOLE" />
+	</root>
+
+	<logger name="org.h2" level="DEBUG" />
+	<logger name="org.jobrunr" level="DEBUG" />
+	<logger name="org.springframework.transaction" level="DEBUG" />
+
+</configuration>

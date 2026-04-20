@@ -28,9 +28,11 @@ import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 
 /**
+ * Auto-configuration to set up event externalization via JobRunr.
+ *
  * @author Oliver Drotbohm
+ * @since 2.1
  */
-
 @AutoConfiguration
 @AutoConfigureAfter(EventExternalizationAutoConfiguration.class)
 @ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")

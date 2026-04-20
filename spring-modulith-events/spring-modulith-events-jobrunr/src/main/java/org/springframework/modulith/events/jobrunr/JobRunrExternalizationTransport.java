@@ -16,7 +16,10 @@
 package org.springframework.modulith.events.jobrunr;
 
 /**
+ * SPI for broker implementations to eventually externalize a given event.
+ *
  * @author Oliver Drotbohm
+ * @since 2.1
  */
 public interface JobRunrExternalizationTransport {
 

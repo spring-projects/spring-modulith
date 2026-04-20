@@ -1,1 +1,2 @@
 org.springframework.modulith.events.jobrunr.JobRunrEventExternalizationAutoConfiguration
+org.springframework.modulith.events.jobrunr.ModulithJobRunrSqlStorageProviderAutoConfiguration

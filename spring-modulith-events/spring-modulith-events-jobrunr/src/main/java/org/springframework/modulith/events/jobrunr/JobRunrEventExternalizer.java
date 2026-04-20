@@ -22,10 +22,14 @@ import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.ConditionalEventListener;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
 /**
+ * A {@link ConditionalEventListener} scheduling a JobRunr job to eventually externalize the received event.
+ *
  * @author Oliver Drotbohm
+ * @since 2.1
  */
 class JobRunrEventExternalizer
 		implements ApplicationListener<PayloadApplicationEvent<?>>, ConditionalEventListener {
@@ -68,6 +72,7 @@ class JobRunrEventExternalizer
 	 * @see org.springframework.context.ApplicationListener#onApplicationEvent(org.springframework.context.ApplicationEvent)
 	 */
 	@Override
+	@Transactional
 	public void onApplicationEvent(PayloadApplicationEvent<?> event) {
 
 		var payload = event.getPayload();
