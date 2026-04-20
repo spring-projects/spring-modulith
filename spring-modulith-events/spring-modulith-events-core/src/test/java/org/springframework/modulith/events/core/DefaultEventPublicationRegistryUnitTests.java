@@ -23,6 +23,7 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -30,6 +31,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.modulith.events.EventPublication.Status;
+import org.springframework.modulith.events.ResubmissionOptions;
 
 /**
  * Unit tests for {@link DefaultEventPublicationRegistry}.
@@ -97,6 +100,34 @@ class DefaultEventPublicationRegistryUnitTests {
 
 		assertThat(inProgress.getPublication(firstEvent, identifier)).containsSame(first);
 		assertThat(inProgress.getPublication(secondEvent, identifier)).containsSame(second);
+	}
+
+	@Test // GH-1650
+	void processFailedPublicationsCapsReadLimitByMaxInFlightHeadroomNotBatchSize() {
+
+		when(repository.countByStatus(Status.RESUBMITTED)).thenReturn(100);
+		when(repository.findFailedPublications(any())).thenReturn(Collections.emptyList());
+
+		var registry = createRegistry(Instant.now());
+
+		registry.processFailedPublications(
+				ResubmissionOptions.defaults().withMaxInFlight(Integer.MAX_VALUE).withBatchSize(100), __ -> {});
+
+		verify(repository).findFailedPublications(argThat(criteria -> criteria.getMaxItemsToRead() == 100));
+	}
+
+	@Test // GH-1650
+	void processFailedPublicationsUsesRemainingInFlightWhenLessThanBatchSize() {
+
+		when(repository.countByStatus(Status.RESUBMITTED)).thenReturn(100);
+		when(repository.findFailedPublications(any())).thenReturn(Collections.emptyList());
+
+		var registry = createRegistry(Instant.now());
+
+		registry.processFailedPublications(
+				ResubmissionOptions.defaults().withMaxInFlight(150).withBatchSize(100), __ -> {});
+
+		verify(repository).findFailedPublications(argThat(criteria -> criteria.getMaxItemsToRead() == 50));
 	}
 
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {

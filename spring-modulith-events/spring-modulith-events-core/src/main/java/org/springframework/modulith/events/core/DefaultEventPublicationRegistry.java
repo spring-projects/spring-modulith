@@ -236,9 +236,12 @@ public class DefaultEventPublicationRegistry
 			return;
 		}
 
+		var remainingHeadroom = options.getMaxInFlight() - currentlyResubmitted;
+		var itemsToRead = Math.min(options.getBatchSize(), remainingHeadroom);
+
 		var criteria = FailedCriteria.ALL
 				.withPublicationsPublishedBefore(clock.instant().minus(options.getMinAge()))
-				.withItemsToRead(Math.min(options.getBatchSize(), options.getBatchSize() - currentlyResubmitted));
+				.withItemsToRead(itemsToRead);
 
 		processPublications(events.findFailedPublications(criteria), options.getFilter(), consumer);
 	}
