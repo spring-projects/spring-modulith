@@ -261,6 +261,38 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 
 		}
 
+		@Test // GH-1652
+		void deleteCompletedPublicationsDoesNotRemoveProcessingPublications() {
+
+			assumeFalse(properties.isArchiveCompletion());
+
+			var testEvent1 = new TestEvent("abc");
+			var serializedEvent1 = "{\"eventId\":\"abc\"}";
+			var testEvent2 = new TestEvent("def");
+			var serializedEvent2 = "{\"eventId\":\"def\"}";
+
+			when(serializer.serialize(testEvent1)).thenReturn(serializedEvent1);
+			when(serializer.deserialize(serializedEvent1, TestEvent.class)).thenReturn(testEvent1);
+			when(serializer.serialize(testEvent2)).thenReturn(serializedEvent2);
+			when(serializer.deserialize(serializedEvent2, TestEvent.class)).thenReturn(testEvent2);
+
+			var publication1 = repository.create(TargetEventPublication.of(testEvent1, TARGET_IDENTIFIER));
+			var publication2 = repository.create(TargetEventPublication.of(testEvent2, TARGET_IDENTIFIER));
+
+			repository.markCompleted(publication1, Instant.now());
+			repository.markProcessing(publication2.getIdentifier());
+
+			repository.deleteCompletedPublications();
+
+			assertThat(repository.findIncompletePublications())
+					.hasSize(1)
+					.element(0)
+					.satisfies(it -> {
+						assertThat(it.getEvent()).isEqualTo(testEvent2);
+						assertThat(it.getStatus()).isEqualTo(Status.PROCESSING);
+					});
+		}
+
 		@Test // GH-251
 		void shouldDeleteCompletedEventsBefore() {
 
