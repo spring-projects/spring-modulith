@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jspecify.annotations.Nullable;
@@ -76,7 +77,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
 	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
 
-	private final Map<ResolvableType, TransactionalEventListeners> listenerCache = new ConcurrentReferenceHashMap<>();
+	private final Map<CacheKey, TransactionalEventListeners> cache = new ConcurrentReferenceHashMap<>();
 	private final Supplier<EventPublicationRegistry> registry;
 	private final Supplier<Environment> environment;
 
@@ -114,35 +115,34 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 	public void multicastEvent(ApplicationEvent event, @Nullable ResolvableType eventType) {
 
 		var type = eventType == null ? ResolvableType.forInstance(event) : eventType;
-		var listeners = getApplicationListeners(event, type);
+		var candidates = super.getApplicationListeners(event, type);
 
-		if (listeners.isEmpty()) {
+		if (candidates.isEmpty()) {
 			return;
 		}
 
-		listenerCache
-				.computeIfAbsent(type, __ -> new TransactionalEventListeners(listeners, environment))
-				.ifPresent(it -> storePublications(it, getEventToPersist(event)));
+		var eventToPersist = getEventToPersist(event);
 
-		for (ApplicationListener listener : listeners) {
+		// Find all listeners that will need to be invoked
+		var matchingListeners = candidates.stream() //
+				.filter(it -> matches(event, eventToPersist, it)) //
+				.toList();
+
+		if (matchingListeners.isEmpty()) {
+			return;
+		}
+
+		// From the candidates find the transactional ones and cache them by source and target type
+		cache.computeIfAbsent(new CacheKey(type, getSourceType(event)),
+				__ -> new TransactionalEventListeners(candidates, environment))
+
+				// Make sure we honor the by-event instance evaluated conditions
+				.filter(matchingListeners::contains)
+				.ifPresent(stream -> storePublications(stream, eventToPersist));
+
+		for (ApplicationListener listener : matchingListeners) {
 			listener.onApplicationEvent(event);
 		}
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.context.event.AbstractApplicationEventMulticaster#getApplicationListeners(org.springframework.context.ApplicationEvent, org.springframework.core.ResolvableType)
-	 */
-	@Override
-	protected Collection<ApplicationListener<?>> getApplicationListeners(ApplicationEvent event,
-			ResolvableType eventType) {
-
-		Object eventToPersist = getEventToPersist(event);
-
-		return super.getApplicationListeners(event, eventType)
-				.stream()
-				.filter(it -> matches(event, eventToPersist, it))
-				.toList();
 	}
 
 	/*
@@ -202,8 +202,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 
 	private void invokeTargetListener(TargetEventPublication publication) {
 
-		var listeners = new TransactionalEventListeners(
-				getApplicationListeners(), environment);
+		var listeners = new TransactionalEventListeners(getApplicationListeners(), environment);
 
 		listeners.stream() //
 				.filter(it -> publication.isIdentifiedBy(PublicationTargetIdentifier.of(it.getListenerId()))) //
@@ -251,6 +250,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				: event;
 	}
 
+	private static @Nullable Class<?> getSourceType(ApplicationEvent event) {
+
+		var source = event.getSource();
+
+		return source != null ? source.getClass() : null;
+	}
+
 	private static boolean matches(ApplicationEvent event, Object payload, ApplicationListener<?> listener) {
 
 		// Verify general listener matching by eagerly evaluating the condition
@@ -278,6 +284,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 		}
 
 		return true;
+	}
+
+	private record CacheKey(ResolvableType eventType, @Nullable Class<?> sourceType) {
+
+		private CacheKey {
+			Assert.notNull(eventType, "Event type must not be null");
+		}
 	}
 
 	/**
@@ -324,6 +337,10 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 					.toList();
 		}
 
+		private TransactionalEventListeners(List<TransactionalApplicationListener<ApplicationEvent>> listeners) {
+			this.listeners = listeners;
+		}
+
 		/**
 		 * Invokes the given {@link Consumer} for all transactional event listeners.
 		 *
@@ -348,6 +365,13 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 			if (!listeners.isEmpty()) {
 				metadata.accept(listeners.stream());
 			}
+		}
+
+		public TransactionalEventListeners filter(
+				Predicate<? super TransactionalApplicationListener<ApplicationEvent>> filter) {
+
+			return listeners.stream().filter(filter)
+					.collect(Collectors.collectingAndThen(Collectors.toUnmodifiableList(), TransactionalEventListeners::new));
 		}
 
 		/**

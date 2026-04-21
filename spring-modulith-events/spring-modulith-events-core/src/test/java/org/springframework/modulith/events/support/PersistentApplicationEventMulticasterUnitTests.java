@@ -22,25 +22,28 @@ import static org.springframework.modulith.events.support.PersistentApplicationE
 
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.EventListenerMethodProcessor;
-import org.springframework.core.ResolvableType;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.env.MockEnvironment;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
+import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster.TransactionalEventListeners;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
 import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.transaction.event.TransactionalEventListener;
+import org.springframework.transaction.event.TransactionalEventListenerFactory;
 import org.springframework.util.ReflectionUtils;
 
 /**
@@ -92,19 +95,34 @@ class PersistentApplicationEventMulticasterUnitTests {
 		verify(registry).processIncompletePublications(any(), any(), any());
 	}
 
-	@Test // GH-277
+	@Test // GH-277, GH-1654
 	void honorsListenerCondition() throws Exception {
 
 		try (var ctx = new AnnotationConfigApplicationContext()) {
 
 			ctx.addBeanFactoryPostProcessor(new EventListenerMethodProcessor());
+			ctx.registerBean(TransactionalEventListenerFactory.class, TransactionalEventListenerFactory::new);
 			ctx.registerBean("applicationEventMulticaster", ApplicationEventMulticaster.class, () -> multicaster);
-			ctx.registerBean("conditionalListener", ConditionalListener.class);
+			ctx.registerBean("unconditionalListener", UnconditionalListener.class, UnconditionalListener::new);
+			ctx.registerBean("conditionalListener", ConditionalListener.class, ConditionalListener::new);
 			ctx.refresh();
 
-			assertListenerSelected(new SampleEvent(true), true);
-			assertListenerSelected(new SampleEvent(false), false);
+			multicast(new SampleEvent(false));
+			multicast(new SampleEvent(true));
+
+			@SuppressWarnings("unchecked")
+			ArgumentCaptor<Stream<PublicationTargetIdentifier>> captor = ArgumentCaptor.forClass(Stream.class);
+			verify(registry, times(2)).store(any(), captor.capture());
+
+			var allValues = captor.getAllValues();
+
+			assertThat(allValues.get(0).count()).isEqualTo(1L);
+			assertThat(allValues.get(1).count()).isEqualTo(2L);
 		}
+	}
+
+	private void multicast(Object event) {
+		multicaster.multicastEvent(new PayloadApplicationEvent<>(this, event));
 	}
 
 	@Test // GH-726
@@ -170,19 +188,26 @@ class PersistentApplicationEventMulticasterUnitTests {
 		return new TransactionalApplicationListenerMethodAdapter(type.getName(), type, method);
 	}
 
-	private void assertListenerSelected(SampleEvent event, boolean expected) {
+	@Component
+	static class UnconditionalListener {
 
-		var listeners = multicaster.getApplicationListeners(new PayloadApplicationEvent<>(this, event),
-				ResolvableType.forClass(event.getClass()));
+		boolean invoked = false;
 
-		assertThat(listeners).hasSize(expected ? 1 : 0);
+		@TransactionalEventListener
+		void on(SampleEvent event) {
+			this.invoked = true;
+		}
 	}
 
 	@Component
 	static class ConditionalListener {
 
+		boolean invoked = false;
+
 		@TransactionalEventListener(condition = "#event.supported")
-		void on(SampleEvent event) {}
+		void on(SampleEvent event) {
+			this.invoked = true;
+		}
 	}
 
 	@Component
