@@ -2,6 +2,7 @@ archunit=ArchUnit
 jgit=jGit
 jmolecules-bom=jMolecules
 jmolecules=jMolecules
+lombok=Lombok
 micrometer=Micrometer
 micrometer-tracing=Micrometer Tracing
 mongodb=MongoDB
