@@ -55,7 +55,7 @@
 
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-rabbitmq</artifactId>
+			<artifactId>spring-boot-amqp</artifactId>
 			<optional>true</optional>
 		</dependency>
 
