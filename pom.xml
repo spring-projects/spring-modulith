@@ -35,7 +35,7 @@
 
 	<properties>
 
-		<archunit.version>1.4.1</archunit.version>
+		<archunit.version>1.4.2</archunit.version>
 		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
 		<cute.version>1.8.0</cute.version>
 		<errorprone.version>2.36.0</errorprone.version>
