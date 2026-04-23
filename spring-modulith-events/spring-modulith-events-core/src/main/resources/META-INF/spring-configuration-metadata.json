@@ -61,10 +61,21 @@
 			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
 		},
 		{
-			"name": "spring.modulith.events.staleness.resubmission",
+			"name": "spring.modulith.events.staleness.resubmitted",
 			"type": "java.time.Duration",
 			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#RESUBMITTED} will be considered stale.",
 			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
+		},
+		{
+			"name": "spring.modulith.events.staleness.resubmission",
+			"type": "java.time.Duration",
+			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#RESUBMITTED} will be considered stale.",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties",
+			"deprecation": {
+				"replacement": "spring.modulith.events.staleness.resubmitted", 
+				"reason": "To align with the publication state. To be removed in 2.2.",
+				"since" : "2.1"
+			}
 		}
 	]
 }
