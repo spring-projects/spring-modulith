@@ -23,6 +23,7 @@ import java.lang.reflect.Method;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.context.event.EventListener;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -45,9 +46,12 @@ class ApplicationModuleListenerUnitTests {
 	@Test // GH-518
 	void exposesConditionToAdapter() throws Exception {
 
-		var adapter = new CustomAdapter("someName", Sample.class.getDeclaredMethod("someMethod", Object.class));
+		var adapter = new ApplicationListenerMethodAdapter("someName", Sample.class,
+				Sample.class.getDeclaredMethod("someMethod", Object.class));
 
-		assertThat(adapter.getCondition()).isEqualTo("#{false}");
+		var condition = (String) ReflectionTestUtils.invokeMethod(adapter, "getCondition");
+
+		assertThat(condition).isEqualTo("#{false}");
 	}
 
 	@Test // GH-858
@@ -72,15 +76,6 @@ class ApplicationModuleListenerUnitTests {
 
 		public CustomAdapter(String beanName, Method method) {
 			super(beanName, method.getDeclaringClass(), method);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see org.springframework.context.event.ApplicationListenerMethodAdapter#getCondition()
-		 */
-		@Override
-		public String getCondition() {
-			return super.getCondition();
 		}
 	}
 }
