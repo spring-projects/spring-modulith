@@ -34,7 +34,7 @@ import org.springframework.util.Assert;
 public class StalenessProperties implements Staleness {
 
 	public static StalenessProperties DEFAULTS = new StalenessProperties(null, null, null,
-			null);
+			null, null);
 
 	/**
 	 * Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as
@@ -52,7 +52,7 @@ public class StalenessProperties implements Staleness {
 	 * Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as
 	 * {@value org.springframework.modulith.events.EventPublication.Status#RESUBMITTED} will be considered stale.
 	 */
-	private final Duration resubmission;
+	private final Duration resubmitted;
 
 	/**
 	 * Configures the {@link Duration} to check for stale event publications. Defaults to one minute.
@@ -63,12 +63,13 @@ public class StalenessProperties implements Staleness {
 	StalenessProperties(
 			@Nullable Duration published,
 			@Nullable Duration processing,
+			@Nullable Duration resubmitted,
 			@Nullable Duration resubmission,
 			@Nullable Duration checkIntervall) {
 
 		this.published = published == null ? Duration.ZERO : published;
 		this.processing = processing == null ? Duration.ZERO : processing;
-		this.resubmission = resubmission == null ? Duration.ZERO : resubmission;
+		this.resubmitted = resubmitted == null ? resubmission == null ? Duration.ZERO : resubmission : resubmitted;
 		this.checkIntervall = checkIntervall == null ? Duration.ofMinutes(1) : checkIntervall;
 	}
 
@@ -76,7 +77,7 @@ public class StalenessProperties implements Staleness {
 
 		return !published.equals(Duration.ZERO)
 				|| !processing.equals(Duration.ZERO)
-				|| !resubmission.equals(Duration.ZERO);
+				|| !resubmitted.equals(Duration.ZERO);
 	}
 
 	Duration getCheckIntervall() {
@@ -95,7 +96,7 @@ public class StalenessProperties implements Staleness {
 		return switch (status) {
 			case PUBLISHED -> published;
 			case PROCESSING -> processing;
-			case RESUBMITTED -> resubmission;
+			case RESUBMITTED -> resubmitted;
 			default -> Duration.ZERO;
 		};
 	}
