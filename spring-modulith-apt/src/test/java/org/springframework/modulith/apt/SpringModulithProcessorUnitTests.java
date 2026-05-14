@@ -24,8 +24,11 @@ import io.toolisticon.cute.CuteApi.BlackBoxTestSourceFilesAndProcessorInterface;
 import io.toolisticon.cute.CuteApi.DoCustomAssertions;
 
 import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.json.BasicJsonParser;
 
 import com.jayway.jsonpath.JsonPath;
 
@@ -69,6 +72,27 @@ class SpringModulithProcessorUnitTests {
 		assertThatNoException().isThrownBy(() -> {
 			assertSucceded(getSourceFile("SampleInterface"));
 		});
+	}
+
+	@Test // GH-1685
+	void javadocWithDoubleQuotesProducesValidJson() throws Exception {
+
+		assertSucceded(getSourceFile("SampleComponentWithQuotes"));
+
+		var content = Files.readString(new File(JSON_LOCATION).toPath(), StandardCharsets.UTF_8);
+
+		assertThatNoException()
+				.as("BasicJsonParser must be able to parse the generated JSON without errors")
+				.isThrownBy(() -> new BasicJsonParser().parseList(content));
+
+		var context = JsonPath.parse(new File(JSON_LOCATION));
+		var comment = context.read(
+				"$[?(@.name == 'example.SampleComponentWithQuotes')].methods[0].comment",
+				String[].class)[0];
+
+		assertThat(comment)
+				.as("Javadoc comment must preserve literal double-quote characters")
+				.contains("\"foo\"", "\"bar\"");
 	}
 
 	@Test // GH-1430
