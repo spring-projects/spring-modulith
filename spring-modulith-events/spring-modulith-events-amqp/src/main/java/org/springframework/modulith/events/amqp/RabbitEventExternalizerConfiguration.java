@@ -19,6 +19,7 @@ import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.concurrent.CompletableFuture;
 
+import java.util.concurrent.ExecutionException;
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,7 +93,16 @@ class RabbitEventExternalizerConfiguration {
 
 				var externalizer = factory.forTransport(transport);
 
-				return (payload, metadata) -> externalizer.externalize(payload);
+				return (payload, metadata) -> {
+					try {
+						externalizer.externalize(payload).get();
+					} catch (InterruptedException e) {
+						Thread.currentThread().interrupt();
+						throw new RuntimeException(e);
+					} catch (ExecutionException e) {
+						throw new RuntimeException(e.getCause());
+					}
+				};
 			}
 		}
 

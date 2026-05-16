@@ -18,6 +18,7 @@ package org.springframework.modulith.events.jms;
 import io.namastack.outbox.handler.OutboxHandler;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
@@ -86,13 +87,22 @@ class JmsEventExternalizerConfiguration {
 		@ConditionalOnClass(OutboxHandler.class)
 		class NamastackOutboxAutoConfiguration {
 
-			@Bean
-			OutboxHandler namastackJmsOutboxExternalizer() {
+		@Bean
+		OutboxHandler namastackJmsOutboxExternalizer() {
 
-				logger.debug("Registering Namastack domain event outbox externalization to JMS.");
+			logger.debug("Registering Namastack domain event outbox externalization to JMS.");
 
-				return (payload, metadata) -> externalizer.externalize(payload);
-			}
+			return (payload, metadata) -> {
+				try {
+					externalizer.externalize(payload).get();
+				} catch (InterruptedException e) {
+					Thread.currentThread().interrupt();
+					throw new RuntimeException(e);
+				} catch (ExecutionException e) {
+					throw new RuntimeException(e.getCause());
+				}
+			};
+		}
 		}
 
 		@AutoConfiguration
