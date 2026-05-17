@@ -30,8 +30,10 @@ import java.time.temporal.WeekFields;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
 import org.springframework.modulith.moments.HourHasPassed;
+import org.springframework.modulith.moments.MinuteHasPassed;
 import org.springframework.modulith.moments.MonthHasPassed;
 import org.springframework.modulith.moments.QuarterHasPassed;
+import org.springframework.modulith.moments.SecondHasPassed;
 import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
@@ -42,6 +44,7 @@ import org.springframework.util.Assert;
  * Core component to publish passage-of-time events.
  *
  * @author Oliver Drotbohm
+ * @author John Cunliffe
  */
 public class Moments implements Now {
 
@@ -70,6 +73,28 @@ public class Moments implements Now {
 		this.clock = clock;
 		this.events = events;
 		this.properties = properties;
+	}
+
+	/**
+	 * Triggers event publication every second.
+	 */
+	@Scheduled(cron = "* * * * * *")
+	void everySecond() {
+
+		if (properties.isSecondly()) {
+			emitSecondEventFor(now().minusSeconds(1).truncatedTo(ChronoUnit.SECONDS));
+		}
+	}
+
+	/**
+	 * Triggers event publication every minute.
+	 */
+	@Scheduled(cron = "0 * * * * *")
+	void everyMinute() {
+
+		if (properties.isMinutely()) {
+			emitMinuteEventFor(now().minusMinutes(1).truncatedTo(ChronoUnit.MINUTES));
+		}
 	}
 
 	/**
@@ -102,15 +127,36 @@ public class Moments implements Now {
 			return this;
 		}
 
-		LocalDateTime current = before.truncatedTo(ChronoUnit.HOURS);
+		boolean secondly = properties.isSecondly();
+		boolean minutely = properties.isMinutely();
 		boolean hourly = properties.isHourly();
 
-		while (current.isBefore(after.truncatedTo(ChronoUnit.HOURS))) {
+		ChronoUnit step = secondly ? ChronoUnit.SECONDS
+				: minutely ? ChronoUnit.MINUTES
+				: ChronoUnit.HOURS;
 
-			LocalDateTime next = hourly ? current.plusHours(1) : current.plusDays(1);
+		LocalDateTime current = before.truncatedTo(step);
+		LocalDateTime stop = after.truncatedTo(step);
 
-			if (hourly) {
-				emitEventsFor(next);
+		while (current.isBefore(stop)) {
+
+			LocalDateTime next = current.plus(1, step);
+
+			if (secondly) {
+				emitSecondEventFor(next.minusSeconds(1).truncatedTo(ChronoUnit.SECONDS));
+				if (current.getMinute() != next.getMinute()) {
+					emitMinuteEventFor(current.truncatedTo(ChronoUnit.MINUTES));
+				}
+				if (current.getHour() != next.getHour()) {
+					emitEventsFor(current.truncatedTo(ChronoUnit.HOURS));
+				}
+			} else if (minutely) {
+				emitMinuteEventFor(next.minusMinutes(1).truncatedTo(ChronoUnit.MINUTES));
+				if (current.getHour() != next.getHour()) {
+					emitEventsFor(current.truncatedTo(ChronoUnit.HOURS));
+				}
+			} else if (hourly) {
+				emitEventsFor(current);
 			}
 
 			if (current.toLocalDate().isBefore(next.toLocalDate())) {
@@ -159,6 +205,14 @@ public class Moments implements Now {
 
 	private void emitEventsFor(LocalDateTime time) {
 		events.publishEvent(HourHasPassed.of(time.truncatedTo(ChronoUnit.HOURS)));
+	}
+
+	private void emitMinuteEventFor(LocalDateTime time) {
+		events.publishEvent(MinuteHasPassed.of(time.truncatedTo(ChronoUnit.MINUTES)));
+	}
+
+	private void emitSecondEventFor(LocalDateTime time) {
+		events.publishEvent(SecondHasPassed.of(time.truncatedTo(ChronoUnit.SECONDS)));
 	}
 
 	private void emitEventsFor(LocalDate date) {
