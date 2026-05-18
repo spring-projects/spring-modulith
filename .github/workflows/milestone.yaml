@@ -34,7 +34,7 @@ jobs:
       run: ./mvnw -B clean deploy -Pci,artifactory
 
     - name: Setup Graphviz
-      uses: ts-graphviz/setup-graphviz@v1
+      uses: ts-graphviz/setup-graphviz@v2
 
     - name: Deploy documentation
       env:
