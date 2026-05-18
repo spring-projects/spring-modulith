@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
@@ -64,5 +65,25 @@ public class OutboxEventExternalizer extends TransportAwareEventExternalizer {
 			events.publishEvent(it);
 			return it;
 		});
+	}
+
+	/**
+	 * Externalizes the given event in a blocking way.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @see #externalize(Object)
+	 */
+	public void externalizeBlocking(Object event) {
+
+		try {
+
+			externalize(event).get();
+
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+			throw new RuntimeException(e);
+		} catch (ExecutionException e) {
+			throw new RuntimeException(e.getCause());
+		}
 	}
 }

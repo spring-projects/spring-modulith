@@ -91,7 +91,7 @@ class SpringMessagingEventExternalizerConfiguration {
 
 				logger.debug("Registering Namastack domain event outbox externalization for Spring Messaging.");
 
-				return (payload, metadata) -> externalizer.externalize(payload);
+				return (payload, metadata) -> externalizer.externalizeBlocking(payload);
 			}
 		}
 
@@ -104,7 +104,7 @@ class SpringMessagingEventExternalizerConfiguration {
 
 				logger.debug("Registering JobRunr domain event outbox externalization for Spring Messaging.");
 
-				return externalizer::externalize;
+				return externalizer::externalizeBlocking;
 			}
 		}
 	}
