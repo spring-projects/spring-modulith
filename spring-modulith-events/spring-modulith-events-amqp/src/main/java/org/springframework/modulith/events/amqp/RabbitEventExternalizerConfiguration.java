@@ -39,6 +39,7 @@ import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTranspo
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.EventExternalizationTransport;
 import org.springframework.modulith.events.support.EventExternalizerModuleListener;
+import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
@@ -73,12 +74,12 @@ class RabbitEventExternalizerConfiguration {
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
 	static class RabbitOutboxConfiguration {
 
-		private final EventExternalizationTransport transport;
+		private final OutboxEventExternalizer externalizer;
 
 		RabbitOutboxConfiguration(EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
-				BeanFactory beanFactory) {
+				BeanFactory beanFactory, OutboxEventExternalizerFactory factory) {
 
-			this.transport = createRabbitTransport(configuration, operations, beanFactory);
+			this.externalizer = factory.forTransport(createRabbitTransport(configuration, operations, beanFactory));
 		}
 
 		@AutoConfiguration
@@ -86,13 +87,11 @@ class RabbitEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler kafkaOutboxExternalizer(OutboxEventExternalizerFactory factory) {
+			OutboxHandler kafkaOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization to RabbitMQ.");
 
-				var externalizer = factory.forTransport(transport);
-
-				return (payload, metadata) -> externalizer.externalize(payload);
+				return (payload, metadata) -> externalizer.externalizeBlocking(payload);
 			}
 		}
 
@@ -101,13 +100,11 @@ class RabbitEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrOutboxExternalizer(OutboxEventExternalizerFactory factory) {
+			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization to RabbitMQ.");
 
-				var externalizer = factory.forTransport(transport);
-
-				return payload -> externalizer.externalize(payload);
+				return payload -> externalizer.externalizeBlocking(payload);
 			}
 		}
 	}

@@ -91,7 +91,7 @@ class JmsEventExternalizerConfiguration {
 
 				logger.debug("Registering Namastack domain event outbox externalization to JMS.");
 
-				return (payload, metadata) -> externalizer.externalize(payload);
+				return (payload, metadata) -> externalizer.externalizeBlocking(payload);
 			}
 		}
 
@@ -104,7 +104,7 @@ class JmsEventExternalizerConfiguration {
 
 				logger.debug("Registering JobRunr domain event outbox externalization to JMS.");
 
-				return externalizer::externalize;
+				return externalizer::externalizeBlocking;
 			}
 		}
 	}

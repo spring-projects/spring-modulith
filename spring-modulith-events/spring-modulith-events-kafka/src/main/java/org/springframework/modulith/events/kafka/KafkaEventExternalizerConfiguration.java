@@ -90,11 +90,11 @@ class KafkaEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler namastackKafkaOutboxExternalizer(OutboxEventExternalizerFactory factory) {
+			OutboxHandler namastackKafkaOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization to Kafka.");
 
-				return (payload, metadata) -> externalizer.externalize(payload);
+				return (payload, metadata) -> externalizer.externalizeBlocking(payload);
 			}
 		}
 
@@ -103,11 +103,11 @@ class KafkaEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrKafkaOutboxExternalizer(OutboxEventExternalizerFactory factory) {
+			JobRunrExternalizationTransport jobRunrKafkaOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization to Kafka.");
 
-				return payload -> externalizer.externalize(payload);
+				return payload -> externalizer.externalizeBlocking(payload);
 			}
 		}
 	}
