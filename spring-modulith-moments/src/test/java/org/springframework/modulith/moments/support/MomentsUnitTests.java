@@ -21,6 +21,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.Year;
@@ -34,8 +35,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
 import org.springframework.modulith.moments.HourHasPassed;
+import org.springframework.modulith.moments.MinuteHasPassed;
 import org.springframework.modulith.moments.MonthHasPassed;
 import org.springframework.modulith.moments.QuarterHasPassed;
+import org.springframework.modulith.moments.SecondHasPassed;
 import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
@@ -45,6 +48,7 @@ import org.springframework.modulith.moments.support.MomentsProperties.Granularit
  * Unit tests for {@link Moments}.
  *
  * @author Oliver Drotbohm
+ * @author John Cunliffe
  */
 class MomentsUnitTests {
 
@@ -55,6 +59,8 @@ class MomentsUnitTests {
 
 	Moments hourly = new Moments(clock, events, MomentsProperties.DEFAULTS);
 	Moments daily = new Moments(clock, events, MomentsProperties.DEFAULTS.withGranularity(Granularity.DAYS));
+	Moments minutely = new Moments(clock, events, MomentsProperties.DEFAULTS.withGranularity(Granularity.MINUTES));
+	Moments secondly = new Moments(clock, events, MomentsProperties.DEFAULTS.withGranularity(Granularity.SECONDS));
 
 	@Test
 	void emitsHourlyEventOnTimeShift() {
@@ -209,5 +215,97 @@ class MomentsUnitTests {
 		}
 
 		return Duration.ofDays(days);
+	}
+
+	@Test
+	void emitsMinutelyEventOnTimeShift() {
+
+		minutely.shiftBy(Duration.ofMinutes(5));
+
+		verify(events, times(5)).publishEvent(any(MinuteHasPassed.class));
+		verify(events, never()).publishEvent(any(SecondHasPassed.class));
+	}
+
+	@Test
+	void minutelyShiftAcrossHourEmitsHourEvent() {
+
+		minutely.shiftBy(Duration.ofMinutes(61));
+
+		verify(events, times(61)).publishEvent(any(MinuteHasPassed.class));
+		verify(events, atLeastOnce()).publishEvent(any(HourHasPassed.class));
+	}
+
+	@Test
+	void emitsSecondlyEventOnTimeShift() {
+
+		secondly.shiftBy(Duration.ofSeconds(3));
+
+		verify(events, times(3)).publishEvent(any(SecondHasPassed.class));
+	}
+
+	@Test
+	void secondlyShiftAcrossMinuteEmitsMinuteEvent() {
+
+		secondly.shiftBy(Duration.ofSeconds(61));
+
+		verify(events, times(61)).publishEvent(any(SecondHasPassed.class));
+		verify(events, atLeastOnce()).publishEvent(any(MinuteHasPassed.class));
+	}
+
+	@Test
+	void hourlyDoesNotEmitMinuteOrSecondEvents() {
+
+		hourly.shiftBy(Duration.ofHours(2));
+
+		verify(events, never()).publishEvent(any(MinuteHasPassed.class));
+		verify(events, never()).publishEvent(any(SecondHasPassed.class));
+	}
+
+	@Test
+	void everyMinuteEmitsOnlyWhenGranularityIsMinutesOrFiner() {
+
+		minutely.everyMinute();
+		verify(events, times(1)).publishEvent(any(MinuteHasPassed.class));
+
+		reset(events);
+
+		hourly.everyMinute();
+		verify(events, never()).publishEvent(any(MinuteHasPassed.class));
+	}
+
+	@Test
+	void everySecondEmitsOnlyWhenGranularityIsSeconds() {
+
+		secondly.everySecond();
+		verify(events, times(1)).publishEvent(any(SecondHasPassed.class));
+
+		reset(events);
+
+		minutely.everySecond();
+		verify(events, never()).publishEvent(any(SecondHasPassed.class));
+	}
+
+	@Test // GH-1688
+	void hourlyShiftEmitsHourHasPassedForThePassedHour() {
+
+		var clock = Clock.fixed(Instant.parse("2026-05-17T10:00:00Z"), ZoneOffset.UTC);
+		var moments = new Moments(clock, events, MomentsProperties.DEFAULTS);
+
+		moments.shiftBy(Duration.ofHours(1));
+
+		verify(events).publishEvent(HourHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 0)));
+	}
+
+	@Test // GH-1688
+	void shiftEmitsEachEventForThePeriodThatActuallyPassed() {
+
+		var clock = Clock.fixed(Instant.parse("2026-05-17T10:59:59Z"), ZoneOffset.UTC);
+		var moments = new Moments(clock, events, MomentsProperties.DEFAULTS.withGranularity(Granularity.SECONDS));
+
+		moments.shiftBy(Duration.ofSeconds(1));
+
+		verify(events).publishEvent(SecondHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 59, 59)));
+		verify(events).publishEvent(MinuteHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 59)));
+		verify(events).publishEvent(HourHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 0)));
 	}
 }
