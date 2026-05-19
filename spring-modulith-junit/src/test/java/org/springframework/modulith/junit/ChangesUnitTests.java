@@ -56,10 +56,13 @@ class ChangesUnitTests {
 		var files = Stream.of(
 
 				// Maven
-				"pom.xml",
+				"pom.xml", "nested/pom.xml",
 
 				// Gradle
-				"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts");
+				"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts",
+				"init.gradle.kts", "nested/build.gradle", "nested/settings.gradle", "nested/gradle.properties",
+				"gradle/libs.versions.toml", "gradle/wrapper/gradle-wrapper.properties", "gradle/my-conventions.gradle.kts",
+				"buildSrc/src/main/kotlin/Dependencies.kt", "build-logic/src/main/kotlin/conventions.gradle.kts");
 
 		return DynamicTest.stream(files, it -> it + " is considered build resource", it -> {
 
@@ -68,6 +71,38 @@ class ChangesUnitTests {
 			assertThat(change.isClasspathResource()).isFalse();
 			assertThat(change.affectsBuildResource()).isTrue();
 		});
+	}
+
+	@Test // GH-1382
+	void shouldBackOffForGradleKotlinDslBuildLogicChanges() {
+
+		var modifiedFilePaths = Stream.of(
+				"buildSrc/src/main/kotlin/Dependencies.kt",
+				"build-logic/src/main/kotlin/conventions.gradle.kts")
+				.map(ModifiedFile::new);
+
+		var result = Changes.of(modifiedFilePaths, OnNoChange.EXECUTE_ALL);
+
+		assertThat(result.hasBuildResourceChanges()).isTrue();
+		assertThat(result).containsExactlyInAnyOrder(
+				new OtherFileChange("buildSrc/src/main/kotlin/Dependencies.kt"),
+				new OtherFileChange("build-logic/src/main/kotlin/conventions.gradle.kts"));
+	}
+
+	@Test // GH-1382
+	void shouldKeepApplicationKotlinSourcesAsSourceChanges() {
+
+		var modifiedFilePaths = Stream.of(
+				"src/main/kotlin/example/Order.kt",
+				"src/test/kotlin/example/OrderTests.kt")
+				.map(ModifiedFile::new);
+
+		var result = Changes.of(modifiedFilePaths, OnNoChange.EXECUTE_ALL);
+
+		assertThat(result.hasBuildResourceChanges()).isFalse();
+		assertThat(result).containsExactlyInAnyOrder(
+				new KotlinSourceChange("example.Order"),
+				new KotlinTestSourceChange("example.OrderTests"));
 	}
 
 	@Test // GH-31, GH-1382

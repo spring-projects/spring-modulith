@@ -432,7 +432,7 @@ Tests will be selected for execution if they reside in either a root module, a m
 The optimization will back off optimizing the execution under the following circumstances:
 
 * The test execution originates from an IDE as we assume the execution is triggered explicitly.
-* The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle(.kts)`, `gradle.properties`, and `settings.gradle(.kts)`).
+* The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle(.kts)`, `gradle.properties`, `settings.gradle(.kts)`, Gradle Kotlin DSL convention plugins, version catalogs, wrapper configuration, and custom build logic).
 * The set of changes contains a change to any classpath resource.
 * The project does not contain a change at all.
 
@@ -442,4 +442,3 @@ This can be customized by setting the xref:appendix.adoc#configuration-propertie
 To optimize the execution in a CI environment, you need to populate the xref:appendix.adoc#configuration-properties[`spring.modulith.test.reference-commit` property] pointing to the commit of the last successful build and make sure that the build checks out all commits up to the reference one.
 The algorithm detecting changes to application modules will then consider all files changed in that delta.
 To override the project modification detection, declare an implementation of `FileModificationDetector` via the xref:appendix.adoc#configuration-properties[`spring.modulith.test.file-modification-detector` property].
-
