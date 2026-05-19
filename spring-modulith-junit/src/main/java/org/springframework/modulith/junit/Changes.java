@@ -181,6 +181,10 @@ public class Changes implements Iterable<Change> {
 		 */
 		static Change of(ModifiedFile file) {
 
+			if (BuildResourceChangeDetector.isBuildResource(file.path())) {
+				return new OtherFileChange(file.path());
+			}
+
 			boolean isJavaSource = file.isJavaSource();
 
 			if (!isJavaSource && !file.isKotlinSource()) {
@@ -303,19 +307,12 @@ public class Changes implements Iterable<Change> {
 		record OtherFileChange(String path) implements Change {
 
 			private static final Collection<String> CLASSPATH_RESOURCES = Set.of("src/main/resources", "src/test/resources");
-			private static final Collection<String> BUILD_FILES = Set.of(
-
-					// Gradle
-					"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts",
-
-					// Maven
-					"pom.xml");
 
 			/**
 			 * Returns whether the change affects a build resource.
 			 */
 			public boolean affectsBuildResource() {
-				return BUILD_FILES.contains(path);
+				return BuildResourceChangeDetector.isBuildResource(path);
 			}
 
 			/*
