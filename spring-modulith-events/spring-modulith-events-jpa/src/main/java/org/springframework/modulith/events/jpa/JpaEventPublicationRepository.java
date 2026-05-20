@@ -423,7 +423,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	public void deletePublications(List<UUID> identifiers) {
 
 		batch(identifiers, DELETE_BATCH_SIZE).forEach(it -> {
-			entityManager.createQuery(DELETE).setParameter(1, identifiers).executeUpdate();
+			entityManager.createQuery(DELETE).setParameter(1, it).executeUpdate();
 		});
 	}
 
