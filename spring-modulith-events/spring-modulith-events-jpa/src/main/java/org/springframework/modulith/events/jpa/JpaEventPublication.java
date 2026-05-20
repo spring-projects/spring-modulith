@@ -78,7 +78,7 @@ public abstract class JpaEventPublication {
 		this.listenerId = listenerId;
 		this.serializedEvent = serializedEvent;
 		this.eventType = eventType;
-		this.status = status != null ? status : completionDate != null ? Status.COMPLETED : Status.PROCESSING;
+		this.status = status != null ? status : Status.PROCESSING;
 		this.lastResubmissionDate = lastResubmissionDate;
 		this.completionAttempts = completionAttempts;
 	}
