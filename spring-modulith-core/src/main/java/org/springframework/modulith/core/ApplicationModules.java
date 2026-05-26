@@ -458,7 +458,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 	}
 
 	/**
-	 * Executes all verifications to be applied and returns {@link Violations} if any occured. Will always execute the
+	 * Executes all verifications to be applied and returns {@link Violations} if any occurred. Will always execute the
 	 * verifications in contrast to {@link #verify()} which just runs once.
 	 *
 	 * @return will never be {@literal null}.
@@ -470,7 +470,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	/**
 	 * Executes all verifications to be applied considering the given {@link VerificationOptions} and returns
-	 * {@link Violations} if any occured. Will always execute the verifications in contrast to {@link #verify()} which
+	 * {@link Violations} if any occurred. Will always execute the verifications in contrast to {@link #verify()} which
 	 * just runs once.
 	 *
 	 * @return will never be {@literal null}.
