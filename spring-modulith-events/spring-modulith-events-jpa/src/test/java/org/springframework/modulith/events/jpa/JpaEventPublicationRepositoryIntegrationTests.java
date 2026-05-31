@@ -448,6 +448,26 @@ class JpaEventPublicationRepositoryIntegrationTests {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1683
+		void exposesPersistedStatusOnReload() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			// markFailed issues a JPQL update; clear the persistence context so the
+			// next query loads a fresh entity from the database rather than the
+			// cached, stale version.
+			em.flush();
+			em.clear();
+
+			var reloaded = repository.findFailedPublications(FailedCriteria.ALL.withItemsToRead(10));
+
+			assertThat(reloaded).hasSize(1);
+			assertThat(reloaded.get(0).getStatus()).isEqualTo(Status.FAILED);
+		}
+
 		private List<JpaEventPublication> getIncompletePublications() {
 			return em.createQuery("select p from DefaultJpaEventPublication p", JpaEventPublication.class).getResultList();
 		}
