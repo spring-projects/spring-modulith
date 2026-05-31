@@ -15,7 +15,11 @@
  */
 package org.springframework.modulith.runtime.flyway;
 
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.flywaydb.core.Flyway;
@@ -24,6 +28,7 @@ import org.flywaydb.core.api.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.util.Assert;
@@ -70,9 +75,16 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	static class SpringModulithFlywayCustomizer {
 
 		private final Flyway flyway;
+		private final Predicate<ApplicationModuleIdentifier> migrationFilter;
 
 		SpringModulithFlywayCustomizer(Flyway flyway) {
 			this.flyway = flyway;
+			this.migrationFilter = this::moduleHasMigrations;
+		}
+
+		SpringModulithFlywayCustomizer(Flyway flyway, Predicate<ApplicationModuleIdentifier> migrationFilter) {
+			this.flyway = flyway;
+			this.migrationFilter = migrationFilter;
 		}
 
 		Stream<Flyway> augment(ApplicationModuleIdentifiers identifiers) {
@@ -80,7 +92,23 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 			var configuration = flyway.getConfiguration();
 			return Stream.concat(Stream.of(ROOT), identifiers.stream())
 					.peek(it -> LOGGER.debug("Executing Flyway migrations for application module {}.", it))
+					.filter(migrationFilter)
 					.map(it -> augmentWithApplicationModule(it, configuration));
+		}
+
+		private boolean moduleHasMigrations(ApplicationModuleIdentifier identifier) {
+			var configuration = flyway.getConfiguration();
+			return Arrays.stream(configuration.getLocations())
+				.map(location -> {
+					try {
+						return new PathMatchingResourcePatternResolver().getResources("%s/%s/*".formatted(location, identifier.toString())).length;
+					} catch (FileNotFoundException e) {
+						return 0;
+					} catch (IOException e) {
+						throw new RuntimeException(e);
+					}
+				})
+				.reduce(0, Integer::sum) > 0;
 		}
 
 		private Flyway augmentWithApplicationModule(ApplicationModuleIdentifier identifier,
