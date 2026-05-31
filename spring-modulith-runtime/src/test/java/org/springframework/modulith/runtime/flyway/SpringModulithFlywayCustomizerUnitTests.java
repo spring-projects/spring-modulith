@@ -31,6 +31,7 @@ import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.NamedExecutable;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
@@ -72,6 +73,28 @@ public class SpringModulithFlywayCustomizerUnitTests {
 		return DynamicTest.stream(Stream.of(first, second, third, fourth, fifth));
 	}
 
+	@Test // GH-1684
+	void dropModulesWithoutMigrations() {
+		var identifiers = ApplicationModuleIdentifiers.of(List.of(
+				ApplicationModuleIdentifier.of("present"),
+				ApplicationModuleIdentifier.of("absent")));
+
+		var result = new SpringModulithFlywayCustomizer(Flyway.configure().load())
+				.augment(identifiers)
+				.toList();
+
+		assertThat(result)
+				.hasSize(2)
+				.satisfies(it -> {
+					assertThat(it.get(0).getConfiguration().getLocations())
+							.extracting(Location::toString)
+							.containsExactly("classpath:db/migration/__root");
+					assertThat(it.get(1).getConfiguration().getLocations())
+							.extracting(Location::toString)
+							.containsExactly("classpath:db/migration/present");
+				});
+	}
+
 	@Builder
 	@ToString
 	@RequiredArgsConstructor
@@ -94,7 +117,7 @@ public class SpringModulithFlywayCustomizerUnitTests {
 				configure = configure.locations(locations.toArray(String[]::new));
 			}
 
-			var result = new SpringModulithFlywayCustomizer(configure.load())
+			var result = new SpringModulithFlywayCustomizer(configure.load(), __ -> true)
 					.augment(createIdentifiers(identifiers));
 
 			var numberOfFlywayInstances = identifiers.size() + 1;
