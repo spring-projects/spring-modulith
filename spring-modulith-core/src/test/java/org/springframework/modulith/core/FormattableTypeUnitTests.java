@@ -1,0 +1,87 @@
+/*
+ * Copyright 2026 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      https://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.springframework.modulith.core;
+
+import static org.assertj.core.api.Assertions.*;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.modulith.core.FormattableType.NonModuleTypeAbbreviation;
+
+/**
+ * Unit tests for {@link FormattableType}.
+ *
+ * @author Oliver Drotbohm
+ */
+class FormattableTypeUnitTests {
+
+	@Test // GH-1713
+	void abbreviatesPackagedType() {
+
+		assertThat(FormattableType.of(String.class).getAbbreviatedFullName()).isEqualTo("j.l.String");
+	}
+
+	@Test // GH-1713
+	void handlesPrimitiveTypeWithoutPackage() {
+
+		assertThat(FormattableType.of(long.class).getAbbreviatedFullName()).isEqualTo("long");
+		assertThat(FormattableType.of(long.class).getFullName()).isEqualTo("long");
+	}
+
+	@Test // GH-1713
+	void handlesVoidTypeWithoutPackage() {
+
+		assertThat(FormattableType.of(void.class).getAbbreviatedFullName()).isEqualTo("void");
+	}
+
+	@Test // GH-1713
+	void abbreviatesPrimitiveTypeForNonModuleType() {
+
+		var module = TestUtils.getApplicationModule("example.springbean");
+
+		var type = FormattableType.of(long.class);
+
+		assertThatNoException()
+				.isThrownBy(() -> type.getAbbreviatedFullName(module, NonModuleTypeAbbreviation.ABBREVIATED));
+
+		assertThat(type.getAbbreviatedFullName(module, NonModuleTypeAbbreviation.ABBREVIATED))
+				.isEqualTo("long");
+
+		assertThat(type.getAbbreviatedFullName(module, NonModuleTypeAbbreviation.FULL_NAME))
+				.isEqualTo("long");
+	}
+
+	@Test // GH-1713
+	void handlesPrimitiveArrayType() {
+
+		assertThat(FormattableType.of(long[].class).getAbbreviatedFullName()).isEqualTo("long[]");
+		assertThat(FormattableType.of(long[].class).getFullName()).isEqualTo("long[]");
+	}
+
+	@Test // GH-1713
+	void handlesReferenceArrayType() {
+
+		assertThat(FormattableType.of(String[].class).getAbbreviatedFullName()).isEqualTo("j.l.String[]");
+		assertThat(FormattableType.of(String[].class).getFullName()).isEqualTo("java.lang.String[]");
+	}
+
+	@Test // GH-1713
+	void handlesMultiDimensionalArrayType() {
+
+		assertThat(FormattableType.of(int[][].class).getAbbreviatedFullName()).isEqualTo("int[][]");
+		assertThat(FormattableType.of(String[][].class).getAbbreviatedFullName()).isEqualTo("j.l.String[][]");
+		assertThat(FormattableType.of(String[][].class).getFullName()).isEqualTo("java.lang.String[][]");
+	}
+}
