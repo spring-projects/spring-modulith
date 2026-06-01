@@ -69,8 +69,14 @@ public class FormattableType {
 		this.type = type;
 		this.abbreviatedName = SingletonSupplier.of(() -> {
 
+			String packageName = ClassUtils.getPackageName(type);
+
+			if (!StringUtils.hasText(packageName)) {
+				return ClassUtils.getShortName(type);
+			}
+
 			String abbreviatedPackage = Stream //
-					.of(ClassUtils.getPackageName(type).split("\\.")) //
+					.of(packageName.split("\\.")) //
 					.map(it -> it.substring(0, 1)) //
 					.collect(Collectors.joining("."));
 
@@ -89,7 +95,7 @@ public class FormattableType {
 
 		Assert.notNull(type, "JavaClass must not be null!");
 
-		return CACHE.computeIfAbsent(type.getName(), FormattableType::new);
+		return of(type.reflect());
 	}
 
 	/**
@@ -99,7 +105,7 @@ public class FormattableType {
 	 * @return will never be {@literal null}.
 	 */
 	public static FormattableType of(Class<?> type) {
-		return CACHE.computeIfAbsent(type.getName(), FormattableType::new);
+		return CACHE.computeIfAbsent(type.getTypeName(), FormattableType::new);
 	}
 
 	/**
