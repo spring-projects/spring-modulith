@@ -1,0 +1,9 @@
+{
+	"groups" : {
+		"spring.modulith" : {
+			"displayName" : "Spring Modulith",
+			"type" : "technology",
+			"priority" : 10
+		}
+	}
+}

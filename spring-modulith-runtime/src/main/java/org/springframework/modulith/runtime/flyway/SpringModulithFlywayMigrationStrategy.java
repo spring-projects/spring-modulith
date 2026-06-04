@@ -15,11 +15,7 @@
  */
 package org.springframework.modulith.runtime.flyway;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.flywaydb.core.Flyway;
@@ -28,7 +24,6 @@ import org.flywaydb.core.api.configuration.Configuration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.flyway.autoconfigure.FlywayMigrationStrategy;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.util.Assert;
@@ -47,17 +42,19 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithFlywayMigrationStrategy.class);
 
 	private final ApplicationModuleIdentifiers identifiers;
+	private final MigrationFilter filter;
 
 	/**
 	 * Creates a new {@link SpringModulithFlywayMigrationStrategy} for the given {@link ApplicationModuleIdentifiers}.
 	 *
 	 * @param identifiers must not be {@literal null}.
 	 */
-	public SpringModulithFlywayMigrationStrategy(ApplicationModuleIdentifiers identifiers) {
+	public SpringModulithFlywayMigrationStrategy(ApplicationModuleIdentifiers identifiers, MigrationFilter filter) {
 
 		Assert.notNull(identifiers, "ApplicationModuleIdentifiers must not be null!");
 
 		this.identifiers = identifiers;
+		this.filter = filter;
 	}
 
 	/*
@@ -67,7 +64,7 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	@Override
 	public void migrate(Flyway flyway) {
 
-		new SpringModulithFlywayCustomizer(flyway)
+		new SpringModulithFlywayCustomizer(flyway, filter)
 				.augment(identifiers)
 				.forEach(Flyway::migrate);
 	}
@@ -75,40 +72,25 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	static class SpringModulithFlywayCustomizer {
 
 		private final Flyway flyway;
-		private final Predicate<ApplicationModuleIdentifier> migrationFilter;
+		private final MigrationFilter migrationFilter;
 
 		SpringModulithFlywayCustomizer(Flyway flyway) {
-			this.flyway = flyway;
-			this.migrationFilter = this::moduleHasMigrations;
+			this(flyway, MigrationFilter.USE_ALL);
 		}
 
-		SpringModulithFlywayCustomizer(Flyway flyway, Predicate<ApplicationModuleIdentifier> migrationFilter) {
+		SpringModulithFlywayCustomizer(Flyway flyway, MigrationFilter filter) {
 			this.flyway = flyway;
-			this.migrationFilter = migrationFilter;
+			this.migrationFilter = filter;
 		}
 
 		Stream<Flyway> augment(ApplicationModuleIdentifiers identifiers) {
 
 			var configuration = flyway.getConfiguration();
+
 			return Stream.concat(Stream.of(ROOT), identifiers.stream())
 					.peek(it -> LOGGER.debug("Executing Flyway migrations for application module {}.", it))
-					.filter(migrationFilter)
+					.filter(it -> migrationFilter.shouldMigrate(it, flyway))
 					.map(it -> augmentWithApplicationModule(it, configuration));
-		}
-
-		private boolean moduleHasMigrations(ApplicationModuleIdentifier identifier) {
-			var configuration = flyway.getConfiguration();
-			return Arrays.stream(configuration.getLocations())
-				.map(location -> {
-					try {
-						return new PathMatchingResourcePatternResolver().getResources("%s/%s/*".formatted(location, identifier.toString())).length;
-					} catch (FileNotFoundException e) {
-						return 0;
-					} catch (IOException e) {
-						throw new RuntimeException(e);
-					}
-				})
-				.reduce(0, Integer::sum) > 0;
 		}
 
 		private Flyway augmentWithApplicationModule(ApplicationModuleIdentifier identifier,

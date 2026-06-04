@@ -33,6 +33,7 @@ import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.NamedExecutable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.runtime.flyway.SpringModulithFlywayMigrationStrategy.SpringModulithFlywayCustomizer;
@@ -41,8 +42,9 @@ import org.springframework.modulith.runtime.flyway.SpringModulithFlywayMigration
  * Unit tests for {@link SpringModulithFlywayCustomizer}.
  *
  * @author Oliver Drotbohm
+ * @author Martin Ahrer
  */
-public class SpringModulithFlywayCustomizerUnitTests {
+class SpringModulithFlywayCustomizerUnitTests {
 
 	@TestFactory // GH-1067
 	Stream<DynamicTest> augmentsLocationWithApplicationModuleIdentifier() {
@@ -75,11 +77,14 @@ public class SpringModulithFlywayCustomizerUnitTests {
 
 	@Test // GH-1684
 	void dropModulesWithoutMigrations() {
+
 		var identifiers = ApplicationModuleIdentifiers.of(List.of(
 				ApplicationModuleIdentifier.of("present"),
 				ApplicationModuleIdentifier.of("absent")));
 
-		var result = new SpringModulithFlywayCustomizer(Flyway.configure().load())
+		var filter = new HasMigrationFiles(new PathMatchingResourcePatternResolver());
+
+		var result = new SpringModulithFlywayCustomizer(Flyway.configure().load(), filter)
 				.augment(identifiers)
 				.toList();
 
@@ -117,7 +122,7 @@ public class SpringModulithFlywayCustomizerUnitTests {
 				configure = configure.locations(locations.toArray(String[]::new));
 			}
 
-			var result = new SpringModulithFlywayCustomizer(configure.load(), __ -> true)
+			var result = new SpringModulithFlywayCustomizer(configure.load())
 					.augment(createIdentifiers(identifiers));
 
 			var numberOfFlywayInstances = identifiers.size() + 1;
