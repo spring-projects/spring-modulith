@@ -20,12 +20,12 @@ jobs:
     steps:
 
     - name: Checkout
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         fetch-depth: 5
 
     - name: Set up JDK 17
-      uses: actions/setup-java@v4
+      uses: actions/setup-java@v5
       with:
         java-version: '17'
         distribution: 'temurin'
@@ -44,7 +44,7 @@ jobs:
         ./mvnw -B antora
 
     - name: Publish Docs
-      uses: spring-io/spring-doc-actions/rsync-antora-reference@v0.0.21
+      uses: spring-io/spring-doc-actions/rsync-antora-reference@v0.0.22
       with:
         docs-username: ${{ secrets.DOCS_USERNAME }}
         docs-host: ${{ secrets.DOCS_HOST }}
@@ -53,7 +53,7 @@ jobs:
         site-path: target/antora/site
 
     - name: Bust Cloudflare Cache
-      uses: spring-io/spring-doc-actions/bust-cloudflare-antora-cache@v0.0.21
+      uses: spring-io/spring-doc-actions/bust-cloudflare-antora-cache@v0.0.22
       with:
         context-root: spring-modulith
         cloudflare-zone-id: ${{ secrets.CLOUDFLARE_ZONE_ID }}
