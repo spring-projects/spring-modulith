@@ -96,7 +96,7 @@ class RabbitEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler kafkaOutboxExternalizer() {
+			OutboxHandler namastackRabbitOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization to RabbitMQ.");
 
@@ -109,7 +109,7 @@ class RabbitEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
+			JobRunrExternalizationTransport jobRunrRabbitOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization to RabbitMQ.");
 
