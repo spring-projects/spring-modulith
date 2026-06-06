@@ -17,13 +17,16 @@ package org.springframework.modulith.events.amqp;
 
 import io.namastack.outbox.handler.OutboxHandler;
 
+import java.util.HashMap;
 import java.util.concurrent.CompletableFuture;
 
 import org.jobrunr.scheduling.JobScheduler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
@@ -31,6 +34,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.core.env.Environment;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
@@ -41,6 +45,7 @@ import org.springframework.modulith.events.support.EventExternalizationTransport
 import org.springframework.modulith.events.support.EventExternalizerModuleListener;
 import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
+import org.springframework.util.Assert;
 
 /**
  * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
@@ -58,6 +63,7 @@ import org.springframework.modulith.events.support.OutboxEventExternalizerFactor
 class RabbitEventExternalizerConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(RabbitEventExternalizerConfiguration.class);
+	private static final String PUBLISHER_CONFIRM_TYPE = "spring.rabbitmq.publisher-confirm-type";
 
 	@Bean
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
@@ -77,9 +83,12 @@ class RabbitEventExternalizerConfiguration {
 		private final OutboxEventExternalizer externalizer;
 
 		RabbitOutboxConfiguration(EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
-				BeanFactory beanFactory, OutboxEventExternalizerFactory factory) {
+				BeanFactory beanFactory, OutboxEventExternalizerFactory factory, Environment environment) {
 
-			this.externalizer = factory.forTransport(createRabbitTransport(configuration, operations, beanFactory));
+			Assert.state("correlated".equalsIgnoreCase(environment.getProperty(PUBLISHER_CONFIRM_TYPE)),
+					() -> "RabbitMQ outbox event externalization requires " + PUBLISHER_CONFIRM_TYPE + "=correlated!");
+
+			this.externalizer = factory.forTransport(createConfirmingRabbitTransport(configuration, operations, beanFactory));
 		}
 
 		@AutoConfiguration
@@ -87,7 +96,7 @@ class RabbitEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler kafkaOutboxExternalizer() {
+			OutboxHandler namastackRabbitOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization to RabbitMQ.");
 
@@ -100,7 +109,7 @@ class RabbitEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrOutboxExternalizer() {
+			JobRunrExternalizationTransport jobRunrRabbitOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization to RabbitMQ.");
 
@@ -124,6 +133,34 @@ class RabbitEventExternalizerConfiguration {
 			operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
 
 			return CompletableFuture.completedFuture(null);
+		};
+	}
+
+	private static EventExternalizationTransport createConfirmingRabbitTransport(
+			EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
+			BeanFactory factory) {
+
+		var context = new StandardEvaluationContext();
+		context.setBeanResolver(new BeanFactoryResolver(factory));
+
+		return (payload, target) -> {
+
+			var routing = BrokerRouting.of(target, context);
+
+			var correlation = new CorrelationData();
+			var headers = new HashMap<>(configuration.getHeadersFor(payload));
+
+			headers.put(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, correlation);
+
+			operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
+
+			return correlation.getFuture().thenAccept(confirm -> {
+
+				if (!confirm.ack()) {
+					throw new IllegalStateException("RabbitMQ publisher confirm was nacked: "
+							+ (confirm.reason() != null ? confirm.reason() : "no reason"));
+				}
+			});
 		};
 	}
 }
