@@ -437,14 +437,6 @@ The logical routing key will be used as Kafka's topic and message key.
 |Uses Spring AMQP for the interaction with any compatible broker.
 Requires an explicit dependency declaration for Spring Rabbit for example.
 The logical routing key will be used as AMQP routing key.
-RabbitMQ outbox usage requires correlated publisher confirms to be enabled through
-`spring.rabbitmq.publisher-confirm-type=correlated`, while the default module-listener mode does not.
-While `convertAndSend(…)` detects synchronous connection, authentication, channel creation, and publishing failures,
-it does not independently guarantee that RabbitMQ accepted a particular publish.
-Spring Modulith therefore only considers RabbitMQ outbox externalization successful after receiving a positive
-publisher confirm.
-This guarantee does not cover consumer processing or unroutable messages; publisher returns and mandatory publishing
-are not handled by the integration.
 
 |JMS
 |`spring-modulith-events-jms`
