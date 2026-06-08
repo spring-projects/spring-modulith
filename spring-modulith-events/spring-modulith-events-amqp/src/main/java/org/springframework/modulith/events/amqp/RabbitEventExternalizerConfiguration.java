@@ -17,7 +17,9 @@ package org.springframework.modulith.events.amqp;
 
 import io.namastack.outbox.handler.OutboxHandler;
 
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 import org.jobrunr.scheduling.JobScheduler;
@@ -35,9 +37,11 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.core.env.Environment;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
+import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
 import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTransport;
 import org.springframework.modulith.events.support.BrokerRouting;
@@ -122,15 +126,9 @@ class RabbitEventExternalizerConfiguration {
 			EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
 			BeanFactory factory) {
 
-		var context = new StandardEvaluationContext();
-		context.setBeanResolver(new BeanFactoryResolver(factory));
-
 		return (payload, target) -> {
 
-			var routing = BrokerRouting.of(target, context);
-			var headers = configuration.getHeadersFor(payload);
-
-			operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
+			send(payload, target, configuration, Collections.emptyMap(), operations, factory);
 
 			return CompletableFuture.completedFuture(null);
 		};
@@ -140,19 +138,12 @@ class RabbitEventExternalizerConfiguration {
 			EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
 			BeanFactory factory) {
 
-		var context = new StandardEvaluationContext();
-		context.setBeanResolver(new BeanFactoryResolver(factory));
-
 		return (payload, target) -> {
 
-			var routing = BrokerRouting.of(target, context);
-
 			var correlation = new CorrelationData();
-			var headers = new HashMap<>(configuration.getHeadersFor(payload));
+			var headers = Map.of(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, (Object) correlation);
 
-			headers.put(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, correlation);
-
-			operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
+			send(payload, target, configuration, headers, operations, factory);
 
 			return correlation.getFuture().thenAccept(confirm -> {
 
@@ -162,5 +153,24 @@ class RabbitEventExternalizerConfiguration {
 				}
 			});
 		};
+	}
+
+	private static void send(Object payload, RoutingTarget target, EventExternalizationConfiguration configuration,
+			Map<String, Object> additionalHeaders, RabbitMessageOperations operations, BeanFactory factory) {
+
+		var routing = BrokerRouting.of(target, createContext(factory));
+
+		var headers = new HashMap<>(configuration.getHeadersFor(payload));
+		headers.putAll(additionalHeaders);
+
+		operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, additionalHeaders);
+	}
+
+	private static EvaluationContext createContext(BeanFactory factory) {
+
+		var context = new StandardEvaluationContext();
+		context.setBeanResolver(new BeanFactoryResolver(factory));
+
+		return context;
 	}
 }

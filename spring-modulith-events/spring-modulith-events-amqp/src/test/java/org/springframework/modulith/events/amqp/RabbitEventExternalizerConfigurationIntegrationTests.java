@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.amqp;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.handler.OutboxHandler;
@@ -57,29 +58,6 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 
 	static final EventExternalizationConfiguration EXTERNALIZATION_ENABLED = EventExternalizationConfiguration
 			.defaults("org").build();
-
-	@Test
-	void requiresCorrelatedPublisherConfirmsForOutboxMode() {
-
-		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, confirmingOperations())
-				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
-				.run(ctxt -> {
-					assertThat(ctxt).hasFailed();
-					assertThat(ctxt.getStartupFailure())
-							.hasRootCauseMessage("RabbitMQ outbox event externalization requires "
-									+ "spring.rabbitmq.publisher-confirm-type=correlated!");
-				});
-	}
-
-	@Test
-	void doesNotRequireCorrelatedPublisherConfirmsForModuleListenerMode() {
-
-		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, mock(RabbitMessageOperations.class))
-				.run(ctxt -> {
-					assertThat(ctxt).hasNotFailed();
-					assertThat(ctxt).hasSingleBean(EventExternalizerModuleListener.class);
-				});
-	}
 
 	@Test // GH-342
 	void registersExternalizerByDefault() {
@@ -152,7 +130,31 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 		assertEventExternalizedPublished(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
 	}
 
-	@Test
+	@Test // GH-1727
+	void requiresCorrelatedPublisherConfirmsForOutboxMode() {
+
+		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, confirmingOperations())
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					assertThat(ctxt).hasFailed();
+					assertThat(ctxt.getStartupFailure())
+							.hasRootCauseMessage("RabbitMQ outbox event externalization requires "
+									+ "spring.rabbitmq.publisher-confirm-type=correlated!");
+				});
+	}
+
+	@Test // GH-1727
+	void doesNotRequireCorrelatedPublisherConfirmsForModuleListenerMode() {
+
+		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, mock(RabbitMessageOperations.class))
+				.run(ctxt -> {
+					assertThat(ctxt).hasNotFailed();
+					assertThat(ctxt).hasSingleBean(EventExternalizerModuleListener.class);
+				});
+	}
+
+	@Test // GH-1727
 	void propagatesSynchronousFailureAsFailedFuture() {
 
 		var operations = mock(RabbitMessageOperations.class);
@@ -170,7 +172,7 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
-	@Test
+	@Test // GH-1727
 	void completesTransportFutureAfterPositivePublisherConfirm() {
 
 		var correlations = new ArrayList<CorrelationData>();
@@ -194,13 +196,13 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
-	@Test
+	@Test // GH-1727
 	void completesTransportFutureExceptionallyAfterPublisherNack() {
 
 		assertPublisherNack(JobRunrExternalizationTransport.class, JobRunrExternalizationTransport::externalize);
 	}
 
-	@Test
+	@Test // GH-1727
 	void moduleListenerDoesNotUsePublisherConfirms() {
 
 		var operations = mock(RabbitMessageOperations.class);
@@ -212,18 +214,18 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 			assertThat(headers).doesNotContainKey(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION);
 
 			return null;
+
 		}).when(operations).convertAndSend(any(), any(), any(), anyMap());
 
-		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, operations)
-				.run(ctxt -> {
+		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, operations).run(ctxt -> {
 
-					var result = ctxt.getBean(EventExternalizerModuleListener.class).externalize(new SampleEvent());
+			var result = ctxt.getBean(EventExternalizerModuleListener.class).externalize(new SampleEvent());
 
-					assertThat(result).isCompleted();
-				});
+			assertThat(result).isCompleted();
+		});
 	}
 
-	@Test
+	@Test // GH-1727
 	void addsUniquePublisherConfirmCorrelationForEachPublish() {
 
 		var correlations = new ArrayList<CorrelationData>();
@@ -244,7 +246,7 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 				});
 	}
 
-	@Test
+	@Test // GH-1727
 	void propagatesPublisherNackToNamastackOutboxHandler() {
 
 		assertPublisherNack(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
