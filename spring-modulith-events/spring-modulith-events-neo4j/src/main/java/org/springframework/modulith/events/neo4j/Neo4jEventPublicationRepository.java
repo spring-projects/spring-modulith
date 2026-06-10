@@ -50,7 +50,6 @@ import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
-import org.springframework.util.DigestUtils;
 
 /**
  * A {@link Neo4jClient} based implementation of {@link EventPublicationRepository}.
@@ -87,14 +86,14 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.named("neo4jEventPublicationArchive");
 
 	private static final Statement INCOMPLETE_BY_EVENT_AND_TARGET_IDENTIFIER_STATEMENT = match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).in(parameter(EVENT_HASH)))
 			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.returning(EVENT_PUBLICATION_NODE)
 			.build();
 
 	private static final Statement DELETE_BY_EVENT_AND_LISTENER_ID = match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).in(parameter(EVENT_HASH)))
 			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.delete(EVENT_PUBLICATION_NODE)
 			.build();
@@ -133,7 +132,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.build();
 
 	private static final Statement COMPLETE_STATEMENT = match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+			.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).in(parameter(EVENT_HASH)))
 			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
@@ -174,10 +173,10 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT = Lazy
 			.of(() -> applyProperties(match(EVENT_PUBLICATION_NODE)
-					.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+					.where(EVENT_PUBLICATION_NODE.property(EVENT_HASH).in(parameter(EVENT_HASH)))
 					.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 					.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
-							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).eq(parameter(EVENT_HASH)))
+							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).in(parameter(EVENT_HASH)))
 							.and(EVENT_PUBLICATION_ARCHIVE_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 							.returning(literalTrue()).build())))
 					.with(EVENT_PUBLICATION_NODE)));
@@ -260,7 +259,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 		var eventType = event.getClass().getName();
 
 		var eventSerialized = eventSerializer.serialize(event).toString();
-		var eventHash = DigestUtils.md5DigestAsHex(eventSerialized.getBytes());
+		var eventHash = EventHash.sha256(eventSerialized.getBytes());
 
 		neo4jClient.query(renderer.render(CREATE_STATEMENT))
 				.bindAll(Map.of(
@@ -284,7 +283,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Transactional
 	public void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate) {
 
-		var eventHash = DigestUtils.md5DigestAsHex(eventSerializer.serialize(event).toString().getBytes());
+		var eventHash = EventHash.candidates(eventSerializer.serialize(event).toString().getBytes());
 
 		if (completionMode == CompletionMode.DELETE) {
 
@@ -385,7 +384,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	public Optional<TargetEventPublication> findIncompletePublicationsByEventAndTargetIdentifier(Object event,
 			PublicationTargetIdentifier targetIdentifier) {
 
-		var eventHash = DigestUtils.md5DigestAsHex(((String) eventSerializer.serialize(event)).getBytes());
+		var eventHash = EventHash.candidates(((String) eventSerializer.serialize(event)).getBytes());
 		var listenerId = targetIdentifier.getValue();
 
 		return neo4jClient.query(renderer.render(INCOMPLETE_BY_EVENT_AND_TARGET_IDENTIFIER_STATEMENT))

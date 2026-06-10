@@ -87,7 +87,7 @@ class SpringMessagingEventExternalizerConfiguration {
 		class NamastackOutboxAutoConfiguration {
 
 			@Bean
-			OutboxHandler namastackKafkaOutboxExternalizer() {
+			OutboxHandler namastackSpringMessagingOutboxExternalizer() {
 
 				logger.debug("Registering Namastack domain event outbox externalization for Spring Messaging.");
 
@@ -100,7 +100,7 @@ class SpringMessagingEventExternalizerConfiguration {
 		class JobRunrOutboxAutoConfiguration {
 
 			@Bean
-			JobRunrExternalizationTransport jobRunrKafkaOutboxExternalizer() {
+			JobRunrExternalizationTransport jobRunrSpringMessagingOutboxExternalizer() {
 
 				logger.debug("Registering JobRunr domain event outbox externalization for Spring Messaging.");
 

@@ -617,7 +617,12 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		 */
 		@Override
 		public Status getStatus() {
-			return publication.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
+
+			if (publication.status != null) {
+				return publication.status;
+			}
+
+			return publication.completionDate != null ? Status.COMPLETED : Status.PROCESSING;
 		}
 
 		/*

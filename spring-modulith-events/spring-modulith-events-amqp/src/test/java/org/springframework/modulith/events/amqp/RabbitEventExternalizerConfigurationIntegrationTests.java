@@ -16,16 +16,25 @@
 package org.springframework.modulith.events.amqp;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.handler.OutboxHandler;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 
 import org.jmolecules.event.annotation.Externalized;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
+import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
@@ -42,6 +51,7 @@ import org.springframework.modulith.test.PublishedEventsFactory;
  * Integration tests for {@link RabbitEventExternalizerConfiguration}.
  *
  * @author Oliver Drotbohm
+ * @author Roland Beisel
  * @since 1.1
  */
 class RabbitEventExternalizerConfigurationIntegrationTests {
@@ -120,11 +130,147 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 		assertEventExternalizedPublished(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
 	}
 
+	@Test // GH-1727
+	void requiresCorrelatedPublisherConfirmsForOutboxMode() {
+
+		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, confirmingOperations())
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					assertThat(ctxt).hasFailed();
+					assertThat(ctxt.getStartupFailure())
+							.hasRootCauseMessage("RabbitMQ outbox event externalization requires "
+									+ "spring.rabbitmq.publisher-confirm-type=correlated!");
+				});
+	}
+
+	@Test // GH-1727
+	void doesNotRequireCorrelatedPublisherConfirmsForModuleListenerMode() {
+
+		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, mock(RabbitMessageOperations.class))
+				.run(ctxt -> {
+					assertThat(ctxt).hasNotFailed();
+					assertThat(ctxt).hasSingleBean(EventExternalizerModuleListener.class);
+				});
+	}
+
+	@Test // GH-1727
+	void propagatesSynchronousFailureAsFailedFuture() {
+
+		var operations = mock(RabbitMessageOperations.class);
+		var failure = new IllegalStateException("Unable to publish!");
+
+		doThrow(failure).when(operations).convertAndSend(any(), any(), any(), anyMap());
+
+		basicSetup(EXTERNALIZATION_ENABLED, operations)
+				.run(ctxt -> {
+
+					var result = ctxt.getBean(EventExternalizerModuleListener.class).externalize(new SampleEvent());
+
+					assertThat(result).isCompletedExceptionally();
+					assertThatThrownBy(result::join).hasRootCause(failure);
+				});
+	}
+
+	@Test // GH-1727
+	void completesTransportFutureAfterPositivePublisherConfirm() {
+
+		var correlations = new ArrayList<CorrelationData>();
+		var sent = new CountDownLatch(1);
+		var operations = capturingOperations(correlations, sent);
+
+		basicSetup(EXTERNALIZATION_ENABLED, operations)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					var handler = ctxt.getBean(OutboxHandler.class);
+					var result = CompletableFuture.runAsync(() -> handler.handle(new SampleEvent(), null));
+
+					assertThat(sent.await(1, TimeUnit.SECONDS)).isTrue();
+					assertThat(result).isNotDone();
+
+					assertThat(correlations).singleElement()
+							.satisfies(it -> it.getFuture().complete(new CorrelationData.Confirm(true, null)));
+
+					assertThat(result).succeedsWithin(1, TimeUnit.SECONDS);
+				});
+	}
+
+	@Test // GH-1727
+	void completesTransportFutureExceptionallyAfterPublisherNack() {
+
+		assertPublisherNack(JobRunrExternalizationTransport.class, JobRunrExternalizationTransport::externalize);
+	}
+
+	@Test // GH-1727
+	void moduleListenerDoesNotUsePublisherConfirms() {
+
+		var operations = mock(RabbitMessageOperations.class);
+
+		doAnswer(invocation -> {
+
+			Map<String, Object> headers = invocation.getArgument(3);
+
+			assertThat(headers).doesNotContainKey(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION);
+
+			return null;
+
+		}).when(operations).convertAndSend(any(), any(), any(), anyMap());
+
+		basicSetupWithoutPublisherConfirms(EXTERNALIZATION_ENABLED, operations).run(ctxt -> {
+
+			var result = ctxt.getBean(EventExternalizerModuleListener.class).externalize(new SampleEvent());
+
+			assertThat(result).isCompleted();
+		});
+	}
+
+	@Test // GH-1727
+	void addsUniquePublisherConfirmCorrelationForEachPublish() {
+
+		var correlations = new ArrayList<CorrelationData>();
+
+		basicSetup(EXTERNALIZATION_ENABLED, confirmingOperations(correlations))
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					var handler = ctxt.getBean(OutboxHandler.class);
+
+					handler.handle(new SampleEvent(), null);
+					handler.handle(new SampleEvent(), null);
+
+					assertThat(correlations)
+							.hasSize(2)
+							.extracting(CorrelationData::getId)
+							.doesNotHaveDuplicates();
+				});
+	}
+
+	@Test // GH-1727
+	void propagatesPublisherNackToNamastackOutboxHandler() {
+
+		assertPublisherNack(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
+	}
+
 	private ApplicationContextRunner basicSetup() {
 		return basicSetup(null);
 	}
 
 	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration configuration,
+			String... excluded) {
+
+		return basicSetup(configuration, confirmingOperations(), excluded);
+	}
+
+	private ApplicationContextRunner basicSetup(@Nullable EventExternalizationConfiguration configuration,
+			RabbitMessageOperations operations, String... excluded) {
+
+		return basicSetupWithoutPublisherConfirms(configuration, operations, excluded)
+				.withPropertyValues("spring.rabbitmq.publisher-confirm-type=correlated");
+	}
+
+	private ApplicationContextRunner basicSetupWithoutPublisherConfirms(
+			@Nullable EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
 			String... excluded) {
 
 		var defaulted = configuration == null ? EventExternalizationConfiguration.disabled() : configuration;
@@ -134,7 +280,7 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 						RabbitEventExternalizerConfiguration.class,
 						EventExternalizationAutoConfiguration.class))
 				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
-				.withBean(RabbitMessageOperations.class, () -> mock(RabbitMessageOperations.class));
+				.withBean(RabbitMessageOperations.class, () -> operations);
 
 		if (excluded.length > 0) {
 			runner = runner.withClassLoader(new FilteredClassLoader(excluded));
@@ -160,6 +306,66 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 					assertThat(events.ofType(EventExternalized.class)
 							.matching(it -> it.getEvent().equals(event))).hasSize(1);
 				});
+	}
+
+	private static RabbitMessageOperations confirmingOperations() {
+		return confirmingOperations(new ArrayList<>());
+	}
+
+	private static RabbitMessageOperations confirmingOperations(List<CorrelationData> correlations) {
+
+		var operations = mock(RabbitMessageOperations.class);
+
+		doAnswer(invocation -> {
+
+			Map<String, Object> headers = invocation.getArgument(3);
+			var correlation = (CorrelationData) headers.get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION);
+
+			correlations.add(correlation);
+			correlation.getFuture().complete(new CorrelationData.Confirm(true, null));
+
+			return null;
+		}).when(operations).convertAndSend(any(), any(), any(), anyMap());
+
+		return operations;
+	}
+
+	private static RabbitMessageOperations capturingOperations(List<CorrelationData> correlations, CountDownLatch sent) {
+
+		var operations = mock(RabbitMessageOperations.class);
+
+		doAnswer(invocation -> {
+
+			Map<String, Object> headers = invocation.getArgument(3);
+
+			assertThat(headers).containsKey(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION);
+			correlations.add((CorrelationData) headers.get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION));
+			sent.countDown();
+
+			return null;
+		}).when(operations).convertAndSend(any(), any(), any(), anyMap());
+
+		return operations;
+	}
+
+	private <T> void assertPublisherNack(Class<T> transportType, BiConsumer<T, Object> consumer) {
+
+		var operations = mock(RabbitMessageOperations.class);
+
+		doAnswer(invocation -> {
+
+			Map<String, Object> headers = invocation.getArgument(3);
+			var correlation = (CorrelationData) headers.get(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION);
+
+			correlation.getFuture().complete(new CorrelationData.Confirm(false, "rejected"));
+
+			return null;
+		}).when(operations).convertAndSend(any(), any(), any(), anyMap());
+
+		basicSetup(EXTERNALIZATION_ENABLED, operations)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> assertThatThrownBy(() -> consumer.accept(ctxt.getBean(transportType), new SampleEvent()))
+						.hasRootCauseMessage("RabbitMQ publisher confirm was nacked: rejected"));
 	}
 
 	@Externalized

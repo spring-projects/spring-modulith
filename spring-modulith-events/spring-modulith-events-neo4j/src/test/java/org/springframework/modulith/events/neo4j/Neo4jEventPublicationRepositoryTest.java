@@ -20,8 +20,10 @@ import static org.junit.jupiter.api.Assumptions.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -46,7 +48,6 @@ import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
-import org.springframework.util.DigestUtils;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 import org.testcontainers.neo4j.Neo4jContainer;
@@ -92,7 +93,7 @@ class Neo4jEventPublicationRepositoryTest {
 
 			var testEvent = new TestEvent("id");
 			var eventSerialized = "{\"eventId\":\"id\"}";
-			var eventHash = DigestUtils.md5DigestAsHex(eventSerialized.getBytes());
+			var eventHash = EventHash.sha256(eventSerialized.getBytes());
 
 			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
 			var publication = repository.create(TargetEventPublication.of(testEvent, TARGET_IDENTIFIER));
@@ -174,6 +175,73 @@ class Neo4jEventPublicationRepositoryTest {
 			assertThat(
 					repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, event.getTargetIdentifier()))
 							.isPresent();
+		}
+
+		@Test // GH-1718
+		void findsLegacyPublicationStoredWithMd5EventHash() {
+
+			var testEvent = new TestEvent("legacy");
+			var eventSerialized = "{\"eventId\":\"legacy\"}";
+			var identifier = UUID.randomUUID();
+
+			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
+			when(eventSerializer.deserialize(eventSerialized, TestEvent.class)).thenReturn(testEvent);
+
+			insertLegacyPublication(identifier, testEvent, eventSerialized);
+
+			assertThat(repository.findIncompletePublicationsByEventAndTargetIdentifier(testEvent, TARGET_IDENTIFIER))
+					.hasValueSatisfying(it -> assertThat(it.getIdentifier()).isEqualTo(identifier));
+		}
+
+		@Test // GH-1718
+		void completesLegacyPublicationStoredWithMd5EventHash() {
+
+			var testEvent = new TestEvent("legacy-complete");
+			var eventSerialized = "{\"eventId\":\"legacy-complete\"}";
+			var identifier = UUID.randomUUID();
+
+			when(eventSerializer.serialize(testEvent)).thenReturn(eventSerialized);
+			when(eventSerializer.deserialize(eventSerialized, TestEvent.class)).thenReturn(testEvent);
+
+			insertLegacyPublication(identifier, testEvent, eventSerialized);
+
+			repository.markCompleted(testEvent, TARGET_IDENTIFIER, Instant.now());
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (completionMode == CompletionMode.DELETE) {
+				assertThat(repository.findCompletedPublications()).isEmpty();
+			} else {
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(identifier);
+			}
+		}
+
+		private void insertLegacyPublication(UUID identifier, Object event, String eventSerialized) {
+
+			try (var session = driver.session()) {
+				session.run("""
+						CREATE (n:Neo4jEventPublication {
+							identifier: $identifier,
+							eventSerialized: $eventSerialized,
+							eventHash: $eventHash,
+							eventType: $eventType,
+							listenerId: $listenerId,
+							publicationDate: $publicationDate,
+							status: $status
+						})
+						""",
+						Map.of(
+								"identifier", identifier.toString(),
+								"eventSerialized", eventSerialized,
+								"eventHash", EventHash.md5(eventSerialized.getBytes()),
+								"eventType", event.getClass().getName(),
+								"listenerId", TARGET_IDENTIFIER.getValue(),
+								"publicationDate", Instant.now().atOffset(ZoneOffset.UTC),
+								"status", EventPublication.Status.PUBLISHED.name()))
+						.consume();
+			}
 		}
 
 		@Test

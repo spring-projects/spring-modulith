@@ -124,3 +124,10 @@ These migrations are also set up to a baseline version of 0 and set up to baseli
 Note, that the version numbers used in migration scripts are now effectively scoped to the application module and should not use global ordering.
 
 By selecting which folder to place the migration files in, you can differentiate migrations always to be run from ones that will only get executed for the corresponding module. The application module test integration will only execute the default migration and the ones for modules included in the test run.
+
+[[module-aware-flyway-migrations.custom-filter]]
+=== Filtering migrations
+
+By default, Spring Modulith will execute migrations of all modules, that contain migration files.
+During test execution, only migrations of modules involved in the test run are executed.
+To further customize the migration execution register a bean of type `org.springframework.modulith.runtime.flyway.MigrationFilter`.
