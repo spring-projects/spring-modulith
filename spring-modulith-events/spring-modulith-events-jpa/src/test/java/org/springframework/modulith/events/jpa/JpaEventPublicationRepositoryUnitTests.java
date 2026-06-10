@@ -25,6 +25,7 @@ import jakarta.persistence.Query;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.modulith.events.core.EventSerializer;
@@ -37,7 +38,7 @@ import org.springframework.modulith.events.support.CompletionMode;
  */
 class JpaEventPublicationRepositoryUnitTests {
 
-	@Test
+	@Test // GH-1701
 	void deletesPublicationsByIdentifierInBatches() {
 
 		var entityManager = mock(EntityManager.class);
@@ -55,9 +56,9 @@ class JpaEventPublicationRepositoryUnitTests {
 				CompletionMode.UPDATE);
 		var identifiers = new ArrayList<UUID>();
 
-		for (var i = 0; i < 101; i++) {
-			identifiers.add(UUID.randomUUID());
-		}
+		IntStream.range(0, 101)
+				.mapToObj(__ -> UUID.randomUUID())
+				.forEach(identifiers::add);
 
 		repository.deletePublications(identifiers);
 
