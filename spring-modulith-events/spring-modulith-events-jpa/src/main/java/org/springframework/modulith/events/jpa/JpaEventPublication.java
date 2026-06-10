@@ -53,7 +53,7 @@ public abstract class JpaEventPublication {
 	protected @Nullable Instant completionDate;
 	protected @Nullable Instant lastResubmissionDate;
 	protected int completionAttempts;
-	protected @Enumerated(EnumType.STRING) Status status;
+	protected @Nullable @Enumerated(EnumType.STRING) Status status;
 
 	/**
 	 * Creates a new {@link JpaEventPublication} for the given publication date, listener id, serialized event and event
@@ -78,7 +78,7 @@ public abstract class JpaEventPublication {
 		this.listenerId = listenerId;
 		this.serializedEvent = serializedEvent;
 		this.eventType = eventType;
-		this.status = status != null ? status : completionDate != null ? Status.COMPLETED : Status.PROCESSING;
+		this.status = status != null ? status : Status.PROCESSING;
 		this.lastResubmissionDate = lastResubmissionDate;
 		this.completionAttempts = completionAttempts;
 	}

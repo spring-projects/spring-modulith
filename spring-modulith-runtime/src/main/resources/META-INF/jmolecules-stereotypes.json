@@ -1,0 +1,9 @@
+{
+	"stereotypes" : {
+		"spring.modulith.MigrationFilter" : {
+			"assignments" : [ "org.springframework.modulith.runtime.flyway.MigrationFilter" ],
+			"displayName" : "Migration filter",
+			"groups" : [ "spring.modulith" ]
+		}
+	}
+}

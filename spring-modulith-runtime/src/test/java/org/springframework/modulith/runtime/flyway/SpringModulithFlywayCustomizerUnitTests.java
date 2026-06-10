@@ -31,7 +31,9 @@ import org.flywaydb.core.api.Location;
 import org.flywaydb.core.api.configuration.Configuration;
 import org.junit.jupiter.api.DynamicTest;
 import org.junit.jupiter.api.NamedExecutable;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestFactory;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.runtime.flyway.SpringModulithFlywayMigrationStrategy.SpringModulithFlywayCustomizer;
@@ -40,8 +42,9 @@ import org.springframework.modulith.runtime.flyway.SpringModulithFlywayMigration
  * Unit tests for {@link SpringModulithFlywayCustomizer}.
  *
  * @author Oliver Drotbohm
+ * @author Martin Ahrer
  */
-public class SpringModulithFlywayCustomizerUnitTests {
+class SpringModulithFlywayCustomizerUnitTests {
 
 	@TestFactory // GH-1067
 	Stream<DynamicTest> augmentsLocationWithApplicationModuleIdentifier() {
@@ -70,6 +73,31 @@ public class SpringModulithFlywayCustomizerUnitTests {
 				List.of(List.of("classpath:db/migration/fully/qualified")));
 
 		return DynamicTest.stream(Stream.of(first, second, third, fourth, fifth));
+	}
+
+	@Test // GH-1684
+	void dropModulesWithoutMigrations() {
+
+		var identifiers = ApplicationModuleIdentifiers.of(List.of(
+				ApplicationModuleIdentifier.of("present"),
+				ApplicationModuleIdentifier.of("absent")));
+
+		var filter = new HasMigrationFiles(new PathMatchingResourcePatternResolver());
+
+		var result = new SpringModulithFlywayCustomizer(Flyway.configure().load(), filter)
+				.augment(identifiers)
+				.toList();
+
+		assertThat(result)
+				.hasSize(2)
+				.satisfies(it -> {
+					assertThat(it.get(0).getConfiguration().getLocations())
+							.extracting(Location::toString)
+							.containsExactly("classpath:db/migration/__root");
+					assertThat(it.get(1).getConfiguration().getLocations())
+							.extracting(Location::toString)
+							.containsExactly("classpath:db/migration/present");
+				});
 	}
 
 	@Builder

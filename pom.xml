@@ -37,14 +37,13 @@
 
 		<aptk.version>0.30.5</aptk.version>
 		<archunit.version>1.4.2</archunit.version>
-		<artifactory-maven-plugin.version>3.6.2</artifactory-maven-plugin.version>
 		<cute.version>1.9.0</cute.version>
 		<errorprone.version>2.46.0</errorprone.version>
 		<flapdoodle-mongodb.version>4.20.0</flapdoodle-mongodb.version>
 		<jgit.version>7.6.0.202603022253-r</jgit.version>
 		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
-		<jobrunr.version>8.6.0</jobrunr.version>
-		<json-unit-assertj.version>5.1.1</json-unit-assertj.version>
+		<jobrunr.version>8.6.1</jobrunr.version>
+		<json-unit-assertj.version>5.1.2</json-unit-assertj.version>
 		<namastack-outbox.version>1.6.0</namastack-outbox.version>
 		<nullaway.version>0.13.0</nullaway.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -521,7 +520,7 @@ limitations under the License.
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
-					<version>3.5.5</version>
+					<version>3.5.6</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -556,7 +555,7 @@ limitations under the License.
 				<plugin>
 					<groupId>org.jfrog.buildinfo</groupId>
 					<artifactId>artifactory-maven-plugin</artifactId>
-					<version>3.7.0</version>
+					<version>3.7.1</version>
 				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
@@ -586,12 +585,12 @@ limitations under the License.
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-shade-plugin</artifactId>
-					<version>3.6.1</version>
+					<version>3.6.2</version>
 				</plugin>
 				<plugin>
 					<groupId>org.codehaus.mojo</groupId>
 					<artifactId>exec-maven-plugin</artifactId>
-					<version>3.6.2</version>
+					<version>3.6.3</version>
 				</plugin>
 				<plugin>
 					<groupId>org.sonatype.central</groupId>

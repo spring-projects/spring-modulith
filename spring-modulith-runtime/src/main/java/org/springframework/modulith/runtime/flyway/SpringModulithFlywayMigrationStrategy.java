@@ -42,17 +42,19 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithFlywayMigrationStrategy.class);
 
 	private final ApplicationModuleIdentifiers identifiers;
+	private final MigrationFilter filter;
 
 	/**
 	 * Creates a new {@link SpringModulithFlywayMigrationStrategy} for the given {@link ApplicationModuleIdentifiers}.
 	 *
 	 * @param identifiers must not be {@literal null}.
 	 */
-	public SpringModulithFlywayMigrationStrategy(ApplicationModuleIdentifiers identifiers) {
+	public SpringModulithFlywayMigrationStrategy(ApplicationModuleIdentifiers identifiers, MigrationFilter filter) {
 
 		Assert.notNull(identifiers, "ApplicationModuleIdentifiers must not be null!");
 
 		this.identifiers = identifiers;
+		this.filter = filter;
 	}
 
 	/*
@@ -62,7 +64,7 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	@Override
 	public void migrate(Flyway flyway) {
 
-		new SpringModulithFlywayCustomizer(flyway)
+		new SpringModulithFlywayCustomizer(flyway, filter)
 				.augment(identifiers)
 				.forEach(Flyway::migrate);
 	}
@@ -70,16 +72,24 @@ public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStr
 	static class SpringModulithFlywayCustomizer {
 
 		private final Flyway flyway;
+		private final MigrationFilter migrationFilter;
 
 		SpringModulithFlywayCustomizer(Flyway flyway) {
+			this(flyway, MigrationFilter.USE_ALL);
+		}
+
+		SpringModulithFlywayCustomizer(Flyway flyway, MigrationFilter filter) {
 			this.flyway = flyway;
+			this.migrationFilter = filter;
 		}
 
 		Stream<Flyway> augment(ApplicationModuleIdentifiers identifiers) {
 
 			var configuration = flyway.getConfiguration();
+
 			return Stream.concat(Stream.of(ROOT), identifiers.stream())
 					.peek(it -> LOGGER.debug("Executing Flyway migrations for application module {}.", it))
+					.filter(it -> migrationFilter.shouldMigrate(it, flyway))
 					.map(it -> augmentWithApplicationModule(it, configuration));
 		}
 

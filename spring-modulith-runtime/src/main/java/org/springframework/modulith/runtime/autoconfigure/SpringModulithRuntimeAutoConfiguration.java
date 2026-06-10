@@ -17,7 +17,6 @@ package org.springframework.modulith.runtime.autoconfigure;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 import org.flywaydb.core.Flyway;
@@ -49,11 +48,11 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.ResourcePatternResolver;
 import org.springframework.core.io.support.SpringFactoriesLoader;
 import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.ApplicationModuleInitializer;
 import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModuleIdentifiers;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ApplicationModulesFactory;
@@ -61,9 +60,10 @@ import org.springframework.modulith.core.VerificationOptions;
 import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
+import org.springframework.modulith.runtime.flyway.ActiveModules;
+import org.springframework.modulith.runtime.flyway.HasMigrationFiles;
+import org.springframework.modulith.runtime.flyway.MigrationFilter;
 import org.springframework.modulith.runtime.flyway.SpringModulithFlywayMigrationStrategy;
-import org.springframework.modulith.test.ModuleTestExecution;
-import org.springframework.util.ClassUtils;
 
 /**
  * Auto-configuration to register an {@link ApplicationRuntime}, a {@link ApplicationModulesRuntime} and an
@@ -154,34 +154,6 @@ class SpringModulithRuntimeAutoConfiguration {
 				: ApplicationModuleIdentifiers.of(runtime.getObject().get());
 	}
 
-	private static class ModuleFilter implements Predicate<ApplicationModuleIdentifier> {
-
-		private static final boolean IN_TEST = ClassUtils.isPresent("org.springframework.modulith.test.ModuleTestExecution",
-				SpringModulithFlywayMigrationStrategy.class.getClassLoader());
-
-		private final BeanFactory factory;
-
-		ModuleFilter(BeanFactory factory) {
-			this.factory = factory;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.util.function.Predicate#test(java.lang.Object)
-		 */
-		@Override
-		public boolean test(ApplicationModuleIdentifier identifier) {
-
-			if (!IN_TEST) {
-				return true;
-			}
-
-			var execution = factory.getBeanProvider(ModuleTestExecution.class).getIfAvailable();
-
-			return execution != null ? execution.isIncludedInExecution(identifier) : true;
-		}
-	}
-
 	static class ApplicationModulesBootstrap {
 
 		private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationModulesBootstrap.class);
@@ -260,12 +232,13 @@ class SpringModulithRuntimeAutoConfiguration {
 		@Bean
 		@ConditionalOnProperty(name = "spring.modulith.runtime.flyway-enabled", havingValue = "true")
 		SpringModulithFlywayMigrationStrategy springModulithFlywayMigrationStrategy(
-				ApplicationModuleIdentifiers identifiers, BeanFactory factory) {
+				ApplicationModuleIdentifiers identifiers, BeanFactory factory, ResourcePatternResolver resolver,
+				ObjectProvider<MigrationFilter> filters) {
 
-			var filter = new ModuleFilter(factory);
-			var filtered = ApplicationModuleIdentifiers.of(identifiers.stream().filter(filter).toList());
+			var defaultFilter = new ActiveModules(factory).and(new HasMigrationFiles(resolver));
+			var filter = filters.stream().reduce(defaultFilter, MigrationFilter::and);
 
-			return new SpringModulithFlywayMigrationStrategy(filtered);
+			return new SpringModulithFlywayMigrationStrategy(identifiers, filter);
 		}
 	}
 

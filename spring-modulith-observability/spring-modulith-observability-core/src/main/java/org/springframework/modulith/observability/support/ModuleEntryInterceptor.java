@@ -19,9 +19,9 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.Scope;
 import io.micrometer.observation.ObservationRegistry;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -47,7 +47,7 @@ import org.springframework.util.ClassUtils;
 class ModuleEntryInterceptor implements MethodInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
-	private static final Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new HashMap<>();
+	private static final Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new ConcurrentHashMap<>();
 
 	private final ObservedModule module;
 	private final ObservationRegistry observationRegistry;
