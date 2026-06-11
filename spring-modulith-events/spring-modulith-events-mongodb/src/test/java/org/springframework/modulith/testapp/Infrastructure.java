@@ -19,14 +19,16 @@ import org.bson.UuidRepresentation;
 import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
-import org.springframework.data.mongodb.config.AbstractMongoClientConfiguration;
 import org.testcontainers.mongodb.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import com.mongodb.MongoClientSettings.Builder;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
+import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 
 @TestConfiguration(proxyBeanMethods = false)
-public class Infrastructure extends AbstractMongoClientConfiguration {
+public class Infrastructure {
 
 	@Bean
 	@ServiceConnection
@@ -34,21 +36,14 @@ public class Infrastructure extends AbstractMongoClientConfiguration {
 		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
 	}
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.config.MongoConfigurationSupport#getDatabaseName()
-	 */
-	@Override
-	protected String getDatabaseName() {
-		return "test";
-	}
+	@Bean
+	MongoClient mongoClient(MongoDBContainer container) {
 
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.data.mongodb.config.MongoConfigurationSupport#configureClientSettings(com.mongodb.MongoClientSettings.Builder)
-	 */
-	@Override
-	protected void configureClientSettings(Builder builder) {
-		builder.uuidRepresentation(UuidRepresentation.STANDARD);
+		var settings = MongoClientSettings.builder()
+				.uuidRepresentation(UuidRepresentation.STANDARD)
+				.applyConnectionString(new ConnectionString(container.getReplicaSetUrl()))
+				.build();
+
+		return MongoClients.create(settings);
 	}
 }
