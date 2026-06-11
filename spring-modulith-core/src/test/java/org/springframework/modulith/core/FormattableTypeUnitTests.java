@@ -18,7 +18,6 @@ package org.springframework.modulith.core;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
-import org.springframework.modulith.core.FormattableType.NonModuleTypeAbbreviation;
 
 /**
  * Unit tests for {@link FormattableType}.
@@ -51,16 +50,7 @@ class FormattableTypeUnitTests {
 
 		var module = TestUtils.getApplicationModule("example.springbean");
 
-		var type = FormattableType.of(long.class);
-
-		assertThatNoException()
-				.isThrownBy(() -> type.getAbbreviatedFullName(module, NonModuleTypeAbbreviation.ABBREVIATED));
-
-		assertThat(type.getAbbreviatedFullName(module, NonModuleTypeAbbreviation.ABBREVIATED))
-				.isEqualTo("long");
-
-		assertThat(type.getAbbreviatedFullName(module, NonModuleTypeAbbreviation.FULL_NAME))
-				.isEqualTo("long");
+		assertThat(FormattableType.of(long.class).getAbbreviatedFullName(module)).isEqualTo("long");
 	}
 
 	@Test // GH-1713
