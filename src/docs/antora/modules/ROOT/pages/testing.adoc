@@ -432,9 +432,11 @@ Tests will be selected for execution if they reside in either a root module, a m
 The optimization will back off optimizing the execution under the following circumstances:
 
 * The test execution originates from an IDE as we assume the execution is triggered explicitly.
-* The set of changes contains a change to a resource related to a build system (`pom.xml`, `build.gradle(.kts)`, `gradle.properties`, and `settings.gradle(.kts)`).
+* The set of changes contains a change to a build system resource at the module root, i.e. `pom.xml`, `build.gradle(.kts)`, `settings.gradle(.kts)`, `gradle.properties`, `gradle/libs.versions.toml`, or `gradle/wrapper/gradle-wrapper.properties`.
 * The set of changes contains a change to any classpath resource.
 * The project does not contain a change at all.
+
+NOTE: Change-aware execution is rooted at the current working directory. Build-file changes in sibling sub-modules or in dedicated build-logic directories (such as `buildSrc/` or `build-logic/`) therefore do not trigger a full test run of the surrounding module — they are picked up when those modules' own tests run.
 
 If no classpath or build resource changes are detected we will execute all tests by default.
 This can be customized by setting the xref:appendix.adoc#configuration-properties[`spring.modulith.test.on-no-changes` property] to `skip-all`.
