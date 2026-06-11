@@ -40,7 +40,7 @@
 		<cute.version>1.9.0</cute.version>
 		<errorprone.version>2.46.0</errorprone.version>
 		<flapdoodle-mongodb.version>4.20.0</flapdoodle-mongodb.version>
-		<jgit.version>7.6.0.202603022253-r</jgit.version>
+		<jgit.version>7.7.0.202606012155-r</jgit.version>
 		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
 		<jobrunr.version>8.6.1</jobrunr.version>
 		<json-unit-assertj.version>5.1.2</json-unit-assertj.version>
