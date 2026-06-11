@@ -208,9 +208,6 @@ limitations under the License.
 
 		<profile>
 			<id>artifactory</id>
-			<properties>
-				<maven.test.skip>true</maven.test.skip>
-			</properties>
 			<build>
 				<plugins>
 					<plugin>
