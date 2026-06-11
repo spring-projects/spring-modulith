@@ -50,7 +50,7 @@ class ChangesUnitTests {
 		});
 	}
 
-	@TestFactory // GH-31
+	@TestFactory // GH-31, GH-1699
 	Stream<DynamicTest> detectsNonClasspathFileChange() {
 
 		var files = Stream.of(
@@ -58,8 +58,14 @@ class ChangesUnitTests {
 				// Maven
 				"pom.xml",
 
-				// Gradle
-				"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts");
+				// Gradle Groovy and Kotlin DSL build/settings at the module root
+				"build.gradle", "build.gradle.kts",
+				"settings.gradle", "settings.gradle.kts",
+				"gradle.properties",
+
+				// Version catalog and wrapper
+				"gradle/libs.versions.toml",
+				"gradle/wrapper/gradle-wrapper.properties");
 
 		return DynamicTest.stream(files, it -> it + " is considered build resource", it -> {
 
@@ -67,6 +73,52 @@ class ChangesUnitTests {
 
 			assertThat(change.isClasspathResource()).isFalse();
 			assertThat(change.affectsBuildResource()).isTrue();
+		});
+	}
+
+	@TestFactory // GH-1699
+	Stream<DynamicTest> ignoresNestedBuildResources() {
+
+		var files = Stream.of(
+
+				// Sub-modules of a multi-module build are tested independently; their build files
+				// must not trigger a full run of the surrounding module.
+				"module-a/pom.xml",
+				"module-a/build.gradle.kts",
+				"module-a/settings.gradle.kts",
+
+				// Dedicated build-logic directories sit at the repo root and are handled by their
+				// own per-module change detection.
+				"buildSrc/build.gradle.kts",
+				"buildSrc/src/main/kotlin/my.convention.gradle.kts",
+				"build-logic/convention/build.gradle.kts",
+
+				// Convention scripts in arbitrary nested locations
+				"config/conventions/java.gradle.kts",
+
+				// Files committed as docs / samples / fixtures that happen to share a name with a
+				// build file
+				"src/main/kotlin/example.gradle.kts",
+				"src/main/resources/sample/build.gradle",
+				"src/test/resources/fixtures/pom.xml");
+
+		return DynamicTest.stream(files, it -> it + " is not treated as a build resource", it -> {
+			assertThat(new OtherFileChange(it).affectsBuildResource()).isFalse();
+		});
+	}
+
+	@TestFactory // GH-1699
+	Stream<DynamicTest> kotlinSourcesAreClassifiedAsSourceChanges() {
+
+		var files = Stream.of(
+				"src/main/kotlin/com/example/Service.kt",
+				"src/test/kotlin/com/example/ServiceTest.kt");
+
+		return DynamicTest.stream(files, it -> it + " is a Kotlin source change", it -> {
+
+			var change = Changes.Change.of(new ModifiedFile(it));
+
+			assertThat(change).isInstanceOfAny(KotlinSourceChange.class, KotlinTestSourceChange.class);
 		});
 	}
 

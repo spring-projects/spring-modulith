@@ -31,6 +31,7 @@ import org.springframework.modulith.junit.Changes.Change;
 import org.springframework.modulith.junit.Changes.Change.OtherFileChange;
 import org.springframework.modulith.junit.Changes.Change.SourceChange;
 import org.springframework.modulith.junit.diff.ModifiedFile;
+import org.springframework.util.AntPathMatcher;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -303,19 +304,39 @@ public class Changes implements Iterable<Change> {
 		record OtherFileChange(String path) implements Change {
 
 			private static final Collection<String> CLASSPATH_RESOURCES = Set.of("src/main/resources", "src/test/resources");
-			private static final Collection<String> BUILD_FILES = Set.of(
+			private static final AntPathMatcher PATH_MATCHER = new AntPathMatcher();
 
-					// Gradle
-					"build.gradle", "build.gradle.kts", "gradle.properties", "settings.gradle", "settings.gradle.kts",
+			/**
+			 * Ant-style patterns identifying files whose change should conservatively force a full test run because they
+			 * influence how this module gets built or tested. Paths reaching this matcher have already been rebased to
+			 * the current working directory by
+			 * {@link org.springframework.modulith.junit.diff.WorkingDirectoryChangesDetector}; change-aware execution is
+			 * therefore a per-module concept, and these patterns are deliberately module-local — anything nested below
+			 * a sub-module or a dedicated build-logic directory (e.g. {@code buildSrc/}, {@code build-logic/}) is
+			 * handled by the surrounding module's own test execution, not ours.
+			 */
+			private static final Collection<String> BUILD_RESOURCE_PATTERNS = Set.of(
 
 					// Maven
-					"pom.xml");
+					"pom.xml",
+
+					// Gradle properties
+					"gradle.properties",
+
+					// Gradle Groovy and Kotlin DSL build/settings scripts at the module root
+					"*.gradle", "*.gradle.kts",
+
+					// Version catalog
+					"gradle/libs.versions.toml",
+
+					// Gradle wrapper
+					"gradle/wrapper/gradle-wrapper.properties");
 
 			/**
 			 * Returns whether the change affects a build resource.
 			 */
 			public boolean affectsBuildResource() {
-				return BUILD_FILES.contains(path);
+				return BUILD_RESOURCE_PATTERNS.stream().anyMatch(it -> PATH_MATCHER.match(it, path));
 			}
 
 			/*
