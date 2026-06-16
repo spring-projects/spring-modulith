@@ -15,6 +15,8 @@
  */
 package example.sample;
 
+import java.util.List;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
@@ -26,4 +28,8 @@ public class SampleComponent {
 
 	@Async
 	public void someMethod() {}
+
+	public void withWildcard(List<?> items) {}
+
+	public <T> void withTypeVariable(List<T> items) {}
 }
