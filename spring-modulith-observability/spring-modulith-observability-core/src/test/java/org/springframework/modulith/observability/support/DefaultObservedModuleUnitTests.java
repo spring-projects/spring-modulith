@@ -18,9 +18,11 @@ package org.springframework.modulith.observability.support;
 import static org.assertj.core.api.Assertions.*;
 
 import example.sample.ObservedComponent;
+import example.sample.SampleComponent;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Method;
+import java.util.List;
 
 import org.aopalliance.intercept.MethodInvocation;
 import org.junit.jupiter.api.Test;
@@ -51,9 +53,39 @@ class DefaultObservedModuleUnitTests {
 		assertThat(observedModule.isEventListenerInvocation(forMethod("someMethod"))).isFalse();
 	}
 
+	@Test // GH-1748
+	void rendersUnboundedWildcardGenericWithoutException() throws Exception {
+
+		var invocation = forMethod(new SampleComponent(), "withWildcard", List.class);
+
+		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
+		assertThat(observedModule.format(invocation)).contains("withWildcard(").contains("<?>");
+	}
+
+	@Test // GH-1748
+	void rendersUnboundedTypeVariableGenericWithoutException() throws Exception {
+
+		var invocation = forMethod(new SampleComponent(), "withTypeVariable", List.class);
+
+		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
+		assertThat(observedModule.format(invocation)).contains("withTypeVariable(").contains("<?>");
+	}
+
 	private static MethodInvocation forMethod(String name, Class<?>... parameterTypes) throws Exception {
 
 		var method = ObservedComponent.class.getDeclaredMethod(name, parameterTypes);
+
+		return forMethod(null, method);
+	}
+
+	private static MethodInvocation forMethod(Object target, String name, Class<?>... parameterTypes) throws Exception {
+
+		var method = target.getClass().getDeclaredMethod(name, parameterTypes);
+
+		return forMethod(target, method);
+	}
+
+	private static MethodInvocation forMethod(Object target, Method method) {
 
 		return new MethodInvocation() {
 
@@ -64,7 +96,7 @@ class DefaultObservedModuleUnitTests {
 
 			@Override
 			public Object getThis() {
-				return null;
+				return target;
 			}
 
 			@Override

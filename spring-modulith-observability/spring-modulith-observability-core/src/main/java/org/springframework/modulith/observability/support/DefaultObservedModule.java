@@ -126,7 +126,14 @@ class DefaultObservedModule implements ObservedModule {
 
 	private String render(ResolvableType type) {
 
-		String formatted = FormattableType.of(type.resolve()).getAbbreviatedFullName(module,
+		var resolved = type.resolve();
+
+		// Unbounded wildcards (Foo<?>) and unbounded type variables (Foo<T>) resolve to null
+		if (resolved == null) {
+			return "?";
+		}
+
+		String formatted = FormattableType.of(resolved).getAbbreviatedFullName(module,
 				NonModuleTypeAbbreviation.ABBREVIATED);
 
 		if (!type.hasGenerics()) {
