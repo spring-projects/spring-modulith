@@ -59,6 +59,10 @@ public class ActiveModules implements MigrationFilter {
 			return true;
 		}
 
+		if (SpringModulithFlywayMigrationStrategy.ROOT.equals(identifier)) {
+			return true;
+		}
+
 		var execution = factory.getBeanProvider(ModuleTestExecution.class).getIfAvailable();
 
 		return execution != null ? execution.isIncludedInExecution(identifier) : true;
