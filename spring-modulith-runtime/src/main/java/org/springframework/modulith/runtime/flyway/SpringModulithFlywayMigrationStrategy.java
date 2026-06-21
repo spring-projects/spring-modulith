@@ -38,7 +38,7 @@ import org.springframework.util.Assert;
  */
 public class SpringModulithFlywayMigrationStrategy implements FlywayMigrationStrategy {
 
-	private static final ApplicationModuleIdentifier ROOT = ApplicationModuleIdentifier.of("__root");
+	static final ApplicationModuleIdentifier ROOT = ApplicationModuleIdentifier.of("__root");
 	private static final Logger LOGGER = LoggerFactory.getLogger(SpringModulithFlywayMigrationStrategy.class);
 
 	private final ApplicationModuleIdentifiers identifiers;
