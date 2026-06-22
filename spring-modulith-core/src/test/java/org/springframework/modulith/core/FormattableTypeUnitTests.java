@@ -17,7 +17,10 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
+import org.springframework.core.ResolvableType;
 import org.springframework.modulith.core.FormattableType.NonModuleTypeAbbreviation;
 
 /**
@@ -83,5 +86,21 @@ class FormattableTypeUnitTests {
 		assertThat(FormattableType.of(int[][].class).getAbbreviatedFullName()).isEqualTo("int[][]");
 		assertThat(FormattableType.of(String[][].class).getAbbreviatedFullName()).isEqualTo("j.l.String[][]");
 		assertThat(FormattableType.of(String[][].class).getFullName()).isEqualTo("java.lang.String[][]");
+	}
+
+	@Test // GH-1748
+	void handlesWildCardsAndUnresolvableGenerics() throws Exception {
+
+		var method = Sample.class.getMethod("wildcarded", List.class);
+
+		var parameterType = ResolvableType.forMethodParameter(method, 0);
+		var returnType = ResolvableType.forMethodReturnType(method);
+
+		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.u.List<?>");
+		assertThat(FormattableType.of(returnType).getAbbreviatedFullName()).isEqualTo("j.u.List<?>");
+	}
+
+	interface Sample {
+		<T> List<?> wildcarded(List<T> parameterized);
 	}
 }
