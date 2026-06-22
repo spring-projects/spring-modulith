@@ -19,6 +19,7 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import org.flywaydb.core.Flyway;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -32,62 +33,65 @@ import org.springframework.modulith.test.ModuleTestExecution;
  * Unit tests for {@link ActiveModules}.
  *
  * @author Seonwoo Jung
+ * @author Oliver Drotbohm
  */
 @ExtendWith(MockitoExtension.class)
 class ActiveModulesUnitTests {
 
-	@Mock BeanFactory beanFactory;
+	private static final ApplicationModuleIdentifier MODULE_A = ApplicationModuleIdentifier.of("moduleA");
+	private static final ApplicationModuleIdentifier MODULE_B = ApplicationModuleIdentifier.of("moduleB");
+	private static final ApplicationModuleIdentifier ROOT_MODULE = SpringModulithFlywayMigrationStrategy.ROOT;
+
 	@Mock Flyway flyway;
-	@Mock ModuleTestExecution execution;
-	@Mock ObjectProvider<ModuleTestExecution> provider;
 
 	@Test // GH-1750
-	void migratesRootModuleWithoutConsultingTestExecution() {
+	void executesMigrationsForModulesPartOfTheTestRun() {
 
-		var filter = new ActiveModules(beanFactory);
+		var filter = withModuleExecutions(MODULE_A);
 
-		assertThat(filter.shouldMigrate(SpringModulithFlywayMigrationStrategy.ROOT, flyway)).isTrue();
-		verifyNoInteractions(beanFactory);
+		assertThat(filter.shouldMigrate(ROOT_MODULE, flyway)).isTrue();
+		assertThat(filter.shouldMigrate(MODULE_A, flyway)).isTrue();
+
+		assertThat(filter.shouldMigrate(MODULE_B, flyway)).isFalse();
 	}
 
 	@Test // GH-1750
-	void delegatesToTestExecutionForNonRootModules() {
+	void migratesAllModuleIfNoExecutionRegistered() {
 
-		var moduleIdentifier = ApplicationModuleIdentifier.of("order");
+		var filter = withoutModuleExecutions();
 
-		when(beanFactory.getBeanProvider(ModuleTestExecution.class)).thenReturn(provider);
-		when(provider.getIfAvailable()).thenReturn(execution);
-		when(execution.isIncludedInExecution(moduleIdentifier)).thenReturn(true);
-
-		var filter = new ActiveModules(beanFactory);
-
-		assertThat(filter.shouldMigrate(moduleIdentifier, flyway)).isTrue();
-		verify(execution).isIncludedInExecution(moduleIdentifier);
+		assertThat(filter.shouldMigrate(ROOT_MODULE, flyway)).isTrue();
+		assertThat(filter.shouldMigrate(MODULE_A, flyway)).isTrue();
 	}
 
-	@Test // GH-1750
-	void skipsModuleNotIncludedInTestExecution() {
-
-		var moduleIdentifier = ApplicationModuleIdentifier.of("inventory");
-
-		when(beanFactory.getBeanProvider(ModuleTestExecution.class)).thenReturn(provider);
-		when(provider.getIfAvailable()).thenReturn(execution);
-		when(execution.isIncludedInExecution(moduleIdentifier)).thenReturn(false);
-
-		var filter = new ActiveModules(beanFactory);
-
-		assertThat(filter.shouldMigrate(moduleIdentifier, flyway)).isFalse();
+	private static ActiveModules withoutModuleExecutions() {
+		return withModuleExecutions((ModuleTestExecution) null);
 	}
 
-	@Test // GH-1750
-	void migratesAllModulesWhenNoTestExecutionAvailable() {
+	private static ActiveModules withModuleExecutions(ApplicationModuleIdentifier... identifiers) {
+		return withModuleExecutions(mock(ModuleTestExecution.class), identifiers);
+	}
 
+	@SuppressWarnings("unchecked")
+	private static final ActiveModules withModuleExecutions(@Nullable ModuleTestExecution execution,
+			ApplicationModuleIdentifier... identifiers) {
+
+		var beanFactory = mock(BeanFactory.class);
+		ObjectProvider<ModuleTestExecution> provider = mock(ObjectProvider.class);
 		when(beanFactory.getBeanProvider(ModuleTestExecution.class)).thenReturn(provider);
-		when(provider.getIfAvailable()).thenReturn(null);
 
-		var filter = new ActiveModules(beanFactory);
+		if (execution != null) {
 
-		assertThat(filter.shouldMigrate(ApplicationModuleIdentifier.of("order"), flyway)).isTrue();
-		assertThat(filter.shouldMigrate(SpringModulithFlywayMigrationStrategy.ROOT, flyway)).isTrue();
+			when(provider.getIfAvailable()).thenReturn(execution);
+
+			for (var identifier : identifiers) {
+				when(execution.isIncludedInExecution(identifier)).thenReturn(true);
+			}
+
+		} else {
+			when(provider.getIfAvailable()).thenReturn(null);
+		}
+
+		return new ActiveModules(beanFactory);
 	}
 }
