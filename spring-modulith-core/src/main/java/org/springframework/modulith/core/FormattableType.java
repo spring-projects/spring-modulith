@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.core.ResolvableType;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.StringUtils;
@@ -38,6 +39,7 @@ import com.tngtech.archunit.core.domain.JavaClass;
 public class FormattableType {
 
 	private static final Map<String, FormattableType> CACHE = new ConcurrentHashMap<>();
+	private static final FormattableType WILDCARD = new FormattableType("?", () -> "?");
 
 	private final String type;
 	private final Supplier<String> abbreviatedName;
@@ -106,6 +108,20 @@ public class FormattableType {
 	 */
 	public static FormattableType of(Class<?> type) {
 		return CACHE.computeIfAbsent(type.getTypeName(), FormattableType::new);
+	}
+
+	/**
+	 * Creates a new {@link FormattableType} for the given {@link ResolvableType}.
+	 *
+	 * @param type must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.1.1, 2.0.8
+	 */
+	public static FormattableType of(ResolvableType type) {
+
+		var source = type.toString();
+
+		return source == "?" ? FormattableType.WILDCARD : CACHE.computeIfAbsent(source, FormattableType::new);
 	}
 
 	/**
