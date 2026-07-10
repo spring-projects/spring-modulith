@@ -218,7 +218,7 @@ a|* `spring-modulith-api`
 |`spring-modulith-starter-insight`
 |`runtime`
 a|* `spring-modulith-actuator` (runtime)
-* `spring-modulith-observability` (runtime)
+* `spring-modulith-observability-core` (runtime)
 * `spring-boot-starter-actuator` (runtime)
 
 |`spring-modulith-starter-jdbc`
@@ -281,8 +281,8 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-neo4j`|`runtime`|A Neo4j-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-junit`|`test`|Test execution optimizations based on the application module structure. Find more details xref:testing.adoc#change-aware-test-execution[here].
 |`spring-modulith-moments`|`compile`|The Passage of Time events implementation described xref:moments.adoc[here].
-|`spring-modulith-observability`|`runtime`|Observability infrastructure described <<observability, here>>.
-|`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability`.
+|`spring-modulith-observability-core`|`runtime`|Observability infrastructure described <<observability, here>>.
+|`spring-modulith-runtime`|`runtime`|Support to bootstrap an `ApplicationModules` instance at runtime. Usually not directly depended on but transitively used by `spring-modulith-actuator` and `spring-modulith-observability-core`.
 |`spring-modulith-test`|`test`|Integration testing support. Find more details xref:testing.adoc[here].
 |===
 
