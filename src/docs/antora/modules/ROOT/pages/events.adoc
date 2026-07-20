@@ -46,7 +46,7 @@ class OrderManagement(val inventory: InventoryManagement) {
 ======
 
 The `complete(…)` method creates functional gravity in the sense that it attracts related functionality and thus interaction with Spring beans defined in other application modules.
-This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see xref:testing.adoc#efferent-dependencies[Dealing with Efferent Dependencies]).
+This especially makes the component harder to test as we need to have instances available of those dependent beans just to create an instance of `OrderManagement` (see xref:testing.adoc#efferent-dependencies[Dealing with Efferent Dependencies]).
 It also means that we will have to touch the class whenever we would like to integrate further functionality with the business event order completion.
 
 We can change the application module interaction as follows:
@@ -252,7 +252,7 @@ RESUBMITTED -right-> PROCESSING : resubmission triggered
 In addition to the status, each publication tracks:
 
 * _Last resubmission date_ – When the publication was last resubmitted (if ever). Exposed via `EventPublication.getLastResubmissionDate()`.
-* _Completion attempts_ – How often the listener was invoked (including the current run). Incremented when moving to `PROCESSING`, so a crash during the listener still leaves the attempt count updated. Exposed via `EventPublication.getCompletionAttempts()`.
+* _Completion attempts_ – How often the listener was invoked (including the current run). Incremented when moving to `PROCESSING`, so a listener crash still leaves the attempt count updated. Exposed via `EventPublication.getCompletionAttempts()`.
 
 These allow you to implement policies such as "resubmit only if failed longer than X" or "stop after N attempts" using the resubmission APIs and options.
 
@@ -342,7 +342,7 @@ dependencies {
 
 This artifact contains primary abstractions that are available to application code as Spring Beans:
 
-* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older than a given duration (for example, 1 minute).
+* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the ones older than a given duration (for example, 1 minute).
 * `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate, older than a given `Duration` relative to the original publishing date, or matching custom criteria via `resubmitIncompletePublications(ResubmissionOptions)` (since 2.0).
 * `FailedEventPublications` (since 2.0) -- This interface allows resubmitting only failed event publications via `resubmit(ResubmissionOptions)`, as described in <<publication-registry.lifecycle.failed-and-resubmission>>.
 
