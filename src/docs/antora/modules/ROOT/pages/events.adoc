@@ -46,7 +46,7 @@ class OrderManagement(val inventory: InventoryManagement) {
 ======
 
 The `complete(…)` method creates functional gravity in the sense that it attracts related functionality and thus interaction with Spring beans defined in other application modules.
-This especially makes the component harder to test as we need to have instances available of those depended on beans just to create an instance of `OrderManagement` (see xref:testing.adoc#efferent-dependencies[Dealing with Efferent Dependencies]).
+This especially makes the component harder to test as we need to have instances available of those dependent beans just to create an instance of `OrderManagement` (see xref:testing.adoc#efferent-dependencies[Dealing with Efferent Dependencies]).
 It also means that we will have to touch the class whenever we would like to integrate further functionality with the business event order completion.
 
 We can change the application module interaction as follows:
