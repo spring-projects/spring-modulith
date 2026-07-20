@@ -344,7 +344,7 @@ dependencies {
 
 This artifact contains primary abstractions that are available to application code as Spring Beans:
 
-* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the completed publications older than a given duration (for example, 1 minute).
+* `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the ones older than a given duration (for example, 1 minute).
 * `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate, older than a given `Duration` relative to the original publishing date, or matching custom criteria via `resubmitIncompletePublications(ResubmissionOptions)` (since 2.0).
 * `FailedEventPublications` (since 2.0) -- This interface allows resubmitting only failed event publications via `resubmit(ResubmissionOptions)`, as described in <<publication-registry.lifecycle.failed-and-resubmission>>.
 
