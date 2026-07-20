@@ -144,7 +144,7 @@ icon:cubes[] Example
 [[modules.advanced]]
 === Advanced Application Modules
 
-If an application module package contains sub-packages, types in those might need to be made public so that it can be referred to from code of the very same module.
+If an application module package contains sub-packages, types in those might need to be made public so that they can be referred to from code of the very same module.
 
 .An inventory and order application module
 [source, subs="macros, quotes"]
