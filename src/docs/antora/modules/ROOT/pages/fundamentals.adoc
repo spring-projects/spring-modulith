@@ -655,7 +655,7 @@ class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrat
 
 In the `detectNamedInterfaces(…)` implementation shown above, we build up a `NamedInterfaces` instance for all packages named `api` underneath the given application module's base package.
 The `Builder` API exposes additional methods to select packages as named interfaces or explicitly exclude them from that.
-Note, that the builder will always include the unnamed named interface containing all public methods located in the application module's base package as that interface is required for application modules.
+Note that the builder will always include the unnamed named interface containing all public methods located in the application module's base package as that interface is required for application modules.
 
 For a more manual setup of a `NamedInterfaces`, be sure to check out its factory methods and the ones exposed by `NamedInterface`.
 
