@@ -45,7 +45,7 @@ val modules = ApplicationModules.of(Application::class.java)
 The `modules` will contain an in-memory representation of the application module arrangement derived from the codebase.
 Which parts of that will be detected as a module depends on the Java package structure underneath the package the class pointed to resides in.
 Find out more about the arrangement expected by default in xref:fundamentals.adoc#modules.simple[].
-Advanced arrangements and customization options are described in xref:fundamentals.adoc#modules.advanced[] and
+Advanced arrangements and customization options are described in xref:fundamentals.adoc#modules.advanced[], xref:fundamentals.adoc#modules.nested[] and xref:fundamentals.adoc#modules.open[].
 
 To get an impression of what the analyzed arrangement looks like, we can just write the individual modules contained in the overall model to the console:
 
@@ -144,7 +144,7 @@ icon:cubes[] Example
 [[modules.advanced]]
 === Advanced Application Modules
 
-If an application module package contains sub-packages, types in those might need to be made public so that it can be referred to from code of the very same module.
+If an application module package contains sub-packages, types in those might need to be made public so that they can be referred to from code of the very same module.
 
 .An inventory and order application module
 [source, subs="macros, quotes"]
@@ -258,7 +258,7 @@ class ModuleMetadata {}
 Declaring an application module as open will cause the following changes to the verification:
 
 * Access to application module internal types from other modules is generally allowed.
-* All types, also ones residing in sub-packages of the application module base package are added to the xref:fundamentals.adoc#modules.named-interfaces[unnamed named interface], unless explicitly assigned to a named interface.
+* All types, including the ones residing in sub-packages of the application module base package are added to the xref:fundamentals.adoc#modules.named-interfaces[unnamed named interface], unless explicitly assigned to a named interface.
 
 NOTE: This feature is intended to be primarily used with code bases of existing projects gradually moving to the Spring Modulith recommended packaging structure.
 In a fully-modularized application, using open application modules usually hints at sub-optimal modularization and packaging structures.
@@ -655,7 +655,7 @@ class CustomApplicationModuleDetectionStrategy : ApplicationModuleDetectionStrat
 
 In the `detectNamedInterfaces(…)` implementation shown above, we build up a `NamedInterfaces` instance for all packages named `api` underneath the given application module's base package.
 The `Builder` API exposes additional methods to select packages as named interfaces or explicitly exclude them from that.
-Note, that the builder will always include the unnamed named interface containing all public methods located in the application module's base package as that interface is required for application modules.
+Note that the builder will always include the unnamed named interface containing all public methods located in the application module's base package as that interface is required for application modules.
 
 For a more manual setup of a `NamedInterfaces`, be sure to check out its factory methods and the ones exposed by `NamedInterface`.
 
