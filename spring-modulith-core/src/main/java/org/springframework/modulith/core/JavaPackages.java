@@ -113,7 +113,7 @@ public class JavaPackages implements Iterable<JavaPackage> {
 	}
 
 	/**
-	 * Returns whether any of the the packages could contain the type independent of the actual types backing the current
+	 * Returns whether any of the packages could contain the type independent of the actual types backing the current
 	 * instance.
 	 *
 	 * @param type must not be {@literal null}.
@@ -128,7 +128,7 @@ public class JavaPackages implements Iterable<JavaPackage> {
 	}
 
 	/**
-	 * Returns whether any of the the packages could contain the type independent of the actual types backing the current
+	 * Returns whether any of the packages could contain the type independent of the actual types backing the current
 	 * instance.
 	 *
 	 * @param type must not be {@literal null}.
