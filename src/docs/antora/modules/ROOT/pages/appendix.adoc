@@ -1,7 +1,7 @@
 [[appendix]]
 = Appendix
 :jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources/org/springframework/modulith/events/jdbc/schemas
-:couchbase-schema-base: partial$spring-modulith-events-jdbc-src/main/resources/org/springframework/modulith/events/couchbase/schemas
+:couchbase-schema-base: partial$spring-modulith-events-couchbase-src/main/resources/org/springframework/modulith/events/couchbase/schemas
 
 [appendix]
 [[compatibility-matrix]]
