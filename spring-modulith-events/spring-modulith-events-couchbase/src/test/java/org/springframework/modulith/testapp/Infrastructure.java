@@ -35,6 +35,7 @@ import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 
 /**
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @TestConfiguration(proxyBeanMethods = false)

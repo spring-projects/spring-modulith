@@ -26,6 +26,7 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 
 /**
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @SpringBootTest(classes = TestApplication.class)

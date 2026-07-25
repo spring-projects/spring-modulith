@@ -19,6 +19,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Import;
 
 /**
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @SpringBootApplication

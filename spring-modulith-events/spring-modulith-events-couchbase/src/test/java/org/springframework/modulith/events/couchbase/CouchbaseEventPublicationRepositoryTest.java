@@ -47,6 +47,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @Testcontainers(disabledWithoutDocker = true)

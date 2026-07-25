@@ -27,6 +27,7 @@ import org.springframework.modulith.events.support.CompletionMode;
 /**
  * Autoconfiguration for Couchbase event publication repository.
  *
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @AutoConfiguration

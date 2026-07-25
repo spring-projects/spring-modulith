@@ -30,6 +30,7 @@ import org.springframework.transaction.support.TransactionTemplate;
  * Auto-configuration to enable Couchbase transaction management as that is required for the
  * {@link org.springframework.modulith.events.core.EventPublicationRegistry} to work properly.
  *
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @AutoConfiguration
