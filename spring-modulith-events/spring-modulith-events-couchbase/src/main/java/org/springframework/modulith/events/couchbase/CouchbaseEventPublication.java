@@ -32,6 +32,7 @@ import static org.springframework.modulith.events.couchbase.CouchbaseEventPublic
 /**
  * A CouchBase Document to represent event publications.
  *
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @Document

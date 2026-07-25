@@ -42,6 +42,7 @@ import org.springframework.util.Assert;
 /**
  * Repository to store {@link TargetEventPublication}s in a Couchbase DB.
  *
+ * @author Oliver Drotbohm
  * @author Alexandre Vigneron
  */
 @Transactional
