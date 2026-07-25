@@ -17,6 +17,7 @@
 
 	<modules>
 		<module>spring-modulith-example-epr-jdbc</module>
+		<module>spring-modulith-example-epr-couchbase</module>
 		<!-- Skip because it doesn't work with Boot 4.0 RC1 for now -->
 		<!--<module>spring-modulith-example-epr-mongodb</module>-->
 		<module>spring-modulith-example-epr-neo4j</module>
