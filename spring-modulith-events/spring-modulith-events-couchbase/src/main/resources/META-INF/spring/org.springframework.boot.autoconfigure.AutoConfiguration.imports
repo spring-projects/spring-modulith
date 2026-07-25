@@ -1,0 +1,2 @@
+org.springframework.modulith.events.couchbase.CouchbaseEventPublicationAutoConfiguration
+org.springframework.modulith.events.couchbase.CouchbaseTransactionAutoConfiguration
