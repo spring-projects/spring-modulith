@@ -142,7 +142,7 @@ class EventPublicationAutoConfigurationIntegrationTests {
 	void registersStalenessMonitorIfPropertiesConfigured() {
 
 		basicSetup()
-				.withPropertyValues("spring.modulith.events.staleness-check-intervall=10s")
+				.withPropertyValues("spring.modulith.events.staleness.check-interval=10s")
 				.run(context -> {
 					assertThat(context).hasSingleBean(SchedulingConfigurer.class);
 				});
