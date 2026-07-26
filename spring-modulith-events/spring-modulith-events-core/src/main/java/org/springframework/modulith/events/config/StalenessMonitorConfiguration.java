@@ -64,10 +64,10 @@ class StalenessMonitorConfiguration implements SchedulingConfigurer {
 		if (staleness.monitorStaleness()) {
 
 			LOGGER.info("Checking for stale event publications every {}.",
-					EventUtils.prettyPrint(staleness.getCheckIntervall()));
+					EventUtils.prettyPrint(staleness.getCheckInterval()));
 
 			taskRegistrar.addFixedDelayTask(() -> registry.markStalePublicationsFailed(staleness),
-					staleness.getCheckIntervall());
+					staleness.getCheckInterval());
 		}
 	}
 }

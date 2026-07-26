@@ -19,9 +19,9 @@
 			"description": "Whether to republish outstanding event publications on restarts of the application.",
 			"defaultValue": "false",
 			"deprecation": {
-				"replacement": "spring.modulith.events.republish-outstanding-events-on-restart", 
+				"replacement": "spring.modulith.events.republish-outstanding-events-on-restart",
 				"reason": "Moved to spring.modulith.events namespace. To be removed in 1.4.",
-				"since" : "1.3"
+				"since": "1.3"
 			}
 		},
 		{
@@ -54,10 +54,21 @@
 			"defaultValue": "false"
 		},
 		{
-			"name": "spring.modulith.events.staleness.check-intervall",
+			"name": "spring.modulith.events.staleness.check-interval",
 			"type": "java.time.Duration",
 			"description": "Configures the {@link Duration} to check for stale event publications. Defaults to one minute.",
 			"sourceType": "org.springframework.modulith.events.config.StalenessProperties"
+		},
+		{
+			"name": "spring.modulith.events.staleness.check-intervall",
+			"type": "java.time.Duration",
+			"description": "Configures the {@link Duration} to check for stale event publications. Defaults to one minute.",
+			"sourceType": "org.springframework.modulith.events.config.StalenessProperties",
+			"deprecation": {
+				"replacement": "spring.modulith.events.staleness.check-interval",
+				"reason": "Corrected spelling. To be removed in 2.2.",
+				"since": "2.1"
+			}
 		},
 		{
 			"name": "spring.modulith.events.staleness.processing",
@@ -83,9 +94,9 @@
 			"description": "Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as {@value org.springframework.modulith.events.EventPublication.Status#RESUBMITTED} will be considered stale.",
 			"sourceType": "org.springframework.modulith.events.config.StalenessProperties",
 			"deprecation": {
-				"replacement": "spring.modulith.events.staleness.resubmitted", 
+				"replacement": "spring.modulith.events.staleness.resubmitted",
 				"reason": "To align with the publication state. To be removed in 2.2.",
-				"since" : "2.1"
+				"since": "2.1"
 			}
 		}
 	]
