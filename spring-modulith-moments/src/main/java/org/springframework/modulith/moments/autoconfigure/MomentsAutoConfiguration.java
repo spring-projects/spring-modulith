@@ -18,11 +18,11 @@ package org.springframework.modulith.moments.autoconfigure;
 import java.time.Clock;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.moments.support.Moments;
 import org.springframework.modulith.moments.support.MomentsProperties;
 import org.springframework.modulith.moments.support.TimeMachine;
@@ -36,7 +36,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @EnableScheduling
 @EnableConfigurationProperties(MomentsProperties.class)
 @ConditionalOnProperty(name = "spring.modulith.moments.enabled", havingValue = "true", matchIfMissing = true)
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 class MomentsAutoConfiguration {
 
 	@Bean

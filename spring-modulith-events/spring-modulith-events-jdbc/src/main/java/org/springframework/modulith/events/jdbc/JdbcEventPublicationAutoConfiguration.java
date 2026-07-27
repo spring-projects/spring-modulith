@@ -21,11 +21,9 @@ import javax.sql.DataSource;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
-import org.springframework.boot.autoconfigure.AutoConfigureBefore;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ProxyType;
 import org.springframework.context.annotation.Proxyable;
 import org.springframework.core.env.Environment;
@@ -44,8 +42,7 @@ import org.springframework.modulith.events.support.CompletionMode;
  * @author Oliver Drotbohm
  * @author Raed Ben Hamouda
  */
-@Configuration(proxyBeanMethods = false)
-@AutoConfigureBefore(EventPublicationAutoConfiguration.class)
+@AutoConfiguration(before = EventPublicationAutoConfiguration.class)
 @EnableConfigurationProperties(JdbcConfigurationProperties.class)
 class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigurationExtension {
 
