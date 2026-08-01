@@ -27,6 +27,8 @@ import java.util.stream.Stream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.event.ApplicationEventMulticaster;
@@ -180,6 +182,15 @@ class PersistentApplicationEventMulticasterUnitTests {
 		});
 	}
 
+	@Test // GH-1783
+	void doesNotPropagateClassCastExceptionOfNonMatchingLambdaListener() {
+
+		multicaster.addApplicationListener(ApplicationListener.forPayload(__ -> {}));
+
+		assertThatNoException()
+				.isThrownBy(() -> multicaster.multicastEvent(new SampleApplicationEvent(this)));
+	}
+
 	private static TransactionalApplicationListenerMethodAdapter getAdapter(Class<?> type, String methodName,
 			Class<?> parameter) {
 
@@ -215,6 +226,14 @@ class PersistentApplicationEventMulticasterUnitTests {
 
 		@ApplicationModuleListener
 		void on(SampleEvent event) {}
+	}
+
+	@SuppressWarnings("serial")
+	static class SampleApplicationEvent extends ApplicationEvent {
+
+		SampleApplicationEvent(Object source) {
+			super(source);
+		}
 	}
 
 	static class SampleEvent {
