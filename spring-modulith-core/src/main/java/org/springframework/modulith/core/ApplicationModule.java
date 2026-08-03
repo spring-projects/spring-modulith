@@ -1369,6 +1369,21 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 			// Check explicitly defined allowed targets
 			if (!allowed.isAllowedDependency(target)) {
 
+				// When the target module is itself listed as an allowed dependency (for example via
+				// sharedModules) but the concrete type is not part of the allowed named interfaces,
+				// report a non-exposed-type violation. Otherwise the "Allowed targets: <module>"
+				// message is ambiguous (GH-1778).
+				var targetModuleAllowed = allowed.stream()
+						.anyMatch(it -> it.getTargetModule().equals(targetModule));
+
+				if (targetModuleAllowed && !targetModule.isExposed(target)) {
+
+					var violationText = INTERNAL_REFERENCE
+							.formatted(originModule.getIdentifier(), target.getName(), targetModule.getIdentifier());
+
+					return violations.and(new Violation(violationText + lineSeparator() + description));
+				}
+
 				var targetNamedInterfaces = targetModule.getNamedInterfaces()
 						.getNamedInterfacesContaining(target)
 						.filter(NamedInterface::isNamed)
