@@ -107,11 +107,16 @@ public class FormattableType {
 	 * @return will never be {@literal null}.
 	 */
 	public static FormattableType of(Class<?> type) {
+
+		Assert.notNull(type, "Type must not be null!");
+
 		return CACHE.computeIfAbsent(type.getTypeName(), FormattableType::new);
 	}
 
 	/**
-	 * Creates a new {@link FormattableType} for the given {@link ResolvableType}.
+	 * Creates a new {@link FormattableType} for the given {@link ResolvableType}. Unbounded wildcards and unresolvable
+	 * type variables ({@link ResolvableType#resolve()} returning {@literal null}) are represented as {@code ?}. Only the
+	 * resolved raw type is formatted so that callers can compose generic arguments recursively.
 	 *
 	 * @param type must not be {@literal null}.
 	 * @return will never be {@literal null}.
@@ -119,9 +124,12 @@ public class FormattableType {
 	 */
 	public static FormattableType of(ResolvableType type) {
 
-		var source = type.toString();
+		Assert.notNull(type, "ResolvableType must not be null!");
 
-		return source == "?" ? FormattableType.WILDCARD : CACHE.computeIfAbsent(source, FormattableType::new);
+		var resolved = type.resolve();
+
+		// Unbounded wildcards (Foo<?>) / type variables resolve to null
+		return resolved == null ? WILDCARD : of(resolved);
 	}
 
 	/**

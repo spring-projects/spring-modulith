@@ -53,22 +53,34 @@ class DefaultObservedModuleUnitTests {
 		assertThat(observedModule.isEventListenerInvocation(forMethod("someMethod"))).isFalse();
 	}
 
-	@Test // GH-1748
+	@Test // GH-1748, GH-1786
 	void rendersUnboundedWildcardGenericWithoutException() throws Exception {
 
 		var invocation = forMethod(new SampleComponent(), "withWildcard", List.class);
 
 		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
-		assertThat(observedModule.format(invocation)).contains("withWildcard(").contains("<?>");
+		assertThat(observedModule.format(invocation))
+				.isEqualTo("e.s.SampleComponent.withWildcard(j.u.List<?>)");
 	}
 
-	@Test // GH-1748
+	@Test // GH-1748, GH-1786
 	void rendersUnboundedTypeVariableGenericWithoutException() throws Exception {
 
 		var invocation = forMethod(new SampleComponent(), "withTypeVariable", List.class);
 
 		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
-		assertThat(observedModule.format(invocation)).contains("withTypeVariable(").contains("<?>");
+		assertThat(observedModule.format(invocation))
+				.isEqualTo("e.s.SampleComponent.withTypeVariable(j.u.List<?>)");
+	}
+
+	@Test // GH-1786
+	void rendersClassWildcardGenericWithoutException() throws Exception {
+
+		var invocation = forMethod(new SampleComponent(), "withClassWildcard", Class.class);
+
+		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
+		assertThat(observedModule.format(invocation))
+				.isEqualTo("e.s.SampleComponent.withClassWildcard(j.l.Class<?>)");
 	}
 
 	private static MethodInvocation forMethod(String name, Class<?>... parameterTypes) throws Exception {

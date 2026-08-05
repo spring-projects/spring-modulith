@@ -32,4 +32,6 @@ public class SampleComponent {
 	public void withWildcard(List<?> items) {}
 
 	public <T> void withTypeVariable(List<T> items) {}
+
+	public void withClassWildcard(Class<?> type) {}
 }
