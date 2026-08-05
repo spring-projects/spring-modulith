@@ -88,19 +88,38 @@ class FormattableTypeUnitTests {
 		assertThat(FormattableType.of(String[][].class).getFullName()).isEqualTo("java.lang.String[][]");
 	}
 
-	@Test // GH-1748
+	@Test // GH-1748, GH-1786
 	void handlesWildCardsAndUnresolvableGenerics() throws Exception {
 
 		var method = Sample.class.getMethod("wildcarded", List.class);
 
 		var parameterType = ResolvableType.forMethodParameter(method, 0);
 		var returnType = ResolvableType.forMethodReturnType(method);
+		var unboundedWildcard = returnType.getGeneric(0);
 
-		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.u.List<?>");
-		assertThat(FormattableType.of(returnType).getAbbreviatedFullName()).isEqualTo("j.u.List<?>");
+		// of(ResolvableType) formats the resolved raw type only; generics are composed by callers
+		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.u.List");
+		assertThat(FormattableType.of(returnType).getAbbreviatedFullName()).isEqualTo("j.u.List");
+
+		// Unbounded wildcard / unresolvable type variable → "?"
+		assertThat(FormattableType.of(unboundedWildcard).getAbbreviatedFullName()).isEqualTo("?");
+		assertThat(FormattableType.of(parameterType.getGeneric(0)).getAbbreviatedFullName()).isEqualTo("?");
+	}
+
+	@Test // GH-1786
+	void handlesClassWildcardWithoutException() throws Exception {
+
+		var method = Sample.class.getMethod("classWildcard", Class.class);
+		var parameterType = ResolvableType.forMethodParameter(method, 0);
+
+		assertThatNoException().isThrownBy(() -> FormattableType.of(parameterType));
+		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.l.Class");
+		assertThat(FormattableType.of(parameterType.getGeneric(0)).getAbbreviatedFullName()).isEqualTo("?");
 	}
 
 	interface Sample {
 		<T> List<?> wildcarded(List<T> parameterized);
+
+		void classWildcard(Class<?> type);
 	}
 }
