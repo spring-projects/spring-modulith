@@ -32,7 +32,7 @@ import org.springframework.context.annotation.Bean;
  *
  * @author Oliver Drotbohm
  */
-@AutoConfiguration
+@AutoConfiguration(before = RabbitJackson2Configuration.class)
 @ConditionalOnClass({ RabbitTemplate.class, JsonMapper.class })
 @ConditionalOnProperty(name = "spring.modulith.events.rabbitmq.enable-json", havingValue = "true",
 		matchIfMissing = true)
