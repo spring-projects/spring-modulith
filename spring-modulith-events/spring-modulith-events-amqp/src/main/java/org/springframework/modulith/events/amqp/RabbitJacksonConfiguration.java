@@ -23,6 +23,7 @@ import org.springframework.boot.amqp.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
@@ -32,7 +33,7 @@ import org.springframework.context.annotation.Bean;
  *
  * @author Oliver Drotbohm
  */
-@AutoConfiguration
+@AutoConfiguration(before = RabbitJackson2Configuration.class)
 @ConditionalOnClass({ RabbitTemplate.class, JsonMapper.class })
 @ConditionalOnProperty(name = "spring.modulith.events.rabbitmq.enable-json", havingValue = "true",
 		matchIfMissing = true)
@@ -40,6 +41,7 @@ class RabbitJacksonConfiguration {
 
 	@Bean
 	@ConditionalOnBean(JsonMapper.class)
+	@ConditionalOnMissingBean(name = "rabbitTemplateCustomizer")
 	RabbitTemplateCustomizer rabbitTemplateCustomizer(JsonMapper mapper) {
 
 		return template -> {
