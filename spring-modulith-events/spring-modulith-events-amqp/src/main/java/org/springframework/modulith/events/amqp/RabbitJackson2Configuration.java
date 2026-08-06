@@ -20,6 +20,7 @@ import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.rabbitmq.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.context.annotation.Bean;
@@ -44,6 +45,7 @@ class RabbitJackson2Configuration {
 	@Deprecated
 	@Bean
 	@ConditionalOnBean(ObjectMapper.class)
+	@ConditionalOnMissingBean(name = "rabbitTemplateCustomizer")
 	RabbitTemplateCustomizer rabbitTemplateCustomizer(ObjectMapper mapper) {
 
 		return template -> {
