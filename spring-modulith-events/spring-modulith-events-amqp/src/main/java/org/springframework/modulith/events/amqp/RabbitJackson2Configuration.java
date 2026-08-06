@@ -21,6 +21,7 @@ import org.springframework.boot.amqp.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 
@@ -43,6 +44,7 @@ class RabbitJackson2Configuration {
 
 	@Bean
 	@ConditionalOnBean(ObjectMapper.class)
+	@ConditionalOnMissingBean(name = "rabbitTemplateCustomizer")
 	RabbitTemplateCustomizer rabbitTemplateCustomizer(ObjectMapper mapper) {
 
 		return template -> {
