@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.junit;
 
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -45,7 +45,7 @@ class TestExecutionCondition {
 	private static final Logger log = LoggerFactory.getLogger(TestExecutionCondition.class);
 	private static final AnnotatedClassFinder SPA_CLASS_FINDER = new AnnotatedClassFinder(SpringBootConfiguration.class);
 
-	private final Map<ApplicationModule, ApplicationModuleDependencies> dependencies = new HashMap<>();
+	private final Map<ApplicationModule, ApplicationModuleDependencies> dependencies = new ConcurrentHashMap<>();
 
 	ConditionEvaluationResult evaluate(ConditionContext context) {
 
