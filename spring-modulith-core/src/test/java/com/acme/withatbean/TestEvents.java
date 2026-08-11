@@ -15,6 +15,8 @@
  */
 package com.acme.withatbean;
 
+import com.acme.other.ExternalConnector;
+
 /**
  * @author Oliver Drotbohm
  */
@@ -32,6 +34,23 @@ public class TestEvents {
 	 */
 	public void constructorCall() {
 		new JMoleculesAnnotated();
+	}
+
+	/**
+	 * Calls a factory method just like {@link #method()} but, unlike that one, isn't publicly accessible itself and
+	 * thus must not be considered an entry point even though it's declared on this otherwise exposed type.
+	 */
+	void packagePrivateMethod() {
+		JMoleculesAnnotated.of();
+	}
+
+	/**
+	 * Reaches {@link #constructorCall()} only via a detour through {@link ExternalConnector}, i.e. leaves the module and
+	 * re-enters it elsewhere. Must not be considered an entry point for the event {@link #constructorCall()} creates, as
+	 * that would require walking the call graph beyond this module's boundary.
+	 */
+	public void viaExternalRoute(ExternalConnector connector) {
+		connector.relay(this);
 	}
 
 	// jMolecules

@@ -35,6 +35,7 @@ import org.springframework.modulith.core.Types.JMoleculesTypes;
 import org.springframework.modulith.core.Types.JavaTypes;
 import org.springframework.modulith.core.Types.SpringTypes;
 import org.springframework.util.Assert;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;
 
@@ -75,6 +76,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	private final Supplier<Classes> aggregateRoots;
 	private final Supplier<List<JavaClass>> valueTypes;
 	private final Supplier<List<EventType>> publishedEvents;
+	private final Supplier<EntryPoints> entryPoints;
 
 	/**
 	 * Creates a new {@link ApplicationModule} from the given {@link ApplicationModuleSource}.
@@ -110,6 +112,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		this.valueTypes = SingletonSupplier
 				.of(() -> findArchitecturallyEvidentType(ArchitecturallyEvidentType::isValueObject));
 		this.publishedEvents = SingletonSupplier.of(() -> findPublishedEvents());
+		this.entryPoints = SingletonSupplier.of(() -> EntryPoints.of(this));
 	}
 
 	/**
@@ -196,6 +199,30 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	 */
 	public List<EventType> getPublishedEvents() {
 		return publishedEvents.get();
+	}
+
+	/**
+	 * Returns all {@link EntryPoints.EntryPoint}s of the module, i.e. methods or constructors that can trigger module
+	 * behavior from the outside.
+	 *
+	 * @return will never be {@literal null}.
+	 * @see EntryPoints
+	 * @since 2.2
+	 */
+	EntryPoints getEntryPoints() {
+		return entryPoints.get();
+	}
+
+	/**
+	 * Returns all {@link EntryPoints.EntryPoint}s (see {@link #getEntryPoints()}) that potentially (transitively) trigger
+	 * the creation of one of the module's {@link EventType}s, paired with the {@link EventType}(s) they trigger.
+	 *
+	 * @return will never be {@literal null}.
+	 * @see EntryPoints#discover(List)
+	 * @since 2.2
+	 */
+	MultiValueMap<EntryPoints.EntryPoint, EventType> getEventPublications() {
+		return getEntryPoints().discover(getPublishedEvents());
 	}
 
 	/**

@@ -17,19 +17,17 @@ package org.springframework.modulith.core;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Stream;
 
 import org.springframework.util.Assert;
 
 import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaModifier;
 
 /**
  * A type that represents an event in a system.
  *
  * @author Oliver Drotbohm
  */
-public class EventType {
+public class EventType implements TypeAware {
 
 	private final JavaClass type;
 	private final List<Source> sources;
@@ -44,16 +42,7 @@ public class EventType {
 		Assert.notNull(type, "Type must not be null!");
 
 		this.type = type;
-
-		var factoryMethodCalls = type.getMethods().stream()
-				.filter(method -> method.getModifiers().contains(JavaModifier.STATIC))
-				.filter(method -> method.getRawReturnType().equals(type))
-				.flatMap(method -> method.getCallsOfSelf().stream());
-
-		var constructorCalls = type.getConstructors().stream()
-				.flatMap(constructor -> constructor.getCallsOfSelf().stream());
-
-		this.sources = Stream.concat(constructorCalls, factoryMethodCalls)
+		this.sources = getCreations().stream()
 				.filter(call -> !call.getOriginOwner().equals(type))
 				.<Source> map(JavaAccessSource::new)
 				.toList();
@@ -64,6 +53,7 @@ public class EventType {
 	 *
 	 * @return will never be {@literal null}.
 	 */
+	@Override
 	public JavaClass getType() {
 		return type;
 	}

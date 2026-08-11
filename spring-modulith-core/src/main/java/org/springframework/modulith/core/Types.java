@@ -258,6 +258,7 @@ public class Types {
 		static final String AT_TX_EVENT_LISTENER = BASE_PACKAGE + ".transaction.event.TransactionalEventListener";
 		static final String AT_CONFIGURATION_PROPERTIES = BASE_PACKAGE
 				+ ".boot.context.properties.ConfigurationProperties";
+		static final String AT_REQUEST_MAPPING = BASE_PACKAGE + ".web.bind.annotation.RequestMapping";
 
 		static DescribedPredicate<? super JavaClass> isConfiguration() {
 			return isAnnotatedWith(AT_CONFIGURATION);
@@ -296,6 +297,18 @@ public class Types {
 			return isInterface().and(is(assignableTo(SpringDataTypes.REPOSITORY)) //
 					.or(isAnnotatedWith(SpringDataTypes.AT_REPOSITORY_DEFINITION)));
 		}
+	}
+
+	/**
+	 * Annotations of the messaging listener flavors optionally supported alongside core Spring. Referenced by name only
+	 * (see {@link SpringTypes}), so none of the underlying libraries need to be on the classpath for these to be usable
+	 * in an {@code isAnnotatedWith(…)} check.
+	 */
+	static class MessagingTypes {
+
+		static final String AT_KAFKA_LISTENER = "org.springframework.kafka.annotation.KafkaListener";
+		static final String AT_RABBIT_LISTENER = "org.springframework.amqp.rabbit.annotation.RabbitListener";
+		static final String AT_JMS_LISTENER = "org.springframework.jms.annotation.JmsListener";
 	}
 
 	/**
