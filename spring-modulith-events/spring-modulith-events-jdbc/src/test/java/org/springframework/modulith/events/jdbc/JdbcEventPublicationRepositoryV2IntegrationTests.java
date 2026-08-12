@@ -29,6 +29,7 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -63,6 +64,11 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 class JdbcEventPublicationRepositoryV2IntegrationTests {
 
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
+
+	@AfterAll
+	static void wipeDatabases() {
+		TestDatabaseCleanup.wipeAll();
+	}
 
 	@Import(TestApplication.class)
 	@Testcontainers(disabledWithoutDocker = true)
