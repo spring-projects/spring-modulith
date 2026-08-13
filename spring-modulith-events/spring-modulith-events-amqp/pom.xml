@@ -53,9 +53,11 @@
 			<artifactId>spring-amqp</artifactId>
 		</dependency>
 
+		<!-- AMQP 0.9 -->
+
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-amqp</artifactId>
+			<artifactId>spring-boot-rabbitmq</artifactId>
 			<optional>true</optional>
 		</dependency>
 
