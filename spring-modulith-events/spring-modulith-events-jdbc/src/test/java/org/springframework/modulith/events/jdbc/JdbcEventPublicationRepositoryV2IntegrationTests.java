@@ -29,6 +29,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 
+import javax.sql.DataSource;
+
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -66,8 +68,8 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");
 
 	@AfterAll
-	static void wipeDatabases() {
-		TestDatabaseCleanup.wipeAll();
+	static void killContainers() {
+		TestDatabaseCleanup.killContainers();
 	}
 
 	@Import(TestApplication.class)
@@ -80,6 +82,14 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 		@Autowired JdbcRepositorySettings properties;
 
 		@MockitoBean EventSerializer serializer;
+
+		@AfterAll
+		static void shutdownH2(@Autowired DataSource dataSource, @Autowired JdbcRepositorySettings settings) {
+
+			if (settings.getDatabaseType() == DatabaseType.H2) {
+				TestDatabaseCleanup.shutdownH2(dataSource);
+			}
+		}
 
 		@AfterEach
 		@BeforeEach
