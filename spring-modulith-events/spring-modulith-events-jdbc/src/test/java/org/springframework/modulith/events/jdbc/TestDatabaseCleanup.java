@@ -15,8 +15,9 @@
  */
 package org.springframework.modulith.events.jdbc;
 
-import java.sql.DriverManager;
 import java.sql.SQLException;
+
+import javax.sql.DataSource;
 
 import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
@@ -29,15 +30,26 @@ import org.testcontainers.jdbc.ContainerDatabaseDriver;
  */
 class TestDatabaseCleanup {
 
-	private static final String H2_URL = "jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1";
-
-	static void wipeAll() {
-
-		// Tears down all containers started via the jdbc:tc:… URL scheme (Postgres, MySQL, MariaDB, MSSQL, Oracle).
+	/**
+	 * Tears down all containers started via the {@code jdbc:tc:…} URL scheme (Postgres, MySQL, MariaDB, MSSQL,
+	 * Oracle). Cheap to call only once per test class, as containers are otherwise reused across {@code @Nested}
+	 * classes sharing the same JDBC URL.
+	 */
+	static void killContainers() {
 		ContainerDatabaseDriver.killContainers();
+	}
 
-		// H2 is kept alive by DB_CLOSE_DELAY=-1 independently of the tc: driver, and needs an explicit shutdown.
-		try (var connection = DriverManager.getConnection(H2_URL)) {
+	/**
+	 * Shuts down the H2 in-memory database backing the given {@link DataSource}, which is kept alive by
+	 * {@code DB_CLOSE_DELAY=-1} independently of the {@code jdbc:tc:} driver. Goes through the {@link DataSource}
+	 * actually used by the tests so that it picks up whatever credentials Spring Boot configured for it, instead of
+	 * guessing them.
+	 *
+	 * @param dataSource must not be {@literal null}.
+	 */
+	static void shutdownH2(DataSource dataSource) {
+
+		try (var connection = dataSource.getConnection()) {
 			connection.createStatement().execute("SHUTDOWN");
 		} catch (SQLException o_O) {
 			// No H2 database was active; nothing to shut down.
