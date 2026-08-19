@@ -34,4 +34,6 @@ public class SampleComponent {
 	public <T> void withTypeVariable(List<T> items) {}
 
 	public void withClassWildcard(Class<?> type) {}
+
+	public void withDeclaredGenerics(List<Object> items) {}
 }

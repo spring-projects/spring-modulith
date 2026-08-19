@@ -15,8 +15,12 @@
  */
 package org.springframework.modulith.core;
 
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -42,7 +46,17 @@ public class FormattableType {
 	private static final FormattableType WILDCARD = new FormattableType("?", () -> "?");
 
 	private final String type;
+	private final Collection<FormattableType> generics;
 	private final Supplier<String> abbreviatedName;
+
+	/**
+	 * Creates a new {@link FormattableType} for the given fully-qualified type name.
+	 *
+	 * @param type must not be {@literal null} or empty.
+	 */
+	private FormattableType(String type) {
+		this(type, Collections.emptyList());
+	}
 
 	/**
 	 * Creates a new {@link FormattableType} for the given source {@link String} and lazily computed abbreviated name.
@@ -57,18 +71,22 @@ public class FormattableType {
 
 		this.type = type;
 		this.abbreviatedName = abbreviatedName;
+		this.generics = Collections.emptyList();
 	}
 
 	/**
-	 * Creates a new {@link FormattableType} for the given fully-qualified type name.
+	 * Creates a new {@link FormattableType} for the given fully-qualified type name and generics.
 	 *
 	 * @param type must not be {@literal null} or empty.
+	 * @param generics must not be {@literal null}.
 	 */
-	private FormattableType(String type) {
+	private FormattableType(String type, List<FormattableType> generics) {
 
 		Assert.hasText(type, "Type must not be null or empty!");
+		Assert.notNull(generics, "Generics must not be null!");
 
 		this.type = type;
+		this.generics = generics;
 		this.abbreviatedName = SingletonSupplier.of(() -> {
 
 			String packageName = ClassUtils.getPackageName(type);
@@ -82,8 +100,10 @@ public class FormattableType {
 					.map(it -> it.substring(0, 1)) //
 					.collect(Collectors.joining("."));
 
-			return abbreviatedPackage.concat(".") //
+			var baseName = abbreviatedPackage.concat(".") //
 					.concat(ClassUtils.getShortName(type));
+
+			return generics.isEmpty() ? baseName : baseName + renderGenerics(FormattableType::getAbbreviatedFullName);
 		});
 	}
 
@@ -110,7 +130,7 @@ public class FormattableType {
 
 		Assert.notNull(type, "Type must not be null!");
 
-		return CACHE.computeIfAbsent(type.getTypeName(), FormattableType::new);
+		return CACHE.computeIfAbsent(type.getTypeName(), it -> new FormattableType(it, Collections.emptyList()));
 	}
 
 	/**
@@ -127,9 +147,13 @@ public class FormattableType {
 		Assert.notNull(type, "ResolvableType must not be null!");
 
 		var resolved = type.resolve();
+		var generics = Stream.of(type.getGenerics())
+				.map(FormattableType::of)
+				.toList();
 
-		// Unbounded wildcards (Foo<?>) / type variables resolve to null
-		return resolved == null ? WILDCARD : of(resolved);
+		return resolved != null
+				? CACHE.computeIfAbsent(type.toString(), __ -> new FormattableType(resolved.getName(), generics))
+				: WILDCARD;
 	}
 
 	/**
@@ -207,7 +231,8 @@ public class FormattableType {
 		return abbreviate(basePackageName) //
 				.concat(typePackageName.substring(basePackageName.length())) //
 				.concat(".") //
-				.concat(ClassUtils.getShortName(type));
+				.concat(ClassUtils.getShortName(type))
+				.concat(renderGenerics(it -> it.getAbbreviatedFullName(module, abbreviation)));
 	}
 
 	/**
@@ -235,7 +260,11 @@ public class FormattableType {
 	 * @return will never be {@literal null}.
 	 */
 	public String getFullName() {
-		return type.replace("$", ".");
+		return type.replace("$", ".") + renderGenerics(FormattableType::getFullName);
+	}
+
+	private String renderGenerics(Function<FormattableType, String> renderer) {
+		return generics.isEmpty() ? "" : generics.stream().map(renderer).collect(Collectors.joining(", ", "<", ">"));
 	}
 
 	private static String abbreviate(String source) {

@@ -18,6 +18,7 @@ package org.springframework.modulith.core;
 import static org.assertj.core.api.Assertions.*;
 
 import java.util.List;
+import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.core.ResolvableType;
@@ -98,8 +99,8 @@ class FormattableTypeUnitTests {
 		var unboundedWildcard = returnType.getGeneric(0);
 
 		// of(ResolvableType) formats the resolved raw type only; generics are composed by callers
-		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.u.List");
-		assertThat(FormattableType.of(returnType).getAbbreviatedFullName()).isEqualTo("j.u.List");
+		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.u.List<?>");
+		assertThat(FormattableType.of(returnType).getAbbreviatedFullName()).isEqualTo("j.u.List<?>");
 
 		// Unbounded wildcard / unresolvable type variable → "?"
 		assertThat(FormattableType.of(unboundedWildcard).getAbbreviatedFullName()).isEqualTo("?");
@@ -113,13 +114,26 @@ class FormattableTypeUnitTests {
 		var parameterType = ResolvableType.forMethodParameter(method, 0);
 
 		assertThatNoException().isThrownBy(() -> FormattableType.of(parameterType));
-		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.l.Class");
+		assertThat(FormattableType.of(parameterType).getAbbreviatedFullName()).isEqualTo("j.l.Class<?>");
 		assertThat(FormattableType.of(parameterType.getGeneric(0)).getAbbreviatedFullName()).isEqualTo("?");
 	}
 
+	@Test // GH-1786
+	void rendersDeclaredGenerics() throws Exception {
+
+		var method = Sample.class.getMethod("genericReturnType");
+		var type = FormattableType.of(ResolvableType.forMethodReturnType(method));
+
+		assertThat(type.getFullName()).isEqualTo("java.util.List<java.util.Map<java.lang.String, java.lang.Integer>>");
+		assertThat(type.getAbbreviatedFullName()).isEqualTo("j.u.List<j.u.Map<j.l.String, j.l.Integer>>");
+	}
+
 	interface Sample {
+
 		<T> List<?> wildcarded(List<T> parameterized);
 
 		void classWildcard(Class<?> type);
+
+		List<Map<String, Integer>> genericReturnType();
 	}
 }

@@ -21,7 +21,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.aopalliance.intercept.MethodInvocation;
@@ -129,13 +128,15 @@ class DefaultObservedModule implements ObservedModule {
 		var formatted = FormattableType.of(type).getAbbreviatedFullName(module,
 				NonModuleTypeAbbreviation.ABBREVIATED);
 
-		if (!type.hasGenerics()) {
-			return formatted;
-		}
+		return formatted;
 
-		return formatted + Stream.of(type.getGenerics())
-				.map(this::render)
-				.collect(Collectors.joining(", ", "<", ">"));
+		// if (!type.hasGenerics()) {
+		// return formatted;
+		// }
+		//
+		// return formatted + Stream.of(type.getGenerics())
+		// .map(this::render)
+		// .collect(Collectors.joining(", ", "<", ">"));
 	}
 
 	private Class<?> getUserType(MethodInvocation invocation) {

@@ -30,7 +30,6 @@ import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.observability.ObservedModule;
-import org.springframework.modulith.observability.support.DefaultObservedModule;
 import org.springframework.modulith.test.TestApplicationModules;
 
 /**
@@ -81,6 +80,16 @@ class DefaultObservedModuleUnitTests {
 		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
 		assertThat(observedModule.format(invocation))
 				.isEqualTo("e.s.SampleComponent.withClassWildcard(j.l.Class<?>)");
+	}
+
+	@Test // GH-1786
+	void rendersDeclaredGenerics() throws Exception {
+
+		var invocation = forMethod(new SampleComponent(), "withDeclaredGenerics", List.class);
+
+		assertThatNoException().isThrownBy(() -> observedModule.format(invocation));
+		assertThat(observedModule.format(invocation))
+				.isEqualTo("e.s.SampleComponent.withDeclaredGenerics(j.u.List<j.l.Object>)");
 	}
 
 	private static MethodInvocation forMethod(String name, Class<?>... parameterTypes) throws Exception {
