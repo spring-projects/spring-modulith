@@ -258,7 +258,7 @@ class ModuleMetadata {}
 Declaring an application module as open will cause the following changes to the verification:
 
 * Access to application module internal types from other modules is generally allowed.
-* All types, also ones residing in sub-packages of the application module base package are added to the xref:fundamentals.adoc#modules.named-interfaces[unnamed named interface], unless explicitly assigned to a named interface.
+* All types, including the ones residing in sub-packages of the application module base package are added to the xref:fundamentals.adoc#modules.named-interfaces[unnamed named interface], unless explicitly assigned to a named interface.
 
 NOTE: This feature is intended to be primarily used with code bases of existing projects gradually moving to the Spring Modulith recommended packaging structure.
 In a fully-modularized application, using open application modules usually hints at sub-optimal modularization and packaging structures.
