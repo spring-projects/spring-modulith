@@ -47,6 +47,7 @@ import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.TestApplication;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
@@ -62,6 +63,7 @@ import org.testcontainers.junit.jupiter.Testcontainers;
  * @author Raed Ben Hamouda
  * @author Cora Iberkleid
  */
+@DirtiesContext
 class JdbcEventPublicationRepositoryIntegrationTests {
 
 	static final PublicationTargetIdentifier TARGET_IDENTIFIER = PublicationTargetIdentifier.of("listener");

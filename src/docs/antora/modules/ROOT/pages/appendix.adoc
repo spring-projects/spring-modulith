@@ -1,6 +1,7 @@
 [[appendix]]
 = Appendix
 :jdbc-schema-base: partial$spring-modulith-events-jdbc-src/main/resources/org/springframework/modulith/events/jdbc/schemas
+:couchbase-schema-base: partial$spring-modulith-events-couchbase-src/main/resources/org/springframework/modulith/events/couchbase/schemas
 
 [appendix]
 [[compatibility-matrix]]
@@ -271,6 +272,7 @@ a|* `spring-modulith-docs`
 |`spring-modulith-events-amqp`|`runtime`|Event externalization support for AMQP.
 |`spring-modulith-events-api`|`runtime`|API to customize the event features of Spring Modulith.
 |`spring-modulith-events-core`|`runtime`|The core implementation of the event publication registry as well as the integration abstractions `EventPublicationRegistry` and `EventPublicationSerializer`.
+|`spring-modulith-events-couchbase`|`runtime`|A Couchbase-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-jackson`|`runtime`|A Jackson-based implementation of the `EventPublicationSerializer`.
 |`spring-modulith-events-jdbc`|`runtime`|A JDBC-based implementation of the `EventPublicationRegistry`.
 |`spring-modulith-events-jms`|`runtime`|Event externalization support for JMS.
@@ -290,8 +292,8 @@ a|* `spring-modulith-docs`
 [[schemas]]
 == Event publication registry schemas
 
-The JDBC-based event publication registry support expects the following database schemas to be present in the database.
-If you would like Spring Modulith to create the schema for you, set the application property `spring.modulith.events.jdbc-schema-initialization.enabled` to `true`.
+The JDBC-based and Couchbase-based event publication registry support expects the following database operations to be executed on the database.
+If you would like Spring Modulith to create the schema for you (JDBC-only), set the application property `spring.modulith.events.jdbc-schema-initialization.enabled` to `true`.
 
 [[schemas.h2]]
 === H2
@@ -477,6 +479,23 @@ include::{jdbc-schema-base}/v1/schema-postgresql.sql[]
 [source, sql]
 ----
 include::{jdbc-schema-base}/v1/schema-postgresql-archive.sql[]
+----
+
+[[schemas.couchbase]]
+=== Couchbase
+
+These operations need to be executed inside an existing bucket
+
+.Standard schema
+[source, sql]
+----
+include::{couchbase-schema-base}/schema-couchbase.sql[]
+----
+
+.Archive-enabled schema
+[source, sql]
+----
+include::{couchbase-schema-base}/schema-couchbase-archive.sql[]
 ----
 
 [appendix]
