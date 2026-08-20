@@ -35,6 +35,7 @@ import org.springframework.util.Assert;
  * Configuration properties for {@link Moments}.
  *
  * @author Oliver Drotbohm
+ * @author John Cunliffe
  */
 @ConfigurationProperties(prefix = "spring.modulith.moments")
 public class MomentsProperties {
@@ -135,7 +136,21 @@ public class MomentsProperties {
 	 * Returns whether to create hourly events.
 	 */
 	boolean isHourly() {
-		return Granularity.HOURS.equals(granularity);
+		return granularity.isAtLeastAsFineAs(Granularity.HOURS);
+	}
+
+	/**
+	 * Returns whether to create minutely events.
+	 */
+	boolean isMinutely() {
+		return granularity.isAtLeastAsFineAs(Granularity.MINUTES);
+	}
+
+	/**
+	 * Returns whether to create per-second events.
+	 */
+	boolean isSecondly() {
+		return granularity.isAtLeastAsFineAs(Granularity.SECONDS);
 	}
 
 	/**
@@ -164,11 +179,23 @@ public class MomentsProperties {
 	}
 
 	/**
-	 * The granularity of events to publish.
+	 * The granularity of events to publish. Ordered finest-first: an entry is "at least as fine as" any
+	 * later entry, so {@code SECONDS} fires every supported event, {@code DAYS} fires only the daily and
+	 * coarser ones.
 	 *
 	 * @author Oliver Drotbohm
 	 */
 	static enum Granularity {
+
+		/**
+		 * Publish per-second events. Will include minute, hourly and daily events.
+		 */
+		SECONDS,
+
+		/**
+		 * Publish per-minute events. Will include hourly and daily events.
+		 */
+		MINUTES,
 
 		/**
 		 * Publish hourly events. Will include daily events.
@@ -179,6 +206,10 @@ public class MomentsProperties {
 		 * Publish daily events only.
 		 */
 		DAYS;
+
+		boolean isAtLeastAsFineAs(Granularity other) {
+			return this.ordinal() <= other.ordinal();
+		}
 	}
 
 	private static class ShiftedQuarters {
