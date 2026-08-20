@@ -74,6 +74,6 @@ class DatabaseSchemaInitializerUnitTests {
 	}
 
 	private static JdbcConfigurationProperties withSchema(String schema) {
-		return new JdbcConfigurationProperties(new SchemaInitialization(true), schema, false);
+		return new JdbcConfigurationProperties(new SchemaInitialization(true), schema, false, null);
 	}
 }
