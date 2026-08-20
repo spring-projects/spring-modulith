@@ -20,9 +20,9 @@ import io.micrometer.observation.ObservationRegistry;
 import java.util.function.Supplier;
 
 import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.data.rest.webmvc.RepositoryController;
 import org.springframework.modulith.observability.ModulithObservationConvention;
@@ -33,7 +33,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 /**
  * @author Oliver Drotbohm
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnClass(RepositoryController.class)
 class SpringDataRestModuleObservabilityAutoConfiguration {
 

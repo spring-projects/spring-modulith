@@ -23,13 +23,13 @@ import java.util.function.Supplier;
 
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.config.ConfigurableListableBeanFactory;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
 import org.springframework.boot.task.SimpleAsyncTaskExecutorCustomizer;
 import org.springframework.boot.task.ThreadPoolTaskExecutorCustomizer;
 import org.springframework.boot.thread.Threading;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.core.task.support.ContextPropagatingTaskDecorator;
 import org.springframework.modulith.observability.ModulithEventMetricsCustomizer;
@@ -44,7 +44,7 @@ import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 /**
  * @author Oliver Drotbohm
  */
-@Configuration(proxyBeanMethods = false)
+@AutoConfiguration
 @ConditionalOnProperty(name = "management.tracing.enabled", havingValue = "true", matchIfMissing = true)
 class ModuleObservabilityAutoConfiguration {
 
