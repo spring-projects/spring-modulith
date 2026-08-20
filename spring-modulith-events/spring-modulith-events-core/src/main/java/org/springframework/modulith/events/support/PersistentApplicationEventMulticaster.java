@@ -35,8 +35,8 @@ import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
-import org.springframework.context.event.AbstractApplicationEventMulticaster;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
+import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
@@ -69,7 +69,7 @@ import org.springframework.util.StringUtils;
  * @author Oliver Drotbohm
  * @see CompletionRegisteringAdvisor
  */
-public class PersistentApplicationEventMulticaster extends AbstractApplicationEventMulticaster
+public class PersistentApplicationEventMulticaster extends SimpleApplicationEventMulticaster
 		implements FailedEventPublications, IncompleteEventPublications, SmartInitializingSingleton {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
@@ -141,7 +141,7 @@ public class PersistentApplicationEventMulticaster extends AbstractApplicationEv
 				.ifPresent(stream -> storePublications(stream, eventToPersist));
 
 		for (ApplicationListener listener : matchingListeners) {
-			listener.onApplicationEvent(event);
+			invokeListener(listener, event);
 		}
 	}
 
