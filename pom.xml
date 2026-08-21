@@ -36,7 +36,7 @@
 						<package>@asciidoctor/tabs@1.0.0-beta.6</package>
 						<package>@springio/antora-extensions@1.14.2</package>
 						<package>@springio/asciidoctor-extensions@1.0.0-alpha.18</package>
-						<package>asciidoctor-kroki</package>
+						<package>asciidoctor-kroki@0.18.1</package>
 					</packages>
 					<options>
 						<option>--to-dir=target/antora/site</option>
