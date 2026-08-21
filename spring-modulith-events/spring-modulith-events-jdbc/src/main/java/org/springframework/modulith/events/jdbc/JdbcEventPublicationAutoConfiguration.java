@@ -52,8 +52,11 @@ class JdbcEventPublicationAutoConfiguration implements EventPublicationConfigura
 	@Autowired Environment environment;
 
 	@Bean
-	DatabaseType databaseType(DataSource dataSource) {
-		return DatabaseType.from(fromDataSource(dataSource));
+	DatabaseType databaseType(DataSource dataSource, JdbcConfigurationProperties properties) {
+
+		var configured = properties.getDatabaseType();
+
+		return configured != null ? configured : DatabaseType.from(fromDataSource(dataSource));
 	}
 
 	@Bean
