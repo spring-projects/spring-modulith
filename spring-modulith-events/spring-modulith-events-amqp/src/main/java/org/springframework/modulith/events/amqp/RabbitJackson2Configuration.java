@@ -32,6 +32,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * application.
  *
  * @author Oliver Drotbohm
+ * @author Dongliang Xie
  * @since 2.0
  * @deprecated since 2.0 in favor of {@link RabbitJacksonConfiguration}
  */
