@@ -52,6 +52,7 @@ import org.springframework.util.ReflectionUtils;
  * Unit tests for {@link PersistentApplicationEventMulticaster}.
  *
  * @author Oliver Drotbohm
+ * @author Seonwoo Jung
  */
 class PersistentApplicationEventMulticasterUnitTests {
 
