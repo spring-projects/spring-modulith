@@ -67,6 +67,7 @@ import org.springframework.util.StringUtils;
  * for incomplete publications.
  *
  * @author Oliver Drotbohm
+ * @author Seonwoo Jung
  * @see CompletionRegisteringAdvisor
  */
 public class PersistentApplicationEventMulticaster extends SimpleApplicationEventMulticaster
