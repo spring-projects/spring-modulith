@@ -27,17 +27,14 @@ import com.tngtech.archunit.core.importer.ImportOption;
  * Regression tests for GH-1778.
  *
  * @author Burak Kalayci
+ * @author Oliver Drotbohm
  */
 class Gh1778Tests {
 
 	@Test // GH-1778
-	void reportsNonExposedTypeWhenSharedModuleTargetIsNotExposed() {
+	void reportsNonExposedTypeForAllowedModuleReference() {
 
 		var modules = ApplicationModules.of(Application.class, new ImportOption.OnlyIncludeTests());
-
-		assertThat(modules.getSharedModules())
-				.extracting(it -> it.getIdentifier().toString())
-				.containsExactly("review");
 
 		assertThatExceptionOfType(Violations.class) //
 				.isThrownBy(modules::verify) //

@@ -1,2 +1,2 @@
-@org.springframework.modulith.ApplicationModule(allowedDependencies = {})
+@org.springframework.modulith.ApplicationModule(allowedDependencies = { "review" })
 package reproducers.gh1778.bidding;
