@@ -31,6 +31,7 @@ import org.springframework.context.annotation.Bean;
  * application.
  *
  * @author Oliver Drotbohm
+ * @author Dongliang Xie
  */
 @AutoConfiguration(before = RabbitJackson2Configuration.class)
 @ConditionalOnClass({ RabbitTemplate.class, JsonMapper.class })

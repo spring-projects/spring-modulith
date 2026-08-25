@@ -17,16 +17,16 @@ package org.springframework.modulith.events.amqp;
 
 import static org.assertj.core.api.Assertions.*;
 
+import tools.jackson.databind.json.JsonMapper;
+
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.JacksonJsonMessageConverter;
+import org.springframework.boot.amqp.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
-import org.springframework.boot.rabbitmq.autoconfigure.RabbitTemplateCustomizer;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-
-import tools.jackson.databind.json.JsonMapper;
 
 /**
  * @author Dongliang Xie
