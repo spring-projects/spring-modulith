@@ -22,6 +22,5 @@ import org.springframework.modulith.Modulithic;
  *
  * @author Burak Kalayci
  */
-@Modulithic(sharedModules = "review")
-public class Application {
-}
+@Modulithic
+public class Application {}
