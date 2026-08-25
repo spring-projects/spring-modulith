@@ -71,9 +71,13 @@ public class StalenessProperties implements Staleness {
 		this.published = published == null ? Duration.ZERO : published;
 		this.processing = processing == null ? Duration.ZERO : processing;
 		this.resubmitted = resubmitted == null ? resubmission == null ? Duration.ZERO : resubmission : resubmitted;
+
 		// Prefer check-interval; keep check-intervall as a deprecated alias for compatibility.
-		this.checkInterval = checkInterval != null ? checkInterval
-				: checkIntervall != null ? checkIntervall : Duration.ofMinutes(1);
+		this.checkInterval = checkInterval != null
+				? checkInterval
+				: checkIntervall != null
+						? checkIntervall
+						: Duration.ofMinutes(1);
 	}
 
 	boolean monitorStaleness() {
