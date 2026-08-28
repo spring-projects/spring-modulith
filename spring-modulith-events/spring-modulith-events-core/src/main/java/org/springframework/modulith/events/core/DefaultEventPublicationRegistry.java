@@ -361,7 +361,7 @@ public class DefaultEventPublicationRegistry
 		var duration = staleness.getStaleness(status);
 		var reference = clock.instant().minus(duration);
 		var result = events.findByStatus(status).stream()
-				.filter(it -> it.getPublicationDate().isBefore(reference))
+				.filter(it -> it.getLastPublicationDate().isBefore(reference))
 				.map(TargetEventPublication::getIdentifier).toList();
 
 		if (result.isEmpty()) {
