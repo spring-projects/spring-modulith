@@ -146,6 +146,11 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 		}
 	}
 
+	@Override
+	public Collection<? extends EventPublication> findAll() {
+		return registry.get().findIncompletePublications();
+	}
+
 	/*
 	* (non-Javadoc)
 	* @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublications(java.util.function.Predicate)
