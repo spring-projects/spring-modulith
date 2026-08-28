@@ -21,9 +21,11 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
+import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -128,6 +130,28 @@ class DefaultEventPublicationRegistryUnitTests {
 				ResubmissionOptions.defaults().withMaxInFlight(150).withBatchSize(100), __ -> {});
 
 		verify(repository).findFailedPublications(argThat(criteria -> criteria.getMaxItemsToRead() == 50));
+	}
+
+	@Test // GH-1836
+	void doesNotConsiderRecentlyResubmittedPublicationStaleBasedOnOriginalPublicationDate() {
+
+		var now = Instant.now();
+
+		var publication = mock(TargetEventPublication.class, CALLS_REAL_METHODS);
+		lenient().when(publication.getPublicationDate()).thenReturn(now.minus(Duration.ofDays(1)));
+		when(publication.getLastResubmissionDate()).thenReturn(now.minus(Duration.ofSeconds(1)));
+
+		when(repository.findByStatus(Status.PUBLISHED)).thenReturn(Collections.emptyList());
+		when(repository.findByStatus(Status.PROCESSING)).thenReturn(Collections.emptyList());
+		when(repository.findByStatus(Status.RESUBMITTED)).thenReturn(List.of(publication));
+
+		var registry = createRegistry(now);
+
+		registry.markStalePublicationsFailed(status -> Duration.ofMinutes(10));
+
+		// Resubmitted a second ago, well within the 10 minute staleness window, must not be marked failed
+		// even though the original publication date is a day old.
+		verify(repository, never()).markFailed(any());
 	}
 
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {

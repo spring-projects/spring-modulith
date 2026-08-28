@@ -111,6 +111,22 @@ public interface EventPublication {
 	Instant getLastResubmissionDate();
 
 	/**
+	 * Returns the date that the publication has been last published at. This will consider the most recent resubmission
+	 * before falling back to the original publication date.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 2.2, 2.1.2, 2.0.9
+	 * @see #getLastResubmissionDate()
+	 * @see #getPublicationDate()
+	 */
+	default Instant getLastPublicationDate() {
+
+		var lastResubmissionDate = getLastResubmissionDate();
+
+		return lastResubmissionDate != null ? lastResubmissionDate : getPublicationDate();
+	}
+
+	/**
 	 * Returns the number of completion attempts.
 	 *
 	 * @since 2.0
