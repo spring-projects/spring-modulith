@@ -102,8 +102,9 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 	 *
 	 * @param interfaces must not be {@literal null}.
 	 * @return will never be {@literal null}.
+	 * @since 2.2 (previously package protected)
 	 */
-	static NamedInterfaces of(List<NamedInterface> interfaces) {
+	public static NamedInterfaces of(List<NamedInterface> interfaces) {
 		return interfaces.isEmpty() ? NONE : new NamedInterfaces(interfaces);
 	}
 
