@@ -263,6 +263,17 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		return new NamedInterfaces(namedInterfaces);
 	}
 
+	/**
+	 * Creates a new {@link NamedInterfaces} instance with the given {@link NamedInterface}s added.
+	 *
+	 * @param others must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	public NamedInterfaces and(NamedInterface... others) {
+		return and(List.of(others));
+	}
+
 	Stream<NamedInterface> getNamedInterfacesContaining(Class<?> type) {
 
 		return namedInterfaces.stream()

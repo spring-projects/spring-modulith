@@ -100,14 +100,15 @@ class Classes implements DescribedIterable<JavaClass> {
 	 *
 	 * @param predicate must not be {@literal null}.
 	 * @return
+	 * @since 2.2, previously package private
 	 */
-	Classes that(DescribedPredicate<? super JavaClass> predicate) {
+	Classes that(Predicate<? super JavaClass> predicate) {
 
 		Assert.notNull(predicate, "Predicate must not be null!");
 
 		return classes.stream() //
-				.filter((Predicate<JavaClass>) it -> predicate.test(it)) //
-				.collect(Collectors.collectingAndThen(Collectors.toList(), Classes::new));
+				.filter(predicate::test) //
+				.collect(Classes.toClasses());
 	}
 
 	/**

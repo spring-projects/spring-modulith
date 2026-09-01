@@ -38,6 +38,7 @@ import example.ni.spi.SpiType;
 import example.ninvalid.InvalidDefaultNamedInterface;
 
 import java.util.Arrays;
+import java.util.List;
 
 import org.junit.jupiter.api.Test;
 
@@ -187,6 +188,19 @@ class NamedInterfacesUnitTests {
 		assertThat(result).hasSize(2)
 				.extracting(NamedInterface::getName)
 				.containsExactly(NamedInterface.UNNAMED_NAME, "domain");
+	}
+
+	@Test // GH-1839
+	void addsNamedInterfacesViaVarargs() {
+
+		var pkg = TestUtils.getPackage(RootType.class);
+		var api = NamedInterface.of("api", pkg.getClasses(), it -> it.getSimpleName().equals("ApiType"));
+		var spi = NamedInterface.of("spi", pkg.getClasses(), it -> it.getSimpleName().equals("SpiType"));
+
+		var result = NamedInterfaces.of(List.of(NamedInterface.unnamed(pkg))).and(api, spi);
+
+		assertThat(result).map(NamedInterface::getName)
+				.containsExactlyInAnyOrder(NamedInterface.UNNAMED_NAME, "api", "spi");
 	}
 
 	private static void assertInterfaceContains(NamedInterfaces interfaces, String name, Class<?>... types) {

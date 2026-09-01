@@ -21,6 +21,7 @@ import static org.springframework.modulith.core.Types.*;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.springframework.core.annotation.AnnotatedElementUtils;
@@ -92,10 +93,38 @@ public class NamedInterface implements Iterable<JavaClass> {
 	 * @param name must not be {@literal null} or empty.
 	 * @param classes must not be {@literal null}.
 	 * @return will never be {@literal null}.
-	 * @since 1.4 (previously package protected)
+	 * @since 2.2 (previously package protected)
 	 */
-	static NamedInterface of(String name, Classes classes) {
+	public static NamedInterface of(String name, Classes classes) {
 		return new NamedInterface(name, classes);
+	}
+
+	/**
+	 * Returns a new {@link NamedInterface} with the given name, and the given {@link Classes} filtered by the given
+	 * {@link Predicate}.
+	 *
+	 * @param name must not be {@literal null} or empty.
+	 * @param classes must not be {@literal null}.
+	 * @param filter must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	public static NamedInterface of(String name, Classes classes, Predicate<? super JavaClass> filter) {
+		return new NamedInterface(name, classes.that(filter));
+	}
+
+	/**
+	 * Returns a new {@link NamedInterface} with the given name, and the {@link Classes} of the given {@link JavaPackage}
+	 * filtered by the given {@link Predicate}.
+	 *
+	 * @param name must not be {@literal null} or empty.
+	 * @param javaPackage must not be {@literal null}.
+	 * @param filter must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	public static NamedInterface of(String name, JavaPackage javaPackage, Predicate<? super JavaClass> filter) {
+		return of(name, javaPackage.getClasses(), filter);
 	}
 
 	/**

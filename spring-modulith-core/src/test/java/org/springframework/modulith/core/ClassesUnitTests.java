@@ -18,6 +18,10 @@ package org.springframework.modulith.core;
 import static org.assertj.core.api.Assertions.*;
 
 import example.Example;
+import example.ni.RootType;
+import example.ni.api.ApiType;
+
+import java.util.function.Predicate;
 
 import org.junit.jupiter.api.Test;
 
@@ -47,5 +51,20 @@ class ClassesUnitTests {
 				.extracting(JavaClass::getSimpleName)
 				.contains("InNested", "InNestedA")
 				.doesNotContain("ApiType");
+	}
+
+	@Test // GH-1839
+	void filtersClassesUsingPlainPredicate() {
+
+		var classes = TestUtils.getClasses(Example.class);
+		Predicate<JavaClass> isApiType = it -> it.isEquivalentTo(ApiType.class);
+
+		var result = classes.that(isApiType);
+
+		assertThat(result)
+				.extracting(JavaClass::getSimpleName)
+				.containsExactly("ApiType");
+
+		assertThat(result.contains(RootType.class)).isFalse();
 	}
 }
