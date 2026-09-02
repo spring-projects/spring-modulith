@@ -32,20 +32,24 @@ class JdbcConfigurationProperties {
 	private final SchemaInitialization schemaInitialization;
 	private final @Nullable String schema;
 	private final boolean useLegacyStructure;
+	private final @Nullable DatabaseType databaseType;
 
 	/**
 	 * Creates a new {@link JdbcConfigurationProperties} instance.
 	 *
 	 * @param schemaInitialization whether to initialize the JDBC event publication schema. Defaults to {@literal false}.
 	 * @param schema the schema name of event publication table, can be {@literal null}.
+	 * @param databaseType the database type to use, can be {@literal null}. If not set, the type is detected from the
+	 *          {@link javax.sql.DataSource}.
 	 */
 	@ConstructorBinding
 	JdbcConfigurationProperties(SchemaInitialization schemaInitialization, @Nullable String schema,
-			@Nullable Boolean useLegacyStructure) {
+			@Nullable Boolean useLegacyStructure, @Nullable DatabaseType databaseType) {
 
 		this.schemaInitialization = schemaInitialization;
 		this.schema = schema;
 		this.useLegacyStructure = useLegacyStructure == null ? false : useLegacyStructure.booleanValue();
+		this.databaseType = databaseType;
 	}
 
 	/**
@@ -71,6 +75,16 @@ class JdbcConfigurationProperties {
 	 */
 	public boolean isUseLegacyStructure() {
 		return useLegacyStructure;
+	}
+
+	/**
+	 * The database type to use. If not set, the type is detected from the {@link javax.sql.DataSource}.
+	 *
+	 * @return can be {@literal null}.
+	 * @since 2.2
+	 */
+	public @Nullable DatabaseType getDatabaseType() {
+		return databaseType;
 	}
 
 	void verify(DatabaseType databaseType) {
