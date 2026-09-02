@@ -27,6 +27,7 @@ import org.springframework.modulith.moments.support.Moments;
 import org.springframework.modulith.moments.support.MomentsProperties;
 import org.springframework.modulith.moments.support.TimeMachine;
 import org.springframework.scheduling.annotation.EnableScheduling;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
 
 /**
  * Auto-configuration for {@link Moments}.
@@ -58,5 +59,13 @@ class MomentsAutoConfiguration {
 		Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
 
 		return new TimeMachine(clock, events, properties);
+	}
+
+	@Bean
+	SchedulingConfigurer momentsSchedulingConfigurer(Moments moments) {
+
+		return registrar -> moments.getTasksToBeScheduled().forEach(it -> {
+			registrar.addCronTask(it.getTask(), it.getExpression());
+		});
 	}
 }

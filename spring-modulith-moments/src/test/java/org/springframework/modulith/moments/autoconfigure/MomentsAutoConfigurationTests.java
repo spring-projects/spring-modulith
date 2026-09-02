@@ -27,6 +27,8 @@ import org.springframework.modulith.moments.Quarter;
 import org.springframework.modulith.moments.support.Moments;
 import org.springframework.modulith.moments.support.MomentsProperties;
 import org.springframework.modulith.moments.support.TimeMachine;
+import org.springframework.scheduling.annotation.SchedulingConfigurer;
+import org.springframework.scheduling.config.ScheduledTaskRegistrar;
 
 /**
  * Integration tests for {@link MomentsAutoConfiguration}.
@@ -92,6 +94,33 @@ class MomentsAutoConfigurationTests {
 				.withPropertyValues("spring.modulith.moments.enable-time-machine=true")
 				.run(it -> {
 					assertThat(it).hasSingleBean(TimeMachine.class);
+				});
+	}
+
+	@Test // GH-1688
+	void configuresSchedulingForMomentsBean() {
+
+		new ApplicationContextRunner()
+				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
+				.run(it -> {
+
+					var configurer = it.getBean(SchedulingConfigurer.class);
+
+					assertThatNoException().isThrownBy(() -> configurer.configureTasks(new ScheduledTaskRegistrar()));
+				});
+	}
+
+	@Test // GH-1688
+	void configuresSchedulingForTimeMachineBeanToo() {
+
+		new ApplicationContextRunner()
+				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
+				.withPropertyValues("spring.modulith.moments.enable-time-machine=true")
+				.run(it -> {
+
+					var configurer = it.getBean(SchedulingConfigurer.class);
+
+					assertThatNoException().isThrownBy(() -> configurer.configureTasks(new ScheduledTaskRegistrar()));
 				});
 	}
 }

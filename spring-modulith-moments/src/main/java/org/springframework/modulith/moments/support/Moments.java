@@ -15,6 +15,8 @@
  */
 package org.springframework.modulith.moments.support;
 
+import static org.springframework.modulith.moments.support.MomentsProperties.Granularity.*;
+
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -26,6 +28,8 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
+import java.util.Collection;
+import java.util.stream.Stream;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
@@ -37,7 +41,7 @@ import org.springframework.modulith.moments.SecondHasPassed;
 import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
-import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.modulith.moments.support.MomentsProperties.Granularity;
 import org.springframework.util.Assert;
 
 /**
@@ -76,9 +80,17 @@ public class Moments implements Now {
 	}
 
 	/**
+	 * Returns the methods to invoke for each {@link Granularity}, bound to this instance.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	public Collection<Task> getTasksToBeScheduled() {
+		return Task.of(properties.getGranularity(), this);
+	}
+
+	/**
 	 * Triggers event publication every second.
 	 */
-	@Scheduled(cron = "* * * * * *")
 	void everySecond() {
 
 		if (properties.isSecondly()) {
@@ -89,7 +101,6 @@ public class Moments implements Now {
 	/**
 	 * Triggers event publication every minute.
 	 */
-	@Scheduled(cron = "0 * * * * *")
 	void everyMinute() {
 
 		if (properties.isMinutely()) {
@@ -100,7 +111,6 @@ public class Moments implements Now {
 	/**
 	 * Triggers event publication every hour.
 	 */
-	@Scheduled(cron = "@hourly")
 	void everyHour() {
 
 		if (properties.isHourly()) {
@@ -111,7 +121,6 @@ public class Moments implements Now {
 	/**
 	 * Triggers event publication every midnight.
 	 */
-	@Scheduled(cron = "@daily")
 	void everyMidnight() {
 		emitEventsFor(now().toLocalDate().minusDays(1));
 	}
@@ -133,7 +142,7 @@ public class Moments implements Now {
 
 		ChronoUnit step = secondly ? ChronoUnit.SECONDS
 				: minutely ? ChronoUnit.MINUTES
-				: ChronoUnit.HOURS;
+						: ChronoUnit.HOURS;
 
 		LocalDateTime current = before.truncatedTo(step);
 		LocalDateTime stop = after.truncatedTo(step);
@@ -250,6 +259,82 @@ public class Moments implements Now {
 		// Year has passed
 		if (MonthDay.from(date).equals(DEC_31ST)) {
 			events.publishEvent(YearHasPassed.of(year));
+		}
+	}
+
+	/**
+	 * A method invocation to be scheduled per {@link Granularity}.
+	 *
+	 * @author Oliver Drotbohm
+	 * @since 2.2
+	 */
+	public static final class Task {
+
+		private final Granularity granularity;
+		private final Runnable task;
+
+		/**
+		 * Creates a new {@link Task} for the given {@link Granularity} and task.
+		 *
+		 * @param granularity must not be {@literal null}.
+		 * @param task must not be {@literal null}.
+		 */
+		private Task(Granularity granularity, Runnable task) {
+
+			Assert.notNull(granularity, "Granularity must not be null!");
+			Assert.notNull(task, "Runnable must not be null!");
+
+			this.granularity = granularity;
+			this.task = task;
+		}
+
+		/**
+		 * Returns all tasks to be scheduled for the given {@link Granularity} and {@link Moments} instance.
+		 *
+		 * @param granularity must not be {@literal null}.
+		 * @param moments must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		static Collection<Task> of(Granularity granularity, Moments moments) {
+
+			return Stream.of(
+					new Task(SECONDS, moments::everySecond),
+					new Task(MINUTES, moments::everyMinute),
+					new Task(HOURS, moments::everyHour),
+					new Task(DAYS, moments::everyMidnight))
+					.filter(it -> it.shouldBeScheduledFor(granularity))
+					.toList();
+		}
+
+		/**
+		 * Returns the actual task to be executed.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public Runnable getTask() {
+			return task;
+		}
+
+		/**
+		 * Return the cron expression to schedule the task at.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		public String getExpression() {
+			return granularity.getCron();
+		}
+
+		/**
+		 * Returns whether the current {@link Task} is associated with the given {@link Granularity}.
+		 *
+		 * @param granularity must not be {@literal null}.
+		 */
+		boolean hasGranularity(Granularity granularity) {
+			return this.granularity == granularity;
+		}
+
+		private boolean shouldBeScheduledFor(Granularity granularity) {
+			return granularity.isAtLeastAsFineAs(this.granularity);
 		}
 	}
 }

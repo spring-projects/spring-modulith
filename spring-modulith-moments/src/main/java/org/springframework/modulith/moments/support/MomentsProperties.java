@@ -126,6 +126,15 @@ public class MomentsProperties {
 	}
 
 	/**
+	 * Returns the configured {@link Granularity}.
+	 *
+	 * @return will never be {@literal null}.
+	 */
+	Granularity getGranularity() {
+		return granularity;
+	}
+
+	/**
 	 * Whether to enable the {@link TimeMachine}.
 	 */
 	public boolean isEnableTimeMachine() {
@@ -179,9 +188,8 @@ public class MomentsProperties {
 	}
 
 	/**
-	 * The granularity of events to publish. Ordered finest-first: an entry is "at least as fine as" any
-	 * later entry, so {@code SECONDS} fires every supported event, {@code DAYS} fires only the daily and
-	 * coarser ones.
+	 * The granularity of events to publish. Ordered finest-first: an entry is "at least as fine as" any later entry, so
+	 * {@code SECONDS} fires every supported event, {@code DAYS} fires only the daily and coarser ones.
 	 *
 	 * @author Oliver Drotbohm
 	 */
@@ -190,22 +198,45 @@ public class MomentsProperties {
 		/**
 		 * Publish per-second events. Will include minute, hourly and daily events.
 		 */
-		SECONDS,
+		SECONDS("* * * * * *"),
 
 		/**
 		 * Publish per-minute events. Will include hourly and daily events.
 		 */
-		MINUTES,
+		MINUTES("0 * * * * *"),
 
 		/**
 		 * Publish hourly events. Will include daily events.
 		 */
-		HOURS,
+		HOURS("@hourly"),
 
 		/**
 		 * Publish daily events only.
 		 */
-		DAYS;
+		DAYS("@daily");
+
+		private final String cron;
+
+		/**
+		 * Creates a new {@link Granularity} for the given cron expression.
+		 *
+		 * @param cron must not be {@literal null} or empty.
+		 */
+		Granularity(String cron) {
+
+			Assert.hasText(cron, "Cron expression must not be null or empty!");
+
+			this.cron = cron;
+		}
+
+		/**
+		 * Returns the cron expression to trigger the event publication for this {@link Granularity} with.
+		 *
+		 * @return will never be {@literal null}.
+		 */
+		String getCron() {
+			return cron;
+		}
 
 		boolean isAtLeastAsFineAs(Granularity other) {
 			return this.ordinal() <= other.ordinal();

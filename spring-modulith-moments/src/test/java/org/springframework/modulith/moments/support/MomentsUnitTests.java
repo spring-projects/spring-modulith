@@ -18,6 +18,7 @@ package org.springframework.modulith.moments.support;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.modulith.moments.support.MomentsProperties.Granularity.*;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -29,9 +30,15 @@ import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
+import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import org.assertj.core.data.TemporalUnitOffset;
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.NamedExecutable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.moments.DayHasPassed;
 import org.springframework.modulith.moments.HourHasPassed;
@@ -42,6 +49,7 @@ import org.springframework.modulith.moments.SecondHasPassed;
 import org.springframework.modulith.moments.ShiftedQuarter;
 import org.springframework.modulith.moments.WeekHasPassed;
 import org.springframework.modulith.moments.YearHasPassed;
+import org.springframework.modulith.moments.support.Moments.Task;
 import org.springframework.modulith.moments.support.MomentsProperties.Granularity;
 
 /**
@@ -205,18 +213,6 @@ class MomentsUnitTests {
 		assertThat(afterReset).isCloseTo(now, ACCEPTABLE_OFFSET);
 	}
 
-	private Duration getNumberOfDaysForThreeMonth(LocalDate date) {
-
-		int days = 0;
-
-		for (int i = 0; i < 3; i++) {
-			days += date.lengthOfMonth();
-			date = date.plusDays(days);
-		}
-
-		return Duration.ofDays(days);
-	}
-
 	@Test
 	void emitsMinutelyEventOnTimeShift() {
 
@@ -307,5 +303,85 @@ class MomentsUnitTests {
 		verify(events).publishEvent(SecondHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 59, 59)));
 		verify(events).publishEvent(MinuteHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 59)));
 		verify(events).publishEvent(HourHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 0)));
+	}
+
+	@TestFactory // GH-1688
+	Stream<DynamicTest> scheduledTasksInvokeTheirCorrespondingMethod() {
+
+		var stream = Stream.of(
+				new $(SECONDS, SecondHasPassed.class, "* * * * * *", "0 * * * * *", "@hourly", "@daily"),
+				new $(MINUTES, MinuteHasPassed.class, "0 * * * * *", "@hourly", "@daily"),
+				new $(HOURS, HourHasPassed.class, "@hourly", "@daily"),
+				new $(DAYS, DayHasPassed.class, "@daily"));
+
+		return DynamicTest.stream(stream);
+	}
+
+	private Duration getNumberOfDaysForThreeMonth(LocalDate date) {
+
+		int days = 0;
+
+		for (int i = 0; i < 3; i++) {
+			days += date.lengthOfMonth();
+			date = date.plusDays(days);
+		}
+
+		return Duration.ofDays(days);
+	}
+
+	/**
+	 * The expectation that the given {@link Granularity} results in exactly the given cron expressions being registered
+	 * for scheduling, and that the {@link Runnable} registered for that {@link Granularity} invokes the {@link Moments}
+	 * method that emits the corresponding event type, and none of the other event types.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	private static class $ implements NamedExecutable {
+
+		private static final Set<Class<?>> ALL_EVENT_TYPES = Set.of(
+				SecondHasPassed.class,
+				MinuteHasPassed.class,
+				HourHasPassed.class,
+				DayHasPassed.class);
+
+		private final Granularity granularity;
+		private final Class<?> eventType;
+		private final String[] expressions;
+
+		$(Granularity granularity, Class<?> eventType, String... expressions) {
+
+			this.granularity = granularity;
+			this.eventType = eventType;
+			this.expressions = expressions;
+		}
+
+		@Override
+		public String getName() {
+			return "%s invokes the method emitting %s".formatted(granularity.getCron(), eventType.getSimpleName());
+		}
+
+		@Override
+		public void execute() {
+
+			var events = mock(ApplicationEventPublisher.class);
+			var moments = new Moments(Clock.systemUTC(), events, MomentsProperties.DEFAULTS.withGranularity(granularity));
+			var tasks = moments.getTasksToBeScheduled();
+
+			assertThat(tasks)
+					.extracting(Task::getExpression)
+					.containsExactlyInAnyOrder(expressions);
+
+			tasks.stream()
+					.filter(it -> it.hasGranularity(granularity))
+					.map(Task::getTask)
+					.findFirst()
+					.ifPresent(Runnable::run);
+
+			verify(events).publishEvent(any(eventType));
+
+			ALL_EVENT_TYPES.stream()
+					.filter(Predicate.not(eventType::equals))
+					.forEach(other -> verify(events, never()).publishEvent(any(other)));
+		}
 	}
 }
