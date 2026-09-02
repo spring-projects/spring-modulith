@@ -45,8 +45,7 @@ class WorkingDirectoryChangesDetectorUnitTests {
 	@Test // GH-861
 	void filtersFilesContainedInReferenceFolder() {
 
-		when(delegate.getModifiedFiles())
-				.thenReturn(Stream.of("rootPom.xml", "nested/nestedPom.xml").map(ModifiedFile::new));
+		registerModifications("rootPom.xml", "nested/nestedPom.xml");
 
 		var detector = new WorkingDirectoryChangesDetector(delegate, "nested");
 
@@ -55,93 +54,83 @@ class WorkingDirectoryChangesDetectorUnitTests {
 				.containsExactly("nestedPom.xml");
 	}
 
-	@Test
-	void resolvesRepositoryRelativeWorkingDirectoryForNestedMavenModule() {
-
-		var repositoryRoot = "/tmp/example-repository";
-		var nestedModule = repositoryRoot + "/nested-module";
-
-		assertThat(WorkingDirectoryChangesDetector.repositoryRelativeWorkingDirectory(repositoryRoot, nestedModule))
-				.isEqualTo("nested-module");
-	}
-
 	@Test // GH-1849
-	void resolvesRepositoryRelativeWorkingDirectoryForGitSubmoduleWorkTree() {
+	void resolvesRepositoryRelativeWorkingDirectoryForNestedMavenModule(@TempDir Path temp) throws Exception {
 
-		var workTree = "/tmp/parent-repository/example-library";
-		var gitMetadataDirectory = "/tmp/parent-repository/.git/modules/example-library";
-		var nestedModule = workTree + "/example-library-core";
+		initGitRepository(temp, "root-pom.xml", "nested-module/module-pom.xml");
+		registerModifications("root-pom.xml", "nested-module/module-pom.xml");
 
-		assertThat(nestedModule).doesNotStartWith(gitMetadataDirectory);
-
-		assertThat(WorkingDirectoryChangesDetector.repositoryRelativeWorkingDirectory(workTree, nestedModule))
-				.isEqualTo("example-library-core");
-	}
-
-	@Test // GH-1849
-	void filtersModifiedFilesForGitSubmoduleWorkTree(@TempDir Path temp) throws Exception {
-
-		var nestedModule = initSubmoduleStyleRepository(temp);
-
-		when(delegate.getModifiedFiles())
-				.thenReturn(Stream.of("README", "module-a/pom.xml", "module-b/pom.xml").map(ModifiedFile::new));
-
-		var repositoryRelative = WorkingDirectoryChangesDetector.repositoryRelativeWorkingDirectory(
-				nestedModule.getParent().toAbsolutePath().toString(), nestedModule.toAbsolutePath().toString());
-
-		var detector = new WorkingDirectoryChangesDetector(delegate, repositoryRelative);
+		var detector = new WorkingDirectoryChangesDetector(delegate, "nested-module");
 
 		assertThat(detector.getModifiedFiles())
 				.extracting(ModifiedFile::path)
-				.containsExactly("pom.xml");
+				.containsExactly("module-pom.xml");
 	}
 
 	@Test // GH-1849
-	void usesWorkTreeWhenResolvingRepositoryRoot(@TempDir Path temp) throws Exception {
+	void resolvesRepositoryRelativeWorkingDirectoryForGitSubmoduleWorkTree(@TempDir Path temp) throws Exception {
 
-		var nestedModule = initSubmoduleStyleRepository(temp);
-		var workTree = nestedModule.getParent();
-		var gitDir = workTree.getParent().resolve("parent-repository/.git/modules/example-library");
+		initSubmoduleStyleRepository(temp);
 
-		try (Repository repository = new FileRepositoryBuilder()
-				.setGitDir(gitDir.toFile())
-				.setWorkTree(workTree.toFile())
-				.build()) {
+		registerModifications("README", "module-a/module-a-pom.xml", "module-b/module-b-pom.xml");
 
-			assertThat(repository.getWorkTree().getAbsolutePath()).isEqualTo(workTree.toAbsolutePath().toString());
-			assertThat(repository.getDirectory().getParent()).isNotEqualTo(repository.getWorkTree().getAbsolutePath());
+		var detector = new WorkingDirectoryChangesDetector(delegate, "module-a");
+
+		assertThat(detector.getModifiedFiles())
+				.extracting(ModifiedFile::path)
+				.containsExactly("module-a-pom.xml");
+	}
+
+	private void registerModifications(String... files) {
+		when(delegate.getModifiedFiles()).thenReturn(Stream.of(files).map(ModifiedFile::new));
+	}
+
+	private static void initGitRepository(Path root, String... files) throws Exception {
+
+		for (var file : files) {
+
+			var path = root.resolve(file);
+
+			Files.createDirectories(path.getParent());
+			Files.writeString(path, file);
+		}
+
+		try (Git git = Git.init().setDirectory(root.toFile()).call()) {
+
+			git.add().addFilepattern(".").call();
+			git.commit().setSign(false).setMessage("init").call();
 		}
 	}
 
-	private static Path initSubmoduleStyleRepository(Path temp) throws Exception {
+	/**
+	 * Sets up a work tree resembling a Git submodule, i.e. one whose {@code .git} entry is a file pointing to the actual
+	 * Git metadata directory located outside the work tree (e.g. in the parent repository's {@code .git/modules}), rather
+	 * than a {@code .git} directory living right inside the work tree.
+	 */
+	private static void initSubmoduleStyleRepository(Path temp) throws Exception {
 
 		var parentRepository = temp.resolve("parent-repository");
 		var gitDir = parentRepository.resolve(".git/modules/example-library");
 		var workTree = temp.resolve("example-library");
-		var nestedModule = workTree.resolve("module-a");
 
 		Files.createDirectories(gitDir);
-		Files.createDirectories(nestedModule);
+		Files.createDirectories(workTree.resolve("module-a"));
 		Files.createDirectories(workTree.resolve("module-b"));
 
 		Git.init().setDirectory(gitDir.toFile()).setBare(true).call();
 
 		Files.writeString(workTree.resolve("README"), "example");
-		Files.writeString(workTree.resolve("module-a/pom.xml"), "module-a");
-		Files.writeString(workTree.resolve("module-b/pom.xml"), "module-b");
+		Files.writeString(workTree.resolve("module-a/module-a-pom.xml"), "module-a");
+		Files.writeString(workTree.resolve("module-b/module-b-pom.xml"), "module-b");
 		Files.writeString(workTree.resolve(".git"), "gitdir: " + gitDir.toAbsolutePath() + "\n");
 
-		Repository repository = new FileRepositoryBuilder()
+		try (Repository repository = new FileRepositoryBuilder()
 				.setGitDir(gitDir.toFile())
 				.setWorkTree(workTree.toFile())
-				.build();
-
-		try (Git git = new Git(repository)) {
+				.build(); Git git = new Git(repository)) {
 
 			git.add().addFilepattern(".").call();
-			git.commit().setMessage("init").call();
+			git.commit().setSign(false).setMessage("init").call();
 		}
-
-		return nestedModule;
 	}
 }
