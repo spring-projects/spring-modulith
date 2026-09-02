@@ -57,33 +57,12 @@ class WorkingDirectoryChangesDetector implements FileModificationDetector {
 	public static WorkingDirectoryChangesDetector of(FileModificationDetector delegate) {
 
 		var pathToRepo = JGitUtil.withRepository(it -> it.getWorkTree().getAbsolutePath());
-		var repositoryRelative = repositoryRelativeWorkingDirectory(pathToRepo, new File("").getAbsolutePath());
+		var absoluteWorkingDirectory = new File("").getAbsolutePath();
+		var repositoryRelative = !pathToRepo.equals(absoluteWorkingDirectory)
+				? absoluteWorkingDirectory.substring(pathToRepo.length() + 1)
+				: "";
 
 		return new WorkingDirectoryChangesDetector(delegate, repositoryRelative);
-	}
-
-	/**
-	 * Returns the path of {@code absoluteWorkingDirectory} relative to the Git work tree root.
-	 * <p>
-	 * When tests run from a nested build module, the JVM working directory sits below the
-	 * repository root. This value is used to scope change detection to files under that
-	 * directory. Returns an empty string when the working directory is the repository root.
-	 * <p>
-	 * Package-private to allow direct unit testing of the path computation.
-	 *
-	 * @param repositoryRoot absolute path to the Git work tree root, must not be {@literal null}.
-	 * @param absoluteWorkingDirectory absolute path of the current working directory, must not be
-	 *          {@literal null}.
-	 * @return repository-relative working directory path, or {@literal ""} if already at the root.
-	 */
-	static String repositoryRelativeWorkingDirectory(String repositoryRoot, String absoluteWorkingDirectory) {
-
-		Assert.notNull(repositoryRoot, "Repository root must not be null!");
-		Assert.notNull(absoluteWorkingDirectory, "Working directory must not be null!");
-
-		return !repositoryRoot.equals(absoluteWorkingDirectory)
-				? absoluteWorkingDirectory.substring(repositoryRoot.length() + 1)
-				: "";
 	}
 
 	/*
