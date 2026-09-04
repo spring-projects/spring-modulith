@@ -328,7 +328,7 @@ class MongoDbEventPublicationRepositoryTest {
 			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
 		}
 
-		@Test // GH-1336
+		@Test // GH-1336, GH-1855
 		void countsByStatus() {
 
 			var event = new TestEvent("first");
@@ -403,6 +403,14 @@ class MongoDbEventPublicationRepositoryTest {
 
 			for (var status : Status.values()) {
 				assertThat(repository.countByStatus(status)).isEqualTo(status == reference ? 1 : 0);
+
+				var result = repository.findByStatus(status);
+
+				if (status == reference) {
+					assertThat(result).hasSize(1).element(0).isNotNull();
+				} else {
+					assertThat(result).isEmpty();
+				}
 			}
 		}
 	}

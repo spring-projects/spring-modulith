@@ -255,6 +255,16 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findByStatus(org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public List<TargetEventPublication> findByStatus(Status status) {
+
+		return readMapped(defaultQuery(where(STATUS).is(status)));
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#countByStatus(org.springframework.modulith.events.EventPublication.Status)
 	 */
 	@Override
