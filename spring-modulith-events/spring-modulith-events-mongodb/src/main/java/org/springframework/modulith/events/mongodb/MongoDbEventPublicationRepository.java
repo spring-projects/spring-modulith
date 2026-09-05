@@ -109,7 +109,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		var criteria = byEventAndListenerId(event, identifier);
 		var query = defaultQuery(criteria);
-		var update = Update.update(COMPLETION_DATE, completionDate);
+		var update = Update.update(COMPLETION_DATE, completionDate).set(STATUS, Status.COMPLETED);
 
 		if (completionMode == CompletionMode.DELETE) {
 
@@ -134,7 +134,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		var criteria = where(ID).is(identifier).and(COMPLETION_DATE).isNull();
 		var query = query(criteria);
-		var update = Update.update(COMPLETION_DATE, completionDate);
+		var update = Update.update(COMPLETION_DATE, completionDate).set(STATUS, Status.COMPLETED);
 
 		if (completionMode == CompletionMode.DELETE) {
 
@@ -156,7 +156,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markFailed(UUID identifier) {
 
-		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.FAILED));
+		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.FAILED).and(COMPLETION_DATE).isNull());
 		var update = Update.update(STATUS, Status.FAILED);
 
 		mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
@@ -169,7 +169,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
 
-		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.RESUBMITTED));
+		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.RESUBMITTED).and(COMPLETION_DATE).isNull());
 		var update = Update.update(STATUS, Status.RESUBMITTED)
 				.inc(COMPLETION_ATTEMPTS, 1)
 				.set(LAST_RESUBMISSION_DATE, resubmissionDate);
@@ -230,7 +230,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findFailedPublications(FailedCriteria criteria) {
 
-		var statusFailed = where(STATUS).is(Status.FAILED);
+		var statusFailed = byStatus(Status.FAILED);
 		var noStatusAndCompletionDate = where(STATUS).isNull().and(COMPLETION_DATE).isNull();
 		var baseCriteria = new Criteria().orOperator(statusFailed, noStatusAndCompletionDate);
 
@@ -260,7 +260,9 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findByStatus(Status status) {
 
-		return readMapped(defaultQuery(where(STATUS).is(status)));
+		var collection = status == Status.COMPLETED ? archiveCollection : this.collection;
+
+		return readMapped(defaultQuery(byStatus(status)), collection);
 	}
 
 	/*
@@ -270,11 +272,9 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public int countByStatus(Status status) {
 
-		var collection = status == Status.COMPLETED && completionMode == CompletionMode.ARCHIVE
-				? archiveCollection
-				: this.collection;
+		var collection = status == Status.COMPLETED ? archiveCollection : this.collection;
 
-		return (int) mongoTemplate.count(query(where(STATUS).is(status)), MongoDbEventPublication.class, collection);
+		return (int) mongoTemplate.count(query(byStatus(status)), MongoDbEventPublication.class, collection);
 	}
 
 	/*
@@ -333,6 +333,16 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 				.and(COMPLETION_DATE).isNull();
 	}
 
+	private static Criteria byStatus(Status status) {
+
+		Assert.notNull(status, "Status must not be null!");
+
+		// Older publications can have a completion date without a corresponding status update.
+		return status == Status.COMPLETED
+				? where(COMPLETION_DATE).ne(null)
+				: where(STATUS).is(status).and(COMPLETION_DATE).isNull();
+	}
+
 	private static MongoDbEventPublication domainToDocument(TargetEventPublication publication) {
 
 		return new MongoDbEventPublication( //
@@ -362,6 +372,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 				addFields()
 						.addFieldWithValue(COMPLETION_DATE, now)
+						.addFieldWithValue(STATUS, Status.COMPLETED.name())
 						.build(),
 
 				merge()
@@ -417,11 +428,11 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		@Override
 		public Status getStatus() {
 
-			if (publication.status != null) {
-				return publication.status;
+			if (publication.completionDate != null) {
+				return Status.COMPLETED;
 			}
 
-			return publication.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
+			return publication.status != null ? publication.status : Status.PUBLISHED;
 		}
 
 		@Override
