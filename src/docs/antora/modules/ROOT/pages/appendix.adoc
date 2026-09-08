@@ -91,6 +91,13 @@ The following values are supported:
 |`false`
 |Whether to serialize event externalization to brokers.
 
+|`spring.modulith.events.jdbc.database-type`
+|
+|The database type to use for the event publication table.
+If not set, the type is detected by opening a connection to the `DataSource`.
+Configuring it explicitly keeps the application context bootstrappable without database access, such as in CDS or AOT cache training runs.
+The following values are supported: `h2`, `hsqldb`, `mariadb`, `mssql`, `mysql`, `oracle`, `postgres`.
+
 |`spring.modulith.events.jdbc.schema-initialization.enabled`
 |`true`
 |Whether to initialize the JDBC event publication schema.
