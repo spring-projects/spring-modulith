@@ -29,6 +29,8 @@
 		<java.version>17</java.version>
 		<jmolecules.version>2025.0.2</jmolecules.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
+		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
+		<project.build.outputTimestamp>2019-09-30T15:30:00Z</project.build.outputTimestamp>
 	</properties>
 
 	<profiles>
