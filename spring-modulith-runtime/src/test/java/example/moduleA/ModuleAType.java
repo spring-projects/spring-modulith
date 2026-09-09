@@ -18,10 +18,12 @@ package example.moduleA;
 import java.time.LocalDateTime;
 
 import org.springframework.modulith.ApplicationModuleInitializer;
+import org.springframework.stereotype.Component;
 
 /**
  * @author Oliver Drotbohm
  */
+@Component
 public class ModuleAType implements ApplicationModuleInitializer {
 
 	public LocalDateTime initialized;
