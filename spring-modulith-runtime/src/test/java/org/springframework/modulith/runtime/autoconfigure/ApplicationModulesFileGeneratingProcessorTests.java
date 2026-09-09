@@ -18,14 +18,21 @@ package org.springframework.modulith.runtime.autoconfigure;
 import static org.assertj.core.api.Assertions.*;
 
 import example.SampleApplication;
+import example.moduleA.ModuleAType;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.aot.generate.GeneratedFiles.Kind;
 import org.springframework.aot.test.generate.TestGenerationContext;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.aot.ApplicationContextAotGenerator;
 import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.core.io.ByteArrayResource;
+import org.springframework.modulith.core.util.ApplicationModulesExporter;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
 import org.springframework.modulith.runtime.ApplicationRuntime;
 import org.springframework.modulith.test.TestApplicationModules;
@@ -49,6 +56,19 @@ class ApplicationModulesFileGeneratingProcessorTests {
 		assertThatNoException().isThrownBy(() -> {
 			generator.processAheadOfTime(createContext(), generationContext);
 		});
+	}
+
+	@Test // GH-1864
+	void generatedMetadataListsInitializers() throws IOException {
+
+		var generationContext = new TestGenerationContext();
+		new ApplicationContextAotGenerator().processAheadOfTime(createContext(), generationContext);
+
+		var json = generationContext.getGeneratedFiles()
+				.getGeneratedFileContent(Kind.RESOURCE, ApplicationModulesExporter.DEFAULT_LOCATION);
+		var metadata = ApplicationModuleMetadata.of(new ByteArrayResource(json.getBytes(StandardCharsets.UTF_8)));
+
+		assertThat(metadata.getInitializerTypeNames()).containsExactly(ModuleAType.class.getName());
 	}
 
 	private static GenericApplicationContext createContext() {
