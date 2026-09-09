@@ -60,7 +60,7 @@ class ApplicationModulesFileGeneratingProcessor implements BeanFactoryInitializa
 
 			context.getGeneratedFiles().handleFile(Kind.RESOURCE, location, it -> {
 
-				var resource = new ByteArrayResource(exporter.toJson().getBytes(StandardCharsets.UTF_8));
+				var resource = new ByteArrayResource(exporter.toFullJson().getBytes(StandardCharsets.UTF_8));
 
 				if (it.exists()) {
 					it.override(resource);
