@@ -22,7 +22,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
+import org.springframework.expression.EvaluationContext;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
+import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.util.Assert;
 
 /**
@@ -41,21 +43,26 @@ class NamastackOutboxEventRecorder implements ApplicationListener<PayloadApplica
 
 	private final EventExternalizationConfiguration configuration;
 	private final Outbox outbox;
+	private final EvaluationContext context;
 
 	/**
-	 * Creates a new {@link NamastackOutboxEventRecorder} for the given {@link EventExternalizationConfiguration} and
-	 * {@link Outbox}.
+	 * Creates a new {@link NamastackOutboxEventRecorder} for the given {@link EventExternalizationConfiguration},
+	 * {@link Outbox} and {@link EvaluationContext}.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param outbox must not be {@literal null}.
+	 * @param context must not be {@literal null}.
 	 */
-	NamastackOutboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox) {
+	NamastackOutboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox,
+			EvaluationContext context) {
 
 		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
 		Assert.notNull(outbox, "Outbox must not be null!");
+		Assert.notNull(context, "EvaluationContext must not be null!");
 
 		this.configuration = configuration;
 		this.outbox = outbox;
+		this.context = context;
 	}
 
 	/**
@@ -75,7 +82,8 @@ class NamastackOutboxEventRecorder implements ApplicationListener<PayloadApplica
 
 		var target = configuration.determineTarget(payload);
 		var mapped = configuration.map(payload);
-		var key = target.getKey();
+		var routing = BrokerRouting.of(target, context);
+		var key = routing.getKey(mapped);
 
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Scheduling event of type {} to outbox for target {}.",
