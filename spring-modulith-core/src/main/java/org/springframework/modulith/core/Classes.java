@@ -41,6 +41,8 @@ import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.properties.HasName;
 
 /**
+ * First-class value for a set of {@link JavaClass} instances.
+ *
  * @author Oliver Drotbohm
  */
 class Classes implements DescribedIterable<JavaClass> {
@@ -96,11 +98,10 @@ class Classes implements DescribedIterable<JavaClass> {
 	}
 
 	/**
-	 * Returns {@link Classes} that match the given {@link DescribedPredicate}.
+	 * Returns {@link Classes} that match the given {@link Predicate}.
 	 *
 	 * @param predicate must not be {@literal null}.
 	 * @return
-	 * @since 2.2, previously package private
 	 */
 	Classes that(Predicate<? super JavaClass> predicate) {
 
