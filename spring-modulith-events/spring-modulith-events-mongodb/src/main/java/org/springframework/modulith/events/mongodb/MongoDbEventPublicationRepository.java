@@ -20,6 +20,7 @@ import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -117,7 +118,9 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			markCompleted(criteria, completionDate);
+			var ids = mongoTemplate.findDistinct(query(criteria), Fields.UNDERSCORE_ID, collection, UUID.class);
+
+			archiveCompleted(ids, completionDate);
 
 		} else {
 
@@ -134,7 +137,8 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		var criteria = where(ID).is(identifier).and(COMPLETION_DATE).isNull();
 		var query = query(criteria);
-		var update = Update.update(COMPLETION_DATE, completionDate).set(STATUS, Status.COMPLETED);
+		var update = Update.update(COMPLETION_DATE, completionDate)
+				.set(STATUS, Status.COMPLETED);
 
 		if (completionMode == CompletionMode.DELETE) {
 
@@ -142,7 +146,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			markCompleted(criteria, completionDate);
+			archiveCompleted(List.of(identifier), completionDate);
 
 		} else {
 			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
@@ -156,7 +160,10 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public void markFailed(UUID identifier) {
 
-		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.FAILED).and(COMPLETION_DATE).isNull());
+		var query = query(where(ID).is(identifier)
+				.and(STATUS).ne(Status.FAILED)
+				.and(COMPLETION_DATE).isNull());
+
 		var update = Update.update(STATUS, Status.FAILED);
 
 		mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
@@ -364,11 +371,18 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		return query(criteria).with(DEFAULT_SORT);
 	}
 
-	private void markCompleted(Criteria lookup, Instant now) {
+	private void archiveCompleted(Collection<UUID> identifiers, Instant now) {
+
+		Assert.isTrue(!archiveCollection.equals(collection),
+				"Archive collection must not be identical to the default collection!");
+
+		if (identifiers.isEmpty()) {
+			return;
+		}
 
 		var aggregation = newAggregation(MongoDbEventPublication.class,
 
-				match(lookup),
+				match(where(ID).in(identifiers).and(COMPLETION_DATE).isNull()),
 
 				addFields()
 						.addFieldWithValue(COMPLETION_DATE, now)
@@ -379,12 +393,11 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 						.intoCollection(archiveCollection)
 						.on(ID)
 						.whenMatched(WhenDocumentsMatch.keepExistingDocument())
-						.build());
+						.build())
+								.withOptions(newAggregationOptions().skipOutput().build());
 
-		mongoTemplate
-				.aggregate(aggregation, collection, Document.class)
-				.forEach(it -> mongoTemplate.remove(query(where(Fields.UNDERSCORE_ID).is(it.get(Fields.UNDERSCORE_ID))),
-						collection));
+		mongoTemplate.aggregate(aggregation, collection, Document.class);
+		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, collection);
 	}
 
 	private static class MongoDbEventPublicationAdapter implements TargetEventPublication {
@@ -432,12 +445,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		@Override
 		public Status getStatus() {
-
-			if (publication.completionDate != null) {
-				return Status.COMPLETED;
-			}
-
-			return publication.status != null ? publication.status : Status.PUBLISHED;
+			return publication.completionDate != null ? Status.COMPLETED : publication.status;
 		}
 
 		@Override
