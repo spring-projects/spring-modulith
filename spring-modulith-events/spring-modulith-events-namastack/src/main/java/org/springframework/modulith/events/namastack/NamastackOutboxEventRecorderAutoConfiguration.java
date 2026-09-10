@@ -19,11 +19,15 @@ import io.namastack.outbox.Outbox;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
@@ -50,10 +54,19 @@ class NamastackOutboxEventRecorderAutoConfiguration {
 	private static final Logger LOGGER = LoggerFactory.getLogger(NamastackOutboxEventRecorderAutoConfiguration.class);
 
 	@Bean
-	NamastackOutboxEventRecorder outboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox) {
+	NamastackOutboxEventRecorder outboxEventRecorder(EventExternalizationConfiguration configuration, Outbox outbox,
+			BeanFactory beanFactory) {
 
 		LOGGER.debug("Registering domain event externalization via outbox…");
 
-		return new NamastackOutboxEventRecorder(configuration, outbox);
+		return new NamastackOutboxEventRecorder(configuration, outbox, createEvaluationContext(beanFactory));
+	}
+
+	private static EvaluationContext createEvaluationContext(BeanFactory beanFactory) {
+
+		var context = new StandardEvaluationContext();
+		context.setBeanResolver(new BeanFactoryResolver(beanFactory));
+
+		return context;
 	}
 }
