@@ -24,7 +24,6 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.jspecify.annotations.Nullable;
-import org.springframework.boot.json.BasicJsonParser;
 import org.springframework.core.io.Resource;
 import org.springframework.modulith.core.JavaPackage;
 import org.springframework.modulith.docs.metadata.MethodMetadata;
@@ -33,6 +32,7 @@ import org.springframework.modulith.docs.util.BuildSystemUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.StringUtils;
 
+import com.jayway.jsonpath.JsonPath;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaMethod;
 
@@ -47,7 +47,8 @@ class SpringModulithDocumentationSource implements DocumentationSource {
 
 	private static final String METADATA_FILE = "generated-spring-modulith/javadoc.json";
 	private static final Optional<DocumentationSource> INSTANCE = BuildSystemUtils
-			.getTargetResource(METADATA_FILE).map(SpringModulithDocumentationSource::new);
+			.getTargetResource(METADATA_FILE)
+			.map(SpringModulithDocumentationSource::new);
 
 	private Collection<TypeMetadata> metadata;
 
@@ -60,7 +61,7 @@ class SpringModulithDocumentationSource implements DocumentationSource {
 
 		Assert.notNull(resource, "Resource must not be null!");
 
-		this.metadata = from(resource);
+		this.metadata = TypeMetadataReader.read(resource);
 	}
 
 	/**
@@ -128,62 +129,70 @@ class SpringModulithDocumentationSource implements DocumentationSource {
 				.map(TypeMetadata::comment);
 	}
 
-	@SuppressWarnings("unchecked")
-	private static Collection<TypeMetadata> from(Resource resource) {
+	/**
+	 * Reads {@link TypeMetadata} from a {@link Resource} containing the JSON produced by {@code spring-modulith-apt}.
+	 *
+	 * @author Oliver Drotbohm
+	 */
+	static class TypeMetadataReader {
 
-		try {
+		/**
+		 * Reads all {@link TypeMetadata} contained in the given {@link Resource}.
+		 *
+		 * @param resource must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
+		@SuppressWarnings("unchecked")
+		static List<TypeMetadata> read(Resource resource) {
 
-			var content = resource.getContentAsString(StandardCharsets.UTF_8);
-			var parsed = new BasicJsonParser().parseList(content);
+			Assert.notNull(resource, "Resource must not be null!");
 
-			return parsed.stream()
-					.map(it -> it instanceof TypeMetadata metadata ? metadata : typeMetadata((Map<String, Object>) it))
-					.toList();
+			try {
 
-		} catch (IOException o_O) {
-			throw new RuntimeException(o_O);
-		}
-	}
+				var content = resource.getContentAsString(StandardCharsets.UTF_8);
+				List<Object> parsed = JsonPath.parse(content).json();
 
-	@SuppressWarnings("unchecked")
-	private static TypeMetadata typeMetadata(Map<String, Object> source) {
+				return parsed.stream()
+						.map(it -> it instanceof TypeMetadata metadata ? metadata : typeMetadata((Map<String, Object>) it))
+						.toList();
 
-		var sourceMethods = (List<Map<String, Object>>) source.get("methods");
-
-		var methods = sourceMethods != null
-				? sourceMethods.stream().map(SpringModulithDocumentationSource::methodMetadata).toList()
-				: Collections.<MethodMetadata> emptyList();
-
-		var name = source.get("name");
-
-		if (name == null) {
-			throw new IllegalArgumentException("Source map does not contain a name entry! %s".formatted(source));
-		}
-
-		return new TypeMetadata(name.toString(), getString(source, "comment"), methods);
-	}
-
-	private static MethodMetadata methodMetadata(Map<String, Object> source) {
-
-		var name = source.get("name");
-
-		if (name == null) {
-			throw new IllegalArgumentException("No name found in source map! %s".formatted(source));
+			} catch (IOException o_O) {
+				throw new RuntimeException(o_O);
+			}
 		}
 
-		var signature = source.get("signature");
+		@SuppressWarnings("unchecked")
+		private static TypeMetadata typeMetadata(Map<String, Object> source) {
 
-		if (signature == null) {
-			throw new IllegalArgumentException("No signature found in source map! %s".formatted(source));
+			var sourceMethods = (List<Map<String, Object>>) source.get("methods");
+
+			var methods = sourceMethods != null
+					? sourceMethods.stream().map(TypeMetadataReader::methodMetadata).toList()
+					: Collections.<MethodMetadata> emptyList();
+
+			var name = source.get("name");
+
+			Assert.notNull(name, () -> "Source map does not contain a name entry! %s".formatted(source));
+
+			return new TypeMetadata(name.toString(), getString(source, "comment"), methods);
 		}
 
-		return new MethodMetadata(name.toString(), signature.toString(), getString(source, "comment"));
-	}
+		private static MethodMetadata methodMetadata(Map<String, Object> source) {
 
-	private static @Nullable String getString(Map<String, Object> source, String key) {
+			var name = source.get("name");
+			var signature = source.get("signature");
 
-		Object result = source.get(key);
+			Assert.notNull(name, () -> "No name found in source map! %s".formatted(source));
+			Assert.notNull(signature, () -> "No signature found in source map! %s".formatted(source));
 
-		return result == null ? null : result.toString();
+			return new MethodMetadata(name.toString(), signature.toString(), getString(source, "comment"));
+		}
+
+		private static @Nullable String getString(Map<String, Object> source, String key) {
+
+			Object result = source.get(key);
+
+			return result == null ? null : result.toString();
+		}
 	}
 }
