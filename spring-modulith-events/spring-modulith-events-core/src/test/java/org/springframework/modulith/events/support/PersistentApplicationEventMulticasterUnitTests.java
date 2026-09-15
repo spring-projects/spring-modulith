@@ -18,10 +18,7 @@ package org.springframework.modulith.events.support;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.modulith.events.support.PersistentApplicationEventMulticaster.TransactionalEventListeners.*;
 
-import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,21 +30,12 @@ import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
 import org.springframework.context.event.ApplicationEventMulticaster;
 import org.springframework.context.event.EventListenerMethodProcessor;
-import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
-import org.springframework.mock.env.MockEnvironment;
-import org.springframework.modulith.events.AbandonPolicy;
-import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
-import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster.TransactionalEventListeners;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.event.TransactionPhase;
-import org.springframework.transaction.event.TransactionalApplicationListener;
-import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.transaction.event.TransactionalEventListenerFactory;
-import org.springframework.util.ReflectionUtils;
 
 /**
  * Unit tests for {@link PersistentApplicationEventMulticaster}.
@@ -65,61 +53,6 @@ class PersistentApplicationEventMulticasterUnitTests {
 	@BeforeEach
 	void setUp() {
 		this.multicaster = new PersistentApplicationEventMulticaster(() -> registry, () -> environment);
-	}
-
-	@Test // GH-240, GH-251
-	void doesNotRepublishEventsOnRestartByDefault() {
-
-		multicaster.afterSingletonsInstantiated();
-
-		verify(registry, never()).findIncompletePublications();
-	}
-
-	@Test // GH-240, GH-251
-	void triggersRepublicationIfExplicitlyEnabled() {
-
-		var source = new MapPropertySource("test",
-				Map.of(PersistentApplicationEventMulticaster.REPUBLISH_ON_RESTART, "true"));
-		environment.getPropertySources().addFirst(source);
-
-		multicaster.afterSingletonsInstantiated();
-
-		verify(registry).processIncompletePublications(any(), any(), any());
-	}
-
-	@Test // GH-240, GH-251, GH-823
-	void triggersRepublicationIfLegacyConfigExplicitlyEnabled() {
-
-		var source = new MapPropertySource("test",
-				Map.of(PersistentApplicationEventMulticaster.REPUBLISH_ON_RESTART_LEGACY, "true"));
-		environment.getPropertySources().addFirst(source);
-
-		multicaster.afterSingletonsInstantiated();
-
-		verify(registry).processIncompletePublications(any(), any(), any());
-	}
-
-	@Test // GH-1764
-	void applyAbandonPolicyWithoutOverrideDelegatesToRegistry() {
-
-		multicaster.applyAbandonPolicy();
-
-		verify(registry).applyAbandonPolicy(null);
-	}
-
-	@Test // GH-1764
-	void applyAbandonPolicyWithOverrideDelegatesToRegistry() {
-
-		AbandonPolicy policy = __ -> AbandonPolicy.Decision.ABANDON;
-
-		multicaster.applyAbandonPolicy(policy);
-
-		verify(registry).applyAbandonPolicy(policy);
-	}
-
-	@Test // GH-1764
-	void applyAbandonPolicyRejectsNullOverride() {
-		assertThatIllegalArgumentException().isThrownBy(() -> multicaster.applyAbandonPolicy(null));
 	}
 
 	@Test // GH-277, GH-1654
@@ -152,61 +85,6 @@ class PersistentApplicationEventMulticasterUnitTests {
 		multicaster.multicastEvent(new PayloadApplicationEvent<>(this, event));
 	}
 
-	@Test // GH-726
-	void onlyConsidersAfterCommitListeners() {
-
-		var afterCommitListener = TransactionalApplicationListener.forPayload(TransactionPhase.AFTER_COMMIT, __ -> {});
-		var beforeCommitListener = TransactionalApplicationListener.forPayload(TransactionPhase.BEFORE_COMMIT, __ -> {});
-
-		var eventListeners = new TransactionalEventListeners(List.of(afterCommitListener, beforeCommitListener),
-				() -> environment);
-
-		assertThat(eventListeners.stream())
-				.hasSize(1)
-				.element(0).isEqualTo(afterCommitListener);
-	}
-
-	@Test // GH-1630
-	void considersTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, ApplicationModuleListener.class.getName());
-
-		var first = getAdapter(ConditionalListener.class, "on", SampleEvent.class);
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		var listeners = new TransactionalEventListeners(List.of(first, second),
-				() -> environment);
-
-		assertThat(listeners.stream()).containsExactly(second);
-	}
-
-	@Test // GH-1630
-	void rejectsNotLoadableTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, "some.non.loadable.Type");
-
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		assertThatIllegalStateException().isThrownBy(() -> {
-			new TransactionalEventListeners(List.of(second), () -> environment);
-		});
-	}
-
-	@Test // GH-1630
-	void rejectsNonAnnotationTypeForTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, "java.lang.String");
-
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		assertThatIllegalStateException().isThrownBy(() -> {
-			new TransactionalEventListeners(List.of(second), () -> environment);
-		});
-	}
-
 	@Test // GH-1783
 	void doesNotPropagateClassCastExceptionOfNonMatchingLambdaListener() {
 
@@ -214,14 +92,6 @@ class PersistentApplicationEventMulticasterUnitTests {
 
 		assertThatNoException()
 				.isThrownBy(() -> multicaster.multicastEvent(new SampleApplicationEvent(this)));
-	}
-
-	private static TransactionalApplicationListenerMethodAdapter getAdapter(Class<?> type, String methodName,
-			Class<?> parameter) {
-
-		var method = ReflectionUtils.findMethod(type, methodName, parameter);
-
-		return new TransactionalApplicationListenerMethodAdapter(type.getName(), type, method);
 	}
 
 	@Component
@@ -244,13 +114,6 @@ class PersistentApplicationEventMulticasterUnitTests {
 		void on(SampleEvent event) {
 			this.invoked = true;
 		}
-	}
-
-	@Component
-	static class ModuleListener {
-
-		@ApplicationModuleListener
-		void on(SampleEvent event) {}
 	}
 
 	@SuppressWarnings("serial")

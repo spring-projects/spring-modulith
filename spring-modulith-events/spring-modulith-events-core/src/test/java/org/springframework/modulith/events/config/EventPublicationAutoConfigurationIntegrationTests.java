@@ -42,6 +42,7 @@ import org.springframework.modulith.events.AbandonPolicy.Decision;
 import org.springframework.modulith.events.AbandonedEventPublications;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
+import org.springframework.modulith.events.FailedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncPropertiesDefaulter;
 import org.springframework.modulith.events.core.AbandonPolicies;
@@ -140,7 +141,8 @@ class EventPublicationAutoConfigurationIntegrationTests {
 		basicSetup().run(context -> {
 			assertThat(context)
 					.hasSingleBean(CompletedEventPublications.class)
-					.hasSingleBean(IncompleteEventPublications.class);
+					.hasSingleBean(IncompleteEventPublications.class)
+					.hasSingleBean(FailedEventPublications.class);
 		});
 	}
 

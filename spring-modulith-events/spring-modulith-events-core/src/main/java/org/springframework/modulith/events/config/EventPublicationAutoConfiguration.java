@@ -44,6 +44,7 @@ import org.springframework.modulith.events.config.EventPublicationAutoConfigurat
 import org.springframework.modulith.events.core.AbandonPolicies;
 import org.springframework.modulith.events.core.DefaultAbandonedEventPublications;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
+import org.springframework.modulith.events.core.DefaultFailedEventPublications;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
@@ -97,6 +98,16 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment) {
 
 		return EventPublicationConfiguration.applicationEventMulticaster(eventPublicationRegistry, environment);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnBean(EventPublicationRegistry.class)
+	static DefaultFailedEventPublications failedEventPublications(
+			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry,
+			PersistentApplicationEventMulticaster multicaster, ObjectFactory<Environment> environment) {
+
+		return EventPublicationConfiguration.failedEventPublications(eventPublicationRegistry, multicaster, environment);
 	}
 
 	@Bean

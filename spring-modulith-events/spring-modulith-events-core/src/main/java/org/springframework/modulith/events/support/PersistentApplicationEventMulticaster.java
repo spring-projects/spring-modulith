@@ -15,69 +15,37 @@
  */
 package org.springframework.modulith.events.support;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.time.Duration;
-import java.util.Collection;
-import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.SmartInitializingSingleton;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.annotation.AnnotatedElementUtils;
-import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
-import org.springframework.modulith.events.AbandonPolicy;
-import org.springframework.modulith.events.EventPublication;
-import org.springframework.modulith.events.FailedEventPublications;
-import org.springframework.modulith.events.IncompleteEventPublications;
-import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.modulith.events.core.ConditionalEventListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
-import org.springframework.modulith.events.core.TargetEventPublication;
-import org.springframework.transaction.event.TransactionPhase;
+import org.springframework.modulith.events.core.TransactionalEventListeners;
 import org.springframework.transaction.event.TransactionalApplicationListener;
-import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register {@link EventPublication}s in an
  * {@link EventPublicationRegistry} so that potentially failing transactional event listeners can get re-invoked upon
  * application restart or via a schedule.
- * <p>
- * Republication is handled in {@link #afterSingletonsInstantiated()} inspecting the {@link EventPublicationRegistry}
- * for incomplete publications.
  *
  * @author Oliver Drotbohm
  * @author Seonwoo Jung
  * @see CompletionRegisteringAdvisor
+ * @see org.springframework.modulith.events.core.DefaultFailedEventPublications
  */
-public class PersistentApplicationEventMulticaster extends SimpleApplicationEventMulticaster
-		implements FailedEventPublications, IncompleteEventPublications, SmartInitializingSingleton {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(PersistentApplicationEventMulticaster.class);
-
-	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
-	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
+public class PersistentApplicationEventMulticaster extends SimpleApplicationEventMulticaster {
 
 	private final Map<CacheKey, TransactionalEventListeners> cache = new ConcurrentReferenceHashMap<>();
 	private final Supplier<EventPublicationRegistry> registry;
@@ -113,7 +81,7 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 	 * @see org.springframework.context.event.ApplicationEventMulticaster#multicastEvent(org.springframework.context.ApplicationEvent, org.springframework.core.ResolvableType)
 	 */
 	@Override
-	@SuppressWarnings({ "unchecked", "rawtypes" })
+	@SuppressWarnings({ "rawtypes" })
 	public void multicastEvent(ApplicationEvent event, @Nullable ResolvableType eventType) {
 
 		var type = eventType == null ? ResolvableType.forInstance(event) : eventType;
@@ -147,114 +115,14 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 		}
 	}
 
-	/*
-	* (non-Javadoc)
-	* @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublications(java.util.function.Predicate)
-	*/
-	@Override
-	public void resubmitIncompletePublications(Predicate<EventPublication> filter) {
-		doResubmitUncompletedPublicationsOlderThan(null, filter);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublicationsOlderThan(java.time.Duration)
+	/**
+	 * Returns the {@link TransactionalEventListeners} currently registered with this multicaster.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 2.2
 	 */
-	@Override
-	public void resubmitIncompletePublicationsOlderThan(Duration duration) {
-		doResubmitUncompletedPublicationsOlderThan(duration, __ -> true);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.IncompleteEventPublications#resubmitIncompletePublications(org.springframework.modulith.events.ResubmissionOptions)
-	 */
-	@Override
-	public void resubmitIncompletePublications(ResubmissionOptions options) {
-		doResubmitIncompletePublications(options);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.FailedEventPublications#resubmit(org.springframework.modulith.events.ResubmissionOptions)
-	 */
-	@Override
-	public void resubmit(ResubmissionOptions options) {
-		doResubmitIncompletePublications(options);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.FailedEventPublications#applyAbandonPolicy()
-	 */
-	@Override
-	public void applyAbandonPolicy() {
-		registry.get().applyAbandonPolicy(null);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.FailedEventPublications#applyAbandonPolicy(org.springframework.modulith.events.AbandonPolicy)
-	 */
-	@Override
-	public void applyAbandonPolicy(AbandonPolicy policy) {
-
-		Assert.notNull(policy, "AbandonPolicy must not be null!");
-
-		registry.get().applyAbandonPolicy(policy);
-	}
-
-	/*
-	 * (non-Javadoc)
-	 * @see org.springframework.beans.factory.SmartInitializingSingleton#afterSingletonsInstantiated()
-	 */
-	@Override
-	public void afterSingletonsInstantiated() {
-
-		var env = environment.get();
-
-		Boolean republishOnRestart = Optional.ofNullable(env.getProperty(REPUBLISH_ON_RESTART, Boolean.class))
-				.orElseGet(() -> env.getProperty(REPUBLISH_ON_RESTART_LEGACY, Boolean.class));
-
-		if (!Boolean.TRUE.equals(republishOnRestart)) {
-			return;
-		}
-
-		resubmitIncompletePublications(__ -> true);
-	}
-
-	private void invokeTargetListener(TargetEventPublication publication) {
-
-		var listeners = new TransactionalEventListeners(getApplicationListeners(), environment);
-
-		listeners.stream() //
-				.filter(it -> publication.isIdentifiedBy(PublicationTargetIdentifier.of(it.getListenerId()))) //
-				.findFirst() //
-				.ifPresentOrElse(it -> executeListenerWithCompletion(publication, it), () -> {
-
-					LOGGER.error("Listener {} not found! Skipping invocation and leaving event publication {} failed.",
-							publication.getTargetIdentifier(), publication.getIdentifier());
-
-					registry.get().markFailed(publication.getEvent(), publication.getTargetIdentifier());
-				});
-	}
-
-	private void doResubmitUncompletedPublicationsOlderThan(@Nullable Duration duration,
-			Predicate<EventPublication> filter) {
-
-		registry.get().processIncompletePublications(filter, this::invokeTargetListener, duration);
-	}
-
-	private void doResubmitIncompletePublications(ResubmissionOptions options) {
-		registry.get().processFailedPublications(options, this::invokeTargetListener);
-	}
-
-	private static ApplicationListener<ApplicationEvent> executeListenerWithCompletion(EventPublication publication,
-			TransactionalApplicationListener<ApplicationEvent> listener) {
-
-		listener.processEvent(publication.getApplicationEvent());
-
-		return listener;
+	public TransactionalEventListeners getTransactionalEventListeners() {
+		return new TransactionalEventListeners(getApplicationListeners(), environment);
 	}
 
 	private void storePublications(Stream<TransactionalApplicationListener<ApplicationEvent>> listeners,
@@ -302,168 +170,15 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 	 */
 	private static boolean invokeShouldHandle(ApplicationListener<?> candidate, ApplicationEvent event) {
 
-		if (candidate instanceof ApplicationListenerMethodAdapter listener) {
-			return listener.shouldHandle(event);
-		}
-
-		return true;
+		return candidate instanceof ApplicationListenerMethodAdapter listener
+				? listener.shouldHandle(event)
+				: true;
 	}
 
 	private record CacheKey(ResolvableType eventType, @Nullable Class<?> sourceType) {
 
 		private CacheKey {
 			Assert.notNull(eventType, "Event type must not be null");
-		}
-	}
-
-	/**
-	 * First-class collection to work with transactional event listeners, i.e. {@link ApplicationListener} instances that
-	 * implement {@link TransactionalApplicationListener}.
-	 *
-	 * @author Oliver Drotbohm
-	 * @see org.springframework.transaction.event.TransactionalEventListener
-	 * @see TransactionalApplicationListener
-	 */
-	static class TransactionalEventListeners {
-
-		static final String TRIGGER_ANNOTATION_PROPERTY = "spring.modulith.events.registry-trigger-annotation";
-
-		private static final Method GET_TARGET_METHOD;
-
-		static {
-
-			GET_TARGET_METHOD = ReflectionUtils
-					.findMethod(TransactionalApplicationListenerMethodAdapter.class, "getTargetMethod");
-			ReflectionUtils.makeAccessible(GET_TARGET_METHOD);
-		}
-
-		private final List<TransactionalApplicationListener<ApplicationEvent>> listeners;
-
-		/**
-		 * Creates a new {@link TransactionalEventListeners} instance by filtering all elements implementing
-		 * {@link TransactionalApplicationListener}.
-		 *
-		 * @param listeners must not be {@literal null}.
-		 */
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		public TransactionalEventListeners(Collection<ApplicationListener<?>> listeners,
-				Supplier<Environment> environment) {
-
-			Assert.notNull(listeners, "ApplicationListeners must not be null!");
-
-			this.listeners = (List) listeners.stream()
-					.filter(TransactionalApplicationListener.class::isInstance)
-					.map(TransactionalApplicationListener.class::cast)
-					.filter(it -> it.getTransactionPhase().equals(TransactionPhase.AFTER_COMMIT))
-					.filter(byAnnotationFilter(environment))
-					.sorted(AnnotationAwareOrderComparator.INSTANCE)
-					.toList();
-		}
-
-		private TransactionalEventListeners(List<TransactionalApplicationListener<ApplicationEvent>> listeners) {
-			this.listeners = listeners;
-		}
-
-		/**
-		 * Invokes the given {@link Consumer} for all transactional event listeners.
-		 *
-		 * @param callback must not be {@literal null}.
-		 */
-		public void forEach(Consumer<TransactionalApplicationListener<?>> callback) {
-
-			Assert.notNull(callback, "Callback must not be null!");
-
-			listeners.forEach(callback);
-		}
-
-		/**
-		 * Executes the given consumer only if there are actual listeners available.
-		 *
-		 * @param metadata must not be {@literal null}.
-		 */
-		public void ifPresent(Consumer<Stream<TransactionalApplicationListener<ApplicationEvent>>> metadata) {
-
-			Assert.notNull(metadata, "Callback must not be null!");
-
-			if (!listeners.isEmpty()) {
-				metadata.accept(listeners.stream());
-			}
-		}
-
-		public TransactionalEventListeners filter(
-				Predicate<? super TransactionalApplicationListener<ApplicationEvent>> filter) {
-
-			return listeners.stream().filter(filter)
-					.collect(Collectors.collectingAndThen(Collectors.toUnmodifiableList(), TransactionalEventListeners::new));
-		}
-
-		/**
-		 * Returns all transactional event listeners.
-		 *
-		 * @return will never be {@literal null}.
-		 */
-		public Stream<TransactionalApplicationListener<ApplicationEvent>> stream() {
-			return listeners.stream();
-		}
-
-		/**
-		 * Invokes the given {@link Consumer} for the listener with the given identifier.
-		 *
-		 * @param identifier must not be {@literal null} or empty.
-		 * @param callback must not be {@literal null}.
-		 */
-		public void doWithListener(String identifier,
-				Consumer<TransactionalApplicationListener<ApplicationEvent>> callback) {
-
-			Assert.hasText(identifier, "Identifier must not be null or empty!");
-			Assert.notNull(callback, "Callback must not be null!");
-
-			listeners.stream()
-					.filter(it -> it.getListenerId().equals(identifier))
-					.findFirst()
-					.ifPresent(callback);
-		}
-
-		/**
-		 * Returns a {@link Predicate} filtering the listeners by the trigger annotation configured in
-		 * {@code spring.modulith.events.annotation}.
-		 *
-		 * @param environment must not be {@literal null}.
-		 * @return will never be {@literal null}.
-		 * @since 2.1
-		 */
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		private static Predicate<TransactionalApplicationListener> byAnnotationFilter(
-				Supplier<Environment> environment) {
-
-			return listener -> {
-
-				var annotationName = environment.get().getProperty(TRIGGER_ANNOTATION_PROPERTY);
-
-				if (!StringUtils.hasText(annotationName)) {
-					return true;
-				}
-
-				try {
-
-					var annotationType = ClassUtils.forName(annotationName, TransactionalEventListeners.class.getClassLoader());
-
-					if (!annotationType.isAnnotation()) {
-						throw new IllegalStateException("Configured type is not an annotation!");
-					}
-
-					if (!(listener instanceof TransactionalApplicationListenerMethodAdapter)) {
-						return false;
-					}
-
-					var method = (Method) ReflectionUtils.invokeMethod(GET_TARGET_METHOD, listener);
-
-					return AnnotatedElementUtils.hasAnnotation(method, (Class<? extends Annotation>) annotationType);
-
-				} catch (ClassNotFoundException o_O) {
-					throw new IllegalStateException(o_O);
-				}
-			};
 		}
 	}
 }
