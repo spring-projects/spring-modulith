@@ -68,7 +68,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 			SELECT %s
 			FROM %s
 			WHERE
-					COMPLETION_DATE IS NOT NULL OR STATUS IS NOT NULL AND STATUS = 'COMPLETED'
+					(STATUS IS NULL AND COMPLETION_DATE IS NOT NULL) OR STATUS = 'COMPLETED'
 			ORDER BY PUBLICATION_DATE ASC
 			""".formatted(ALL_COLUMNS, "%s");
 
@@ -76,7 +76,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 			SELECT %s
 			FROM %s
 			WHERE
-					COMPLETION_DATE IS NULL OR STATUS != 'COMPLETED'
+					COMPLETION_DATE IS NULL OR STATUS NOT IN ('COMPLETED', 'ABANDONED')
 			ORDER BY
 					PUBLICATION_DATE ASC
 			""".formatted(ALL_COLUMNS, "%s");
@@ -116,7 +116,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 	private static final String SQL_STATEMENT_UPDATE_BY_ID = """
 			UPDATE %s
 			SET
-					STATUS = 'COMPLETED',
+					STATUS = '%s',
 					COMPLETION_DATE = ?
 			WHERE
 					ID = ?
@@ -157,7 +157,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 			DELETE
 			FROM %s
 			WHERE
-					COMPLETION_DATE IS NOT NULL OR STATUS IS NOT NULL AND STATUS = 'COMPLETED'
+					(STATUS IS NULL AND COMPLETION_DATE IS NOT NULL) OR STATUS = 'COMPLETED'
 			""";
 
 	private static final String SQL_STATEMENT_DELETE_COMPLETED_BEFORE = """
@@ -167,10 +167,17 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 					COMPLETION_DATE < ? AND (STATUS = 'COMPLETED' OR STATUS IS NULL)
 			""";
 
+	private static final String SQL_STATEMENT_DELETE_ABANDONED_BEFORE = """
+			DELETE
+			FROM %s
+			WHERE
+					COMPLETION_DATE < ? AND STATUS = 'ABANDONED'
+			""";
+
 	// Only copy if no entry in target table
 	private static final String SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID = """
 			INSERT INTO %s (ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, STATUS, COMPLETION_DATE, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE)
-			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, 'COMPLETED', ?, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE
+			SELECT ID, LISTENER_ID, EVENT_TYPE, SERIALIZED_EVENT, PUBLICATION_DATE, '%s', ?, COMPLETION_ATTEMPTS, LAST_RESUBMISSION_DATE
 			 	FROM %s
 			 	WHERE ID = ?
 			 	  AND NOT EXISTS (SELECT 1 FROM %s WHERE ID = EVENT_PUBLICATION.ID)
@@ -200,13 +207,16 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 			sqlStatementFindUncompletedBefore,
 			sqlStatementUpdateByEventAndListenerId,
 			sqlStatementUpdateById,
+			sqlStatementUpdateByIdAbandoned,
 			sqlStatementFindByEventAndListenerId,
 			sqlStatementDelete,
 			sqlStatementDeleteByEventAndListenerId,
 			sqlStatementDeleteById,
 			sqlStatementDeleteCompleted,
 			sqlStatementDeleteCompletedBefore,
+			sqlStatementDeleteAbandonedBefore,
 			sqlStatementCopyToArchive,
+			sqlStatementCopyToArchiveAbandoned,
 			sqlStatementCopyToArchiveByEventAndListenerId,
 			sqlStatementMarkProcessing,
 			sqlStatementMarkFailed;
@@ -239,7 +249,8 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		this.sqlStatementFindUncompletedBefore = asOneLine(SQL_STATEMENT_FIND_INCOMPLETE_PUBLISHED_BEFORE.formatted(table));
 		this.sqlStatementUpdateByEventAndListenerId = asOneLine(
 				SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table));
-		this.sqlStatementUpdateById = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table));
+		this.sqlStatementUpdateById = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table, Status.COMPLETED.name()));
+		this.sqlStatementUpdateByIdAbandoned = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table, Status.ABANDONED.name()));
 		this.sqlStatementFindByEventAndListenerId = asOneLine(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table));
 		this.sqlStatementDelete = asOneLine(SQL_STATEMENT_DELETE.formatted(table));
 		this.sqlStatementDeleteByEventAndListenerId = asOneLine(
@@ -247,8 +258,11 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		this.sqlStatementDeleteById = asOneLine(SQL_STATEMENT_DELETE_BY_ID.formatted(table));
 		this.sqlStatementDeleteCompleted = asOneLine(SQL_STATEMENT_DELETE_COMPLETED.formatted(completedTable));
 		this.sqlStatementDeleteCompletedBefore = asOneLine(SQL_STATEMENT_DELETE_COMPLETED_BEFORE.formatted(completedTable));
-		this.sqlStatementCopyToArchive = asOneLine(SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable, table,
-				completedTable));
+		this.sqlStatementDeleteAbandonedBefore = asOneLine(SQL_STATEMENT_DELETE_ABANDONED_BEFORE.formatted(completedTable));
+		this.sqlStatementCopyToArchive = asOneLine(SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable,
+				Status.COMPLETED.name(), table, completedTable));
+		this.sqlStatementCopyToArchiveAbandoned = asOneLine(SQL_STATEMENT_COPY_TO_ARCHIVE_BY_ID.formatted(completedTable,
+				Status.ABANDONED.name(), table, completedTable));
 		this.sqlStatementCopyToArchiveByEventAndListenerId = asOneLine(
 				SQL_STATEMENT_COPY_TO_ARCHIVE_BY_EVENT_AND_LISTENER_ID
 						.formatted(completedTable, table, completedTable));
@@ -352,6 +366,36 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markAbandoned(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public boolean markAbandoned(UUID identifier, Instant instant, @Nullable Status expectedCurrentStatus) {
+
+		var databaseId = uuidToDatabase(identifier);
+		var timestamp = Timestamp.from(instant);
+		var guard = expectedCurrentStatus == null ? "" : " AND STATUS = '%s'".formatted(expectedCurrentStatus.name());
+
+		if (settings.isDeleteCompletion()) {
+
+			return operations.update(sqlStatementDeleteById + guard, databaseId) > 0;
+
+		} else if (settings.isArchiveCompletion()) {
+
+			if (operations.update(sqlStatementCopyToArchiveAbandoned + guard, timestamp, databaseId) == 0) {
+				return false;
+			}
+
+			operations.update(sqlStatementDeleteById, databaseId);
+			return true;
+
+		} else {
+
+			return operations.update(sqlStatementUpdateByIdAbandoned + guard, timestamp, databaseId) > 0;
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markFailed(java.util.UUID)
 	 */
 	@Override
@@ -414,6 +458,15 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		return result == null ? Collections.emptyList() : result;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findAbandonedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findAbandonedPublications() {
+		return findByStatus(Status.ABANDONED);
+	}
+
 	@Override
 	@Transactional(readOnly = true)
 	public List<TargetEventPublication> findIncompletePublications() {
@@ -473,14 +526,24 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deleteAbandonedPublicationsBefore(java.time.Instant)
+	 */
+	@Override
+	public void deleteAbandonedPublicationsBefore(Instant instant) {
+
+		Assert.notNull(instant, "Instant must not be null!");
+
+		operations.update(sqlStatementDeleteAbandonedBefore, Timestamp.from(instant));
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findByStatus(org.springframework.modulith.events.EventPublication.Status)
 	 */
 	@Override
 	public List<TargetEventPublication> findByStatus(Status status) {
 
-		var table = status == Status.COMPLETED && settings.isArchiveCompletion()
-				? settings.getArchiveTable()
-				: settings.getTable();
+		var table = settings.getTargetTable(status);
 
 		var sql = """
 				SELECT %s FROM %s
@@ -499,9 +562,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 	@Override
 	public int countByStatus(Status status) {
 
-		var table = status == Status.COMPLETED && settings.isArchiveCompletion()
-				? settings.getArchiveTable()
-				: settings.getTable();
+		var table = settings.getTargetTable(status);
 
 		var sql = asOneLine("""
 				SELECT COUNT(ID) FROM %s

@@ -90,7 +90,7 @@ public class ObservedModuleType {
 
 		return type.isController()
 				|| listensToOtherModulesEvents()
-				|| module.exposes(javaType)
+				|| exposesTypeOrSupertype(javaType)
 				|| hasMethodWithMessageMappingAnnotation(javaType);
 	}
 
@@ -120,6 +120,16 @@ public class ObservedModuleType {
 				.findFirst()
 				.map(it -> !module.isObservedModule(it))
 				.orElse(true);
+	}
+
+	private boolean exposesTypeOrSupertype(JavaClass type) {
+
+		if (module.exposes(type)) {
+			return true;
+		}
+
+		return type.getAllRawInterfaces().stream().anyMatch(module::exposes)
+				|| type.getRawSuperclass().map(this::exposesTypeOrSupertype).orElse(false);
 	}
 
 	/**

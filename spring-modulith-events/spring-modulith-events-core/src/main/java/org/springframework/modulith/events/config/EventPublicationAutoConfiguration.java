@@ -39,8 +39,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
+import org.springframework.modulith.events.core.AbandonPolicies;
+import org.springframework.modulith.events.core.DefaultAbandonedEventPublications;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
+import org.springframework.modulith.events.core.DefaultFailedEventPublications;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
@@ -58,7 +62,7 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  */
 @AutoConfiguration
 @Import({ AsyncEnablingConfiguration.class, StalenessMonitorConfiguration.class })
-@EnableConfigurationProperties(StalenessProperties.class)
+@EnableConfigurationProperties({ StalenessProperties.class, ResubmissionProperties.class })
 public class EventPublicationAutoConfiguration extends EventPublicationConfiguration {
 
 	@Override
@@ -66,8 +70,25 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRepository.class)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
+			ObjectProvider<Clock> clock, ObjectProvider<AbandonPolicies> abandonPolicies) {
+		return super.eventPublicationRegistry(repository, clock, abandonPolicies);
+	}
+
+	@Override
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnBean(EventPublicationRepository.class)
+	DefaultAbandonedEventPublications abandonedEventPublications(EventPublicationRepository repository,
 			ObjectProvider<Clock> clock) {
-		return super.eventPublicationRegistry(repository, clock);
+		return super.abandonedEventPublications(repository, clock);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnMissingBean(AbandonPolicies.class)
+	static AbandonPolicies abandonPolicies(ObjectProvider<AbandonPolicy> userPolicies, ResubmissionProperties properties) {
+
+		return new AbandonPolicies(userPolicies.orderedStream().toList(), properties::shouldAbandon);
 	}
 
 	@Bean
@@ -77,6 +98,16 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry, ObjectFactory<Environment> environment) {
 
 		return EventPublicationConfiguration.applicationEventMulticaster(eventPublicationRegistry, environment);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnBean(EventPublicationRegistry.class)
+	static DefaultFailedEventPublications failedEventPublications(
+			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry,
+			PersistentApplicationEventMulticaster multicaster, ObjectFactory<Environment> environment) {
+
+		return EventPublicationConfiguration.failedEventPublications(eventPublicationRegistry, multicaster, environment);
 	}
 
 	@Bean

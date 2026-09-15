@@ -105,12 +105,20 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private static final Function<Node, Statement> DELETE_COMPLETED_STATEMENT = node -> match(node)
 			.where(node.property(COMPLETION_DATE).isNotNull())
+			.and(node.property(STATUS).ne(literalOf(Status.ABANDONED.name())))
 			.delete(node)
 			.build();
 
 	private static final Function<Node, Statement> DELETE_COMPLETED_BEFORE_STATEMENT = node -> match(node)
-			.where(node.property(PUBLICATION_DATE).lt(parameter(PUBLICATION_DATE)))
-			.and(node.property(COMPLETION_DATE).isNotNull())
+			.where(node.property(COMPLETION_DATE).isNotNull())
+			.and(node.property(COMPLETION_DATE).lt(parameter(COMPLETION_DATE)))
+			.and(node.property(STATUS).ne(literalOf(Status.ABANDONED.name())))
+			.delete(node)
+			.build();
+
+	private static final Function<Node, Statement> DELETE_ABANDONED_BEFORE_STATEMENT = node -> match(node)
+			.where(node.property(STATUS).eq(literalOf(Status.ABANDONED.name())))
+			.and(node.property(COMPLETION_DATE).lt(parameter(COMPLETION_DATE)))
 			.delete(node)
 			.build();
 
@@ -136,17 +144,18 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.and(EVENT_PUBLICATION_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
 			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(literalOf(Status.COMPLETED.name())))
 			.build();
 
-	private static final Statement FIND_BY_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(STATUS).eq(parameter(STATUS)))
-			.returning(EVENT_PUBLICATION_NODE)
-			.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+	private static final Function<Node, Statement> FIND_BY_STATUS_STATEMENT = node -> match(node)
+			.where(node.property(STATUS).eq(parameter(STATUS)))
+			.returning(node)
+			.orderBy(node.property(PUBLICATION_DATE))
 			.build();
 
-	private static final Statement COUNT_BY_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(STATUS).eq(parameter(STATUS)))
-			.returning(count(EVENT_PUBLICATION_NODE).as(STATUS_COUNT))
+	private static final Function<Node, Statement> COUNT_BY_STATUS_STATEMENT = node -> match(node)
+			.where(node.property(STATUS).eq(parameter(STATUS)))
+			.returning(count(node).as(STATUS_COUNT))
 			.build();
 
 	private static final Statement UPDATE_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
@@ -169,7 +178,27 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 					.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
 							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(ID).eq(parameter(ID)))
 							.returning(literalTrue()).build())))
-					.with(EVENT_PUBLICATION_NODE)));
+					.with(EVENT_PUBLICATION_NODE), Status.COMPLETED));
+
+	private static final Lazy<Statement> ABANDON_IN_ARCHIVE_BY_ID_STATEMENT = Lazy.of(
+			() -> applyProperties(match(EVENT_PUBLICATION_NODE).where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+					.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
+							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(ID).eq(parameter(ID)))
+							.returning(literalTrue()).build())))
+					.with(EVENT_PUBLICATION_NODE), Status.ABANDONED));
+
+	// Guards against racing a concurrent resubmission or completion based on a previously read status.
+	// Built on demand (not cached) since it is only used for that guarded, comparatively infrequent case.
+	private static Statement abandonInArchiveByIdStatement(Status expectedCurrentStatus) {
+
+		return applyProperties(match(EVENT_PUBLICATION_NODE)
+				.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+				.and(EVENT_PUBLICATION_NODE.property(STATUS).eq(literalOf(expectedCurrentStatus.name())))
+				.and(not(exists(match(EVENT_PUBLICATION_ARCHIVE_NODE)
+						.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(ID).eq(parameter(ID)))
+						.returning(literalTrue()).build())))
+				.with(EVENT_PUBLICATION_NODE), Status.ABANDONED);
+	}
 
 	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_EVENT_AND_LISTENER_ID_STATEMENT = Lazy
 			.of(() -> applyProperties(match(EVENT_PUBLICATION_NODE)
@@ -179,16 +208,18 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 							.where(EVENT_PUBLICATION_ARCHIVE_NODE.property(EVENT_HASH).in(parameter(EVENT_HASH)))
 							.and(EVENT_PUBLICATION_ARCHIVE_NODE.property(LISTENER_ID).eq(parameter(LISTENER_ID)))
 							.returning(literalTrue()).build())))
-					.with(EVENT_PUBLICATION_NODE)));
+					.with(EVENT_PUBLICATION_NODE), Status.COMPLETED));
 
-	private static Statement applyProperties(OrderableOngoingReadingAndWithWithoutWhere source) {
+	private static Statement applyProperties(OrderableOngoingReadingAndWithWithoutWhere source, Status status) {
 
 		var operations = ALL_PROPERTIES.stream()
+				.filter(it -> !it.equals(STATUS))
 				.map(it -> EVENT_PUBLICATION_ARCHIVE_NODE.property(it).to(EVENT_PUBLICATION_NODE.property(it)))
 				.toList();
 
 		return source.create(EVENT_PUBLICATION_ARCHIVE_NODE)
 				.set(operations)
+				.set(EVENT_PUBLICATION_ARCHIVE_NODE.property(STATUS).to(literalOf(status.name())))
 				.set(EVENT_PUBLICATION_ARCHIVE_NODE.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 				.build();
 	}
@@ -196,7 +227,35 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	private static final Function<Node, Statement> COMPLETE_BY_ID_STATEMENT = node -> match(node)
 			.where(node.property(ID).eq(parameter(ID)))
 			.set(node.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+			.set(node.property(STATUS).to(literalOf(Status.COMPLETED.name())))
 			.build();
+
+	private static final Function<Node, Statement> ABANDON_BY_ID_STATEMENT = node -> match(node)
+			.where(node.property(ID).eq(parameter(ID)))
+			.set(node.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+			.set(node.property(STATUS).to(literalOf(Status.ABANDONED.name())))
+			.build();
+
+	// Guards against racing a concurrent resubmission or completion based on a previously read status.
+	// Built on demand (not cached) since they are only used for that guarded, comparatively infrequent case.
+	private static Statement abandonByIdStatement(Node node, Status expectedCurrentStatus) {
+
+		return match(node)
+				.where(node.property(ID).eq(parameter(ID)))
+				.and(node.property(STATUS).eq(literalOf(expectedCurrentStatus.name())))
+				.set(node.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
+				.set(node.property(STATUS).to(literalOf(Status.ABANDONED.name())))
+				.build();
+	}
+
+	private static Statement deleteByIdStatement(Node node, Status expectedCurrentStatus) {
+
+		return match(node)
+				.where(node.property(ID).eq(parameter(ID)))
+				.and(node.property(STATUS).eq(literalOf(expectedCurrentStatus.name())))
+				.delete(node)
+				.build();
+	}
 
 	private static final ResultStatement INCOMPLETE_STATEMENT = match(EVENT_PUBLICATION_NODE)
 			.where(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
@@ -206,6 +265,13 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private static final Function<Node, ResultStatement> ALL_COMPLETED_STATEMENT = node -> match(node)
 			.where(node.property(COMPLETION_DATE).isNotNull())
+			.and(node.property(STATUS).ne(literalOf(Status.ABANDONED.name())))
+			.returning(node)
+			.orderBy(node.property(PUBLICATION_DATE))
+			.build();
+
+	private static final Function<Node, ResultStatement> ALL_ABANDONED_STATEMENT = node -> match(node)
+			.where(node.property(STATUS).eq(literalOf(Status.ABANDONED.name())))
 			.returning(node)
 			.orderBy(node.property(PUBLICATION_DATE))
 			.build();
@@ -218,8 +284,15 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private final Statement deleteCompletedStatement;
 	private final Statement deleteCompletedBeforeStatement;
+	private final Statement deleteAbandonedBeforeStatement;
 	private final Statement completedByIdStatement;
+	private final Statement abandonedByIdStatement;
 	private final ResultStatement allCompletedStatement;
+	private final ResultStatement allAbandonedStatement;
+	private final Statement findByStatusStatement;
+	private final Statement findTerminalByStatusStatement;
+	private final Statement countByStatusStatement;
+	private final Statement countTerminalByStatusStatement;
 
 	Neo4jEventPublicationRepository(Neo4jClient neo4jClient, Configuration cypherDslConfiguration,
 			EventSerializer eventSerializer, CompletionMode completionMode) {
@@ -240,8 +313,15 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 		this.deleteCompletedStatement = DELETE_COMPLETED_STATEMENT.apply(completedNode);
 		this.deleteCompletedBeforeStatement = DELETE_COMPLETED_BEFORE_STATEMENT.apply(completedNode);
+		this.deleteAbandonedBeforeStatement = DELETE_ABANDONED_BEFORE_STATEMENT.apply(completedNode);
 		this.completedByIdStatement = COMPLETE_BY_ID_STATEMENT.apply(completedNode);
+		this.abandonedByIdStatement = ABANDON_BY_ID_STATEMENT.apply(completedNode);
 		this.allCompletedStatement = ALL_COMPLETED_STATEMENT.apply(completedNode);
+		this.allAbandonedStatement = ALL_ABANDONED_STATEMENT.apply(completedNode);
+		this.findByStatusStatement = FIND_BY_STATUS_STATEMENT.apply(EVENT_PUBLICATION_NODE);
+		this.findTerminalByStatusStatement = FIND_BY_STATUS_STATEMENT.apply(completedNode);
+		this.countByStatusStatement = COUNT_BY_STATUS_STATEMENT.apply(EVENT_PUBLICATION_NODE);
+		this.countTerminalByStatusStatement = COUNT_BY_STATUS_STATEMENT.apply(completedNode);
 	}
 
 	/*
@@ -348,6 +428,61 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markAbandoned(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	@Transactional
+	public boolean markAbandoned(UUID identifier, Instant instant, @Nullable Status expectedCurrentStatus) {
+
+		if (completionMode == CompletionMode.DELETE) {
+
+			if (expectedCurrentStatus == null) {
+				deletePublications(List.of(identifier));
+				return true;
+			}
+
+			var result = neo4jClient.query(renderer.render(deleteByIdStatement(EVENT_PUBLICATION_NODE, expectedCurrentStatus)))
+					.bind(Values.value(identifier.toString())).to(ID)
+					.run();
+
+			return result.counters().nodesDeleted() > 0;
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			var statement = expectedCurrentStatus == null
+					? ABANDON_IN_ARCHIVE_BY_ID_STATEMENT.get()
+					: abandonInArchiveByIdStatement(expectedCurrentStatus);
+
+			var result = neo4jClient.query(renderer.render(statement))
+					.bind(Values.value(identifier.toString())).to(ID)
+					.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+					.run();
+
+			if (result.counters().nodesCreated() == 0) {
+				return false;
+			}
+
+			deletePublications(List.of(identifier));
+
+			return true;
+
+		} else {
+
+			var statement = expectedCurrentStatus == null
+					? abandonedByIdStatement
+					: abandonByIdStatement(completedNode, expectedCurrentStatus);
+
+			var result = neo4jClient.query(renderer.render(statement))
+					.bind(Values.value(identifier.toString())).to(ID)
+					.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+					.run();
+
+			return result.counters().propertiesSet() > 0;
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findIncompletePublicationsByEventAndTargetIdentifier(java.lang.Object, org.springframework.modulith.events.core.PublicationTargetIdentifier)
 	 */
 	@Override
@@ -409,6 +544,19 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findAbandonedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findAbandonedPublications() {
+
+		return new ArrayList<>(neo4jClient.query(renderer.render(allAbandonedStatement))
+				.fetchAs(TargetEventPublication.class)
+				.mappedBy(completeMapping())
+				.all());
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deletePublications(java.util.List)
 	 */
 	@Override
@@ -441,7 +589,20 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	public void deleteCompletedPublicationsBefore(Instant instant) {
 
 		neo4jClient.query(renderer.render(deleteCompletedBeforeStatement))
-				.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(PUBLICATION_DATE)
+				.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
+				.run();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deleteAbandonedPublicationsBefore(java.time.Instant)
+	 */
+	@Override
+	@Transactional
+	public void deleteAbandonedPublicationsBefore(Instant instant) {
+
+		neo4jClient.query(renderer.render(deleteAbandonedBeforeStatement))
+				.bind(Values.value(instant.atOffset(ZoneOffset.UTC))).to(COMPLETION_DATE)
 				.run();
 	}
 
@@ -452,7 +613,9 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public int countByStatus(Status status) {
 
-		return neo4jClient.query(renderer.render(COUNT_BY_STATUS_STATEMENT))
+		var statement = status.isTerminal() ? countTerminalByStatusStatement : countByStatusStatement;
+
+		return neo4jClient.query(renderer.render(statement))
 				.bind(status.name()).to(STATUS)
 				.fetchAs(Integer.class)
 				.one()
@@ -466,10 +629,13 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findByStatus(Status status) {
 
-		return List.copyOf(neo4jClient.query(renderer.render(FIND_BY_STATUS_STATEMENT))
+		var terminal = status.isTerminal();
+		var statement = terminal ? findTerminalByStatusStatement : findByStatusStatement;
+
+		return List.copyOf(neo4jClient.query(renderer.render(statement))
 				.bind(status.name()).to(STATUS)
 				.fetchAs(TargetEventPublication.class)
-				.mappedBy(status == Status.COMPLETED ? completeMapping() : incompleteMapping())
+				.mappedBy(terminal ? completeMapping() : incompleteMapping())
 				.all());
 	}
 
@@ -627,17 +793,22 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 		@Override
 		public Status getStatus() {
-			return delegate.completionDate != null ? Status.COMPLETED : Status.PUBLISHED;
+
+			if (delegate.status == Status.ABANDONED) {
+				return Status.ABANDONED;
+			}
+
+			return delegate.completionDate != null ? Status.COMPLETED : delegate.status;
 		}
 
 		@Override
 		public int getCompletionAttempts() {
-			return 1;
+			return delegate.completionAttempts;
 		}
 
 		@Override
 		public @Nullable Instant getLastResubmissionDate() {
-			return null;
+			return delegate.lastResubmissionDate;
 		}
 
 		/*

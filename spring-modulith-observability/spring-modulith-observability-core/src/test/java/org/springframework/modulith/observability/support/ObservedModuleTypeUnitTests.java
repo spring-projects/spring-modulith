@@ -19,15 +19,16 @@ import static org.assertj.core.api.Assertions.*;
 
 import example.sample.ObservedComponent;
 import example.sample.SampleConfiguration;
+import example.sample.internal.AbstractSampleServiceImpl;
+import example.sample.internal.InternalOnlyComponent;
+import example.sample.internal.SampleServiceImpl;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.Advised;
 import org.springframework.modulith.core.ApplicationModule;
 import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.ArchitecturallyEvidentType;
 import org.springframework.modulith.core.Types;
 import org.springframework.modulith.observability.ObservedModuleType;
-import org.springframework.modulith.observability.support.DefaultObservedModule;
 import org.springframework.modulith.test.TestApplicationModules;
 import org.springframework.util.ReflectionUtils;
 
@@ -38,12 +39,10 @@ import org.springframework.util.ReflectionUtils;
  */
 class ObservedModuleTypeUnitTests {
 
-	static final ApplicationModules modules = TestApplicationModules.of("example");
+	static final ApplicationModules MODULES = TestApplicationModules.of("example");
+	static final ApplicationModule MODULE = MODULES.getModuleByName("sample").orElseThrow();
 
-	ApplicationModule module = modules.getModuleByName("sample").orElseThrow();
-	ArchitecturallyEvidentType type = module.getArchitecturallyEvidentType(ObservedComponent.class);
-
-	ObservedModuleType observedType = new ObservedModuleType(modules, new DefaultObservedModule(module), type);
+	ObservedModuleType observedType = observedTypeOf(ObservedComponent.class);
 
 	@Test // GH-106, GH-744
 	void onlyExposesUserMethodsAsToBeIntercepted() {
@@ -66,21 +65,37 @@ class ObservedModuleTypeUnitTests {
 
 	@Test // GH-332
 	void doesNotObserveConfigurationClasses() {
-
-		var type = module.getArchitecturallyEvidentType(SampleConfiguration.class);
-		var observedType = new ObservedModuleType(modules, new DefaultObservedModule(module), type);
-
-		assertThat(observedType.shouldBeObserved()).isFalse();
+		assertThat(observedTypeOf(SampleConfiguration.class).shouldBeObserved()).isFalse();
 	}
 
 	@Test // GH-936
 	void exposesMessageListenerMethodsForObservation() {
 
-		var type = Types.loadIfPresent("example.sample.SampleMessageListener");
+		Class<?> type = Types.loadIfPresent("example.sample.SampleMessageListener");
 
-		var architecturallyEvidentType = module.getArchitecturallyEvidentType(type);
-		var moduleType = new ObservedModuleType(modules, new DefaultObservedModule(module), architecturallyEvidentType);
+		assertThat(type).isNotNull();
+		assertThat(observedTypeOf(type).shouldBeObserved()).isTrue();
+	}
 
-		assertThat(moduleType.shouldBeObserved()).isTrue();
+	@Test // GH-1712
+	void considersInternalImplementationOfExposedInterfaceAsToBeIntercepted() {
+		assertThat(observedTypeOf(SampleServiceImpl.class).shouldBeObserved()).isTrue();
+	}
+
+	@Test // GH-1712
+	void considersInternalSubclassOfExposedAbstractClassAsToBeIntercepted() {
+		assertThat(observedTypeOf(AbstractSampleServiceImpl.class).shouldBeObserved()).isTrue();
+	}
+
+	@Test // GH-1712
+	void doesNotConsiderPurelyInternalComponentToBeIntercepted() {
+		assertThat(observedTypeOf(InternalOnlyComponent.class).shouldBeObserved()).isFalse();
+	}
+
+	private static ObservedModuleType observedTypeOf(Class<?> type) {
+
+		var evidentType = MODULE.getArchitecturallyEvidentType(type);
+
+		return new ObservedModuleType(MODULES, new DefaultObservedModule(MODULE), evidentType);
 	}
 }

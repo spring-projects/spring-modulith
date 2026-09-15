@@ -26,13 +26,17 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.modulith.events.AbandonPolicy.Decision;
+import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.ResubmissionOptions;
 
@@ -132,6 +136,89 @@ class DefaultEventPublicationRegistryUnitTests {
 		verify(repository).findFailedPublications(argThat(criteria -> criteria.getMaxItemsToRead() == 50));
 	}
 
+	@Test // GH-1764
+	void marksPublicationAsAbandonedWhenAbandonPolicyApplies() {
+
+		when(repository.create(any())).then(returnsFirstArg());
+
+		var registry = createRegistry(Instant.now(), publication -> true);
+		var identifier = PublicationTargetIdentifier.of("id");
+		var event = new Object();
+
+		registry.store(event, Stream.of(identifier));
+		registry.markFailed(event, identifier);
+
+		verify(repository).markAbandoned(any(), any(), isNull());
+		verify(repository, never()).markFailed(any());
+	}
+
+	@Test // GH-1764
+	void marksPublicationAsFailedWhenAbandonPolicyDoesNotApply() {
+
+		when(repository.create(any())).then(returnsFirstArg());
+
+		var registry = createRegistry(Instant.now());
+		var identifier = PublicationTargetIdentifier.of("id");
+		var event = new Object();
+
+		registry.store(event, Stream.of(identifier));
+		registry.markFailed(event, identifier);
+
+		verify(repository).markFailed(any());
+		verify(repository, never()).markAbandoned(any(), any(), any());
+	}
+
+	@Test // GH-1764
+	void appliesConfiguredPoliciesWhenNoOverrideGiven() {
+
+		var identifier = UUID.randomUUID();
+		var publication = mock(TargetEventPublication.class);
+		when(publication.getIdentifier()).thenReturn(identifier);
+
+		when(repository.findByStatus(Status.FAILED)).thenReturn(List.of(publication));
+		when(repository.markAbandoned(eq(identifier), any(), eq(Status.FAILED))).thenReturn(true);
+
+		var registry = createRegistry(Instant.now(), it -> true);
+
+		registry.applyAbandonPolicy(null);
+
+		verify(repository).markAbandoned(eq(identifier), any(), eq(Status.FAILED));
+	}
+
+	@Test // GH-1764
+	void doesNotAbandonFailedPublicationsWhenConfiguredPoliciesRetain() {
+
+		var publication = mock(TargetEventPublication.class);
+
+		when(repository.findByStatus(Status.FAILED)).thenReturn(List.of(publication));
+
+		var registry = createRegistry(Instant.now());
+
+		registry.applyAbandonPolicy(null);
+
+		verify(repository, never()).markAbandoned(any(), any(), any());
+	}
+
+	@Test // GH-1764
+	void appliedOverrideTakesPrecedenceOverConfiguredPolicies() {
+
+		var identifier = UUID.randomUUID();
+		var publication = mock(TargetEventPublication.class);
+		when(publication.getIdentifier()).thenReturn(identifier);
+
+		when(repository.findByStatus(Status.FAILED)).thenReturn(List.of(publication));
+		when(repository.markAbandoned(eq(identifier), any(), eq(Status.FAILED))).thenReturn(true);
+
+		// Configured policies (none) would never abandon anything.
+		var registry = createRegistry(Instant.now());
+
+		org.springframework.modulith.events.AbandonPolicy override = __ -> Decision.ABANDON;
+
+		registry.applyAbandonPolicy(override);
+
+		verify(repository).markAbandoned(eq(identifier), any(), eq(Status.FAILED));
+	}
+
 	@Test // GH-1836
 	void doesNotConsiderRecentlyResubmittedPublicationStaleBasedOnOriginalPublicationDate() {
 
@@ -158,7 +245,19 @@ class DefaultEventPublicationRegistryUnitTests {
 
 		var clock = Clock.fixed(instant, ZoneId.systemDefault());
 
-		return new DefaultEventPublicationRegistry(repository, clock);
+		return new DefaultEventPublicationRegistry(repository, clock, AbandonPolicies.none());
+	}
+
+	private DefaultEventPublicationRegistry createRegistry(Instant instant, Predicate<EventPublication> abandon) {
+
+		var clock = Clock.fixed(instant, ZoneId.systemDefault());
+		var policy = (org.springframework.modulith.events.AbandonPolicy) publication -> abandon.test(publication)
+				? Decision.ABANDON
+				: Decision.RETAIN;
+
+		var abandonPolicies = new AbandonPolicies(List.of(policy), __ -> false);
+
+		return new DefaultEventPublicationRegistry(repository, clock, abandonPolicies);
 	}
 
 	private Consumer<TargetEventPublication> failingConsumer() {

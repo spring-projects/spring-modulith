@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.events.core;
 
-import java.time.Clock;
 import java.time.Instant;
 
 import org.springframework.util.Assert;
@@ -32,7 +31,7 @@ public interface TargetEventPublication extends Completable, org.springframework
 	/**
 	 * Creates a {@link TargetEventPublication} for the given event an listener identifier using a default
 	 * {@link Instant}. Prefer using {@link #of(Object, PublicationTargetIdentifier, Instant)} with a dedicated
-	 * {@link Instant} obtained from a {@link Clock}.
+	 * {@link Instant} obtained from a {@link java.time.Clock}.
 	 *
 	 * @param event must not be {@literal null}.
 	 * @param id must not be {@literal null}.

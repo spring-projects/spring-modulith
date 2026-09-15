@@ -31,6 +31,7 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.core.TypeInformation;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Fields;
 import org.springframework.data.mongodb.core.aggregation.MergeOperation.WhenDocumentsMatch;
@@ -120,7 +121,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 			var ids = mongoTemplate.findDistinct(query(criteria), Fields.UNDERSCORE_ID, collection, UUID.class);
 
-			archiveCompleted(ids, completionDate);
+			archiveTerminal(ids, completionDate, Status.COMPLETED);
 
 		} else {
 
@@ -146,10 +147,53 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			archiveCompleted(List.of(identifier), completionDate);
+			archiveTerminal(List.of(identifier), completionDate, Status.COMPLETED);
 
 		} else {
 			mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection);
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markAbandoned(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public boolean markAbandoned(UUID identifier, Instant instant, @Nullable Status expectedCurrentStatus) {
+
+		var criteria = expectedCurrentStatus == null
+				? where(ID).is(identifier).and(COMPLETION_DATE).isNull()
+				: new Criteria().andOperator(where(ID).is(identifier), byStatus(expectedCurrentStatus));
+
+		var query = query(criteria);
+		var update = Update.update(COMPLETION_DATE, instant).set(STATUS, Status.ABANDONED);
+
+		if (completionMode == CompletionMode.DELETE) {
+
+			return mongoTemplate.remove(query, MongoDbEventPublication.class, collection).getDeletedCount() > 0;
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			if (expectedCurrentStatus == null) {
+
+				archiveTerminal(List.of(identifier), instant, Status.ABANDONED);
+				return true;
+			}
+
+			var options = FindAndModifyOptions.options().returnNew(true);
+			var updated = mongoTemplate.findAndModify(query, update, options, MongoDbEventPublication.class, collection);
+
+			if (updated == null) {
+				return false;
+			}
+
+			mongoTemplate.save(updated, archiveCollection);
+			mongoTemplate.remove(query(where(ID).is(identifier)), MongoDbEventPublication.class, collection);
+
+			return true;
+
+		} else {
+			return mongoTemplate.findAndModify(query, update, MongoDbEventPublication.class, collection) != null;
 		}
 	}
 
@@ -227,7 +271,16 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public List<TargetEventPublication> findCompletedPublications() {
-		return readMapped(defaultQuery(where(COMPLETION_DATE).ne(null)), archiveCollection);
+		return readMapped(defaultQuery(byStatus(Status.COMPLETED)), archiveCollection);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findAbandonedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findAbandonedPublications() {
+		return readMapped(defaultQuery(byStatus(Status.ABANDONED)), archiveCollection);
 	}
 
 	/*
@@ -267,7 +320,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public List<TargetEventPublication> findByStatus(Status status) {
 
-		var collection = status == Status.COMPLETED ? archiveCollection : this.collection;
+		var collection = status.isTerminal() ? archiveCollection : this.collection;
 
 		return readMapped(defaultQuery(byStatus(status)), collection);
 	}
@@ -279,7 +332,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	public int countByStatus(Status status) {
 
-		var collection = status == Status.COMPLETED ? archiveCollection : this.collection;
+		var collection = status.isTerminal() ? archiveCollection : this.collection;
 
 		return (int) mongoTemplate.count(query(byStatus(status)), MongoDbEventPublication.class, collection);
 	}
@@ -301,7 +354,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	 */
 	@Override
 	public void deleteCompletedPublications() {
-		mongoTemplate.remove(query(where(COMPLETION_DATE).ne(null)), MongoDbEventPublication.class, archiveCollection);
+		mongoTemplate.remove(query(byStatus(Status.COMPLETED)), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	/*
@@ -313,7 +366,23 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(instant, "Instant must not be null!");
 
-		mongoTemplate.remove(query(where(COMPLETION_DATE).lt(instant)), MongoDbEventPublication.class, archiveCollection);
+		var criteria = new Criteria().andOperator(byStatus(Status.COMPLETED), where(COMPLETION_DATE).lt(instant));
+
+		mongoTemplate.remove(query(criteria), MongoDbEventPublication.class, archiveCollection);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deleteAbandonedPublicationsBefore(java.time.Instant)
+	 */
+	@Override
+	public void deleteAbandonedPublicationsBefore(Instant instant) {
+
+		Assert.notNull(instant, "Instant must not be null!");
+
+		var criteria = new Criteria().andOperator(byStatus(Status.ABANDONED), where(COMPLETION_DATE).lt(instant));
+
+		mongoTemplate.remove(query(criteria), MongoDbEventPublication.class, archiveCollection);
 	}
 
 	private List<TargetEventPublication> readMapped(Query query) {
@@ -344,10 +413,16 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		Assert.notNull(status, "Status must not be null!");
 
-		// Older publications can have a completion date without a corresponding status update.
-		return status == Status.COMPLETED
-				? where(COMPLETION_DATE).ne(null)
-				: where(STATUS).is(status).and(COMPLETION_DATE).isNull();
+		return switch (status) {
+
+			// Any publication with a completion date is considered completed unless explicitly abandoned. Older
+			// versions did not consistently update the stored status on completion.
+			case COMPLETED -> where(COMPLETION_DATE).ne(null).and(STATUS).ne(Status.ABANDONED);
+
+			case ABANDONED -> where(STATUS).is(status);
+
+			default -> where(STATUS).is(status).and(COMPLETION_DATE).isNull();
+		};
 	}
 
 	private static MongoDbEventPublication domainToDocument(TargetEventPublication publication) {
@@ -371,7 +446,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		return query(criteria).with(DEFAULT_SORT);
 	}
 
-	private void archiveCompleted(Collection<UUID> identifiers, Instant now) {
+	private void archiveTerminal(Collection<UUID> identifiers, Instant now, Status status) {
 
 		Assert.isTrue(!archiveCollection.equals(collection),
 				"Archive collection must not be identical to the default collection!");
@@ -386,7 +461,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 				addFields()
 						.addFieldWithValue(COMPLETION_DATE, now)
-						.addFieldWithValue(STATUS, Status.COMPLETED.name())
+						.addFieldWithValue(STATUS, status.name())
 						.build(),
 
 				merge()
@@ -440,6 +515,11 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 		@Override
 		public Status getStatus() {
+
+			if (publication.status == Status.ABANDONED) {
+				return Status.ABANDONED;
+			}
+
 			return publication.completionDate != null ? Status.COMPLETED : publication.status;
 		}
 

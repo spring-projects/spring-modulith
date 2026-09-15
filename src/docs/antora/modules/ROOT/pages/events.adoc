@@ -229,6 +229,7 @@ Each event publication has a `EventPublication.Status`:
 * `COMPLETED` – The listener finished successfully. A completion date is set (unless the completion xref:events.adoc#publication-registry.completion[mode is `DELETE`]).
 * `FAILED` – The listener threw an exception, or the publication was marked failed by the staleness mechanism (see <<publication-registry.lifecycle.staleness>>).
 * `RESUBMITTED` – A previously failed publication was resubmitted and is again pending processing.
+* `ABANDONED` (since 2.2) – The listener invocation failed and an `AbandonPolicy` decided the publication should permanently give up on further resubmission (see <<publication-registry.lifecycle.abandoning>>). Distinct from `COMPLETED`, which indicates a successful listener invocation.
 
 [plantuml, event-publication-lifecycle, format='svg']
 ....
@@ -238,11 +239,13 @@ state PROCESSING
 state COMPLETED
 state FAILED
 state RESUBMITTED
+state ABANDONED
 
 [*] -right-> PUBLISHED : event stored
 PUBLISHED -down-> PROCESSING : listener picks up
 PROCESSING -right-> COMPLETED : success
 PROCESSING -down-> FAILED : exception
+PROCESSING -right-> ABANDONED : exception, abandon policy applies
 FAILED -left-> RESUBMITTED : resubmit
 RESUBMITTED -right-> PROCESSING : resubmission triggered
 @enduml
@@ -280,6 +283,26 @@ The registry lets you work explicitly with failed publications:
 Resubmission changes the status from `FAILED` to `RESUBMITTED` and updates the last resubmission date; when a listener is about to run, the publication moves to `PROCESSING` and the completion attempt count is incremented.
 
 For "incomplete" publications in general (including failed and, depending on configuration, stale ones), the existing `IncompleteEventPublications` API still applies; as of 2.0 it supports `resubmitIncompletePublications(ResubmissionOptions)` in addition to the predicate- and duration-based overloads.
+
+[[publication-registry.lifecycle.abandoning]]
+==== Abandoning failed publications (since 2.2)
+
+Some failures are not worth resubmitting at all -- for example, a payload that can never be deserialized, or a permanent error signaled by a downstream system. For those cases, a failing publication can be marked `ABANDONED` right away instead of `FAILED`, so it is no longer picked up by the resubmission mechanisms described in <<publication-registry.lifecycle.failed-and-resubmission>> or considered by the Staleness Monitor.
+
+The decision is made by an `AbandonPolicy`:
+
+[source, java]
+----
+public interface AbandonPolicy {
+  Decision shouldAbandon(EventPublication publication);
+}
+----
+
+`Decision` is one of `ABANDON`, `RETAIN`, or `DEFAULT`. Register as many `AbandonPolicy` beans as you need; they are consulted in the order defined by `@Order` / `Ordered`, and the first one to return `ABANDON` or `RETAIN` wins, short-circuiting the remaining policies. If every policy returns `DEFAULT` (or none is configured at all), the framework-provided default applies: a configurable number of completion attempts, controlled via the xref:appendix.adoc#configuration-properties[`spring.modulith.events.resubmission.abandon-after-attempts`] property. That property defaults to `-1`, which disables the framework-provided default so that, without any `AbandonPolicy` bean registered, publications are never abandoned and behave exactly as before 2.2.
+
+The decision is made only at the moment a publication actually fails, i.e. when a listener invocation throws. It is not applied retroactively to publications that are already `FAILED` in the store. As a result, introducing or tightening an `AbandonPolicy` never abandons publications that failed before that change was deployed -- it only affects failures happening from that point on.
+
+`AbandonedEventPublications` -- available as a Spring bean analogous to `CompletedEventPublications` -- lets you inspect and purge abandoned publications, as described in <<publication-registry.managing-publications>>.
 
 [[publication-registry.starters]]
 === Spring Boot Event Registry Starters
@@ -347,6 +370,7 @@ This artifact contains primary abstractions that are available to application co
 * `CompletedEventPublications` -- This interface allows accessing all completed event publications, and provides an API to immediately purge all of them from the database or the ones older than a given duration (for example, 1 minute).
 * `IncompleteEventPublications` -- This interface allows accessing all incomplete event publications to resubmit either the ones matching a given predicate, older than a given `Duration` relative to the original publishing date, or matching custom criteria via `resubmitIncompletePublications(ResubmissionOptions)` (since 2.0).
 * `FailedEventPublications` (since 2.0) -- This interface allows resubmitting only failed event publications via `resubmit(ResubmissionOptions)`, as described in <<publication-registry.lifecycle.failed-and-resubmission>>.
+* `AbandonedEventPublications` (since 2.2) -- This interface allows accessing all abandoned event publications and provides an API to purge them from the database, either matching a given predicate (`deletePublications(Predicate)`) or older than a given `Duration` (`deletePublicationsOlderThan(Duration)`), as described in <<publication-registry.lifecycle.abandoning>>.
 
 [[publication-registry.completion]]
 === Event Publication Completion
@@ -365,6 +389,8 @@ This means that `CompletedEventPublications` will not return any publications an
 The third option is the `ARCHIVE` mode, which copies the entry into an archive table, collection or node.
 For that archive entry, the completion date is set and the original entry is removed.
 Contrary to the `DELETE` mode, completed event publications are then still accessible via the `CompletedEventPublications` abstraction.
+
+The configured completion mode also governs how publications marked xref:events.adoc#publication-registry.lifecycle.abandoning[`ABANDONED`] are persisted, mirroring the same `UPDATE`, `DELETE`, or `ARCHIVE` strategy used for completed ones.
 
 [[publication-registry.publication-repositories]]
 === Event Publication Repositories

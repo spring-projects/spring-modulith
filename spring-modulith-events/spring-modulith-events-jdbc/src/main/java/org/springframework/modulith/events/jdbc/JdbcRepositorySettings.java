@@ -21,6 +21,7 @@ import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
 import org.springframework.core.io.Resource;
+import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
@@ -133,6 +134,18 @@ public class JdbcRepositorySettings {
 
 	String getArchiveTable() {
 		return isArchiveCompletion() ? getTable() + "_ARCHIVE" : getTable();
+	}
+
+	/**
+	 * Returns the table to read {@link org.springframework.modulith.events.EventPublication}s with the given
+	 * {@link Status} from, i.e. the archive table for terminal statuses if archiving is enabled, the regular table
+	 * otherwise.
+	 *
+	 * @param status must not be {@literal null}.
+	 * @since 2.2
+	 */
+	String getTargetTable(Status status) {
+		return status.isTerminal() && isArchiveCompletion() ? getArchiveTable() : getTable();
 	}
 
 	enum SchemaVersion {

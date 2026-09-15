@@ -162,6 +162,24 @@ public interface EventPublication {
 		/**
 		 * A previously failed publication has been resubmitted for processing.
 		 */
-		RESUBMITTED;
+		RESUBMITTED,
+
+		/**
+		 * The publication has permanently given up on further resubmission attempts, as decided by an application-defined
+		 * policy. Distinct from {@link #COMPLETED}, which indicates a successful listener invocation.
+		 *
+		 * @since 2.2
+		 */
+		ABANDONED;
+
+		/**
+		 * Returns whether this {@link Status} is terminal, i.e. the publication will not transition into any other
+		 * {@link Status} anymore.
+		 *
+		 * @since 2.2
+		 */
+		public boolean isTerminal() {
+			return this == COMPLETED || this == ABANDONED;
+		}
 	}
 }
