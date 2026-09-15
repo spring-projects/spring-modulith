@@ -41,7 +41,7 @@ abstract class EventExternalizerSupport {
 	private final Semaphore semaphore = new Semaphore(1);
 
 	/**
-	 * Creates a new {@link EventExternalizationSupport} for the given {@link EventExternalizationConfiguration}.
+	 * Creates a new {@link EventExternalizerSupport} for the given {@link EventExternalizationConfiguration}.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 */

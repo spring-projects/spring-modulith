@@ -43,8 +43,7 @@ import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
- * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
- * externalize events to JMS.
+ * Auto-configuration to set up a {@link EventExternalizerModuleListener} to externalize events to JMS.
  *
  * @author Oliver Drotbohm
  * @since 1.1

@@ -102,16 +102,4 @@ class DefaultFailedEventPublicationsUnitTests {
 
 		verify(registry).processIncompletePublications(any(), any(), any());
 	}
-
-	@Test // GH-240, GH-251, GH-823
-	void triggersRepublicationIfLegacyConfigExplicitlyEnabled() {
-
-		var source = new MapPropertySource("test",
-				Map.of(DefaultFailedEventPublications.REPUBLISH_ON_RESTART_LEGACY, "true"));
-		environment.getPropertySources().addFirst(source);
-
-		failedEventPublications.afterSingletonsInstantiated();
-
-		verify(registry).processIncompletePublications(any(), any(), any());
-	}
 }

@@ -35,12 +35,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Unit tests for {@link DelegatingEventExternalizer}.
+ * Unit tests for {@link EventExternalizerModuleListener}.
  *
  * @author Oliver Drotbohm
  * @since 1.3
  */
-class DelegatingEventExternalizerUnitTests {
+class EventExternalizerModuleListenerUnitTests {
 
 	@Test // GH-859
 	void doesNotRequireATransactionForExternalization() throws Exception {

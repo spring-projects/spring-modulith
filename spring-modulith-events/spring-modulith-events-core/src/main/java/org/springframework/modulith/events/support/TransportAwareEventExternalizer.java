@@ -22,7 +22,7 @@ import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.util.Assert;
 
 /**
- * An {@link EventExternalizationSupport} delegating to a {@link EventExternalizationTransport} for the actual
+ * An {@link EventExternalizerSupport} delegating to a {@link EventExternalizationTransport} for the actual
  * externalization.
  *
  * @author Oliver Drotbohm
@@ -34,7 +34,7 @@ abstract class TransportAwareEventExternalizer extends EventExternalizerSupport 
 	private final EventExternalizationTransport transport;
 
 	/**
-	 * Creates a new {@link DelegatingEventExternalizer} for the given {@link EventExternalizationConfiguration} and
+	 * Creates a new {@link TransportAwareEventExternalizer} for the given {@link EventExternalizationConfiguration} and
 	 * {@link EventExternalizationTransport} implementing the actual externalization.
 	 *
 	 * @param configuration must not be {@literal null}.
@@ -52,7 +52,7 @@ abstract class TransportAwareEventExternalizer extends EventExternalizerSupport 
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.support.EventExternalizationSupport#externalize(org.springframework.modulith.events.RoutingTarget, java.lang.Object)
+	 * @see org.springframework.modulith.events.support.EventExternalizerSupport#externalize(org.springframework.modulith.events.RoutingTarget, java.lang.Object)
 	 */
 	@Override
 	protected CompletableFuture<?> externalize(Object payload, RoutingTarget target) {

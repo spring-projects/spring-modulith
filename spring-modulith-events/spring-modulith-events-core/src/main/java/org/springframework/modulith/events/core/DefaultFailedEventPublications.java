@@ -16,7 +16,6 @@
 package org.springframework.modulith.events.core;
 
 import java.time.Duration;
-import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -47,7 +46,6 @@ public class DefaultFailedEventPublications implements FailedEventPublications, 
 		SmartInitializingSingleton {
 
 	static final String REPUBLISH_ON_RESTART = "spring.modulith.events.republish-outstanding-events-on-restart";
-	static final String REPUBLISH_ON_RESTART_LEGACY = "spring.modulith.republish-outstanding-events-on-restart";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(DefaultFailedEventPublications.class);
 
@@ -141,10 +139,7 @@ public class DefaultFailedEventPublications implements FailedEventPublications, 
 
 		var env = environment.get();
 
-		Boolean republishOnRestart = Optional.ofNullable(env.getProperty(REPUBLISH_ON_RESTART, Boolean.class))
-				.orElseGet(() -> env.getProperty(REPUBLISH_ON_RESTART_LEGACY, Boolean.class));
-
-		if (!Boolean.TRUE.equals(republishOnRestart)) {
+		if (!Boolean.TRUE.equals(env.getProperty(REPUBLISH_ON_RESTART, Boolean.class))) {
 			return;
 		}
 

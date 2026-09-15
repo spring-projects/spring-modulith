@@ -50,7 +50,8 @@ class PersistentDomainEventIntegrationTest {
 		try (var context = new AnnotationConfigApplicationContext()) {
 
 			context.getEnvironment().getPropertySources().addFirst(
-					new MapPropertySource("test", Map.of("spring.modulith.republish-outstanding-events-on-restart", "true")));
+					new MapPropertySource("test",
+							Map.of("spring.modulith.events.republish-outstanding-events-on-restart", "true")));
 			context.register(ApplicationConfiguration.class, InfrastructureConfiguration.class);
 			context.refresh();
 

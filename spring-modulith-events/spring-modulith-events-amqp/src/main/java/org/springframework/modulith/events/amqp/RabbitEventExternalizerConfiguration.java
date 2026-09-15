@@ -52,8 +52,7 @@ import org.springframework.modulith.events.support.OutboxEventExternalizerFactor
 import org.springframework.util.Assert;
 
 /**
- * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
- * externalize events to RabbitMQ.
+ * Auto-configuration to set up a {@link EventExternalizerModuleListener} to externalize events to RabbitMQ.
  *
  * @author Oliver Drotbohm
  * @since 1.1

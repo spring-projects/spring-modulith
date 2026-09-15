@@ -33,8 +33,7 @@ import org.springframework.util.Assert;
 @ConfigurationProperties("spring.modulith.events.staleness")
 public class StalenessProperties implements Staleness {
 
-	public static StalenessProperties DEFAULTS = new StalenessProperties(null, null, null,
-			null, null, null);
+	public static StalenessProperties DEFAULTS = new StalenessProperties(null, null, null, null);
 
 	/**
 	 * Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as
@@ -64,20 +63,12 @@ public class StalenessProperties implements Staleness {
 			@Nullable Duration published,
 			@Nullable Duration processing,
 			@Nullable Duration resubmitted,
-			@Nullable Duration resubmission,
-			@Nullable Duration checkInterval,
-			@Nullable Duration checkIntervall) {
+			@Nullable Duration checkInterval) {
 
 		this.published = published == null ? Duration.ZERO : published;
 		this.processing = processing == null ? Duration.ZERO : processing;
-		this.resubmitted = resubmitted == null ? resubmission == null ? Duration.ZERO : resubmission : resubmitted;
-
-		// Prefer check-interval; keep check-intervall as a deprecated alias for compatibility.
-		this.checkInterval = checkInterval != null
-				? checkInterval
-				: checkIntervall != null
-						? checkIntervall
-						: Duration.ofMinutes(1);
+		this.resubmitted = resubmitted == null ? Duration.ZERO : resubmitted;
+		this.checkInterval = checkInterval == null ? Duration.ofMinutes(1) : checkInterval;
 	}
 
 	boolean monitorStaleness() {

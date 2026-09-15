@@ -69,7 +69,7 @@ public class EventExternalizerModuleListener extends TransportAwareEventExternal
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.support.EventExternalizationSupport#externalize(java.lang.Object)
+	 * @see org.springframework.modulith.events.support.EventExternalizerSupport#externalize(java.lang.Object)
 	 */
 	@Override
 	@ApplicationModuleListener(propagation = Propagation.SUPPORTS)
