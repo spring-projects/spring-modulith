@@ -245,7 +245,7 @@ state ABANDONED
 PUBLISHED -down-> PROCESSING : listener picks up
 PROCESSING -right-> COMPLETED : success
 PROCESSING -down-> FAILED : exception
-PROCESSING -left-> ABANDONED : exception, abandon policy applies
+PROCESSING -right-> ABANDONED : exception, abandon policy applies
 FAILED -left-> RESUBMITTED : resubmit
 RESUBMITTED -right-> PROCESSING : resubmission triggered
 @enduml
