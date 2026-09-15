@@ -36,9 +36,9 @@ import org.springframework.util.Assert;
 import org.springframework.util.ConcurrentReferenceHashMap;
 
 /**
- * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register {@link EventPublication}s in an
- * {@link EventPublicationRegistry} so that potentially failing transactional event listeners can get re-invoked upon
- * application restart or via a schedule.
+ * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register
+ * {@link org.springframework.modulith.events.EventPublication}s in an {@link EventPublicationRegistry} so that
+ * potentially failing transactional event listeners can get re-invoked upon application restart or via a schedule.
  *
  * @author Oliver Drotbohm
  * @author Seonwoo Jung
