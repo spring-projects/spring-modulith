@@ -41,6 +41,7 @@ import org.springframework.core.ResolvableType;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.FailedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
@@ -180,6 +181,27 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 	@Override
 	public void resubmit(ResubmissionOptions options) {
 		doResubmitIncompletePublications(options);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.FailedEventPublications#applyAbandonPolicy()
+	 */
+	@Override
+	public void applyAbandonPolicy() {
+		registry.get().applyAbandonPolicy(null);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.FailedEventPublications#applyAbandonPolicy(org.springframework.modulith.events.AbandonPolicy)
+	 */
+	@Override
+	public void applyAbandonPolicy(AbandonPolicy policy) {
+
+		Assert.notNull(policy, "AbandonPolicy must not be null!");
+
+		registry.get().applyAbandonPolicy(policy);
 	}
 
 	/*

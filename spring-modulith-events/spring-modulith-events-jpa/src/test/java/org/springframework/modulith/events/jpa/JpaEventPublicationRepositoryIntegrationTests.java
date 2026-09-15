@@ -338,6 +338,78 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			}
 		}
 
+		@Test // GH-1764
+		void marksPublicationAsAbandoned() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markAbandoned(publication.getIdentifier(), Instant.now(), null);
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findAbandonedPublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findAbandonedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+
+			if (completionMode == CompletionMode.ARCHIVE) {
+				assertThat(getArchivedPublications()).hasSize(1);
+			}
+		}
+
+		@Test // GH-1764
+		void distinguishesAbandonedFromCompletedPublications() {
+
+			var completed = createPublication(new TestEvent("completed"));
+			var abandoned = createPublication(new TestEvent("abandoned"));
+
+			repository.markCompleted(completed.getIdentifier(), Instant.now());
+			repository.markAbandoned(abandoned.getIdentifier(), Instant.now(), null);
+
+			var expectedCount = completionMode == CompletionMode.DELETE ? 0 : 1;
+
+			assertThat(repository.countByStatus(Status.COMPLETED)).isEqualTo(expectedCount);
+			assertThat(repository.countByStatus(Status.ABANDONED)).isEqualTo(expectedCount);
+
+			if (completionMode != CompletionMode.DELETE) {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(completed.getIdentifier());
+
+				assertThat(repository.findAbandonedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(abandoned.getIdentifier());
+			}
+		}
+
+		@Test // GH-1764
+		void shouldDeleteAbandonedEventsBefore() {
+
+			assumeFalse(completionMode == CompletionMode.DELETE);
+
+			var publication1 = createPublication(new TestEvent("abc"));
+			var publication2 = createPublication(new TestEvent("def"));
+
+			var now = Instant.now();
+
+			repository.markAbandoned(publication1.getIdentifier(), now.minusSeconds(30), null);
+			repository.markAbandoned(publication2.getIdentifier(), now, null);
+
+			repository.deleteAbandonedPublicationsBefore(now.minusSeconds(15));
+
+			assertThat(repository.findAbandonedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication2.getIdentifier());
+		}
+
 		@Test // GH 806
 		void archivesByEvent() {
 
@@ -466,6 +538,57 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			assertThat(reloaded).hasSize(1);
 			assertThat(reloaded.get(0).getStatus()).isEqualTo(Status.FAILED);
+		}
+
+		@Test // GH-1764
+		void abandonsFailedPublicationIfStillFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+
+			em.flush();
+			em.clear();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+
+			} else {
+
+				assertThat(repository.findByStatus(Status.ABANDONED))
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+		}
+
+		@Test // GH-1764
+		void doesNotAbandonPublicationThatHasBeenConcurrentlyResubmitted() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isFalse();
+
+			em.flush();
+			em.clear();
+
+			assertThat(repository.findByStatus(Status.RESUBMITTED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+			assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
 		}
 
 		private List<JpaEventPublication> getIncompletePublications() {

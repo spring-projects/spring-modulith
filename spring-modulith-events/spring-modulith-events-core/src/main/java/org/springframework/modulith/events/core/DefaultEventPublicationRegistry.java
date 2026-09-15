@@ -30,6 +30,7 @@ import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.DisposableBean;
+import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.EventPublication.Status;
@@ -55,21 +56,39 @@ public class DefaultEventPublicationRegistry
 
 	private final EventPublicationRepository events;
 	private final Clock clock;
+	private final AbandonPolicies abandonPolicies;
 	private final PublicationsInProgress inProgress;
 
 	/**
-	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository}.
+	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository}, never
+	 * abandoning failed publications.
 	 *
 	 * @param events must not be {@literal null}.
 	 * @param clock must not be {@literal null}.
 	 */
 	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock) {
+		this(events, clock, AbandonPolicies.none());
+	}
+
+	/**
+	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository},
+	 * {@link Clock} and {@link AbandonPolicies}.
+	 *
+	 * @param events must not be {@literal null}.
+	 * @param clock must not be {@literal null}.
+	 * @param abandonPolicies must not be {@literal null}.
+	 * @since 2.2
+	 */
+	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock,
+			AbandonPolicies abandonPolicies) {
 
 		Assert.notNull(events, "EventPublicationRepository must not be null!");
 		Assert.notNull(clock, "Clock must not be null!");
+		Assert.notNull(abandonPolicies, "AbandonPolicies must not be null!");
 
 		this.events = events;
 		this.clock = clock;
+		this.abandonPolicies = abandonPolicies;
 		this.inProgress = new PublicationsInProgress();
 	}
 
@@ -146,7 +165,7 @@ public class DefaultEventPublicationRegistry
 	@Transactional(propagation = Propagation.REQUIRES_NEW)
 	public void markFailed(Object event, PublicationTargetIdentifier targetIdentifier) {
 
-		propagateStateTransitionAndConclude(event, targetIdentifier, it -> events.markFailed(it.getIdentifier()), () -> {});
+		propagateStateTransitionAndConclude(event, targetIdentifier, this::markFailedOrAbandoned, () -> {});
 
 		inProgress.unregister(event, targetIdentifier);
 	}
@@ -256,6 +275,38 @@ public class DefaultEventPublicationRegistry
 		markFailed(Status.PUBLISHED, staleness);
 		markFailed(Status.PROCESSING, staleness);
 		markFailed(Status.RESUBMITTED, staleness);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRegistry#applyAbandonPolicy(org.springframework.modulith.events.AbandonPolicy)
+	 */
+	@Override
+	public void applyAbandonPolicy(@Nullable AbandonPolicy override) {
+
+		var policies = override == null ? abandonPolicies : abandonPolicies.withPolicy(override);
+
+		var result = events.findByStatus(Status.FAILED).stream()
+				.filter(policies::shouldAbandon)
+				.map(TargetEventPublication::getIdentifier)
+				.toList();
+
+		if (result.isEmpty()) {
+
+			LOGGER.info("No failed publications eligible for abandonment found.");
+			return;
+		}
+
+		LOGGER.info("Abandoning the following failed publications as they exceed the applied AbandonPolicy:");
+
+		var now = clock.instant();
+
+		result.forEach(it -> {
+
+			if (events.markAbandoned(it, now, Status.FAILED)) {
+				LOGGER.info("- {}", it);
+			}
+		});
 	}
 
 	/*
@@ -375,6 +426,33 @@ public class DefaultEventPublicationRegistry
 		result.stream()
 				.peek(it -> LOGGER.info("- {}", it))
 				.forEach(events::markFailed);
+	}
+
+	/**
+	 * Marks the given {@link TargetEventPublication} as either {@link Status#ABANDONED} or {@link Status#FAILED},
+	 * depending on the configured {@link AbandonPolicies}.
+	 *
+	 * @param publication must not be {@literal null}.
+	 */
+	private void markFailedOrAbandoned(TargetEventPublication publication) {
+
+		var identifier = publication.getIdentifier();
+		var completionAttempts = publication.getCompletionAttempts();
+
+		if (abandonPolicies.shouldAbandon(publication)) {
+
+			LOGGER.debug("Abandoning event publication {} after {} completion attempts.", //
+					identifier, completionAttempts);
+
+			events.markAbandoned(identifier, clock.instant(), null);
+
+		} else {
+
+			LOGGER.debug("Marking event publication {} as failed after {} completion attempts.", //
+					identifier, completionAttempts);
+
+			events.markFailed(identifier);
+		}
 	}
 
 	private static String getConfirmationMessage(Collection<?> publications) {

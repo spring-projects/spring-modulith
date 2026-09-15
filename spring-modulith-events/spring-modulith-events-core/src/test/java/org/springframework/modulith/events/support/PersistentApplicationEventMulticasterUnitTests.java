@@ -36,6 +36,7 @@ import org.springframework.context.event.EventListenerMethodProcessor;
 import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.env.StandardEnvironment;
 import org.springframework.mock.env.MockEnvironment;
+import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
@@ -96,6 +97,29 @@ class PersistentApplicationEventMulticasterUnitTests {
 		multicaster.afterSingletonsInstantiated();
 
 		verify(registry).processIncompletePublications(any(), any(), any());
+	}
+
+	@Test // GH-1764
+	void applyAbandonPolicyWithoutOverrideDelegatesToRegistry() {
+
+		multicaster.applyAbandonPolicy();
+
+		verify(registry).applyAbandonPolicy(null);
+	}
+
+	@Test // GH-1764
+	void applyAbandonPolicyWithOverrideDelegatesToRegistry() {
+
+		AbandonPolicy policy = __ -> AbandonPolicy.Decision.ABANDON;
+
+		multicaster.applyAbandonPolicy(policy);
+
+		verify(registry).applyAbandonPolicy(policy);
+	}
+
+	@Test // GH-1764
+	void applyAbandonPolicyRejectsNullOverride() {
+		assertThatIllegalArgumentException().isThrownBy(() -> multicaster.applyAbandonPolicy(null));
 	}
 
 	@Test // GH-277, GH-1654

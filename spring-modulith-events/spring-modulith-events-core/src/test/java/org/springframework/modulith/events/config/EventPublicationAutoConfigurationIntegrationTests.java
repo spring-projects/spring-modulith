@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.config;
 
 import static org.assertj.core.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -36,9 +37,14 @@ import org.springframework.boot.test.context.assertj.AssertableApplicationContex
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.modulith.events.AbandonPolicy;
+import org.springframework.modulith.events.AbandonPolicy.Decision;
+import org.springframework.modulith.events.AbandonedEventPublications;
 import org.springframework.modulith.events.CompletedEventPublications;
+import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncPropertiesDefaulter;
+import org.springframework.modulith.events.core.AbandonPolicies;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -136,6 +142,113 @@ class EventPublicationAutoConfigurationIntegrationTests {
 					.hasSingleBean(CompletedEventPublications.class)
 					.hasSingleBean(IncompleteEventPublications.class);
 		});
+	}
+
+	@Test // GH-1764
+	void exposesAbandonedEventPublications() {
+
+		basicSetup().run(context -> assertThat(context).hasSingleBean(AbandonedEventPublications.class));
+	}
+
+	@Test // GH-1764
+	void registersNonAbandoningAbandonPolicyByDefault() {
+
+		basicSetup().run(context -> {
+
+			var policies = context.getBean(AbandonPolicies.class);
+
+			assertThat(policies.shouldAbandon(mock(EventPublication.class))).isFalse();
+		});
+	}
+
+	@Test // GH-1764
+	void appliesConfiguredAbandonAfterAttemptsThreshold() {
+
+		basicSetup()
+				.withPropertyValues("spring.modulith.events.resubmission.abandon-after-attempts=5")
+				.run(context -> {
+
+					var policies = context.getBean(AbandonPolicies.class);
+					var publication = mock(EventPublication.class);
+
+					when(publication.getCompletionAttempts()).thenReturn(4);
+					assertThat(policies.shouldAbandon(publication)).isFalse();
+
+					when(publication.getCompletionAttempts()).thenReturn(5);
+					assertThat(policies.shouldAbandon(publication)).isTrue();
+				});
+	}
+
+	@Test // GH-1764
+	void explicitAbandonDecisionTakesPrecedenceOverConfiguredDefault() {
+
+		AbandonPolicy alwaysAbandon = __ -> Decision.ABANDON;
+
+		basicSetup()
+				.withPropertyValues("spring.modulith.events.resubmission.abandon-after-attempts=5")
+				.withBean(AbandonPolicy.class, () -> alwaysAbandon)
+				.run(context -> {
+
+					var policies = context.getBean(AbandonPolicies.class);
+					var publication = mock(EventPublication.class);
+
+					assertThat(policies.shouldAbandon(publication)).isTrue();
+				});
+	}
+
+	@Test // GH-1764
+	void explicitRetainDecisionSuppressesConfiguredDefault() {
+
+		AbandonPolicy alwaysRetain = __ -> Decision.RETAIN;
+
+		basicSetup()
+				.withPropertyValues("spring.modulith.events.resubmission.abandon-after-attempts=5")
+				.withBean(AbandonPolicy.class, () -> alwaysRetain)
+				.run(context -> {
+
+					var policies = context.getBean(AbandonPolicies.class);
+					var publication = mock(EventPublication.class);
+
+					assertThat(policies.shouldAbandon(publication)).isFalse();
+				});
+	}
+
+	@Test // GH-1764
+	void defaultDecisionDefersToConfiguredThreshold() {
+
+		AbandonPolicy deferring = __ -> Decision.DEFAULT;
+
+		basicSetup()
+				.withPropertyValues("spring.modulith.events.resubmission.abandon-after-attempts=5")
+				.withBean(AbandonPolicy.class, () -> deferring)
+				.run(context -> {
+
+					var policies = context.getBean(AbandonPolicies.class);
+					var publication = mock(EventPublication.class);
+
+					when(publication.getCompletionAttempts()).thenReturn(4);
+					assertThat(policies.shouldAbandon(publication)).isFalse();
+
+					when(publication.getCompletionAttempts()).thenReturn(5);
+					assertThat(policies.shouldAbandon(publication)).isTrue();
+				});
+	}
+
+	@Test // GH-1764
+	void supportsMultipleAbandonPolicyBeans() {
+
+		AbandonPolicy deferring = __ -> Decision.DEFAULT;
+		AbandonPolicy abandoning = __ -> Decision.ABANDON;
+
+		basicSetup()
+				.withBean("deferring", AbandonPolicy.class, () -> deferring)
+				.withBean("abandoning", AbandonPolicy.class, () -> abandoning)
+				.run(context -> {
+
+					var policies = context.getBean(AbandonPolicies.class);
+
+					assertThat(policies.shouldAbandon(mock(EventPublication.class))).isTrue();
+				});
 	}
 
 	@Test // GH-1321

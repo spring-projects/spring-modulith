@@ -114,6 +114,30 @@ public interface EventPublicationRepository {
 	}
 
 	/**
+	 * Marks the {@link org.springframework.modulith.events.EventPublication} with the given identifier as abandoned,
+	 * i.e. permanently given up on further resubmission. Implementations are expected to apply the same storage
+	 * strategy (update, delete, archive) used for {@link #markCompleted(UUID, Instant)}.
+	 * <p>
+	 * If {@code expectedCurrentStatus} is given, the transition is only applied if the publication currently has that
+	 * status, and {@literal false} is returned otherwise. This guards against racing a concurrent resubmission or
+	 * completion that might have happened between reading the publication's previous status and applying this
+	 * transition; used when an {@link org.springframework.modulith.events.AbandonPolicy} is applied to a batch of
+	 * previously-read {@link org.springframework.modulith.events.EventPublication.Status#FAILED} publications. Pass
+	 * {@literal null} to apply the transition unconditionally, as is appropriate when the caller itself just drove the
+	 * publication into its current state (e.g. a live completion callback).
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @param instant must not be {@literal null}.
+	 * @param expectedCurrentStatus can be {@literal null}.
+	 * @return whether the given {@link org.springframework.modulith.events.EventPublication} was abandoned.
+	 * @since 2.2
+	 * @see org.springframework.modulith.events.EventPublication.Status#ABANDONED
+	 */
+	default boolean markAbandoned(UUID identifier, Instant instant, @Nullable Status expectedCurrentStatus) {
+		return false;
+	}
+
+	/**
 	 * Returns all {@link TargetEventPublication}s that have not been completed yet.
 	 *
 	 * @return will never be {@literal null}.
@@ -152,6 +176,17 @@ public interface EventPublicationRepository {
 	}
 
 	/**
+	 * Returns all abandoned event publications currently found in the system.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	default List<TargetEventPublication> findAbandonedPublications() {
+		throw new UnsupportedOperationException(
+				"Your store implementation does not support looking up abandoned publications!");
+	}
+
+	/**
 	 * Deletes all publications with the given identifiers.
 	 *
 	 * @param identifiers must not be {@literal null}.
@@ -170,6 +205,14 @@ public interface EventPublicationRepository {
 	 * @param instant must not be {@literal null}.
 	 */
 	void deleteCompletedPublicationsBefore(Instant instant);
+
+	/**
+	 * Deletes all publications that were already marked as abandoned with a completion date before the given one.
+	 *
+	 * @param instant must not be {@literal null}.
+	 * @since 2.2
+	 */
+	default void deleteAbandonedPublicationsBefore(Instant instant) {}
 
 	/**
 	 * @param criteria must not be {@literal null}.
