@@ -19,7 +19,7 @@ import static com.tngtech.archunit.base.DescribedPredicate.*;
 import static com.tngtech.archunit.core.domain.JavaClass.Predicates.*;
 import static java.lang.System.*;
 import static java.util.Comparator.*;
-import static org.springframework.modulith.core.SyntacticSugar.*;
+import static org.springframework.modulith.core.Types.*;
 import static org.springframework.modulith.core.Types.JavaXTypes.*;
 import static org.springframework.modulith.core.Types.SpringDataTypes.*;
 import static org.springframework.modulith.core.Types.SpringTypes.*;
@@ -677,33 +677,6 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		return classes.that(isEvent).stream() //
 				.map(EventType::new).toList();
-	}
-
-	/**
-	 * Returns a {@link DescribedPredicate} matching types that are annotated or meta-annotated with the given
-	 * annotation type, either directly or anywhere in their type hierarchy (superclasses and implemented interfaces).
-	 *
-	 * @param annotationType must not be {@literal null} or empty.
-	 * @return will never be {@literal null}.
-	 */
-	private static DescribedPredicate<JavaClass> isAnnotatedInTypeHierarchyWith(String annotationType) {
-
-		Assert.hasText(annotationType, "Annotation type must not be null or empty!");
-
-		return new DescribedPredicate<>("is annotated with %s directly or in its type hierarchy", annotationType) {
-
-			@Override
-			public boolean test(JavaClass type) {
-
-				return isAnnotated(type) || Stream
-						.concat(type.getAllRawSuperclasses().stream(), type.getAllRawInterfaces().stream())
-						.anyMatch(this::isAnnotated);
-			}
-
-			private boolean isAnnotated(JavaClass type) {
-				return type.isAnnotatedWith(annotationType) || type.isMetaAnnotatedWith(annotationType);
-			}
-		};
 	}
 
 	/**
