@@ -675,10 +675,37 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	private List<EventType> findPublishedEvents() {
 
 		var isEvent = implement(JMoleculesTypes.DOMAIN_EVENT) //
-				.or(isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT));
+				.or(isAnnotatedInTypeHierarchyWith(JMoleculesTypes.AT_DOMAIN_EVENT));
 
 		return classes.that(isEvent).stream() //
 				.map(EventType::new).toList();
+	}
+
+	/**
+	 * Returns a {@link DescribedPredicate} matching types that are annotated or meta-annotated with the given
+	 * annotation type, either directly or anywhere in their type hierarchy (superclasses and implemented interfaces).
+	 *
+	 * @param annotationType must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 */
+	private static DescribedPredicate<JavaClass> isAnnotatedInTypeHierarchyWith(String annotationType) {
+
+		Assert.hasText(annotationType, "Annotation type must not be null or empty!");
+
+		return new DescribedPredicate<>("is annotated with %s directly or in its type hierarchy", annotationType) {
+
+			@Override
+			public boolean test(JavaClass type) {
+
+				return isAnnotated(type) || Stream
+						.concat(type.getAllRawSuperclasses().stream(), type.getAllRawInterfaces().stream())
+						.anyMatch(this::isAnnotated);
+			}
+
+			private boolean isAnnotated(JavaClass type) {
+				return type.isAnnotatedWith(annotationType) || type.isMetaAnnotatedWith(annotationType);
+			}
+		};
 	}
 
 	/**
