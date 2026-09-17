@@ -39,7 +39,6 @@ import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.util.function.SingletonSupplier;
 
-import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.Dependency;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaCodeUnit;
@@ -675,7 +674,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 	private List<EventType> findPublishedEvents() {
 
-		DescribedPredicate<JavaClass> isEvent = implement(JMoleculesTypes.DOMAIN_EVENT) //
+		var isEvent = implement(JMoleculesTypes.DOMAIN_EVENT) //
 				.or(isAnnotatedWith(JMoleculesTypes.AT_DOMAIN_EVENT));
 
 		return classes.that(isEvent).stream() //

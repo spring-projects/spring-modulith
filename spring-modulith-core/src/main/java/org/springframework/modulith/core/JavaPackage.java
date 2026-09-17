@@ -32,6 +32,7 @@ import java.util.SortedSet;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.function.BiPredicate;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -57,7 +58,7 @@ public class JavaPackage implements DescribedIterable<JavaClass>, Comparable<Jav
 
 	private static final String PACKAGE_INFO_NAME = "package-info";
 	private static final String MULTIPLE_TYPES_ANNOTATED_WITH = "Expected maximum of one type in package %s to be annotated with %s, but got %s!";
-	private static final DescribedPredicate<JavaClass> ARE_PACKAGE_INFOS = //
+	private static final Predicate<JavaClass> ARE_PACKAGE_INFOS = //
 			has(simpleName(PACKAGE_INFO_NAME)).or(is(metaAnnotatedWith(PackageInfo.class)));
 	private static final Supplier<JavaPackages> NO_SUB_PACKAGES = SingletonSupplier.of(JavaPackages.NONE);
 

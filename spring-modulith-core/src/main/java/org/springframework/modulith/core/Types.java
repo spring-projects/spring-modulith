@@ -235,7 +235,7 @@ public class Types {
 		static final String AT_INJECT = BASE_PACKAGE + ".inject.Inject";
 		static final String AT_RESOURCE = BASE_PACKAGE + ".annotation.Resource";
 
-		static DescribedPredicate<? super JavaClass> isJpaEntity() {
+		static Predicate<? super JavaClass> isJpaEntity() {
 			return isAnnotatedWith(AT_ENTITY);
 		}
 	}
@@ -260,15 +260,15 @@ public class Types {
 				+ ".boot.context.properties.ConfigurationProperties";
 		static final String AT_REQUEST_MAPPING = BASE_PACKAGE + ".web.bind.annotation.RequestMapping";
 
-		static DescribedPredicate<? super JavaClass> isConfiguration() {
+		static Predicate<? super JavaClass> isConfiguration() {
 			return isAnnotatedWith(AT_CONFIGURATION);
 		}
 
-		static DescribedPredicate<? super JavaClass> isComponent() {
+		static Predicate<? super JavaClass> isComponent() {
 			return isAnnotatedWith(AT_COMPONENT);
 		}
 
-		static DescribedPredicate<? super JavaClass> isConfigurationProperties() {
+		static Predicate<? super JavaClass> isConfigurationProperties() {
 			return isAnnotatedWith(AT_CONFIGURATION_PROPERTIES);
 		}
 
@@ -292,7 +292,7 @@ public class Types {
 			return ClassUtils.isPresent(REPOSITORY, SpringDataTypes.class.getClassLoader());
 		}
 
-		static DescribedPredicate<JavaClass> isSpringDataRepository() {
+		static Predicate<JavaClass> isSpringDataRepository() {
 
 			return isInterface().and(is(assignableTo(SpringDataTypes.REPOSITORY)) //
 					.or(isAnnotatedWith(SpringDataTypes.AT_REPOSITORY_DEFINITION)));
@@ -318,21 +318,17 @@ public class Types {
 	 * @return will never be {@literal null}.
 	 * @since 1.2
 	 */
-	static DescribedPredicate<JavaClass> residesInPackageAnnotatedWith(Class<? extends Annotation> type) {
+	static Predicate<JavaClass> residesInPackageAnnotatedWith(Class<? extends Annotation> type) {
 
 		Assert.notNull(type, "Annotation type must not be null!");
 
-		return new DescribedPredicate<JavaClass>("resides in a package annotated with", type) {
+		return t -> {
 
-			@Override
-			public boolean test(JavaClass t) {
+			var pkg = t.getPackage();
 
-				var pkg = t.getPackage();
-
-				return pkg.isMetaAnnotatedWith(type)
-						|| pkg.getClasses().stream()
-								.anyMatch(it -> it.isMetaAnnotatedWith(PackageInfo.class) && it.isMetaAnnotatedWith(type));
-			}
+			return pkg.isMetaAnnotatedWith(type)
+					|| pkg.getClasses().stream()
+							.anyMatch(it -> it.isMetaAnnotatedWith(PackageInfo.class) && it.isMetaAnnotatedWith(type));
 		};
 	}
 
@@ -342,14 +338,7 @@ public class Types {
 	 * @return will never be {@literal null}.
 	 * @since 2.1, 2.0.3, 1.4.8
 	 */
-	static DescribedPredicate<JavaClass> isInterface() {
-
-		return new DescribedPredicate<>("is an interface") {
-
-			@Override
-			public boolean test(JavaClass t) {
-				return t.isInterface();
-			}
-		};
+	private static Predicate<JavaClass> isInterface() {
+		return t -> t.isInterface();
 	}
 }
