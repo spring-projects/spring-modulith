@@ -31,7 +31,10 @@ import org.springframework.modulith.core.ApplicationModule.AllowedDependency;
 
 import com.acme.withatbean.SampleAggregate;
 import com.acme.withatbean.TestEvents.JMoleculesAnnotated;
+import com.acme.withatbean.TestEvents.JMoleculesAnnotatedInterface;
+import com.acme.withatbean.TestEvents.JMoleculesExtendingAnnotatedClass;
 import com.acme.withatbean.TestEvents.JMoleculesImplementing;
+import com.acme.withatbean.TestEvents.JMoleculesImplementingAnnotatedInterface;
 import com.tngtech.archunit.core.domain.JavaClass;
 
 /**
@@ -60,11 +63,17 @@ class ModuleUnitTest {
 
 		JavaClass jMoleculesAnnotated = classes.getRequiredClass(JMoleculesAnnotated.class);
 		JavaClass jMoleculesImplementing = classes.getRequiredClass(JMoleculesImplementing.class);
+		JavaClass jMoleculesAnnotatedInterface = classes.getRequiredClass(JMoleculesAnnotatedInterface.class);
+		JavaClass jMoleculesImplementingAnnotatedInterface = classes
+				.getRequiredClass(JMoleculesImplementingAnnotatedInterface.class);
+		JavaClass jMoleculesExtendingAnnotatedClass = classes
+				.getRequiredClass(JMoleculesExtendingAnnotatedClass.class);
 
 		List<EventType> events = module.getPublishedEvents();
 
 		assertThat(events.stream().map(EventType::getType)) //
-				.containsExactlyInAnyOrder(jMoleculesAnnotated, jMoleculesImplementing);
+				.containsExactlyInAnyOrder(jMoleculesAnnotated, jMoleculesImplementing, jMoleculesAnnotatedInterface,
+						jMoleculesImplementingAnnotatedInterface, jMoleculesExtendingAnnotatedClass);
 		assertThat(events.stream().filter(it -> it.getType().equals(jMoleculesAnnotated))) //
 				.element(0) //
 				.satisfies(it -> {

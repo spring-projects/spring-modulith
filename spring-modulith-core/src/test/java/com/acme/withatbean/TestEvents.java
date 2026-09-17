@@ -44,4 +44,11 @@ public class TestEvents {
 	}
 
 	public static class JMoleculesImplementing implements org.jmolecules.event.types.DomainEvent {}
+
+	@org.jmolecules.event.annotation.DomainEvent
+	public interface JMoleculesAnnotatedInterface {}
+
+	public static class JMoleculesImplementingAnnotatedInterface implements JMoleculesAnnotatedInterface {}
+
+	public static class JMoleculesExtendingAnnotatedClass extends JMoleculesAnnotated {}
 }
