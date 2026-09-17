@@ -324,6 +324,34 @@ public class Types {
 	}
 
 	/**
+	 * Returns a {@link DescribedPredicate} matching types that are annotated or meta-annotated with the given annotation
+	 * type, either directly or anywhere in their type hierarchy (super-classes and implemented interfaces).
+	 *
+	 * @param annotationType must not be {@literal null} or empty.
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	static Predicate<JavaClass> isAnnotatedInTypeHierarchyWith(String annotationType) {
+
+		Assert.hasText(annotationType, "Annotation type must not be null or empty!");
+
+		return new Predicate<>() {
+
+			@Override
+			public boolean test(JavaClass type) {
+
+				return isAnnotated(type) || Stream
+						.concat(type.getAllRawInterfaces().stream(), type.getAllRawSuperclasses().stream())
+						.anyMatch(this::isAnnotated);
+			}
+
+			private boolean isAnnotated(JavaClass type) {
+				return type.isAnnotatedWith(annotationType) || type.isMetaAnnotatedWith(annotationType);
+			}
+		};
+	}
+
+	/**
 	 * A {@link DescribedPredicate} matching only interfaces.
 	 *
 	 * @return will never be {@literal null}.
