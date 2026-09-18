@@ -1,0 +1,10 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.events.couchbase.transaction-management.enabled",
+			"type": "java.lang.Boolean",
+			"description": "Whether to automatically enable transactions for Couchbase.",
+			"defaultValue": "true"
+		}
+	]
+}

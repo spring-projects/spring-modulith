@@ -1,0 +1,16 @@
+= Spring Modulith Example Documentation
+:modulith-docs: ../../../target/spring-modulith-docs
+
+== Overview
+
+plantuml::{modulith-docs}/components.puml[format="svg"]
+
+== Inventory
+
+plantuml::{modulith-docs}/module-inventory.puml[format="svg"]
+include::{modulith-docs}/module-inventory.adoc[]
+
+== Orders
+
+plantuml::{modulith-docs}/module-order.puml[format="svg"]
+include::{modulith-docs}/module-order.adoc[]
