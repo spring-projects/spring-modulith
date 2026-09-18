@@ -51,7 +51,6 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>4.2.0-SNAPSHOT</spring-boot.version>
-		<spring-framework.version>7.1.0-SNAPSHOT</spring-framework.version> <!-- For Javadoc links only -->
 		<testcontainers.version>2.0.5</testcontainers.version>
 		<structurizr.version>5.0.3</structurizr.version>
 		<micrometer-tracing.version>1.8.0-SNAPSHOT</micrometer-tracing.version>
@@ -97,15 +96,6 @@ limitations under the License.
 
 	<dependencyManagement>
 		<dependencies>
-			
-			<dependency>
-				<groupId>org.springframework</groupId>
-				<artifactId>spring-framework-bom</artifactId>
-				<version>${spring-framework.version}</version>
-				<type>pom</type>
-				<scope>import</scope>
-			</dependency>
-			<!-- TODO: For snapshots -->
 			<dependency>
 				<groupId>io.micrometer</groupId>
 				<artifactId>micrometer-tracing-bom</artifactId>
