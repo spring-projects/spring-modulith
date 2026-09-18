@@ -370,7 +370,7 @@ public class DefaultEventPublicationRegistry
 						return;
 					}
 
-					LOGGER.debug("Resubmitting event publication %s.".formatted(it.getIdentifier()));
+					LOGGER.debug("Resubmitting event publication {}.", it.getIdentifier());
 
 					try {
 
