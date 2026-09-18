@@ -44,7 +44,7 @@
 		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
 		<jobrunr.version>8.8.2</jobrunr.version>
 		<json-unit-assertj.version>5.1.2</json-unit-assertj.version>
-		<namastack-outbox.version>1.8.1</namastack-outbox.version>
+		<namastack-outbox.version>1.9.0</namastack-outbox.version>
 		<nullaway.version>0.13.0</nullaway.version>
 		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
 		<project.build.outputTimestamp>2023-08-21T15:59:00Z</project.build.outputTimestamp>
