@@ -160,13 +160,15 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private static final Statement UPDATE_STATUS_STATEMENT = match(EVENT_PUBLICATION_NODE)
 			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
-			.and(EVENT_PUBLICATION_NODE.property(STATUS).ne(parameter(STATUS)))
+			.and(EVENT_PUBLICATION_NODE.property(STATUS).isNull()
+					.or(EVENT_PUBLICATION_NODE.property(STATUS).ne(parameter(STATUS))))
 			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
 			.build();
 
 	private static final Statement RESUBMIT_STATEMENT = match(EVENT_PUBLICATION_NODE)
 			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
-			.and(EVENT_PUBLICATION_NODE.property(STATUS).ne(literalOf(Status.RESUBMITTED.name())))
+			.and(EVENT_PUBLICATION_NODE.property(STATUS).isNull()
+					.or(EVENT_PUBLICATION_NODE.property(STATUS).ne(literalOf(Status.RESUBMITTED.name()))))
 			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
 			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS)
 					.to(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS).add(literalOf(1))))

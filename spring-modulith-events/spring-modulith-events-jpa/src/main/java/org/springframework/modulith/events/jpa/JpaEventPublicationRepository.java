@@ -154,7 +154,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			update DefaultJpaEventPublication p
 			   set p.status = ?1
 			 where p.id = ?2
-			   and status != ?1
+			   and (status is null or status != ?1)
 			""";
 
 	private static final String MARK_RESUBMITTED = """
@@ -163,7 +163,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			       p.completionAttempts = p.completionAttempts + 1,
 			       p.lastResubmissionDate = ?1
 			 where p.id = ?2
-			   and p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED
+			   and (p.status is null or p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED)
 			""";
 
 	private static final String COUNT_BY_STATUS = """
