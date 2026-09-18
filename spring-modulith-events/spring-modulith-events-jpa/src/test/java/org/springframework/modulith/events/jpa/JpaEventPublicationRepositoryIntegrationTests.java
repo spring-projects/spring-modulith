@@ -468,6 +468,48 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			assertThat(reloaded.get(0).getStatus()).isEqualTo(Status.FAILED);
 		}
 
+		@Test // GH-1565
+		void resubmitsPublicationWithNullStatusColumn() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			setStatusColumnToNull(publication);
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isTrue();
+		}
+
+		@Test // GH-1565
+		void marksPublicationWithNullStatusColumnAsFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			setStatusColumnToNull(publication);
+
+			repository.markFailed(publication.getIdentifier());
+
+			em.clear();
+
+			assertThat(repository.findByStatus(Status.FAILED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		/**
+		 * Simulates a publication persisted by a schema version that predates the {@code status} column, i.e. one for
+		 * which the column was never backfilled and is {@literal null} rather than defaulted.
+		 */
+		private void setStatusColumnToNull(TargetEventPublication publication) {
+
+			em.flush();
+
+			new JdbcTemplate(dataSource)
+					.update("update event_publication set status = null where id = ?", publication.getIdentifier());
+
+			em.clear();
+		}
+
 		private List<JpaEventPublication> getIncompletePublications() {
 			return em.createQuery("select p from DefaultJpaEventPublication p", JpaEventPublication.class).getResultList();
 		}

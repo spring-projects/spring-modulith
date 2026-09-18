@@ -381,6 +381,44 @@ class Neo4jEventPublicationRepositoryTest {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1565
+		void resubmitsPublicationWithNullStatusProperty() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			removeStatusProperty(publication);
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isTrue();
+		}
+
+		@Test // GH-1565
+		void marksPublicationWithNullStatusPropertyAsFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			removeStatusProperty(publication);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findByStatus(EventPublication.Status.FAILED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		/**
+		 * Simulates a publication persisted by a schema version that predates the {@code status} property, i.e. one for
+		 * which the property is missing rather than defaulted.
+		 */
+		private void removeStatusProperty(TargetEventPublication publication) {
+
+			try (var session = driver.session()) {
+				session.run("MATCH (n:Neo4jEventPublication {identifier: $id}) REMOVE n.status",
+						Map.of("id", publication.getIdentifier().toString())).consume();
+			}
+		}
+
 		private void assertOneByStatus(EventPublication.Status reference) {
 
 			for (var status : EventPublication.Status.values()) {
