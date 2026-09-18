@@ -22,7 +22,7 @@ import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates;
 
 /**
- * Helper to make the composition of {@link DescribedPredicate}s more readable.
+ * Helper to make the composition of {@link Predicate}s more readable.
  *
  * @author Oliver Drotbohm
  * @since 1.2
