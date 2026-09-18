@@ -525,6 +525,43 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1565
+		void resubmitsPublicationWithNullStatusColumn() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			setStatusColumnToNull(publication);
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isTrue();
+		}
+
+		@Test // GH-1565
+		void marksPublicationWithNullStatusColumnAsFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			setStatusColumnToNull(publication);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findByStatus(Status.FAILED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		/**
+		 * Simulates a publication persisted by a schema version that predates the {@code STATUS} column, i.e. one for
+		 * which the column was never backfilled and is {@literal null} rather than defaulted.
+		 */
+		private void setStatusColumnToNull(TargetEventPublication publication) {
+
+			var id = properties.getDatabaseType().uuidToDatabase(publication.getIdentifier());
+
+			operations.update("UPDATE " + table() + " SET STATUS = NULL WHERE ID = ?", id);
+		}
+
 		private void assertOneByStatus(Status reference) {
 
 			for (var status : Status.values()) {
