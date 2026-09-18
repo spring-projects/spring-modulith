@@ -40,6 +40,7 @@ import org.springframework.modulith.core.ApplicationModulesFactory;
 import org.springframework.modulith.core.JavaPackages;
 import org.springframework.modulith.core.PackageName;
 import org.springframework.modulith.test.ApplicationModuleTest.BootstrapMode;
+import org.springframework.test.context.TestContextAnnotationUtils;
 import org.springframework.util.Assert;
 import org.springframework.util.ObjectUtils;
 import org.springframework.util.StringUtils;
@@ -124,7 +125,7 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		return SingletonSupplier.of(() -> {
 
-			var annotation = AnnotatedElementUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
+			var annotation = TestContextAnnotationUtils.findMergedAnnotation(type, ApplicationModuleTest.class);
 
 			if (annotation == null) {
 				throw new IllegalStateException(
