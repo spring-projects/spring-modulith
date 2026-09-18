@@ -53,7 +53,7 @@
 		<spring-boot.version>4.2.0-M2</spring-boot.version>
 		<testcontainers.version>2.0.5</testcontainers.version>
 		<structurizr.version>5.0.3</structurizr.version>
-		<micrometer-tracing.version>1.8.0-SNAPSHOT</micrometer-tracing.version>
+		<micrometer-tracing.version>1.8.0-M2</micrometer-tracing.version>
 
 	</properties>
 
