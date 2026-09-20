@@ -151,12 +151,39 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		assertEventExternalizedPublished(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
 	}
 
+	@Test // GH-1895
+	void appliesMappingForNamastackExternalization() {
+
+		var config = EventExternalizationConfiguration.defaults("org")
+				.mapping(Sample.class, __ -> new MappedSample())
+				.build();
+
+		assertOutboxMessage(config, it -> {
+			assertThat(it.getPayload()).isInstanceOf(MappedSample.class);
+		});
+	}
+
 	private void assertMessage(EventExternalizationConfiguration configuration, Consumer<Message<?>> assertions) {
 
 		basicSetup(configuration)
 				.run(ctxt -> {
 
 					ctxt.getBean(EventExternalizerModuleListener.class).externalize(new Sample());
+
+					var captor = ArgumentCaptor.forClass(Message.class);
+					verify(operations).send(captor.capture());
+
+					assertions.accept(captor.getValue());
+				});
+	}
+
+	private void assertOutboxMessage(EventExternalizationConfiguration configuration, Consumer<Message<?>> assertions) {
+
+		basicSetup(configuration)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					ctxt.getBean(OutboxHandler.class).handle(new Sample(), null);
 
 					var captor = ArgumentCaptor.forClass(Message.class);
 					verify(operations).send(captor.capture());
@@ -208,4 +235,6 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 
 	@Externalized
 	record Sample() {}
+
+	record MappedSample() {}
 }
