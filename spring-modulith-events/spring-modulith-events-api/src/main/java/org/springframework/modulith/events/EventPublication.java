@@ -46,8 +46,8 @@ public interface EventPublication {
 	Object getEvent();
 
 	/**
-	 * Returns the event as Spring {@link ApplicationEvent}, effectively wrapping it into a
-	 * {@link PayloadApplicationEvent} in case it's not one already.
+	 * Returns the event as Spring {@link ApplicationEvent}: the event itself if it already is one, or the event
+	 * wrapped into a {@link PayloadApplicationEvent} otherwise.
 	 *
 	 * @return the underlying event as {@link ApplicationEvent}.
 	 */
@@ -55,8 +55,8 @@ public interface EventPublication {
 
 		Object event = getEvent();
 
-		return PayloadApplicationEvent.class.isInstance(event) //
-				? PayloadApplicationEvent.class.cast(event)
+		return ApplicationEvent.class.isInstance(event) //
+				? ApplicationEvent.class.cast(event)
 				: new PayloadApplicationEvent<>(this, event);
 	}
 

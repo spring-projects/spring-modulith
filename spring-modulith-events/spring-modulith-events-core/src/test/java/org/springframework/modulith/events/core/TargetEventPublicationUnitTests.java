@@ -18,6 +18,8 @@ package org.springframework.modulith.events.core;
 import static org.assertj.core.api.Assertions.*;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEvent;
+import org.springframework.context.PayloadApplicationEvent;
 
 /**
  * @author Oliver Drotbohm
@@ -65,5 +67,34 @@ class TargetEventPublicationUnitTests {
 		assertThat(publication.isAssociatedWith(second, identifier)).isFalse();
 	}
 
+	@Test // GH-1565
+	void wrapsPlainPayloadIntoPayloadApplicationEvent() {
+
+		var event = new SampleEvent("Foo");
+		var publication = TargetEventPublication.of(event, PublicationTargetIdentifier.of("id"));
+
+		var applicationEvent = publication.getApplicationEvent();
+
+		assertThat(applicationEvent).isInstanceOf(PayloadApplicationEvent.class);
+		assertThat(((PayloadApplicationEvent<?>) applicationEvent).getPayload()).isEqualTo(event);
+	}
+
+	@Test // GH-1565
+	void doesNotRewrapEventThatAlreadyIsAnApplicationEvent() {
+
+		var event = new SampleApplicationEvent(this);
+		var publication = TargetEventPublication.of(event, PublicationTargetIdentifier.of("id"));
+
+		assertThat(publication.getApplicationEvent()).isSameAs(event);
+	}
+
 	record SampleEvent(String payload) {}
+
+	@SuppressWarnings("serial")
+	static class SampleApplicationEvent extends ApplicationEvent {
+
+		public SampleApplicationEvent(Object source) {
+			super(source);
+		}
+	}
 }
