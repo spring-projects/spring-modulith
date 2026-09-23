@@ -69,7 +69,7 @@ class KafkaEventExternalizerConfiguration {
 		logger.debug("Registering domain event externalization to Kafka…");
 
 		return new EventExternalizerModuleListener(configuration,
-				createKafkaTransport(configuration, operations, factory));
+				createKafkaTransport(configuration, operations, factory), factory);
 	}
 
 	@AutoConfiguration

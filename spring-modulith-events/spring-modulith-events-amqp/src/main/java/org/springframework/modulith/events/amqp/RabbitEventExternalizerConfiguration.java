@@ -68,6 +68,16 @@ class RabbitEventExternalizerConfiguration {
 	private static final Logger logger = LoggerFactory.getLogger(RabbitEventExternalizerConfiguration.class);
 	private static final String PUBLISHER_CONFIRM_TYPE = "spring.rabbitmq.publisher-confirm-type";
 
+	private final EvaluationContext evaluationContext;
+
+	RabbitEventExternalizerConfiguration(BeanFactory factory) {
+
+		var context = new StandardEvaluationContext();
+		context.setBeanResolver(new BeanFactoryResolver(factory));
+
+		this.evaluationContext = context;
+	}
+
 	@Bean
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
 	EventExternalizerModuleListener rabbitEventExternalizer(EventExternalizationConfiguration configuration,
@@ -76,22 +86,22 @@ class RabbitEventExternalizerConfiguration {
 		logger.debug("Registering domain event externalization to RabbitMQ…");
 
 		return new EventExternalizerModuleListener(configuration,
-				createRabbitTransport(configuration, operations, factory));
+				createRabbitTransport(configuration, operations), factory);
 	}
 
 	@AutoConfiguration
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
-	static class RabbitOutboxConfiguration {
+	class RabbitOutboxConfiguration {
 
 		private final OutboxEventExternalizer externalizer;
 
 		RabbitOutboxConfiguration(EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
-				BeanFactory beanFactory, OutboxEventExternalizerFactory factory, Environment environment) {
+				OutboxEventExternalizerFactory factory, Environment environment) {
 
 			Assert.state("correlated".equalsIgnoreCase(environment.getProperty(PUBLISHER_CONFIRM_TYPE)),
 					() -> "RabbitMQ outbox event externalization requires " + PUBLISHER_CONFIRM_TYPE + "=correlated!");
 
-			this.externalizer = factory.forTransport(createConfirmingRabbitTransport(configuration, operations, beanFactory));
+			this.externalizer = factory.forTransport(createConfirmingRabbitTransport(configuration, operations));
 		}
 
 		@AutoConfiguration
@@ -121,28 +131,26 @@ class RabbitEventExternalizerConfiguration {
 		}
 	}
 
-	private static EventExternalizationTransport createRabbitTransport(
-			EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
-			BeanFactory factory) {
+	private EventExternalizationTransport createRabbitTransport(
+			EventExternalizationConfiguration configuration, RabbitMessageOperations operations) {
 
 		return (payload, target) -> {
 
-			send(payload, target, configuration, Collections.emptyMap(), operations, factory);
+			send(payload, target, configuration, Collections.emptyMap(), operations);
 
 			return CompletableFuture.completedFuture(null);
 		};
 	}
 
-	private static EventExternalizationTransport createConfirmingRabbitTransport(
-			EventExternalizationConfiguration configuration, RabbitMessageOperations operations,
-			BeanFactory factory) {
+	private EventExternalizationTransport createConfirmingRabbitTransport(EventExternalizationConfiguration configuration,
+			RabbitMessageOperations operations) {
 
 		return (payload, target) -> {
 
 			var correlation = new CorrelationData();
 			var headers = Map.of(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION, (Object) correlation);
 
-			send(payload, target, configuration, headers, operations, factory);
+			send(payload, target, configuration, headers, operations);
 
 			return correlation.getFuture().thenAccept(confirm -> {
 
@@ -154,22 +162,13 @@ class RabbitEventExternalizerConfiguration {
 		};
 	}
 
-	private static void send(Object payload, RoutingTarget target, EventExternalizationConfiguration configuration,
-			Map<String, Object> additionalHeaders, RabbitMessageOperations operations, BeanFactory factory) {
+	private void send(Object payload, RoutingTarget target, EventExternalizationConfiguration configuration,
+			Map<String, Object> additionalHeaders, RabbitMessageOperations operations) {
 
-		var routing = BrokerRouting.of(target, createContext(factory));
-
+		var routing = BrokerRouting.of(target, evaluationContext);
 		var headers = new HashMap<>(configuration.getHeadersFor(payload));
 		headers.putAll(additionalHeaders);
 
 		operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, additionalHeaders);
-	}
-
-	private static EvaluationContext createContext(BeanFactory factory) {
-
-		var context = new StandardEvaluationContext();
-		context.setBeanResolver(new BeanFactoryResolver(factory));
-
-		return context;
 	}
 }

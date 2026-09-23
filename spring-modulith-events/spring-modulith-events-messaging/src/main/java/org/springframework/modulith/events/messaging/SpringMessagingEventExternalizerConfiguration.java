@@ -67,7 +67,8 @@ class SpringMessagingEventExternalizerConfiguration {
 
 		logger.debug("Registering domain event externalization for Spring Messaging…");
 
-		return new EventExternalizerModuleListener(configuration, createMessagingTransport(configuration, factory));
+		return new EventExternalizerModuleListener(configuration, createMessagingTransport(configuration, factory),
+				factory);
 	}
 
 	@AutoConfiguration
