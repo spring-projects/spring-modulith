@@ -146,6 +146,12 @@ limitations under the License.
 
 		</profile>
 
+		<!-- Release train profile to make sure the default profile gets deactivated during releases -->
+
+		<profile>
+			<id>releaseTrain</id>
+		</profile>
+
 		<!-- For integration builds against milestones and snapshots -->
 
 		<profile>
