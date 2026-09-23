@@ -17,6 +17,7 @@ package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.core.ConditionalEventListener;
@@ -47,11 +48,35 @@ public class EventExternalizerModuleListener extends TransportAwareEventExternal
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
+	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
+	 *             {@link #EventExternalizerModuleListener(EventExternalizationConfiguration, EventExternalizationTransport, BeanFactory)}
+	 *             instead.
 	 */
+	@Deprecated(since = "2.2, 2.1.2", forRemoval = true)
 	public EventExternalizerModuleListener(EventExternalizationConfiguration configuration,
 			EventExternalizationTransport transport) {
 
 		super(configuration, transport);
+
+		Assert.notNull(transport, "EventExternalizationTransport must not be null!");
+
+		this.configuration = configuration;
+	}
+
+	/**
+	 * Creates a new {@link EventExternalizerModuleListener} for the given {@link EventExternalizationConfiguration},
+	 * {@link EventExternalizationTransport} and {@link BeanFactory} to resolve routing target and key expressions (which
+	 * may refer to beans) against the original event.
+	 *
+	 * @param configuration must not be {@literal null}.
+	 * @param transport must not be {@literal null}.
+	 * @param beanFactory must not be {@literal null}.
+	 * @since 2.2, 2.1.2
+	 */
+	public EventExternalizerModuleListener(EventExternalizationConfiguration configuration,
+			EventExternalizationTransport transport, BeanFactory beanFactory) {
+
+		super(configuration, transport, beanFactory);
 
 		Assert.notNull(transport, "EventExternalizationTransport must not be null!");
 

@@ -31,6 +31,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.kafka.core.KafkaOperations;
+import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.Message;
 import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
@@ -163,6 +164,29 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 		});
 	}
 
+	@Test // GH-1896
+	void evaluatesRoutingKeyAgainstOriginalEventWhenMapped() {
+
+		var config = EventExternalizationConfiguration.defaults("org")
+				.mapping(RoutedSample.class, __ -> new MappedSample())
+				.build();
+
+		basicSetup(config)
+				.run(ctxt -> {
+
+					ctxt.getBean(EventExternalizerModuleListener.class).externalize(new RoutedSample("42"));
+
+					var captor = ArgumentCaptor.forClass(Message.class);
+					verify(operations).send(captor.capture());
+
+					var message = captor.getValue();
+
+					assertThat(message.getPayload()).isInstanceOf(MappedSample.class);
+					assertThat(message.getHeaders().get(KafkaHeaders.KEY)).isEqualTo("42");
+					assertThat(message.getHeaders().get(KafkaHeaders.TOPIC)).isEqualTo("orders");
+				});
+	}
+
 	private void assertMessage(EventExternalizationConfiguration configuration, Consumer<Message<?>> assertions) {
 
 		basicSetup(configuration)
@@ -237,4 +261,12 @@ class KafkaEventExternalizerConfigurationIntegrationTests {
 	record Sample() {}
 
 	record MappedSample() {}
+
+	@Externalized("orders::#{getValue()}")
+	record RoutedSample(String value) {
+
+		public String getValue() {
+			return value;
+		}
+	}
 }

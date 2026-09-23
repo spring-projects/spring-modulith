@@ -17,6 +17,7 @@ package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.util.Assert;
@@ -35,15 +36,40 @@ abstract class TransportAwareEventExternalizer extends EventExternalizerSupport 
 
 	/**
 	 * Creates a new {@link TransportAwareEventExternalizer} for the given {@link EventExternalizationConfiguration} and
-	 * {@link EventExternalizationTransport} implementing the actual externalization.
+	 * {@link EventExternalizationTransport} implementing the actual externalization, not resolving bean references in
+	 * routing target and key expressions.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
+	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
+	 *             {@link #TransportAwareEventExternalizer(EventExternalizationConfiguration, EventExternalizationTransport, BeanFactory)}
+	 *             instead.
 	 */
+	@Deprecated(since = "2.2, 2.1.2", forRemoval = true)
 	public TransportAwareEventExternalizer(EventExternalizationConfiguration configuration,
 			EventExternalizationTransport transport) {
 
 		super(configuration);
+
+		Assert.notNull(transport, "EventExternalizationTransport must not be null!");
+
+		this.transport = transport;
+	}
+
+	/**
+	 * Creates a new {@link TransportAwareEventExternalizer} for the given {@link EventExternalizationConfiguration},
+	 * {@link EventExternalizationTransport} implementing the actual externalization and {@link BeanFactory} to resolve
+	 * routing target and key expressions (which may refer to beans) against the original event.
+	 *
+	 * @param configuration must not be {@literal null}.
+	 * @param transport must not be {@literal null}.
+	 * @param beanFactory must not be {@literal null}.
+	 * @since 2.2, 2.1.2
+	 */
+	public TransportAwareEventExternalizer(EventExternalizationConfiguration configuration,
+			EventExternalizationTransport transport, BeanFactory beanFactory) {
+
+		super(configuration, beanFactory);
 
 		Assert.notNull(transport, "EventExternalizationTransport must not be null!");
 

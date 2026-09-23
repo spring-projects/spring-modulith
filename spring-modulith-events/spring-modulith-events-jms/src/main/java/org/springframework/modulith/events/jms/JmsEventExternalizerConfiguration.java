@@ -66,7 +66,7 @@ class JmsEventExternalizerConfiguration {
 		logger.debug("Registering domain event externalization to JMS…");
 
 		return new EventExternalizerModuleListener(configuration,
-				createJmsTransport(operations, serializer, factory));
+				createJmsTransport(operations, serializer, factory), factory);
 	}
 
 	@AutoConfiguration
