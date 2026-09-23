@@ -55,9 +55,14 @@
 
 		</profile>
 
-		<!-- Needs to be declared to disable default profile -->
+		<!-- Needs to be declared to disable profiles active by default during releases -->
+
 		<profile>
 			<id>sonatype</id>
+		</profile>
+
+		<profile>
+			<id>releaseTrain</id>
 		</profile>
 
 	</profiles>
