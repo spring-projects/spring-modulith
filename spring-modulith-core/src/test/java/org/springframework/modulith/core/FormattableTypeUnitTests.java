@@ -128,6 +128,32 @@ class FormattableTypeUnitTests {
 		assertThat(type.getAbbreviatedFullName()).isEqualTo("j.u.List<j.u.Map<j.l.String, j.l.Integer>>");
 	}
 
+	@Test // GH-1901
+	void handlesArrayTypesFromResolvableType() throws Exception {
+
+		var method = Sample.class.getMethod("arrays", Integer[].class, byte[].class, Integer[][].class, List.class);
+
+		assertThat(FormattableType.of(ResolvableType.forMethodParameter(method, 0)).getAbbreviatedFullName())
+				.isEqualTo("j.l.Integer[]");
+		assertThat(FormattableType.of(ResolvableType.forMethodParameter(method, 1)).getAbbreviatedFullName())
+				.isEqualTo("byte[]");
+		assertThat(FormattableType.of(ResolvableType.forMethodParameter(method, 2)).getFullName())
+				.isEqualTo("java.lang.Integer[][]");
+		assertThat(FormattableType.of(ResolvableType.forMethodParameter(method, 3)).getAbbreviatedFullName())
+				.isEqualTo("j.u.List<j.l.Integer[]>");
+	}
+
+	@Test // GH-1901
+	void rendersArrayTypesConsistentlyIndependentOfLookupOrder() {
+
+		var fromResolvableType = FormattableType.of(ResolvableType.forClass(Sample[].class));
+		var fromClass = FormattableType.of(Sample[].class);
+
+		assertThat(fromClass.getFullName())
+				.isEqualTo(fromResolvableType.getFullName())
+				.isEqualTo("org.springframework.modulith.core.FormattableTypeUnitTests.Sample[]");
+	}
+
 	interface Sample {
 
 		<T> List<?> wildcarded(List<T> parameterized);
@@ -135,5 +161,7 @@ class FormattableTypeUnitTests {
 		void classWildcard(Class<?> type);
 
 		List<Map<String, Integer>> genericReturnType();
+
+		void arrays(Integer[] integers, byte[] bytes, Integer[][] matrix, List<Integer[]> list);
 	}
 }
