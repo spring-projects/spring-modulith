@@ -152,7 +152,7 @@ public class FormattableType {
 				.toList();
 
 		return resolved != null
-				? CACHE.computeIfAbsent(type.toString(), __ -> new FormattableType(resolved.getName(), generics))
+				? CACHE.computeIfAbsent(type.toString(), __ -> new FormattableType(resolved.getTypeName(), generics))
 				: WILDCARD;
 	}
 
