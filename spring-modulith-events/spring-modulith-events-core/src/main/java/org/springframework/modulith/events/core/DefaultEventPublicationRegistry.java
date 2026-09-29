@@ -372,14 +372,18 @@ public class DefaultEventPublicationRegistry
 
 					LOGGER.debug("Resubmitting event publication {}.", it.getIdentifier());
 
+					TargetEventPublication registered = null;
+
 					try {
 
-						inProgress.register(it);
+						registered = inProgress.register(it);
 						consumer.accept(it);
 
 					} catch (Exception o_O) {
 
-						inProgress.unregister(it);
+						if (registered != null) {
+							inProgress.unregister(registered);
+						}
 
 						if (LOGGER.isInfoEnabled()) {
 							LOGGER.info("Error republishing event publication %s.".formatted(it), o_O);
