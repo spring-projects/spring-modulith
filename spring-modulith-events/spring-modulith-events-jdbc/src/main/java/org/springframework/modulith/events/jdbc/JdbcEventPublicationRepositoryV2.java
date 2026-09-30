@@ -526,7 +526,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		var sql = """
 				SELECT %s
 				  FROM %s
-				 WHERE STATUS = 'FAILED' OR (STATUS IS NULL AND COMPLETION_DATE IS NULL)
+				 WHERE (STATUS = 'FAILED' OR (STATUS IS NULL AND COMPLETION_DATE IS NULL))
 				""".formatted(ALL_COLUMNS, settings.getTable());
 
 		var instant = criteria.getPublicationDateReference();
