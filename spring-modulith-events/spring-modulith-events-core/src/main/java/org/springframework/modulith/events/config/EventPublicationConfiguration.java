@@ -25,6 +25,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
@@ -59,7 +60,9 @@ class EventPublicationConfiguration {
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry) {
-		return new CompletionRegisteringAdvisor(registry::getObject);
+	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry,
+			ObjectFactory<Environment> environment) {
+		return new CompletionRegisteringAdvisor(registry::getObject,
+				EventListenerMethodMetadata.of(environment::getObject));
 	}
 }

@@ -18,7 +18,6 @@ package org.springframework.modulith.events.support;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
-import static org.springframework.modulith.events.support.PersistentApplicationEventMulticaster.TransactionalEventListeners.*;
 
 import java.util.List;
 import java.util.Map;
@@ -55,6 +54,8 @@ import org.springframework.util.ReflectionUtils;
  * @author Seonwoo Jung
  */
 class PersistentApplicationEventMulticasterUnitTests {
+
+	static final String TRIGGER_ANNOTATION_PROPERTY = "spring.modulith.events.registry-trigger-annotation";
 
 	PersistentApplicationEventMulticaster multicaster;
 
@@ -155,32 +156,6 @@ class PersistentApplicationEventMulticasterUnitTests {
 				() -> environment);
 
 		assertThat(listeners.stream()).containsExactly(second);
-	}
-
-	@Test // GH-1630
-	void rejectsNotLoadableTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, "some.non.loadable.Type");
-
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		assertThatIllegalStateException().isThrownBy(() -> {
-			new TransactionalEventListeners(List.of(second), () -> environment);
-		});
-	}
-
-	@Test // GH-1630
-	void rejectsNonAnnotationTypeForTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, "java.lang.String");
-
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		assertThatIllegalStateException().isThrownBy(() -> {
-			new TransactionalEventListeners(List.of(second), () -> environment);
-		});
 	}
 
 	@Test // GH-1783

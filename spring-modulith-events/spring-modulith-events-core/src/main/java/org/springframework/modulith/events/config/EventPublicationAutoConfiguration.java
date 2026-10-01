@@ -82,8 +82,9 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRegistry.class)
-	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry) {
-		return EventPublicationConfiguration.completionRegisteringAdvisor(registry);
+	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry,
+			ObjectFactory<Environment> environment) {
+		return EventPublicationConfiguration.completionRegisteringAdvisor(registry, environment);
 	}
 
 	@Bean

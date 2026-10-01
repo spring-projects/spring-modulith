@@ -15,8 +15,6 @@
  */
 package org.springframework.modulith.events.support;
 
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -38,7 +36,6 @@ import org.springframework.context.PayloadApplicationEvent;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.context.event.SimpleApplicationEventMulticaster;
 import org.springframework.core.ResolvableType;
-import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.EventPublication;
@@ -46,17 +43,13 @@ import org.springframework.modulith.events.FailedEventPublications;
 import org.springframework.modulith.events.IncompleteEventPublications;
 import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.modulith.events.core.ConditionalEventListener;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
 import org.springframework.modulith.events.core.TargetEventPublication;
-import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListener;
-import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.util.Assert;
-import org.springframework.util.ClassUtils;
 import org.springframework.util.ConcurrentReferenceHashMap;
-import org.springframework.util.ReflectionUtils;
-import org.springframework.util.StringUtils;
 
 /**
  * An {@link org.springframework.context.event.ApplicationEventMulticaster} to register {@link EventPublication}s in an
@@ -304,17 +297,6 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 	 */
 	static class TransactionalEventListeners {
 
-		static final String TRIGGER_ANNOTATION_PROPERTY = "spring.modulith.events.registry-trigger-annotation";
-
-		private static final Method GET_TARGET_METHOD;
-
-		static {
-
-			GET_TARGET_METHOD = ReflectionUtils
-					.findMethod(TransactionalApplicationListenerMethodAdapter.class, "getTargetMethod");
-			ReflectionUtils.makeAccessible(GET_TARGET_METHOD);
-		}
-
 		private final List<TransactionalApplicationListener<ApplicationEvent>> listeners;
 
 		/**
@@ -322,6 +304,7 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 		 * {@link TransactionalApplicationListener}.
 		 *
 		 * @param listeners must not be {@literal null}.
+		 * @param environment must not be {@literal null}.
 		 */
 		@SuppressWarnings({ "rawtypes", "unchecked" })
 		public TransactionalEventListeners(Collection<ApplicationListener<?>> listeners,
@@ -329,11 +312,12 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 
 			Assert.notNull(listeners, "ApplicationListeners must not be null!");
 
+			var metadata = EventListenerMethodMetadata.of(environment);
+
 			this.listeners = (List) listeners.stream()
 					.filter(TransactionalApplicationListener.class::isInstance)
 					.map(TransactionalApplicationListener.class::cast)
-					.filter(it -> it.getTransactionPhase().equals(TransactionPhase.AFTER_COMMIT))
-					.filter(byAnnotationFilter(environment))
+					.filter(metadata::triggersRegistry)
 					.sorted(AnnotationAwareOrderComparator.INSTANCE)
 					.toList();
 		}
@@ -400,48 +384,6 @@ public class PersistentApplicationEventMulticaster extends SimpleApplicationEven
 					.filter(it -> it.getListenerId().equals(identifier))
 					.findFirst()
 					.ifPresent(callback);
-		}
-
-		/**
-		 * Returns a {@link Predicate} filtering the listeners by the trigger annotation configured in
-		 * {@code spring.modulith.events.annotation}.
-		 *
-		 * @param environment must not be {@literal null}.
-		 * @return will never be {@literal null}.
-		 * @since 2.1
-		 */
-		@SuppressWarnings({ "rawtypes", "unchecked" })
-		private static Predicate<TransactionalApplicationListener> byAnnotationFilter(
-				Supplier<Environment> environment) {
-
-			return listener -> {
-
-				var annotationName = environment.get().getProperty(TRIGGER_ANNOTATION_PROPERTY);
-
-				if (!StringUtils.hasText(annotationName)) {
-					return true;
-				}
-
-				try {
-
-					var annotationType = ClassUtils.forName(annotationName, TransactionalEventListeners.class.getClassLoader());
-
-					if (!annotationType.isAnnotation()) {
-						throw new IllegalStateException("Configured type is not an annotation!");
-					}
-
-					if (!(listener instanceof TransactionalApplicationListenerMethodAdapter)) {
-						return false;
-					}
-
-					var method = (Method) ReflectionUtils.invokeMethod(GET_TARGET_METHOD, listener);
-
-					return AnnotatedElementUtils.hasAnnotation(method, (Class<? extends Annotation>) annotationType);
-
-				} catch (ClassNotFoundException o_O) {
-					throw new IllegalStateException(o_O);
-				}
-			};
 		}
 	}
 }
