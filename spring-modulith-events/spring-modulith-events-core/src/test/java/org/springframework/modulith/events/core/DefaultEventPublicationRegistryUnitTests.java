@@ -24,6 +24,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -239,6 +240,25 @@ class DefaultEventPublicationRegistryUnitTests {
 		// Resubmitted a second ago, well within the 10 minute staleness window, must not be marked failed
 		// even though the original publication date is a day old.
 		verify(repository, never()).markFailed(any());
+	}
+
+	@Test // GH-1904
+	void skipsResubmissionOfPublicationWhoseEventCannotBeDeserialized() {
+
+		var broken = mock(TargetEventPublication.class);
+		when(broken.getIdentifier()).thenReturn(UUID.randomUUID());
+		when(broken.getEvent()).thenThrow(new IllegalStateException("Cannot deserialize event!"));
+
+		var intact = TargetEventPublication.of(new Object(), PublicationTargetIdentifier.of("id"));
+
+		when(repository.findIncompletePublications()).thenReturn(List.of(broken, intact));
+		when(repository.markResubmitted(any(), any())).thenReturn(true);
+
+		var resubmitted = new ArrayList<TargetEventPublication>();
+
+		createRegistry(Instant.now()).processIncompletePublications(__ -> true, resubmitted::add, null);
+
+		assertThat(resubmitted).containsExactly(intact);
 	}
 
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {
