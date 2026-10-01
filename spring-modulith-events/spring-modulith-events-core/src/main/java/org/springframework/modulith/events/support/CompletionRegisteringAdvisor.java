@@ -32,10 +32,9 @@ import org.springframework.aop.support.AbstractPointcutAdvisor;
 import org.springframework.aop.support.StaticMethodMatcher;
 import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.core.Ordered;
-import org.springframework.core.annotation.AnnotatedElementUtils;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.PublicationTargetIdentifier;
-import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalApplicationListenerMethodAdapter;
 import org.springframework.transaction.event.TransactionalEventListener;
 import org.springframework.util.Assert;
@@ -55,13 +54,33 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 	private final Advice advice;
 
 	/**
-	 * Creates a new {@link CompletionRegisteringAdvisor} for the given {@link EventPublicationRegistry}.
+	 * Creates a new {@link CompletionRegisteringAdvisor} for the given {@link EventPublicationRegistry}, decorating all
+	 * {@link TransactionalEventListener} annotated methods, no matter whether they are selected via
+	 * {@code spring.modulith.events.registry-trigger-annotation}.
 	 *
 	 * @param registry must not be {@literal null}.
+	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
+	 *             {@link #CompletionRegisteringAdvisor(Supplier, EventListenerMethodMetadata)} instead to honor the
+	 *             configured registry trigger annotation.
 	 */
+	@Deprecated(since = "2.2, 2.1.2", forRemoval = true)
 	public CompletionRegisteringAdvisor(Supplier<EventPublicationRegistry> registry) {
+		this(registry, EventListenerMethodMetadata.all());
+	}
+
+	/**
+	 * Creates a new {@link CompletionRegisteringAdvisor} for the given {@link EventPublicationRegistry}, only decorating
+	 * methods that actually trigger an entry in the former according to the given {@link EventListenerMethodMetadata}.
+	 *
+	 * @param registry must not be {@literal null}.
+	 * @param metadata must not be {@literal null}.
+	 * @since 2.2, 2.1.2
+	 */
+	public CompletionRegisteringAdvisor(Supplier<EventPublicationRegistry> registry,
+			EventListenerMethodMetadata metadata) {
 
 		Assert.notNull(registry, "EventPublicationRegistry must not be null!");
+		Assert.notNull(metadata, "EventListenerMethodMetadata must not be null!");
 
 		this.pointcut = new AnnotationMatchingPointcut(null, TransactionalEventListener.class, true) {
 
@@ -71,7 +90,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 			 */
 			@Override
 			public MethodMatcher getMethodMatcher() {
-				return new CommitListenerMethodMatcher(super.getMethodMatcher());
+				return new CommitListenerMethodMatcher(super.getMethodMatcher(), metadata);
 			}
 		};
 
@@ -103,14 +122,19 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 	private static class CommitListenerMethodMatcher extends StaticMethodMatcher {
 
 		private final MethodMatcher delegate;
+		private final EventListenerMethodMetadata metadata;
 
 		/**
-		 * Creates a new {@link CommitListenerMethodMatcher} with the given delegate {@link MethodMatcher}.
+		 * Creates a new {@link CommitListenerMethodMatcher} with the given delegate {@link MethodMatcher} and
+		 * {@link EventListenerMethodMetadata}.
 		 *
 		 * @param delegate must not be {@literal null}.
+		 * @param metadata must not be {@literal null}.
 		 */
-		public CommitListenerMethodMatcher(MethodMatcher delegate) {
+		public CommitListenerMethodMatcher(MethodMatcher delegate, EventListenerMethodMetadata metadata) {
+
 			this.delegate = delegate;
+			this.metadata = metadata;
 		}
 
 		/*
@@ -119,14 +143,7 @@ public class CompletionRegisteringAdvisor extends AbstractPointcutAdvisor {
 		 */
 		@Override
 		public boolean matches(Method method, Class<?> targetClass) {
-
-			if (!delegate.matches(method, targetClass)) {
-				return false;
-			}
-
-			var annotation = AnnotatedElementUtils.findMergedAnnotation(method, TransactionalEventListener.class);
-
-			return annotation != null && annotation.phase().equals(TransactionPhase.AFTER_COMMIT);
+			return delegate.matches(method, targetClass) && metadata.triggersRegistry(method);
 		}
 	}
 

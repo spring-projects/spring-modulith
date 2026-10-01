@@ -16,7 +16,7 @@
 package org.springframework.modulith.events.core;
 
 import static org.assertj.core.api.Assertions.*;
-import static org.springframework.modulith.events.core.TransactionalEventListeners.*;
+import static org.springframework.modulith.events.core.EventListenerMethodMetadata.*;
 
 import java.util.List;
 
@@ -67,32 +67,6 @@ class TransactionalEventListenersUnitTests {
 		var listeners = new TransactionalEventListeners(List.of(first, second), () -> environment);
 
 		assertThat(listeners.stream()).containsExactly(second);
-	}
-
-	@Test // GH-1630
-	void rejectsNotLoadableTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, "some.non.loadable.Type");
-
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		assertThatIllegalStateException().isThrownBy(() -> {
-			new TransactionalEventListeners(List.of(second), () -> environment);
-		});
-	}
-
-	@Test // GH-1630
-	void rejectsNonAnnotationTypeForTriggerAnnotation() {
-
-		var environment = new MockEnvironment();
-		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, "java.lang.String");
-
-		var second = getAdapter(ModuleListener.class, "on", SampleEvent.class);
-
-		assertThatIllegalStateException().isThrownBy(() -> {
-			new TransactionalEventListeners(List.of(second), () -> environment);
-		});
 	}
 
 	private static TransactionalApplicationListenerMethodAdapter getAdapter(Class<?> type, String methodName,
