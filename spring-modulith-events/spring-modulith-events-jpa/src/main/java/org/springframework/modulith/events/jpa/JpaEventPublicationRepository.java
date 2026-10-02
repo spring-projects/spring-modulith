@@ -181,8 +181,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	private static final String FIND_FAILED = """
 				select p
 			  from DefaultJpaEventPublication p
-			 where p.status = org.springframework.modulith.events.EventPublication$Status.FAILED
-			    or (p.status is null and p.completionDate is null)
+			 where (p.status = org.springframework.modulith.events.EventPublication$Status.FAILED
+			    or (p.status is null and p.completionDate is null))
 			""";
 
 	private static final int DELETE_BATCH_SIZE = 100;
