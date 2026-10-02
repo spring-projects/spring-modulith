@@ -154,6 +154,25 @@ class DefaultEventPublicationRegistryUnitTests {
 		verify(repository, never()).markFailed(any());
 	}
 
+	@Test // GH-1919
+	void doesNotMarkPublicationsFailedForStatusWithZeroStaleness() {
+
+		var now = Instant.now();
+
+		var publication = mock(TargetEventPublication.class, CALLS_REAL_METHODS);
+		lenient().when(publication.getPublicationDate()).thenReturn(now.minusSeconds(1));
+		lenient().when(publication.getLastResubmissionDate()).thenReturn(null);
+
+		lenient().when(repository.findByStatus(Status.PUBLISHED)).thenReturn(List.of(publication));
+		lenient().when(repository.findByStatus(Status.PROCESSING)).thenReturn(List.of(publication));
+		when(repository.findByStatus(Status.RESUBMITTED)).thenReturn(Collections.emptyList());
+
+		createRegistry(now).markStalePublicationsFailed(
+				status -> status == Status.RESUBMITTED ? Duration.ofMinutes(5) : Duration.ZERO);
+
+		verify(repository, never()).markFailed(any());
+	}
+
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {
 
 		var clock = Clock.fixed(instant, ZoneId.systemDefault());

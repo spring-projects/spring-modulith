@@ -68,23 +68,27 @@ public class StalenessProperties implements Staleness {
 			@Nullable Duration checkInterval,
 			@Nullable Duration checkIntervall) {
 
-		this.published = published == null ? Duration.ZERO : published;
-		this.processing = processing == null ? Duration.ZERO : processing;
-		this.resubmitted = resubmitted == null ? resubmission == null ? Duration.ZERO : resubmission : resubmitted;
+		this.published = published == null ? UNCONFIGURED_DURATION : requirePositive(published, "published");
+		this.processing = processing == null ? UNCONFIGURED_DURATION : requirePositive(processing, "processing");
+		this.resubmitted = resubmitted != null
+				? requirePositive(resubmitted, "resubmitted")
+				: resubmission != null
+						? requirePositive(resubmission, "resubmission")
+						: UNCONFIGURED_DURATION;
 
 		// Prefer check-interval; keep check-intervall as a deprecated alias for compatibility.
 		this.checkInterval = checkInterval != null
-				? checkInterval
+				? requirePositive(checkInterval, "checkInterval")
 				: checkIntervall != null
-						? checkIntervall
+						? requirePositive(checkIntervall, "checkIntervall")
 						: Duration.ofMinutes(1);
 	}
 
 	boolean monitorStaleness() {
 
-		return !published.equals(Duration.ZERO)
-				|| !processing.equals(Duration.ZERO)
-				|| !resubmitted.equals(Duration.ZERO);
+		return !published.equals(UNCONFIGURED_DURATION)
+				|| !processing.equals(UNCONFIGURED_DURATION)
+				|| !resubmitted.equals(UNCONFIGURED_DURATION);
 	}
 
 	Duration getCheckInterval() {
@@ -104,7 +108,15 @@ public class StalenessProperties implements Staleness {
 			case PUBLISHED -> published;
 			case PROCESSING -> processing;
 			case RESUBMITTED -> resubmitted;
-			default -> Duration.ZERO;
+			default -> throw new IllegalArgumentException("Unsupported status: " + status);
 		};
+	}
+
+	private static Duration requirePositive(Duration duration, String name) {
+
+		Assert.isTrue(!duration.isZero() && !duration.isNegative(),
+				() -> "Staleness property '%s' must be greater than zero but was %s!".formatted(name, duration));
+
+		return duration;
 	}
 }
