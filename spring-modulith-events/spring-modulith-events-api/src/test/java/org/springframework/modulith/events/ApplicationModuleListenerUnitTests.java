@@ -21,6 +21,11 @@ import static org.springframework.core.annotation.AnnotatedElementUtils.*;
 import java.lang.reflect.Method;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.aot.hint.RuntimeHints;
+import org.springframework.aot.hint.RuntimeHintsRegistrar;
+import org.springframework.aot.hint.predicate.RuntimeHintsPredicates;
+import org.springframework.beans.factory.aot.AotServices;
+import org.springframework.beans.factory.config.BeanExpressionContext;
 import org.springframework.context.event.ApplicationListenerMethodAdapter;
 import org.springframework.context.event.EventListener;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -61,6 +66,20 @@ class ApplicationModuleListenerUnitTests {
 		var annotation = findMergedAnnotation(method, Transactional.class);
 
 		assertThat(annotation.propagation()).isEqualTo(Propagation.SUPPORTS);
+	}
+
+	@Test // GH-641
+	void registersRuntimeHintsToResolveExecutorQualifier() {
+
+		var hints = new RuntimeHints();
+
+		AotServices.factories().load(RuntimeHintsRegistrar.class)
+				.forEach(it -> it.registerHints(hints, getClass().getClassLoader()));
+
+		var predicate = RuntimeHintsPredicates.reflection()
+				.onMethodInvocation(BeanExpressionContext.class, "containsObject");
+
+		assertThat(predicate).accepts(hints);
 	}
 
 	static class Sample {
