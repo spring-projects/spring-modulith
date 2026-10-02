@@ -663,7 +663,8 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 		var limit = criteria.getMaxItemsToRead();
 		var builder = match.returning(EVENT_PUBLICATION_NODE)
-				.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+				.orderBy(coalesce(EVENT_PUBLICATION_NODE.property(LAST_RESUBMISSION_DATE),
+						EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE)))
 				.ascending();
 
 		var statement = limit != -1 ? builder.limit(limit) : builder;

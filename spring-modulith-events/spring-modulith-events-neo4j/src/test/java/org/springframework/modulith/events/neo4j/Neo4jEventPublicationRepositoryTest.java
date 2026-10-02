@@ -431,6 +431,23 @@ class Neo4jEventPublicationRepositoryTest {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1906
+		void looksUpLeastRecentlyAttemptedFailedPublicationsFirst() {
+
+			var first = createPublication(new TestEvent("first"));
+			var second = createPublication(new TestEvent("second"));
+
+			repository.markFailed(first.getIdentifier());
+			repository.markFailed(second.getIdentifier());
+
+			repository.markResubmitted(first.getIdentifier(), second.getPublicationDate().plusSeconds(1));
+			repository.markFailed(first.getIdentifier());
+
+			assertThat(repository.findFailedPublications(EventPublicationRepository.FailedCriteria.ALL.withItemsToRead(1)))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(second.getIdentifier());
+		}
+
 		@Test // GH-1337
 		void looksUpFailedPublicationWithReferenceDate() throws Exception {
 
