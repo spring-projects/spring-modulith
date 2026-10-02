@@ -65,17 +65,18 @@ public class StalenessProperties implements Staleness {
 			@Nullable Duration resubmitted,
 			@Nullable Duration checkInterval) {
 
-		this.published = published == null ? Duration.ZERO : published;
-		this.processing = processing == null ? Duration.ZERO : processing;
-		this.resubmitted = resubmitted == null ? Duration.ZERO : resubmitted;
-		this.checkInterval = checkInterval == null ? Duration.ofMinutes(1) : checkInterval;
+		this.published = published == null ? UNCONFIGURED_DURATION : requirePositive(published, "published");
+		this.processing = processing == null ? UNCONFIGURED_DURATION : requirePositive(processing, "processing");
+		this.resubmitted = resubmitted == null ? UNCONFIGURED_DURATION : requirePositive(resubmitted, "resubmitted");
+		this.checkInterval = checkInterval == null ? Duration.ofMinutes(1)
+				: requirePositive(checkInterval, "checkInterval");
 	}
 
 	boolean monitorStaleness() {
 
-		return !published.equals(Duration.ZERO)
-				|| !processing.equals(Duration.ZERO)
-				|| !resubmitted.equals(Duration.ZERO);
+		return !published.equals(UNCONFIGURED_DURATION)
+				|| !processing.equals(UNCONFIGURED_DURATION)
+				|| !resubmitted.equals(UNCONFIGURED_DURATION);
 	}
 
 	Duration getCheckInterval() {
@@ -95,7 +96,15 @@ public class StalenessProperties implements Staleness {
 			case PUBLISHED -> published;
 			case PROCESSING -> processing;
 			case RESUBMITTED -> resubmitted;
-			default -> Duration.ZERO;
+			default -> throw new IllegalArgumentException("Unsupported status: " + status);
 		};
+	}
+
+	private static Duration requirePositive(Duration duration, String name) {
+
+		Assert.isTrue(!duration.isZero() && !duration.isNegative(),
+				() -> "Staleness property '%s' must be greater than zero but was %s!".formatted(name, duration));
+
+		return duration;
 	}
 }
