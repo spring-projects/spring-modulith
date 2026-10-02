@@ -358,6 +358,10 @@ public class DefaultEventPublicationRegistry
 
 	private void markFailed(Status status, Staleness staleness) {
 
+		if (!staleness.isMonitored(status)) {
+			return;
+		}
+
 		var duration = staleness.getStaleness(status);
 		var reference = clock.instant().minus(duration);
 		var result = events.findByStatus(status).stream()
