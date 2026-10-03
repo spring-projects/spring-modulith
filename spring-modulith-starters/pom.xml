@@ -15,6 +15,7 @@
 
 	<modules>
 		<module>spring-modulith-starter-core</module>
+		<module>spring-modulith-starter-couchbase</module>
 		<module>spring-modulith-starter-insight</module>
 		<module>spring-modulith-starter-jdbc</module>
 		<module>spring-modulith-starter-jpa</module>
