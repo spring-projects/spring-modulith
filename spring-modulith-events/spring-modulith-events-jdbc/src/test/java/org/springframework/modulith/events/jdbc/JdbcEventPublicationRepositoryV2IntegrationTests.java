@@ -661,6 +661,27 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1925
+		void doesNotResubmitCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isFalse();
+		}
+
+		@Test // GH-1925
+		void doesNotMarkCompletedPublicationFailed() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findByStatus(Status.FAILED)).isEmpty();
+		}
+
 		/**
 		 * Simulates a publication persisted by a schema version that predates the {@code STATUS} column, i.e. one for
 		 * which the column was never backfilled and is {@literal null} rather than defaulted.
