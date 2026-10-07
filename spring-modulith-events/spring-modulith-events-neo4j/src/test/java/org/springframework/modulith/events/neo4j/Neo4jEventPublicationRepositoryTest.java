@@ -475,6 +475,27 @@ class Neo4jEventPublicationRepositoryTest {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1935
+		void doesNotResubmitCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isFalse();
+		}
+
+		@Test // GH-1935
+		void doesNotMarkCompletedPublicationFailed() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.findByStatus(EventPublication.Status.FAILED)).isEmpty();
+		}
+
 		/**
 		 * Simulates a publication persisted by a schema version that predates the {@code status} property, i.e. one for
 		 * which the property is missing rather than defaulted.
