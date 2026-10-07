@@ -109,6 +109,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 						STATUS = '%s'
 				WHERE
 						ID = ?
+						AND COMPLETION_DATE IS NULL
 						AND (STATUS IS NULL OR STATUS != '%s')
 				""".formatted(table, status.name(), status.name()));
 	}
@@ -418,6 +419,7 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 						LAST_RESUBMISSION_DATE = ?
 				WHERE
 						ID = ?
+						AND COMPLETION_DATE IS NULL
 						AND (STATUS IS NULL OR STATUS != 'RESUBMITTED')
 				""".formatted(settings.getTable()));
 

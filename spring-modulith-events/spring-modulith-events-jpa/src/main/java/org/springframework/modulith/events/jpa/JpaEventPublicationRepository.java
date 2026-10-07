@@ -154,6 +154,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			update DefaultJpaEventPublication p
 			   set p.status = ?1
 			 where p.id = ?2
+			   and p.completionDate is null
 			   and (status is null or status != ?1)
 			""";
 
@@ -163,6 +164,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			       p.completionAttempts = p.completionAttempts + 1,
 			       p.lastResubmissionDate = ?1
 			 where p.id = ?2
+			   and p.completionDate is null
 			   and (p.status is null or p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED)
 			""";
 
