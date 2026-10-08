@@ -455,23 +455,24 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			return;
 		}
 
-		var aggregation = newAggregation(MongoDbEventPublication.class,
+		var publications = mongoTemplate.find(
+				query(where(ID).in(identifiers).and(COMPLETION_DATE).isNull()),
+				MongoDbEventPublication.class, collection);
 
-				match(where(ID).in(identifiers).and(COMPLETION_DATE).isNull()),
+		var archivedIdentifiers = mongoTemplate.find(
+				query(where(ID).in(identifiers)), MongoDbEventPublication.class, archiveCollection)
+					.stream()
+					.map(it -> it.id)
+					.toList();
 
-				addFields()
-						.addFieldWithValue(COMPLETION_DATE, now)
-						.addFieldWithValue(STATUS, status.name())
-						.build(),
+		publications.stream()
+				.filter(it -> !archivedIdentifiers.contains(it.id))
+				.forEach(it -> {
+					it.completionDate = now;
+					it.status = status;
+					mongoTemplate.save(it, archiveCollection);
+				});
 
-				merge()
-						.intoCollection(archiveCollection)
-						.on(ID)
-						.whenMatched(WhenDocumentsMatch.keepExistingDocument())
-						.build())
-								.withOptions(newAggregationOptions().skipOutput().build());
-
-		mongoTemplate.aggregate(aggregation, collection, Document.class);
 		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, collection);
 	}
 
