@@ -118,4 +118,19 @@ class ModuleUnitTest {
 					.contains(it.getIdentifier());
 		});
 	}
+
+	@Test // GH-1934
+	void doesNotListSharedModuleAsOwnAllowedDependency() {
+
+		var modules = TestUtils.of(reproducers.gh1927.Application.class);
+		var shared = modules.getModuleByName("shared").orElseThrow();
+
+		assertThat(shared.getAllowedDependencies(modules)).isEmpty();
+
+		assertThatExceptionOfType(Violations.class) //
+				.isThrownBy(modules::verify) //
+				.satisfies(ex -> {
+					assertThat(ex.getMessages()).anySatisfy(message -> assertThat(message).contains("Allowed targets: none"));
+				});
+	}
 }

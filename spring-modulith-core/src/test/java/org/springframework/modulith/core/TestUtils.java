@@ -58,6 +58,21 @@ public class TestUtils {
 	}
 
 	/**
+	 * Creates an {@link ApplicationModules} instance from the given modulith type but only inspecting the test code.
+	 * Contrary to {@link #of(String, String...)}, this honors the configuration declared on the type, e.g. shared modules
+	 * via {@link org.springframework.modulith.Modulithic}.
+	 *
+	 * @param modulithType must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	public static ApplicationModules of(Class<?> modulithType) {
+
+		Assert.notNull(modulithType, "Modulith type must not be null!");
+
+		return ApplicationModules.of(modulithType, new ImportOption.OnlyIncludeTests());
+	}
+
+	/**
 	 * Returns all {@link Classes} of this module.
 	 *
 	 * @return
