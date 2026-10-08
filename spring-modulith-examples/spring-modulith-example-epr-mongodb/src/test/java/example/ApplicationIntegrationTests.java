@@ -29,6 +29,7 @@ import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Bean;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
+import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.test.EnableScenarios;
 import org.springframework.modulith.test.Scenario;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -44,7 +45,7 @@ import com.mongodb.client.MongoClients;
  *
  * @author Oliver Drotbohm
  */
-@SpringBootTest
+@SpringBootTest(properties = { CompletionMode.PROPERTY + "=ARCHIVE" })
 @EnableScenarios
 @Testcontainers(disabledWithoutDocker = true)
 class ApplicationIntegrationTests {
@@ -63,7 +64,7 @@ class ApplicationIntegrationTests {
 		@Bean
 		@ServiceConnection
 		MongoDBContainer mongoDBContainer() {
-			return new MongoDBContainer("mongo:latest");
+			return new MongoDBContainer("mongo:latest").withReplicaSet();
 		}
 
 		@Bean
