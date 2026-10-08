@@ -115,6 +115,15 @@ class ModuleUnitTest {
 		assertThat(dependency.contains(ApiType.class)).isTrue();
 	}
 
+	@Test // GH-1927
+	void doesNotListSharedModuleAsOwnAllowedDependency() {
+
+		var modules = TestUtils.of("reproducers.gh1927");
+		var shared = modules.getModuleByName("shared").orElseThrow();
+
+		assertThat(shared.getAllowedDependencies(modules).toString()).isEqualTo("none");
+	}
+
 	@Test // GH-1299
 	void obtainsDependenciesForCyclicArrangement() {
 
