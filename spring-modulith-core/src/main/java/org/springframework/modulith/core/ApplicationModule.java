@@ -522,6 +522,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 				.map(it -> AllowedDependency.of(it, this, modules));
 
 		var sharedDependencies = modules.getSharedModules().stream()
+				.filter(it -> !it.equals(this))
 				.map(AllowedDependency::to);
 
 		return Stream.concat(explicitlyDeclaredModules, sharedDependencies) //
