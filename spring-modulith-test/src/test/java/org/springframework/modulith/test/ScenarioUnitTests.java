@@ -56,6 +56,7 @@ class ScenarioUnitTests {
 
 	private static final Duration DELAY = Duration.ofMillis(50);
 	private static final Duration WAIT_TIME = Duration.ofMillis(101);
+	private static final Duration NEGATIVE_WAIT_TIME = Duration.ofMillis(300);
 	private static final Duration TIMED_OUT = Duration.ofMillis(150);
 
 	TransactionTemplate tx;
@@ -86,7 +87,7 @@ class ScenarioUnitTests {
 	void succeedsIfExpectedEventDoesNotArrive() {
 
 		Consumer<Scenario> consumer = it -> publishObject(it)
-				.andWaitAtMost(WAIT_TIME)
+				.andWaitAtMost(NEGATIVE_WAIT_TIME)
 				.forEventOfType(String.class)
 				.notToArrive();
 

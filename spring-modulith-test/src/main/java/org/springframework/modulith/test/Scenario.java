@@ -244,6 +244,7 @@ public class Scenario {
 		 * @param stimulus must not be {@literal null}.
 		 * @param cleanup must not be {@literal null}.
 		 * @param customizer must not be {@literal null}.
+		 * @param waitAtMost the configured maximum wait duration, potentially {@literal null}.
 		 */
 		When(BiFunction<TransactionOperations, ApplicationEventPublisher, T> stimulus, Consumer<T> cleanup,
 				Function<ConditionFactory, ConditionFactory> customizer, @Nullable Duration waitAtMost) {
@@ -297,7 +298,7 @@ public class Scenario {
 
 			Assert.notNull(duration, "Duration must not be null!");
 
-			return new When<>(stimulus, cleanup, customizer, duration);
+			return new When<>(stimulus, cleanup, customizer.andThen(it -> it.atMost(duration)), duration);
 		}
 
 		/**
@@ -583,7 +584,7 @@ public class Scenario {
 
 				try {
 					customizer.apply(Awaitility.await())
-						.atMost(duration)
+						.atMost(duration.plusSeconds(1))
 						.during(duration)
 						.until(() -> !getFilteredEvents().eventOfTypeWasPublished(type));
 				} finally {
