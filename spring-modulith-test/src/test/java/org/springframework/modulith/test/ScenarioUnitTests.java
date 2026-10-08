@@ -81,6 +81,32 @@ class ScenarioUnitTests {
 				.expectFailure();
 	}
 
+
+	@Test // GH-1357
+	void succeedsIfExpectedEventDoesNotArrive() {
+
+		Consumer<Scenario> consumer = it -> publishObject(it)
+				.andWaitAtMost(WAIT_TIME)
+				.forEventOfType(String.class)
+				.notToArrive();
+
+		givenAScenario(consumer)
+				.expectSuccess();
+	}
+
+	@Test // GH-1357
+	void failsIfExpectedEventArrives() {
+
+		Consumer<Scenario> consumer = it -> publishObject(it)
+				.andWaitAtMost(WAIT_TIME)
+				.forEventOfType(String.class)
+				.notToArrive();
+
+		givenAScenario(consumer)
+				.onEvent(() -> "foo")
+				.expectFailure();
+	}
+
 	@Test // GH-136
 	void failsIfNoEventOfExpectedTypeArrives() {
 

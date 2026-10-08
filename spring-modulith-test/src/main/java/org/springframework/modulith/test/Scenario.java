@@ -215,7 +215,7 @@ public class Scenario {
 
 		Assert.notNull(stimulus, "Stimulus must not be null!");
 
-		return new When<>(stimulus, __ -> {}, defaultCustomizer);
+		return new When<>(stimulus, __ -> {}, defaultCustomizer, null);
 	}
 
 	/**
@@ -238,6 +238,7 @@ public class Scenario {
 		private final BiFunction<TransactionOperations, ApplicationEventPublisher, T> stimulus;
 		private final Consumer<T> cleanup;
 		private final Function<ConditionFactory, ConditionFactory> customizer;
+		private final @Nullable Duration waitAtMost;
 
 		/**
 		 * @param stimulus must not be {@literal null}.
@@ -245,10 +246,11 @@ public class Scenario {
 		 * @param customizer must not be {@literal null}.
 		 */
 		When(BiFunction<TransactionOperations, ApplicationEventPublisher, T> stimulus, Consumer<T> cleanup,
-				Function<ConditionFactory, ConditionFactory> customizer) {
+				Function<ConditionFactory, ConditionFactory> customizer, @Nullable Duration waitAtMost) {
 			this.stimulus = stimulus;
 			this.cleanup = cleanup;
 			this.customizer = customizer;
+			this.waitAtMost = waitAtMost;
 		}
 
 		/**
@@ -278,7 +280,7 @@ public class Scenario {
 
 			Assert.notNull(consumer, "Cleanup callback must not be null!");
 
-			return new When<>(stimulus, consumer, customizer);
+			return new When<>(stimulus, consumer, customizer, waitAtMost);
 		}
 
 		// Customize
@@ -295,7 +297,7 @@ public class Scenario {
 
 			Assert.notNull(duration, "Duration must not be null!");
 
-			return customize(it -> it.atMost(duration));
+			return new When<>(stimulus, cleanup, customizer, duration);
 		}
 
 		/**
@@ -311,7 +313,7 @@ public class Scenario {
 
 			Assert.notNull(customizer, "Customizer must not be null!");
 
-			return new When<T>(stimulus, cleanup, defaultCustomizer.andThen(customizer));
+			return new When<T>(stimulus, cleanup, defaultCustomizer.andThen(customizer), waitAtMost);
 		}
 
 		// Expect event
@@ -569,6 +571,24 @@ public class Scenario {
 			 */
 			public void toArrive() {
 				toArriveAndVerifyInternal(__ -> {});
+			}
+
+			/**
+			 * Verifies that an event of the given specification does not arrive during the configured wait period.
+			 */
+			public void notToArrive() {
+
+				T result = stimulus.apply(transactionOperations, publisher);
+				var duration = waitAtMost == null ? Duration.ofSeconds(10) : waitAtMost;
+
+				try {
+					customizer.apply(Awaitility.await())
+						.atMost(duration)
+						.during(duration)
+						.until(() -> !getFilteredEvents().eventOfTypeWasPublished(type));
+				} finally {
+					cleanup.accept(result);
+				}
 			}
 
 			/**
