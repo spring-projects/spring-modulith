@@ -30,6 +30,7 @@ import java.util.function.Supplier;
 
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
 import org.jspecify.annotations.Nullable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.lang.CheckReturnValue;
@@ -428,6 +429,29 @@ public class Scenario {
 			}
 		}
 
+		/**
+		 * Runs the stimulus and expects the given condition to <em>not</em> become true within the configured wait time,
+		 * i.e. the customized {@link ConditionFactory} timing out is the success case, in which the given verifications are
+		 * applied to the stimulus result.
+		 */
+		private <S> void awaitAbsenceInternal(Consumer<T> verifications, Callable<S> supplier,
+				Predicate<? super S> condition, Supplier<AssertionError> failure) {
+
+			T result = stimulus.apply(transactionOperations, publisher);
+
+			try {
+
+				customizer.apply(Awaitility.await()).until(supplier, condition);
+
+				throw failure.get();
+
+			} catch (ConditionTimeoutException o_O) {
+				verifications.accept(result);
+			} finally {
+				cleanup.accept(result);
+			}
+		}
+
 		private record ExecutionResult<S, T>(S first, T second) {}
 
 		/**
@@ -500,6 +524,7 @@ public class Scenario {
 		 */
 		public class EventResult<E> {
 
+			private static final String UNEXPECTED_EVENT = "Expected no event of type %s (potentially further constrained using matching clauses above) to be published but found one in %s!";
 			private static final String EXPECTED_EVENT = "Expected an event of type %s (potentially further constrained using matching clauses above) to be published but couldn't find one in %s!";
 
 			private final Class<E> type;
@@ -572,6 +597,33 @@ public class Scenario {
 			}
 
 			/**
+			 * Verifies that no event of the given specification arrives within the configured wait time (see
+			 * {@link When#andWaitAtMost(Duration)}). Note that, as the absence of an event can only be established by waiting,
+			 * a successful invocation always takes the full wait time.
+			 *
+			 * @since 2.2
+			 */
+			public void notToArrive() {
+				notToArriveAndVerifyInternal(__ -> {});
+			}
+
+			/**
+			 * Verifies that no event of the given specification arrives within the configured wait time (see
+			 * {@link When#andWaitAtMost(Duration)}) and invokes the given consumer with the result created by the stimulus
+			 * afterwards.
+			 *
+			 * @param consumer must not be {@literal null}.
+			 * @see #notToArrive()
+			 * @since 2.2
+			 */
+			public void notToArriveAndVerify(Consumer<T> consumer) {
+
+				Assert.notNull(consumer, "Consumer must not be null!");
+
+				notToArriveAndVerifyInternal(consumer);
+			}
+
+			/**
 			 * Awaits an event of the given specification to arrive and invokes the given consumer with it.
 			 *
 			 * @param consumer must not be {@literal null}.
@@ -641,6 +693,23 @@ public class Scenario {
 
 			private PublishedEventAssert<? super E> getAssertedEvent() {
 				return new PublishedEventsAssert(getFilteredEvents()).contains(type);
+			}
+
+			private void notToArriveAndVerifyInternal(Consumer<T> verifications) {
+
+				if (previousResult != null) {
+
+					assertThat(getFilteredEvents().eventOfTypeWasPublished(type))
+							.overridingErrorMessage(UNEXPECTED_EVENT, type, events)
+							.isFalse();
+
+					verifications.accept(previousResult.second());
+
+				} else {
+
+					awaitAbsenceInternal(verifications, () -> getFilteredEvents(), it -> it.eventOfTypeWasPublished(type),
+							() -> new AssertionError(UNEXPECTED_EVENT.formatted(type, events)));
+				}
 			}
 
 			private void toArriveAndVerifyInternal(Consumer<T> verifications) {
