@@ -41,7 +41,7 @@
 		<errorprone.version>2.50.0</errorprone.version>
 		<jgit.version>7.8.0.202609011348-r</jgit.version>
 		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
-		<jobrunr.version>8.8.2</jobrunr.version>
+		<jobrunr.version>9.0.1</jobrunr.version>
 		<json-unit-assertj.version>5.1.2</json-unit-assertj.version>
 		<namastack-outbox.version>1.9.0</namastack-outbox.version>
 		<nullaway.version>0.13.0</nullaway.version>
