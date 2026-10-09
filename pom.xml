@@ -1,4 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.springframework.modulith</groupId>
@@ -36,7 +36,7 @@
 	<properties>
 
 		<aptk.version>0.30.5</aptk.version>
-		<archunit.version>1.5.0</archunit.version>
+		<archunit.version>1.5.1</archunit.version>
 		<cute.version>1.9.0</cute.version>
 		<errorprone.version>2.46.0</errorprone.version>
 		<jgit.version>7.8.0.202609011348-r</jgit.version>
@@ -622,7 +622,7 @@ limitations under the License.
 				<artifactId>maven-surefire-plugin</artifactId>
 				<configuration>
 					<excludes>
-						<exclude />
+						<exclude/>
 					</excludes>
 				</configuration>
 			</plugin>
