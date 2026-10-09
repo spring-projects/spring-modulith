@@ -25,9 +25,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.core.Types.JavaTypes;
 import org.springframework.util.Assert;
@@ -287,6 +289,19 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 				.anyMatch(NamedInterface::isNamed);
 	}
 
+	/**
+	 * Returns only explicitly named {@link NamedInterface}s.
+	 *
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	NamedInterfaces namedOnly() {
+
+		return namedInterfaces.stream()
+				.filter(NamedInterface::isNamed)
+				.collect(NamedInterfaces.collector());
+	}
+
 	/*
 	 * (non-Javadoc)
 	 * @see java.lang.Object#toString()
@@ -297,6 +312,30 @@ public class NamedInterfaces implements Iterable<NamedInterface> {
 		return namedInterfaces.stream()
 				.map(NamedInterface::toString)
 				.collect(Collectors.joining(System.lineSeparator()));
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(@Nullable Object obj) {
+
+		return this == obj
+				|| obj instanceof NamedInterfaces that && this.namedInterfaces.equals(that.namedInterfaces);
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		return this.namedInterfaces.hashCode();
+	}
+
+	static Collector<NamedInterface, ?, NamedInterfaces> collector() {
+		return Collectors.collectingAndThen(Collectors.toList(), NamedInterfaces::new);
 	}
 
 	private static NamedInterfaces of(NamedInterface interfaces) {

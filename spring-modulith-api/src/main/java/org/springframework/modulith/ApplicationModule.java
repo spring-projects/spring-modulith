@@ -51,7 +51,9 @@ public @interface ApplicationModule {
 	 * {@link Modulith}/{@link Modulithic} will be allowed, too. Names listed are local ones, unless the application has
 	 * configured {@link Modulithic#useFullyQualifiedModuleNames()} to {@literal true}. Explicit references to
 	 * {@link NamedInterface}s need to be separated by a double colon {@code ::}, e.g. {@code module::API} if
-	 * {@code module} is the logical module name and {@code API} is the name of the named interface.
+	 * {@code module} is the logical module name and {@code API} is the name of the named interface. Use {@code module::*}
+	 * to refer to all explicitly declared named interfaces of the module (not including its base package) and
+	 * {@code module::**} to refer to everything the module exposes, i.e. the base package and all named interfaces.
 	 * <p>
 	 * Declaring an empty array will allow no dependencies to other modules. To not restrict the dependencies at all,
 	 * leave the attribute at its default value.

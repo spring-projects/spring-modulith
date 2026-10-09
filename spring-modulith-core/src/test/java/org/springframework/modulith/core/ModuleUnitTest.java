@@ -17,8 +17,9 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
-import example.ni.api.ApiType;
-import example.ni.spi.SpiType;
+import reproducers.gh1924.order.OrderId;
+import reproducers.gh1924.order.events.OrderShipped;
+import reproducers.gh1924.order.internal.Hidden;
 
 import java.util.List;
 
@@ -27,7 +28,7 @@ import javax.sql.DataSource;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestInstance.Lifecycle;
-import org.springframework.modulith.core.ApplicationModule.AllowedDependency;
+import org.springframework.modulith.core.ApplicationModule.AllowedDependencies;
 
 import com.acme.withatbean.SampleAggregate;
 import com.acme.withatbean.TestEvents.JMoleculesAnnotated;
@@ -109,10 +110,10 @@ class ModuleUnitTest {
 		var modules = TestUtils.of("example", "example.ninvalid");
 
 		var module = modules.getModuleByName("ni").orElseThrow();
-		var dependency = AllowedDependency.of("ni :: *", module, modules);
+		var namedInterfaces = module.getNamedInterfaces().namedOnly();
+		var dependencies = AllowedDependencies.of(module, "ni :: *", modules);
 
-		assertThat(dependency.contains(SpiType.class)).isTrue();
-		assertThat(dependency.contains(ApiType.class)).isTrue();
+		assertThat(dependencies.referTo(module, namedInterfaces)).isTrue();
 	}
 
 	@Test // GH-1299
@@ -141,5 +142,21 @@ class ModuleUnitTest {
 				.satisfies(ex -> {
 					assertThat(ex.getMessages()).anySatisfy(message -> assertThat(message).contains("Allowed targets: none"));
 				});
+	}
+
+	@Test // GH-1924
+	void allowsAccessToEverythingExposedViaDoubleAsterisk() {
+
+		var modules = TestUtils.of(reproducers.gh1924.Application.class);
+
+		var inventory = modules.getModuleByName("inventory").orElseThrow();
+		var order = modules.getModuleByName("order").orElseThrow();
+
+		var allowed = inventory.getAllowedDependencies(modules);
+
+		assertThat(allowed.referTo(order, order.getNamedInterfaces())).isTrue();
+		assertThat(allowed.isAllowedDependency(OrderId.class)).isTrue();
+		assertThat(allowed.isAllowedDependency(OrderShipped.class)).isTrue();
+		assertThat(allowed.isAllowedDependency(Hidden.class)).isFalse();
 	}
 }
