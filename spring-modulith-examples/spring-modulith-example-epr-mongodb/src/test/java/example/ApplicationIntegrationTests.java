@@ -63,7 +63,7 @@ class ApplicationIntegrationTests {
 		@Bean
 		@ServiceConnection
 		MongoDBContainer mongoDBContainer() {
-			return new MongoDBContainer("mongo:latest");
+			return new MongoDBContainer("mongo:latest").withReplicaSet();
 		}
 
 		@Bean
