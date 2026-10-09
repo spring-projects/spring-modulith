@@ -15,7 +15,6 @@
  */
 package org.springframework.modulith.events.mongodb;
 
-import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
@@ -31,10 +30,10 @@ import org.jspecify.annotations.Nullable;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.core.TypeInformation;
 import org.springframework.data.domain.Sort;
+import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.aggregation.Fields;
-import org.springframework.data.mongodb.core.aggregation.MergeOperation.WhenDocumentsMatch;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.data.mongodb.core.query.Update;
@@ -455,23 +454,34 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			return;
 		}
 
-		var aggregation = newAggregation(MongoDbEventPublication.class,
+		// Avoid $merge as it's not supported in transactions. Upserting via $setOnInsert keeps existing archive entries.
+		var publications = mongoTemplate.find(query(where(ID).in(identifiers).and(COMPLETION_DATE).isNull()),
+				MongoDbEventPublication.class, collection);
 
-				match(where(ID).in(identifiers).and(COMPLETION_DATE).isNull()),
+		if (!publications.isEmpty()) {
 
-				addFields()
-						.addFieldWithValue(COMPLETION_DATE, now)
-						.addFieldWithValue(STATUS, status.name())
-						.build(),
+			var operations = mongoTemplate.bulkOps(BulkMode.UNORDERED, MongoDbEventPublication.class, archiveCollection);
+			var converter = mongoTemplate.getConverter();
 
-				merge()
-						.intoCollection(archiveCollection)
-						.on(ID)
-						.whenMatched(WhenDocumentsMatch.keepExistingDocument())
-						.build())
-								.withOptions(newAggregationOptions().skipOutput().build());
+			for (var publication : publications) {
 
-		mongoTemplate.aggregate(aggregation, collection, Document.class);
+				publication.completionDate = now;
+				publication.status = status;
+
+				var document = new Document();
+				converter.write(publication, document);
+
+				var update = new Update();
+				document.entrySet().stream()
+						.filter(it -> !it.getKey().equals(Fields.UNDERSCORE_ID))
+						.forEach(it -> update.setOnInsert(it.getKey(), it.getValue()));
+
+				operations.upsert(query(where(ID).is(publication.id)), update);
+			}
+
+			operations.execute();
+		}
+
 		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, collection);
 	}
 
