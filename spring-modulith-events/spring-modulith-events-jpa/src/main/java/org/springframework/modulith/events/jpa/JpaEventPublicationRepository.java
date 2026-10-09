@@ -470,7 +470,9 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			args.add(instant);
 		}
 
-		query += " order by p.publicationDate asc";
+		query += criteria.isLeastRecentlyAttemptedFirst()
+				? " order by coalesce(p.lastResubmissionDate, p.publicationDate) asc"
+				: " order by p.publicationDate asc";
 
 		var jpaQuery = entityManager.createQuery(query, DefaultJpaEventPublication.class);
 
