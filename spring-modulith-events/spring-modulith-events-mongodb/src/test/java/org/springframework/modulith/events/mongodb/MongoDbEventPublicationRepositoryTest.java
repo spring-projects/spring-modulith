@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.ResubmissionOptions;
@@ -51,6 +52,7 @@ import org.springframework.modulith.testapp.Infrastructure;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -615,6 +617,48 @@ class MongoDbEventPublicationRepositoryTest {
 					.extracting(TargetEventPublication::getIdentifier)
 					.containsExactly(publication.getIdentifier());
 			assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+		}
+
+		@Test // GH-1412
+		void archivesPublicationsInsideTransaction() {
+
+			assumeTrue(completionMode == CompletionMode.ARCHIVE);
+
+			var first = createPublication(new TestEvent("first"));
+			var second = createPublication(new TestEvent("second"));
+			var template = new TransactionTemplate(new MongoTransactionManager(mongoTemplate.getMongoDatabaseFactory()));
+
+			template.executeWithoutResult(__ -> {
+				repository.markCompleted(first.getIdentifier(), Instant.now());
+				repository.markCompleted(second.getIdentifier(), Instant.now());
+			});
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+			assertThat(repository.findCompletedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactlyInAnyOrder(first.getIdentifier(), second.getIdentifier());
+		}
+
+		@Test // GH-1412
+		void keepsExistingArchiveEntryWhenArchivingAgain() {
+
+			assumeTrue(completionMode == CompletionMode.ARCHIVE);
+
+			var publication = createPublication(new TestEvent("first"));
+			var firstCompletion = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+			repository.markCompleted(publication.getIdentifier(), firstCompletion);
+
+			// Re-create the active entry with the same identifier to simulate a concurrent archival
+			mongoTemplate.save(new MongoDbEventPublication(publication.getIdentifier(), Instant.now(), "listener",
+					new TestEvent("first"), null, Status.PUBLISHED, null, 1));
+
+			repository.markCompleted(publication.getIdentifier(), firstCompletion.plusSeconds(60));
+
+			assertThat(mongoTemplate.findAll(MongoDbEventPublication.class, archiveCollection)).singleElement()
+					.satisfies(it -> assertThat(it.completionDate).isEqualTo(firstCompletion));
+			assertThat(mongoTemplate.findAll(MongoDbEventPublication.class,
+					mongoTemplate.getCollectionName(MongoDbEventPublication.class))).isEmpty();
 		}
 
 		private TargetEventPublication createPublication(Object event) {
