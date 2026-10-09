@@ -1,0 +1,54 @@
+name: CI Build (Internal)
+
+on:
+  push:
+    branches: [ release/* ]
+
+jobs:
+  build:
+    name: Build project
+    runs-on: ubuntu22-2-8
+
+    steps:
+
+    - name: Check out sources
+      uses: actions/checkout@v6
+
+    - name: Determine project version
+      id: determine-version
+      shell: bash
+      run: |
+        PROJECT_VERSION=$(python3 -c "import sys, xml.etree.ElementTree as ET; ns='{http://maven.apache.org/POM/4.0.0}'; r=ET.parse(sys.stdin).getroot(); print((r.findtext(ns+'version') or r.findtext(ns+'parent/'+ns+'version') or '').strip())" < pom.xml)
+        if [[ -z "${PROJECT_VERSION}" ]]; then
+          echo "::error::Unable to determine the project version from pom.xml"
+          exit 1
+        fi
+
+        if [[ "${PROJECT_VERSION}" == *-SNAPSHOT ]]; then
+          IS_SNAPSHOT=true
+        else
+          IS_SNAPSHOT=false
+        fi
+
+        echo "Project version: ${PROJECT_VERSION} (isSnapshot=${IS_SNAPSHOT}"
+        echo "isSnapshot=${IS_SNAPSHOT}" >> "$GITHUB_OUTPUT"
+
+        if [[ "${IS_SNAPSHOT}" != true ]]; then
+          echo "::notice::Project version ${PROJECT_VERSION} is not a snapshot, skipping build"
+        fi
+
+    - name: Set up JDK 21
+      if: steps.determine-version.outputs.isSnapshot == 'true'
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: 21
+        cache: 'maven'
+
+    - name: Build & deploy internal snapshot
+      if: steps.determine-version.outputs.isSnapshot == 'true'
+      env:
+        INTERNAL_REPOSITORY_USERNAME: ${{ secrets.COMMERCIAL_ARTIFACTORY_USERNAME }}
+        INTERNAL_REPOSITORY_PASSWORD: ${{ secrets.COMMERCIAL_ARTIFACTORY_PASSWORD }}
+        INTERNAL_REPOSITORY_URL: ${{ vars.INTERNAL_REPOSITORY_URL }}
+      run: ./mvnw -B dependency:list clean deploy -Dsort --settings settings.xml --activate-profiles ci -DaltDeploymentRepository="internal::${{ vars.INTERNAL_REPOSITORY_URL }}"
