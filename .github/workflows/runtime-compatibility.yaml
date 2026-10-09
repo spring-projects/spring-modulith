@@ -33,7 +33,10 @@ jobs:
         ../mvnw -B clean test-compile
 
     - name: Apply runtime dependency versions
-      run: etc/apply-runtime-versions.sh spring-modulith-examples
+      run: |
+        etc/apply-runtime-versions.sh spring-modulith-examples
+        versions=$(grep -vE '^\s*(#|$)' etc/runtime-versions.properties | awk '{ printf "%s%s", sep, $0; sep = "%0A" }')
+        echo "::notice title=Runtime dependency versions::${versions}"
 
     - name: Run examples
       run: |
