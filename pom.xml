@@ -44,7 +44,7 @@
 		<jobrunr.version>9.0.1</jobrunr.version>
 		<json-unit-assertj.version>6.3.0</json-unit-assertj.version>
 		<namastack-outbox.version>1.10.1</namastack-outbox.version>
-		<nullaway.version>0.13.0</nullaway.version>
+		<nullaway.version>0.14.2</nullaway.version>
 		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
 		<project.build.outputTimestamp>2026-10-09T13:07:59Z</project.build.outputTimestamp>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
