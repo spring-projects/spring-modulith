@@ -540,19 +540,13 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		var allowedDependencyNames = information.getDeclaredDependencies();
 
-		if (AllowedDependencies.isOpen(allowedDependencyNames)) {
-			return AllowedDependencies.open();
-		}
-
-		var explicitlyDeclaredModules = allowedDependencyNames.stream() //
-				.map(it -> AllowedDependency.of(it, this, modules));
-
-		var sharedDependencies = modules.getSharedModules().stream()
-				.map(AllowedDependency::to);
-
-		return Stream.concat(explicitlyDeclaredModules, sharedDependencies) //
-				.distinct() //
-				.collect(Collectors.collectingAndThen(Collectors.toList(), AllowedDependencies::closed));
+		return AllowedDependencies.isOpen(allowedDependencyNames)
+				? AllowedDependencies.open()
+				: AllowedDependencies.NONE
+						// Explicitly declared
+						.and(AllowedDependencies.of(this, allowedDependencyNames, modules))
+						// All shared modules except itself
+						.and(AllowedDependencies.to(modules.getSharedModules().stream().filter(Predicate.not(this::equals))));
 	}
 
 	/**
@@ -932,43 +926,50 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 		private static final String INVALID_EXPLICIT_MODULE_DEPENDENCY = "Invalid explicit module dependency in %s! No module found with name '%s'.";
 		private static final String INVALID_NAMED_INTERFACE_DECLARATION = "No named interface named '%s' found! Original dependency declaration: %s -> %s.";
-		private static final String WILDCARD = "*";
+		private static final String ALL_NAMED_INTERFACES = "*";
+		private static final String EVERYTHING = "**";
 
 		private final ApplicationModule target;
-		private final @Nullable NamedInterface namedInterface;
+		private final NamedInterface namedInterface;
 
 		/**
 		 * Creates a new {@link AllowedDependency} for the given {@link ApplicationModule} and {@link NamedInterface}.
 		 *
 		 * @param target must not be {@literal null}.
-		 * @param namedInterface can be {@literal null}.
+		 * @param namedInterface must not be {@literal null}.
 		 */
-		private AllowedDependency(ApplicationModule target, @Nullable NamedInterface namedInterface) {
+		private AllowedDependency(ApplicationModule target, NamedInterface namedInterface) {
 
 			Assert.notNull(target, "Target ApplicationModule must not be null!");
+			Assert.notNull(namedInterface, "NamedInterface must not be null!");
 
 			this.target = target;
 			this.namedInterface = namedInterface;
 		}
 
 		/**
-		 * Creates an {@link AllowedDependency} to the module and optionally named interface defined by the given
-		 * identifier.
+		 * Creates {@link AllowedDependency} instances to the module and optionally named interface defined by the given
+		 * expression. The wildcard variants are expanded into the individual named interfaces they stand for.
 		 *
-		 * @param identifier must not be {@literal null} or empty. Follows the
-		 *          {@code ${moduleName}(::${namedInterfaceName})} pattern.
 		 * @param source the source module of the dependency, must not be {@literal null}.
+		 * @param expression must not be {@literal null} or empty. Follows the
+		 *          {@code ${moduleName}(::${namedInterfaceName})} pattern, where the interface name can be {@code *} to
+		 *          refer to all explicitly declared named interfaces or {@code **} to additionally include the unnamed
+		 *          interface, i.e. the module's base package.
 		 * @param modules must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 * @throws IllegalArgumentException in case the given identifier is invalid, i.e. does not refer to an existing
 		 *           module or named interface.
+		 * @see org.springframework.modulith.ApplicationModule#allowedDependencies()
 		 */
-		static AllowedDependency of(String identifier, ApplicationModule source,
+		static AllowedDependencies of(ApplicationModule source, String expression,
 				ApplicationModules modules) {
 
-			Assert.hasText(identifier, "Module dependency identifier must not be null or empty!");
+			Assert.notNull(source, "Source ApplicationModule must not be null!");
+			Assert.hasText(expression, "Module dependency expression must not be null or empty!");
+			Assert.notNull(modules, "ApplicationModules must not be null!");
 
-			var segments = identifier.split("::");
+			var segments = expression.split("::");
 			var targetModuleName = segments[0].trim();
 			var namedInterfaceName = segments.length > 1 ? segments[1].trim() : null;
 
@@ -976,19 +977,28 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 					.orElseThrow(() -> new IllegalArgumentException(
 							INVALID_EXPLICIT_MODULE_DEPENDENCY.formatted(source.getIdentifier(), targetModuleName)));
 
-			if (WILDCARD.equals(namedInterfaceName)) {
-				return new AllowedDependency(target, null);
+			var namedInterfaces = target.getNamedInterfaces();
+
+			if (ALL_NAMED_INTERFACES.equals(namedInterfaceName)) {
+
+				return AllowedDependencies.closed(namedInterfaces.namedOnly().stream()
+						.map(it -> toNamedInterface(target, it)).toList());
 			}
 
-			var namedInterfaces = target.getNamedInterfaces();
+			if (EVERYTHING.equals(namedInterfaceName)) {
+
+				return AllowedDependencies.closed(namedInterfaces.stream()
+						.map(it -> toNamedInterface(target, it)).toList());
+			}
+
 			var namedInterface = namedInterfaceName == null
 					? namedInterfaces.getUnnamedInterface()
 					: namedInterfaces.getByName(namedInterfaceName)
 							.orElseThrow(() -> new IllegalArgumentException(
 									INVALID_NAMED_INTERFACE_DECLARATION.formatted(namedInterfaceName, source.getIdentifier(),
-											identifier)));
+											expression)));
 
-			return new AllowedDependency(target, namedInterface);
+			return AllowedDependencies.closed(List.of(toNamedInterface(target, namedInterface)));
 		}
 
 		/**
@@ -1001,7 +1011,21 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			Assert.notNull(module, "ApplicationModule must not be null!");
 
-			return new AllowedDependency(module, module.getNamedInterfaces().getUnnamedInterface());
+			return toNamedInterface(module, module.getNamedInterfaces().getUnnamedInterface());
+		}
+
+		/**
+		 * Creates a new {@link AllowedDependency} to the given {@link NamedInterface} of the given
+		 * {@link ApplicationModule}. Passing the module's unnamed interface refers to its base package, which corresponds
+		 * to a plain {@code module} declaration.
+		 *
+		 * @param module must not be {@literal null}.
+		 * @param namedInterface must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 2.2
+		 */
+		private static AllowedDependency toNamedInterface(ApplicationModule module, NamedInterface namedInterface) {
+			return new AllowedDependency(module, namedInterface);
 		}
 
 		/**
@@ -1014,12 +1038,22 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		}
 
 		/**
-		 * Returns the {@link NamedInterface} declared as valid target if declared.
+		 * Returns the {@link NamedInterface} declared as valid target.
 		 *
-		 * @return can be {@literal null}.
+		 * @return will never be {@literal null}.
 		 */
-		public @Nullable NamedInterface getTargetNamedInterface() {
+		public NamedInterface getTargetNamedInterface() {
 			return namedInterface;
+		}
+
+		/**
+		 * Returns whether the {@link AllowedDependency} refers to the given {@link ApplicationModule}.
+		 *
+		 * @param module must not be {@literal null}.
+		 * @since 2.2
+		 */
+		boolean refersTo(ApplicationModule module) {
+			return target.equals(module);
 		}
 
 		/**
@@ -1032,9 +1066,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			Assert.notNull(type, "Type must not be null!");
 
-			return namedInterface == null
-					? target.getNamedInterfaces().containsInExplicitInterface(type)
-					: namedInterface.contains(type);
+			return namedInterface.contains(type);
 		}
 
 		/**
@@ -1047,9 +1079,7 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 
 			Assert.notNull(type, "Type must not be null!");
 
-			return namedInterface == null
-					? target.getNamedInterfaces().containsInExplicitInterface(type)
-					: namedInterface.contains(type);
+			return namedInterface.contains(type);
 		}
 
 		/*
@@ -1060,17 +1090,12 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		public String toString() {
 
 			var result = target.getIdentifier().toString();
-			var ni = namedInterface;
 
-			if (ni == null) {
-				return result + " :: " + WILDCARD;
-			}
-
-			if (ni.isUnnamed()) {
+			if (namedInterface.isUnnamed()) {
 				return result;
 			}
 
-			return result + " :: " + ni.getName();
+			return result + " :: " + namedInterface.getName();
 		}
 
 		/*
@@ -1111,20 +1136,86 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 	public static class AllowedDependencies implements Iterable<AllowedDependency> {
 
 		private static final String OPEN_TOKEN = "¯\\_(ツ)_/¯";
+		private static final AllowedDependencies NONE = AllowedDependencies.closed(Collections.emptyList());
 
 		private final List<AllowedDependency> dependencies;
 		private final boolean closed;
 
+		/**
+		 * Returns whether the given declared dependencies consist of nothing but the open token, i.e. whether the
+		 * dependencies are not restricted.
+		 *
+		 * @param AllowedDependencies must not be {@literal null}.
+		 */
 		static boolean isOpen(List<String> AllowedDependencies) {
 			return AllowedDependencies.size() == 1 && AllowedDependencies.get(0).equals(OPEN_TOKEN);
 		}
 
+		/**
+		 * Creates an {@link AllowedDependencies} instance that does not restrict dependencies, i.e. every dependency is
+		 * considered allowed. Used for modules that do not declare any allowed dependencies explicitly.
+		 *
+		 * @return will never be {@literal null}.
+		 */
 		static AllowedDependencies open() {
 			return new AllowedDependencies(Collections.emptyList(), false);
 		}
 
+		/**
+		 * Creates an {@link AllowedDependencies} instance that only allows the given {@link AllowedDependency} instances.
+		 * An empty {@link List} means no dependency is allowed at all.
+		 *
+		 * @param dependencies must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 */
 		static AllowedDependencies closed(List<AllowedDependency> dependencies) {
 			return new AllowedDependencies(dependencies, true);
+		}
+
+		/**
+		 * Creates a new AllowedDependecies from the given {@link ApplicationModule} to the targets defined in the
+		 * expression.
+		 *
+		 * @param source the source {@link ApplicationModule}, must not be {@literal null}.
+		 * @param expression the expression identifying the targets, must not be {@literal null} or empty.
+		 * @param modules all {@link ApplicationModules} available, must not be {@literal null}..
+		 * @return will never be {@literal null}.
+		 * @since 2.2
+		 */
+		static AllowedDependencies of(ApplicationModule source, String expression, ApplicationModules modules) {
+			return AllowedDependency.of(source, expression, modules);
+		}
+
+		/**
+		 * Creates a new {@link AllowedDependencies} from the given {@link ApplicationModule} to the targets defined by all
+		 * of the given expressions. Targets referred to by multiple expressions are only included once.
+		 *
+		 * @param source the source {@link ApplicationModule}, must not be {@literal null}.
+		 * @param expression the expressions identifying the targets, must not be {@literal null}.
+		 * @param modules all {@link ApplicationModules} available, must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @throws IllegalArgumentException in case any of the expressions is invalid.
+		 * @since 2.2
+		 * @see #of(ApplicationModule, String, ApplicationModules)
+		 */
+		private static AllowedDependencies of(ApplicationModule source, Collection<String> expression,
+				ApplicationModules modules) {
+
+			return expression.stream()
+					.map(it -> AllowedDependencies.of(source, it, modules))
+					.reduce(AllowedDependencies.NONE, AllowedDependencies::and);
+		}
+
+		/**
+		 * Creates a new {@link AllowedDependencies} to the unnamed interface of each of the given
+		 * {@link ApplicationModule}s.
+		 *
+		 * @param modules must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 2.2
+		 */
+		private static AllowedDependencies to(Stream<ApplicationModule> modules) {
+			return AllowedDependencies.closed(modules.map(AllowedDependency::to).toList());
 		}
 
 		/**
@@ -1154,6 +1245,60 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		 */
 		public Stream<AllowedDependency> stream() {
 			return dependencies.stream();
+		}
+
+		/**
+		 * Creates a new {@link AllowedDependencies} adding the given {@link AllowedDependency} instance unless they're
+		 * already present.
+		 *
+		 * @param others must not be {@literal null}.
+		 * @return will never be {@literal null}.
+		 * @since 2.2
+		 */
+		public AllowedDependencies and(Iterable<AllowedDependency> others) {
+
+			Assert.notNull(others, "AllowedDependencies must not be null!");
+
+			var result = new ArrayList<>(dependencies);
+
+			for (var dependency : others) {
+				if (!result.contains(dependency)) {
+					result.add(dependency);
+				}
+			}
+
+			return AllowedDependencies.closed(result);
+		}
+
+		/**
+		 * Returns all {@link NamedInterfaces} targeted by the {@link AllowedDependency} instances.
+		 *
+		 * @return will never be {@literal null}.
+		 * @since 2.2
+		 */
+		NamedInterfaces getTargetNamedInterfaces() {
+
+			return dependencies.stream()
+					.map(it -> it.getTargetNamedInterface())
+					.collect(NamedInterfaces.collector());
+		}
+
+		/**
+		 * Returns whether the {@link AllowedDependency} instances refer to exactly the given {@link NamedInterface}s of the
+		 * given {@link ApplicationModule}, i.e. there is a dependency for each of them and no dependency refers to anything
+		 * else.
+		 *
+		 * @param module must not be {@literal null}.
+		 * @param namedInterfaces must not be {@literal null}.
+		 * @since 2.2
+		 */
+		boolean referTo(ApplicationModule module, NamedInterfaces namedInterfaces) {
+
+			Assert.notNull(module, "ApplicationModule must not be null!");
+			Assert.notNull(namedInterfaces, "NamedInterfaces must not be null!");
+
+			return dependencies.stream().allMatch(it -> it.refersTo(module))
+					&& getTargetNamedInterfaces().equals(namedInterfaces);
 		}
 
 		/**

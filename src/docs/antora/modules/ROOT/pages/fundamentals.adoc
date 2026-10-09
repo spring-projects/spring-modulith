@@ -412,6 +412,40 @@ class ModuleMetadata {}
 ----
 ======
 
+Note that the asterisk does *not* cover the application module's base package.
+To allow access to everything an application module exposes -- its base package *and* all explicitly declared named interfaces -- use a double asterisk (``**``):
+
+.Using the double asterisk to declare allowed dependencies to everything a module exposes
+[tabs]
+======
+Java::
++
+[source, java, role="primary", chomp="none"]
+----
+@org.springframework.modulith.ApplicationModule(
+  allowedDependencies = "order :: **"
+)
+package example.inventory;
+----
+Kotlin::
++
+[source, kotlin, role="secondary", chomp="none"]
+----
+package example.inventory
+
+import org.springframework.modulith.ApplicationModule
+import org.springframework.modulith.PackageInfo
+
+@ApplicationModule(
+  allowedDependencies = "order :: **"
+)
+@PackageInfo
+class ModuleMetadata {}
+----
+======
+
+This is equivalent to declaring `{ "order", "order :: *" }`.
+
 If you require more generic control about the named interfaces of an application module, check out xref:fundamentals.adoc#customizing-named-interfaces[the customization section]. 
 
 [[customizing-modules-arrangement]]
