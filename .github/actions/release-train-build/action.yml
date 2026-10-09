@@ -1,0 +1,7 @@
+name: Build Release
+runs:
+  using: composite
+  steps:
+    - name: Build Release
+      shell: bash
+      run:  ./mvnw --batch-mode --settings release-train-settings.xml clean deploy --activate-profiles releaseTrain,ci -DaltDeploymentRepository="release-train::file://$(pwd)/deployment-repository" -DskipTests
