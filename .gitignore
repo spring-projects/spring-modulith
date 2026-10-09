@@ -1,5 +1,6 @@
 target/
 .idea/
+.vscode/
 .flattened-pom.xml
 .settings/
 *.iml
