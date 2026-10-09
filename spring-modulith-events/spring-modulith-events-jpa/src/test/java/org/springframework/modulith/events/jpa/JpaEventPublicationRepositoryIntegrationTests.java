@@ -520,19 +520,6 @@ class JpaEventPublicationRepositoryIntegrationTests {
 					.containsExactly(publication.getIdentifier());
 		}
 
-		@Test // GH-1908
-		void doesNotLookUpFailedPublicationPublishedAfterReferenceDate() {
-
-			var publication = createPublication(new TestEvent("first"));
-
-			repository.markFailed(publication.getIdentifier());
-
-			var criteria = FailedCriteria.ALL
-					.withPublicationsPublishedBefore(publication.getPublicationDate().minusMillis(50));
-
-			assertThat(repository.findFailedPublications(criteria)).isEmpty();
-		}
-
 		@Test // GH-1683
 		void exposesPersistedStatusOnReload() {
 
@@ -657,6 +644,19 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			em.clear();
 
 			assertThat(repository.findByStatus(Status.FAILED)).isEmpty();
+		}
+
+		@Test // GH-1908
+		void doesNotLookUpFailedPublicationPublishedAfterReferenceDate() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			var criteria = FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().minusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria)).isEmpty();
 		}
 
 		/**

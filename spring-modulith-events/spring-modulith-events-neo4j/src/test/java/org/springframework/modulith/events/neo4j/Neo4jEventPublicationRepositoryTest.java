@@ -449,19 +449,6 @@ class Neo4jEventPublicationRepositoryTest {
 					.containsExactly(publication.getIdentifier());
 		}
 
-		@Test // GH-1908
-		void doesNotLookUpFailedPublicationPublishedAfterReferenceDate() {
-
-			var publication = createPublication(new TestEvent("first"));
-
-			repository.markFailed(publication.getIdentifier());
-
-			var criteria = EventPublicationRepository.FailedCriteria.ALL
-					.withPublicationsPublishedBefore(publication.getPublicationDate().minusMillis(50));
-
-			assertThat(repository.findFailedPublications(criteria)).isEmpty();
-		}
-
 		@Test // GH-1764
 		void marksPublicationAsAbandoned() {
 
@@ -613,6 +600,19 @@ class Neo4jEventPublicationRepositoryTest {
 			repository.markFailed(publication.getIdentifier());
 
 			assertThat(repository.findByStatus(EventPublication.Status.FAILED)).isEmpty();
+		}
+
+		@Test // GH-1908
+		void doesNotLookUpFailedPublicationPublishedAfterReferenceDate() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			var criteria = EventPublicationRepository.FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().minusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria)).isEmpty();
 		}
 
 		/**
