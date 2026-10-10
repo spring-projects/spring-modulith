@@ -17,9 +17,13 @@ package org.springframework.modulith.docs;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.core.SpringBean;
 import org.springframework.modulith.docs.Documenter.CanvasOptions;
@@ -65,6 +69,17 @@ class DocumenterUnitTests {
 				.extracting(it -> it.getType()) //
 				.extracting(JavaClass::getSimpleName) //
 				.containsOnly("SomeEventListener", "SomeTxEventListener");
+	}
+
+	@Test
+	void includesModulesWithoutRelationships(@TempDir Path outputFolder) throws IOException {
+
+		var modules = ApplicationModules.of(Application.class);
+		var options = Documenter.Options.defaults().withOutputFolder(outputFolder.toString());
+
+		new Documenter(modules, options).writeModulesAsPlantUml();
+
+		assertThat(Files.readString(outputFolder.resolve("components.puml"))).contains("emptydiagram");
 	}
 
 	@Test
