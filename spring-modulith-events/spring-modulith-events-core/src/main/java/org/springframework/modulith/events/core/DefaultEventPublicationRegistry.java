@@ -142,7 +142,7 @@ public class DefaultEventPublicationRegistry
 	 * @see org.springframework.modulith.events.EventPublicationRegistry#markCompleted(java.lang.Object, org.springframework.modulith.events.PublicationTargetIdentifier)
 	 */
 	@Override
-	@Transactional(propagation = Propagation.REQUIRES_NEW)
+	@Transactional(propagation = Propagation.REQUIRED)
 	public void markCompleted(Object event, PublicationTargetIdentifier targetIdentifier) {
 
 		Assert.notNull(event, "Domain event must not be null!");

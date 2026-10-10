@@ -33,6 +33,11 @@ import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * Fundamental configuration for the {@link EventPublicationRegistry} support.
@@ -83,8 +88,13 @@ class EventPublicationConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry,
-			ObjectFactory<Environment> environment) {
+			ObjectFactory<Environment> environment, ObjectFactory<PlatformTransactionManager> transactionManager) {
+
+		var definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+		var template = SingletonSupplier
+				.of(() -> new TransactionTemplate(transactionManager.getObject(), definition));
+
 		return new CompletionRegisteringAdvisor(registry::getObject,
-				EventListenerMethodMetadata.of(environment::getObject));
+				EventListenerMethodMetadata.of(environment::getObject), template);
 	}
 }

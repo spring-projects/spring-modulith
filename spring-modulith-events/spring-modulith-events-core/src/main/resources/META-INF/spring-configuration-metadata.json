@@ -32,6 +32,12 @@
 			"defaultValue": "update"
 		},
 		{
+			"name": "spring.modulith.events.completion",
+			"type": "org.springframework.modulith.events.support.CompletionTiming",
+			"description": "When to complete event publications for transactional listeners. 'in-listener' completes right before the listener's transaction commits, 'in-interceptor' completes after the listener (and its transaction) has finished.",
+			"defaultValue": "in-listener"
+		},
+		{
 			"name": "spring.modulith.events.registry-trigger-annotation",
 			"type": "java.lang.String",
 			"description": "Which annotation to trigger an entry in the Event Publication Registry. Nothing configured will use everything (meta-) annotated with @TransactionalEventListener."

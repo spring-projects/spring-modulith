@@ -119,6 +119,12 @@ The following values are supported:
 |`true`
 |Whether to enable JSON support for `RabbitTemplate`.
 
+|`spring.modulith.events.completion`
+|`in-listener`
+|When to complete event publications for transactional listeners.
+`in-listener` marks the publication completed right before the listener's transaction commits, so that completion is atomic with the listener's work.
+`in-interceptor` completes it in a separate transaction after the listener has finished.
+
 |`spring.modulith.events.registry-trigger-annotation`
 |
 |The fully-qualified class name of an annotation that is supposed to trigger an entry in the Event Publication Registry.

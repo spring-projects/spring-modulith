@@ -45,13 +45,17 @@ import org.springframework.modulith.events.core.AbandonPolicies;
 import org.springframework.modulith.events.core.DefaultAbandonedEventPublications;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
 import org.springframework.modulith.events.core.DefaultFailedEventPublications;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
+import org.springframework.modulith.events.support.CompletionRegisteringBeanPostProcessor;
+import org.springframework.modulith.events.support.CompletionTiming;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
 import org.springframework.scheduling.annotation.AbstractAsyncConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.transaction.PlatformTransactionManager;
 
 /**
  * Fundamental configuration for the {@link EventPublicationRegistry} support.
@@ -86,7 +90,8 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnMissingBean(AbandonPolicies.class)
-	static AbandonPolicies abandonPolicies(ObjectProvider<AbandonPolicy> userPolicies, ResubmissionProperties properties) {
+	static AbandonPolicies abandonPolicies(ObjectProvider<AbandonPolicy> userPolicies,
+			ResubmissionProperties properties) {
 
 		return new AbandonPolicies(userPolicies.orderedStream().toList(), properties::shouldAbandon);
 	}
@@ -114,8 +119,20 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRegistry.class)
 	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry,
-			ObjectFactory<Environment> environment) {
-		return EventPublicationConfiguration.completionRegisteringAdvisor(registry, environment);
+			ObjectFactory<Environment> environment, ObjectFactory<PlatformTransactionManager> transactionManager) {
+		return EventPublicationConfiguration.completionRegisteringAdvisor(registry, environment, transactionManager);
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	@ConditionalOnBean(EventPublicationRegistry.class)
+	@ConditionalOnProperty(name = CompletionTiming.PROPERTY, havingValue = "in-listener", matchIfMissing = true)
+	static CompletionRegisteringBeanPostProcessor completionRegisteringBeanPostProcessor(
+			ObjectFactory<EventPublicationRegistry> registry, ObjectFactory<Environment> environment) {
+
+		var metadata = EventListenerMethodMetadata.of(environment::getObject);
+
+		return new CompletionRegisteringBeanPostProcessor(registry::getObject, metadata);
 	}
 
 	@Bean
