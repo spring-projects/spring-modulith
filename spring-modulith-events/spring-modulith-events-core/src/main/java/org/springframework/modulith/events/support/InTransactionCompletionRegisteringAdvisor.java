@@ -35,7 +35,6 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  * @since 2.2
- * @see TransactionalCompletionRegisteringInterceptor
  */
 class InTransactionCompletionRegisteringAdvisor extends AbstractCompletionRegisteringAdvisor {
 

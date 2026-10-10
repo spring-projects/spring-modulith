@@ -33,8 +33,9 @@ import org.springframework.transaction.support.TransactionOperations;
 import org.springframework.util.Assert;
 
 /**
- * An {@link org.springframework.aop.Advisor} to decorate {@link TransactionalEventListener} annotated methods to mark
- * the previously registered event publications as completed on successful method execution.
+ * An {@link org.springframework.aop.Advisor} to decorate
+ * {@link org.springframework.transaction.event.TransactionalEventListener} annotated methods to mark the previously
+ * registered event publications as completed on successful method execution.
  *
  * @author Oliver Drotbohm
  */
@@ -44,8 +45,8 @@ public class CompletionRegisteringAdvisor extends AbstractCompletionRegisteringA
 
 	/**
 	 * Creates a new {@link CompletionRegisteringAdvisor} for the given {@link EventPublicationRegistry}, decorating all
-	 * {@link TransactionalEventListener} annotated methods, no matter whether they are selected via
-	 * {@code spring.modulith.events.registry-trigger-annotation}.
+	 * {@link org.springframework.transaction.event.TransactionalEventListener} annotated methods, no matter whether they
+	 * are selected via {@code spring.modulith.events.registry-trigger-annotation}.
 	 *
 	 * @param registry must not be {@literal null}.
 	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
