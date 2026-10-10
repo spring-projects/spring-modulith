@@ -818,7 +818,7 @@ public class Documenter {
 
 		/**
 		 * Configuration setting to define whether modules that do not have a relationship to any other module shall be
-		 * retained in the diagrams created. The default is {@link ElementsWithoutRelationships#HIDDEN}. See
+		 * retained in the diagrams created. The default is {@link ElementsWithoutRelationships#VISIBLE}. See
 		 * {@link DiagramOptions#withExclusions(Predicate)} for a more fine-grained way of defining which modules to exclude
 		 * in case you flip this to {@link ElementsWithoutRelationships#VISIBLE}.
 		 *
@@ -859,7 +859,7 @@ public class Documenter {
 		public static DiagramOptions defaults() {
 			return new DiagramOptions(ALL_TYPES, DependencyDepth.IMMEDIATE, it -> false, it -> true, it -> false, null,
 					__ -> Optional.empty(), it -> it.getDisplayName(), DiagramStyle.C4,
-					ElementsWithoutRelationships.HIDDEN, new LinkedHashMap<>());
+					ElementsWithoutRelationships.VISIBLE, new LinkedHashMap<>());
 		}
 
 		/**
