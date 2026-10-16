@@ -1,9 +1,10 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>org.springframework.modulith</groupId>
 	<artifactId>spring-modulith</artifactId>
-	<version>2.0.9-SNAPSHOT</version>
+	<version>2.0.9</version>
 
 	<packaging>pom</packaging>
 
@@ -44,7 +45,7 @@
 		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
 		<nullaway.version>0.13.8</nullaway.version>
 		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
-		<project.build.outputTimestamp>2023-08-21T15:59:00Z</project.build.outputTimestamp>
+		<project.build.outputTimestamp>2026-10-22T00:00:00Z</project.build.outputTimestamp>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>4.0.9</spring-boot.version>
@@ -717,20 +718,8 @@ limitations under the License.
 	</scm>
 
 	<repositories>
-		<repository>
-			<id>spring-snapshot</id>
-			<url>https://repo.spring.io/snapshot</url>
-			<releases>
-				<enabled>false</enabled>
-			</releases>
-		</repository>
-		<repository>
-			<id>spring-milestone</id>
-			<url>https://repo.spring.io/milestone</url>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>
+		
+		
 	</repositories>
 
 </project>
