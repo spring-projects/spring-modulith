@@ -27,6 +27,7 @@ import io.micrometer.observation.ObservationRegistry;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import org.junit.jupiter.api.Test;
@@ -126,20 +127,22 @@ class ModuleObservabilityContextIntegrationTests {
 
 		var handler = new RecordingHandler();
 		var registry = registry(handler);
-		@SuppressWarnings("unchecked")
-		Supplier<ObservationRegistry> supplier = mock(Supplier.class);
-		when(supplier.get()).thenReturn(registry);
+		var lookups = new AtomicInteger();
+		Supplier<ObservationRegistry> supplier = () -> {
+			lookups.incrementAndGet();
+			return registry;
+		};
 
 		try (var context = context("rest", registry, supplier)) {
 
-			clearInvocations(supplier);
+			lookups.set(0);
 
 			var controller = context.getBean(SampleController.class);
 			controller.invoke(resourceInformation(), () -> {});
 			controller.invoke(resourceInformation(), () -> {});
 
 			assertThat(handler.observations).hasSize(2);
-			verify(supplier).get();
+			assertThat(lookups.get()).isOne();
 		}
 	}
 
