@@ -136,6 +136,20 @@ class DefaultEventPublicationRegistryUnitTests {
 		verify(repository).findFailedPublications(argThat(criteria -> criteria.getMaxItemsToRead() == 50));
 	}
 
+	@Test // GH-1971
+	void claimsFailedPublicationsForResubmissionOnlyIfStillFailed() {
+
+		var identifier = UUID.randomUUID();
+		var publication = mock(TargetEventPublication.class);
+		when(publication.getIdentifier()).thenReturn(identifier);
+
+		when(repository.findFailedPublications(any())).thenReturn(List.of(publication));
+
+		createRegistry(Instant.now()).processFailedPublications(ResubmissionOptions.defaults(), __ -> {});
+
+		verify(repository).markResubmitted(eq(identifier), any(), eq(Status.FAILED));
+	}
+
 	@Test // GH-1764
 	void marksPublicationAsAbandonedWhenAbandonPolicyApplies() {
 
