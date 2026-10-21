@@ -22,6 +22,7 @@ import static org.mockito.Mockito.*;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -695,6 +696,41 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 			assertThat(repository.findFailedPublications(criteria)).isEmpty();
 		}
 
+		@Test // GH-1392
+		void doesNotCompleteAbandonedPublication() {
+
+			var publication = createPublication(new TestEvent("abandoned"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void doesNotAbandonCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), null)).isFalse();
+			assertThat(repository.findAbandonedPublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void abandonsFailedPublicationWithCompletionDate() {
+
+			var publication = createPublication(new TestEvent("failed"));
+
+			setFailedWithCompletionDate(publication);
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+		}
+
 		/**
 		 * Simulates a publication persisted by a schema version that predates the {@code STATUS} column, i.e. one for
 		 * which the column was never backfilled and is {@literal null} rather than defaulted.
@@ -704,6 +740,18 @@ class JdbcEventPublicationRepositoryV2IntegrationTests {
 			var id = properties.getDatabaseType().uuidToDatabase(publication.getIdentifier());
 
 			operations.update("UPDATE " + table() + " SET STATUS = NULL WHERE ID = ?", id);
+		}
+
+		/**
+		 * Simulates a publication that an older version marked as failed after it had been completed, i.e. one that is
+		 * {@link Status#FAILED} but has a completion date (see GH-1925).
+		 */
+		private void setFailedWithCompletionDate(TargetEventPublication publication) {
+
+			var id = properties.getDatabaseType().uuidToDatabase(publication.getIdentifier());
+
+			operations.update("UPDATE " + table() + " SET STATUS = 'FAILED', COMPLETION_DATE = ? WHERE ID = ?",
+					Timestamp.from(Instant.now()), id);
 		}
 
 		private void assertOneByStatus(Status reference) {

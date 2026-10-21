@@ -114,6 +114,8 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 				""".formatted(table, status.name(), status.name()));
 	}
 
+	private static final String COMPLETION_DATE_UNSET = " AND COMPLETION_DATE IS NULL";
+
 	private static final String SQL_STATEMENT_UPDATE_BY_ID = """
 			UPDATE %s
 			SET
@@ -250,7 +252,8 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 		this.sqlStatementFindUncompletedBefore = asOneLine(SQL_STATEMENT_FIND_INCOMPLETE_PUBLISHED_BEFORE.formatted(table));
 		this.sqlStatementUpdateByEventAndListenerId = asOneLine(
 				SQL_STATEMENT_UPDATE_BY_EVENT_AND_LISTENER_ID.formatted(table));
-		this.sqlStatementUpdateById = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table, Status.COMPLETED.name()));
+		this.sqlStatementUpdateById = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table, Status.COMPLETED.name()))
+				+ COMPLETION_DATE_UNSET;
 		this.sqlStatementUpdateByIdAbandoned = asOneLine(SQL_STATEMENT_UPDATE_BY_ID.formatted(table, Status.ABANDONED.name()));
 		this.sqlStatementFindByEventAndListenerId = asOneLine(SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID.formatted(table));
 		this.sqlStatementDelete = asOneLine(SQL_STATEMENT_DELETE.formatted(table));
@@ -391,7 +394,9 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 
 		} else {
 
-			return operations.update(sqlStatementUpdateByIdAbandoned + guard, timestamp, databaseId) > 0;
+			var statement = sqlStatementUpdateByIdAbandoned + (expectedCurrentStatus == null ? COMPLETION_DATE_UNSET : guard);
+
+			return operations.update(statement, timestamp, databaseId) > 0;
 		}
 	}
 
