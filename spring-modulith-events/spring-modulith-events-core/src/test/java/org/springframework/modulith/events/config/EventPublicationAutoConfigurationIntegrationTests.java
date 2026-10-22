@@ -17,15 +17,21 @@ package org.springframework.modulith.events.config;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
+import static org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration.*;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.EnabledForJreRange;
+import org.junit.jupiter.api.condition.JRE;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,13 +39,18 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutdown;
+import org.springframework.boot.task.ThreadPoolTaskExecutorCustomizer;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
 import org.springframework.context.annotation.AdviceMode;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
+import org.springframework.core.task.SyncTaskExecutor;
+import org.springframework.core.task.TaskExecutor;
 import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.AbandonPolicy.Decision;
 import org.springframework.modulith.events.AbandonedEventPublications;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.CompletedEventPublications;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.FailedEventPublications;
@@ -52,6 +63,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.ProxyAsyncConfiguration;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.aspectj.AspectJAsyncConfiguration;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.test.util.ReflectionTestUtils;
 
 /**
@@ -263,6 +275,87 @@ class EventPublicationAutoConfigurationIntegrationTests {
 				});
 	}
 
+	@Test // GH-641
+	void registersDedicatedTaskExecutorForApplicationModuleListeners() {
+
+		basicSetup().run(context -> {
+
+			assertThat(context.getBean(ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME))
+					.isInstanceOf(ThreadPoolTaskExecutor.class);
+
+			// By-type lookups still resolve Boot's application task executor
+			assertThat(context.getBean(TaskExecutor.class))
+					.isSameAs(context.getBean(APPLICATION_TASK_EXECUTOR_BEAN_NAME));
+		});
+	}
+
+	@Test // GH-641
+	@EnabledForJreRange(min = JRE.JAVA_21)
+	void registersVirtualThreadTaskExecutorForApplicationModuleListenersIfEnabled() {
+
+		basicSetup()
+				.withPropertyValues("spring.threads.virtual.enabled=true")
+				.run(context -> {
+
+					var executor = context.getBean(ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME,
+							SimpleAsyncTaskExecutor.class);
+					var thread = new CompletableFuture<Thread>();
+
+					executor.execute(() -> thread.complete(Thread.currentThread()));
+
+					assertThat(thread.get(5, TimeUnit.SECONDS)).extracting("virtual").isEqualTo(true);
+				});
+	}
+
+	@Test // GH-641
+	void usesCustomTaskExecutorForApplicationModuleListenersIfDeclared() {
+
+		var executor = new SyncTaskExecutor();
+
+		basicSetup()
+				.withBean(ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME, Executor.class, () -> executor)
+				.run(context -> {
+					assertThat(context.getBean(ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME)).isSameAs(executor);
+				});
+	}
+
+	@Test // GH-641
+	void appliesTaskExecutorCustomizersToApplicationModuleListenerTaskExecutor() {
+
+		ThreadPoolTaskExecutorCustomizer customizer = it -> it.setThreadNamePrefix("customized-");
+
+		basicSetup()
+				.withBean(ThreadPoolTaskExecutorCustomizer.class, () -> customizer)
+				.run(context -> {
+
+					var executor = context.getBean(ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME,
+							ThreadPoolTaskExecutor.class);
+
+					assertThat(executor.getThreadNamePrefix()).isEqualTo("customized-");
+				});
+	}
+
+	@Test // GH-641
+	void runsApplicationModuleListenersOnDedicatedTaskExecutor() {
+
+		basicSetup()
+				.withBean(SampleListener.class)
+				.run(context -> {
+
+					var thread = new CompletableFuture<Thread>();
+
+					context.getBean(SampleListener.class).on(thread);
+
+					assertThat(thread.get(5, TimeUnit.SECONDS)).isNotSameAs(Thread.currentThread());
+					assertThat(taskCount(context, ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME)).isOne();
+					assertThat(taskCount(context, APPLICATION_TASK_EXECUTOR_BEAN_NAME)).isZero();
+				});
+	}
+
+	private static long taskCount(AssertableApplicationContext context, String executorName) {
+		return context.getBean(executorName, ThreadPoolTaskExecutor.class).getThreadPoolExecutor().getTaskCount();
+	}
+
 	private static <T> ContextConsumer<AssertableApplicationContext> expect(Function<Shutdown, T> extractor,
 			@Nullable T expected) {
 
@@ -281,4 +374,12 @@ class EventPublicationAutoConfigurationIntegrationTests {
 
 	@EnableAsync(mode = AdviceMode.ASPECTJ)
 	static class CustomAsyncConfiguration {}
+
+	static class SampleListener {
+
+		@ApplicationModuleListener
+		void on(CompletableFuture<Thread> thread) {
+			thread.complete(Thread.currentThread());
+		}
+	}
 }
