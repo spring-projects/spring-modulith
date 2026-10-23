@@ -79,7 +79,8 @@ public interface EventPublicationRepository {
 	void markCompleted(Object event, PublicationTargetIdentifier identifier, Instant completionDate);
 
 	/**
-	 * Marks the publication with the given identifier completed at the given {@link Instant}.
+	 * Marks the publication with the given identifier completed at the given {@link Instant}. A publication that has
+	 * already been completed or abandoned is left untouched.
 	 *
 	 * @param identifier must not be {@literal null}.
 	 * @param completionDate must not be {@literal null}.
@@ -123,8 +124,9 @@ public interface EventPublicationRepository {
 	 * completion that might have happened between reading the publication's previous status and applying this
 	 * transition; used when an {@link org.springframework.modulith.events.AbandonPolicy} is applied to a batch of
 	 * previously-read {@link org.springframework.modulith.events.EventPublication.Status#FAILED} publications. Pass
-	 * {@literal null} to apply the transition unconditionally, as is appropriate when the caller itself just drove the
-	 * publication into its current state (e.g. a live completion callback).
+	 * {@literal null} to apply the transition regardless of the current status, as is appropriate when the caller itself
+	 * just drove the publication into its current state (e.g. a live completion callback). A publication that has
+	 * already been completed or abandoned is left untouched in either case, and {@literal false} is returned.
 	 *
 	 * @param identifier must not be {@literal null}.
 	 * @param instant must not be {@literal null}.

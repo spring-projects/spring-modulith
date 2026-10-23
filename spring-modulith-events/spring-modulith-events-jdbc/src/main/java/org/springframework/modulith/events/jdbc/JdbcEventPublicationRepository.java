@@ -99,6 +99,7 @@ class JdbcEventPublicationRepository implements EventPublicationRepository, Bean
 			SET COMPLETION_DATE = ?
 			WHERE
 					ID = ?
+					AND COMPLETION_DATE IS NULL
 			""";
 
 	private static final String SQL_STATEMENT_FIND_BY_EVENT_AND_LISTENER_ID = """

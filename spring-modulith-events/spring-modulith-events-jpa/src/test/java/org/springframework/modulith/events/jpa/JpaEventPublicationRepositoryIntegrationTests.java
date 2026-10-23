@@ -60,7 +60,10 @@ import org.springframework.orm.jpa.vendor.AbstractJpaVendorAdapter;
 import org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * @author Oliver Drotbohm
@@ -659,6 +662,95 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			assertThat(repository.findFailedPublications(criteria)).isEmpty();
 		}
 
+		@Test // GH-1392
+		void doesNotFailCompletingArchivedPublicationById() {
+
+			assumeTrue(completionMode == CompletionMode.ARCHIVE);
+
+			var publication = createPublication(new TestEvent("abc"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			em.flush();
+			em.clear();
+
+			assertThatNoException()
+					.isThrownBy(() -> repository.markCompleted(publication.getIdentifier(), Instant.now()));
+			assertThat(repository.findCompletedPublications()).hasSize(1);
+		}
+
+		@Test // GH-1392
+		void doesNotFailCompletingArchivedPublicationByEvent() {
+
+			assumeTrue(completionMode == CompletionMode.ARCHIVE);
+
+			var event = new TestEvent("abc");
+			var publication = createPublication(event);
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			em.flush();
+			em.clear();
+
+			assertThatNoException()
+					.isThrownBy(() -> repository.markCompleted(event, TARGET_IDENTIFIER, Instant.now()));
+			assertThat(repository.findCompletedPublications()).hasSize(1);
+		}
+
+		@Test // GH-1392
+		void completesAllPublicationsMatchingEventAndListener() {
+
+			var event = new TestEvent("abc");
+
+			createPublication(event);
+			createPublication(event);
+
+			repository.markCompleted(event, TARGET_IDENTIFIER, Instant.now());
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void doesNotCompleteAbandonedPublication() {
+
+			var publication = createPublication(new TestEvent("abc"));
+
+			repository.markFailed(publication.getIdentifier());
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+			em.flush();
+			em.clear();
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			em.flush();
+			em.clear();
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void doesNotAbandonCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("abc"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), null)).isFalse();
+			assertThat(repository.findAbandonedPublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void abandonsFailedPublicationWithCompletionDate() {
+
+			var publication = createPublication(new TestEvent("abc"));
+
+			setFailedWithCompletionDate(publication);
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+		}
+
 		/**
 		 * Simulates a publication persisted by a schema version that predates the {@code status} column, i.e. one for
 		 * which the column was never backfilled and is {@literal null} rather than defaulted.
@@ -669,6 +761,21 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			new JdbcTemplate(dataSource)
 					.update("update event_publication set status = null where id = ?", publication.getIdentifier());
+
+			em.clear();
+		}
+
+		/**
+		 * Simulates a publication that an older version marked as failed after it had been completed, i.e. one that is
+		 * {@link Status#FAILED} but has a completion date (see GH-1925).
+		 */
+		private void setFailedWithCompletionDate(TargetEventPublication publication) {
+
+			em.createQuery("update DefaultJpaEventPublication p set p.status = ?1, p.completionDate = ?2 where p.id = ?3")
+					.setParameter(1, Status.FAILED)
+					.setParameter(2, Instant.now())
+					.setParameter(3, publication.getIdentifier())
+					.executeUpdate();
 
 			em.clear();
 		}
@@ -722,6 +829,89 @@ class JpaEventPublicationRepositoryIntegrationTests {
 	@Nested
 	@TestPropertySource(properties = CompletionMode.PROPERTY + "=ARCHIVE")
 	class WithArchiveCompletionTests extends TestBase {}
+
+	@Nested
+	@SpringBootTest
+	@ContextConfiguration(classes = TestConfig.class)
+	@TestPropertySource(properties = CompletionMode.PROPERTY + "=ARCHIVE")
+	class WithConcurrentArchiveCompletionTests {
+
+		@Autowired JpaEventPublicationRepository repository;
+		@Autowired TestEventSerializer serializer;
+		@Autowired PlatformTransactionManager transactionManager;
+		@Autowired EntityManager em;
+
+		@AfterEach
+		void cleanUp() {
+
+			transaction().executeWithoutResult(__ -> {
+				em.createQuery("delete from DefaultJpaEventPublication").executeUpdate();
+				em.createQuery("delete from ArchivedJpaEventPublication").executeUpdate();
+			});
+		}
+
+		@Test // GH-1392
+		void doesNotFailCompletingPublicationArchivedByConcurrentTransaction() {
+
+			var event = serializer.registerSerialization(new TestBase.TestEvent("abc"));
+			var identifier = transaction()
+					.execute(__ -> repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER)).getIdentifier());
+
+			var concurrent = transaction();
+			concurrent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+			assertThatNoException().isThrownBy(() -> transaction().executeWithoutResult(__ -> {
+
+				// Loads the publication into this transaction's persistence context…
+				assertThat(repository.findIncompletePublications()).hasSize(1);
+
+				// …before a concurrent transaction completes and archives it.
+				concurrent.executeWithoutResult(___ -> repository.markCompleted(identifier, Instant.now()));
+
+				repository.markCompleted(identifier, Instant.now());
+			}));
+
+			List<TargetEventPublication> completed = transaction().execute(__ -> repository.findCompletedPublications());
+
+			assertThat(completed).hasSize(1);
+		}
+
+		@Test // GH-1392
+		void doesNotAbandonPublicationArchivedByConcurrentCompletion() {
+
+			var event = serializer.registerSerialization(new TestBase.TestEvent("abc"));
+			var identifier = transaction().execute(__ -> {
+
+				var id = repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER)).getIdentifier();
+				repository.markFailed(id);
+
+				return id;
+			});
+
+			var concurrent = transaction();
+			concurrent.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+
+			Boolean abandoned = transaction().execute(__ -> {
+
+				// Loads the failed publication into this transaction's persistence context…
+				assertThat(repository.findIncompletePublications()).hasSize(1);
+
+				// …before a concurrent transaction completes and archives it.
+				concurrent.executeWithoutResult(___ -> repository.markCompleted(identifier, Instant.now()));
+
+				return repository.markAbandoned(identifier, Instant.now(), Status.FAILED);
+			});
+
+			List<TargetEventPublication> completed = transaction().execute(__ -> repository.findCompletedPublications());
+
+			assertThat(abandoned).isFalse();
+			assertThat(completed).hasSize(1);
+		}
+
+		private TransactionTemplate transaction() {
+			return new TransactionTemplate(transactionManager);
+		}
+	}
 
 	private static class TestEventSerializer implements EventSerializer {
 

@@ -230,12 +230,14 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	private static final Function<Node, Statement> COMPLETE_BY_ID_STATEMENT = node -> match(node)
 			.where(node.property(ID).eq(parameter(ID)))
+			.and(node.property(COMPLETION_DATE).isNull())
 			.set(node.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 			.set(node.property(STATUS).to(literalOf(Status.COMPLETED.name())))
 			.build();
 
 	private static final Function<Node, Statement> ABANDON_BY_ID_STATEMENT = node -> match(node)
 			.where(node.property(ID).eq(parameter(ID)))
+			.and(node.property(COMPLETION_DATE).isNull())
 			.set(node.property(COMPLETION_DATE).to(parameter(COMPLETION_DATE)))
 			.set(node.property(STATUS).to(literalOf(Status.ABANDONED.name())))
 			.build();
@@ -441,8 +443,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 		if (completionMode == CompletionMode.DELETE) {
 
 			if (expectedCurrentStatus == null) {
-				deletePublications(List.of(identifier));
-				return true;
+				return delete(List.of(identifier)) > 0;
 			}
 
 			var result = neo4jClient.query(renderer.render(deleteByIdStatement(EVENT_PUBLICATION_NODE, expectedCurrentStatus)))
@@ -566,10 +567,16 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	@Override
 	@Transactional
 	public void deletePublications(List<UUID> identifiers) {
+		delete(identifiers);
+	}
 
-		neo4jClient.query(renderer.render(DELETE_BY_ID_STATEMENT))
+	private int delete(List<UUID> identifiers) {
+
+		return neo4jClient.query(renderer.render(DELETE_BY_ID_STATEMENT))
 				.bind(identifiers.stream().map(UUID::toString).toList()).to(ID)
-				.run();
+				.run()
+				.counters()
+				.nodesDeleted();
 	}
 
 	/*

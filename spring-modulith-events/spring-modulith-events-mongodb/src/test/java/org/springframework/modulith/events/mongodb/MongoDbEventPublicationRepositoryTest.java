@@ -674,6 +674,31 @@ class MongoDbEventPublicationRepositoryTest {
 			assertThat(repository.findFailedPublications(criteria)).isEmpty();
 		}
 
+		@Test // GH-1392
+		void doesNotCompleteAbandonedPublication() {
+
+			var publication = createPublication(new TestEvent("abandoned"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void doesNotAbandonCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), null)).isFalse();
+			assertThat(repository.findAbandonedPublications()).isEmpty();
+		}
+
 		private TargetEventPublication createPublication(Object event) {
 			return createPublication(event, TARGET_IDENTIFIER);
 		}
