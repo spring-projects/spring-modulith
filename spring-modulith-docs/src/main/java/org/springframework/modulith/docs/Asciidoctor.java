@@ -15,8 +15,17 @@
  */
 package org.springframework.modulith.docs;
 
-import static java.util.stream.Collectors.*;
-import static org.springframework.util.ClassUtils.*;
+import com.tngtech.archunit.core.domain.JavaClass;
+import com.tngtech.archunit.core.domain.JavaModifier;
+import org.jspecify.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.modulith.core.*;
+import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
+import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
+import org.springframework.modulith.docs.Documenter.CanvasOptions;
+import org.springframework.util.Assert;
+import org.springframework.util.StringUtils;
 
 import java.util.Collection;
 import java.util.List;
@@ -25,26 +34,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
-import org.jspecify.annotations.Nullable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.modulith.core.ApplicationModule;
-import org.springframework.modulith.core.ApplicationModuleDependency;
-import org.springframework.modulith.core.ApplicationModules;
-import org.springframework.modulith.core.ArchitecturallyEvidentType;
-import org.springframework.modulith.core.ArchitecturallyEvidentType.ReferenceMethod;
-import org.springframework.modulith.core.DependencyType;
-import org.springframework.modulith.core.EventType;
-import org.springframework.modulith.core.FormattableType;
-import org.springframework.modulith.core.Source;
-import org.springframework.modulith.core.SpringBean;
-import org.springframework.modulith.docs.ConfigurationProperties.ModuleProperty;
-import org.springframework.modulith.docs.Documenter.CanvasOptions;
-import org.springframework.util.Assert;
-import org.springframework.util.StringUtils;
-
-import com.tngtech.archunit.core.domain.JavaClass;
-import com.tngtech.archunit.core.domain.JavaModifier;
+import static java.util.stream.Collectors.joining;
+import static org.springframework.util.ClassUtils.convertClassNameToResourcePath;
 
 /**
  * @author Oliver Drotbohm
@@ -56,11 +47,9 @@ class Asciidoctor {
 	private static final Pattern LINE_BREAKS = Pattern.compile("\\<\\s*br\\s*\\>");
 	private static final Logger LOG = LoggerFactory.getLogger(Asciidoctor.class);
 
-	private static final Optional<DocumentationSource> DOC_SOURCE = getSpringModulithDocsSource();
-
 	private final ApplicationModules modules;
 	private final String javaDocBase;
-	private final Optional<DocumentationSource> docSource;
+	private final DocumentationSource docSource;
 
 	private Asciidoctor(ApplicationModules modules, String javaDocBase) {
 
@@ -69,13 +58,15 @@ class Asciidoctor {
 
 		this.javaDocBase = javaDocBase;
 		this.modules = modules;
-		this.docSource = DOC_SOURCE.map(it -> new CodeReplacingDocumentationSource(it, this));
+
+		var rawSource = DocumentationSourceLookup.getDocumentationSource();
+		this.docSource = new CodeReplacingDocumentationSource(rawSource, this);
 	}
 
 	/**
 	 * Creates a new {@link Asciidoctor} instance for the given {@link ApplicationModules} and Javadoc base URI.
 	 *
-	 * @param modules must not be {@literal null}.
+	 * @param modules     must not be {@literal null}.
 	 * @param javadocBase can be {@literal null}.
 	 * @return will never be {@literal null}.
 	 */
@@ -103,7 +94,7 @@ class Asciidoctor {
 
 		var parts = source.split("#");
 		var type = parts[0];
-		var methodSignature = parts.length == 2 ? Optional.of(parts[1]) : Optional.<String> empty();
+		var methodSignature = parts.length == 2 ? Optional.of(parts[1]) : Optional.<String>empty();
 
 		if (type.isBlank()) {
 			return methodSignature.map(Asciidoctor::toCode).orElse(source);
@@ -138,7 +129,7 @@ class Asciidoctor {
 
 	private String withDocumentation(String base, JavaClass type) {
 
-		return docSource.flatMap(it -> it.getDocumentation(type))
+		return docSource.getDocumentation(type)
 				.map(it -> base + " -- " + it)
 				.orElse(base);
 	}
@@ -194,7 +185,7 @@ class Asciidoctor {
 				continue;
 			}
 
-			var documentation = docSource.flatMap(it -> it.getDocumentation(eventType.getType()))
+			var documentation = docSource.getDocumentation(eventType.getType())
 					.map(" -- "::concat);
 
 			builder.append("* ")
@@ -333,7 +324,7 @@ class Asciidoctor {
 		var isAsync = it.isAsync() ? "(async) " : "";
 		var indent = "*".repeat(level + 1);
 
-		return docSource.flatMap(source -> source.getDocumentation(method))
+		return docSource.getDocumentation(method)
 				.map(doc -> "%s %s %s-- %s".formatted(indent, toInlineCode(exposedReferenceTypes), isAsync, doc))
 				.orElseGet(() -> "%s %s %s".formatted(indent, toInlineCode(exposedReferenceTypes), isAsync));
 	}
@@ -411,7 +402,7 @@ class Asciidoctor {
 	}
 
 	public String renderModuleDescription(ApplicationModule module) {
-		return docSource.flatMap(it -> it.getDocumentation(module.getBasePackage())).orElse("");
+		return docSource.getDocumentation(module.getBasePackage()).orElse("");
 	}
 
 	public String renderHeadline(int i, String modules) {
@@ -424,16 +415,6 @@ class Asciidoctor {
 
 	public String renderGeneralInclude(String componentsFilename) {
 		return "include::" + componentsFilename + "[]" + System.lineSeparator();
-	}
-
-	private static Optional<DocumentationSource> getSpringModulithDocsSource() {
-
-		return SpringModulithDocumentationSource.getInstance()
-				.map(it -> {
-					LOG.debug("Using Javadoc extracted by Spring Modulith in {}.",
-							SpringModulithDocumentationSource.getMetadataLocation());
-					return it;
-				});
 	}
 
 	private static final String wrap(String source, String chars) {
