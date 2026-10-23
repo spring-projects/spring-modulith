@@ -165,7 +165,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			       p.lastResubmissionDate = ?1
 			 where p.id = ?2
 			   and p.completionDate is null
-			   and (p.status is null or p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED)
+			   and (p.status is null or %s)
 			""";
 
 	private static final String COUNT_BY_STATUS = """
@@ -374,17 +374,24 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
 	 */
 	@Override
-	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+	public boolean markResubmitted(UUID identifier, Instant resubmissionDate, @Nullable Status expectedCurrentStatus) {
 
-		var result = entityManager.createQuery(MARK_RESUBMITTED)
+		var guard = expectedCurrentStatus == null
+				? "p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED"
+				: "p.status = ?3";
+
+		var query = entityManager.createQuery(MARK_RESUBMITTED.formatted(guard))
 				.setParameter(1, resubmissionDate)
-				.setParameter(2, identifier)
-				.executeUpdate();
+				.setParameter(2, identifier);
 
-		return result == 1;
+		if (expectedCurrentStatus != null) {
+			query.setParameter(3, expectedCurrentStatus);
+		}
+
+		return query.executeUpdate() == 1;
 	}
 
 	/*

@@ -101,15 +101,22 @@ public interface EventPublicationRepository {
 	 * Marks the {@link org.springframework.modulith.events.EventPublication} with the given identifier as resubmitted.
 	 * Returns {@literal false} in case the update was not successful, which usually means that the instance identified
 	 * might have been claimed for re-submission by another application instance.
+	 * <p>
+	 * If {@code expectedCurrentStatus} is given, the publication is only claimed if it currently has that status or no
+	 * status at all. This guards against claiming a publication that a concurrent resubmission has claimed and moved on
+	 * (e.g. to {@link org.springframework.modulith.events.EventPublication.Status#PROCESSING}) since it was read; used
+	 * when resubmitting previously-read {@link org.springframework.modulith.events.EventPublication.Status#FAILED}
+	 * publications. Pass {@literal null} to claim any incomplete publication not currently resubmitted.
 	 *
 	 * @param identifier must not be {@literal null}.
 	 * @param resubmissionDate must not be {@literal null}.
+	 * @param expectedCurrentStatus can be {@literal null}.
 	 * @return whether the {@link org.springframework.modulith.events.EventPublication} with the given identifier was
 	 *         marked as resubmitted.
 	 * @since 2.0
 	 * @see org.springframework.modulith.events.EventPublication.Status#RESUBMITTED
 	 */
-	default boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+	default boolean markResubmitted(UUID identifier, Instant resubmissionDate, @Nullable Status expectedCurrentStatus) {
 		return true;
 	}
 
