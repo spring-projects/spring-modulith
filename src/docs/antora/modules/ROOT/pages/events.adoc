@@ -490,7 +490,7 @@ The event externalization performs three steps on each application event publish
 By default, only event types located within a Spring Boot auto-configuration package and annotated with one of the supported `@Externalized` annotations are selected for externalization.
 2. _Preparing the message (optional)_ -- By default, the event is serialized as is by the corresponding broker infrastructure.
 An optional mapping step allows developers to customize or even completely replace the original event with a payload suitable for external parties.
-For Kafka and AMQP, developers can also add headers to the message to be published.
+For Kafka, AMQP and JMS, developers can also add headers to the message to be published.
 3. _Determining a routing target_ -- Message broker clients need a logical target to publish the message to.
 The target usually identifies physical infrastructure (a topic, exchange, or queue depending on the broker) and is often statically derived from the event type.
 Unless defined in the `@Externalized` annotation specifically, Spring Modulith uses the application-local type name as target.
