@@ -279,7 +279,11 @@ If all of `published`, `processing`, and `resubmitted` are zero (default), the S
 The registry lets you work explicitly with failed publications:
 
 * _FailedEventPublications_ (since 2.0) – Use the bean of this type to resubmit only failed publications: `resubmit(ResubmissionOptions)`.
-* _ResubmissionOptions_ – Control how resubmission works: batch size, maximum in-flight, minimum age of the publication, and an optional filter (e.g. by event type or `completionAttempts`). Create with `ResubmissionOptions.defaults()` and customize with `withBatchSize(…)`, `withMinAge(…)`, `withFilter(…)`, etc.
+* _ResubmissionOptions_ – Control how resubmission works: batch size, maximum in-flight, minimum age of the publication, an optional filter (e.g. by event type or `completionAttempts`), and the order in which failed publications are read. Create with `ResubmissionOptions.defaults()` and customize with `withBatchSize(…)`, `withMinAge(…)`, `withFilter(…)`, `withLeastRecentlyAttemptedFirst()`, etc.
+
+Failed publications are read oldest first, so that they are resubmitted in the order they were published.
+The filter only applies to the publications read, so publications that keep failing or that the filter skips stay at the head of the queue and, once they fill a batch, keep all others from being resubmitted.
+If your listeners do not depend on that order, `withLeastRecentlyAttemptedFirst()` reads failed publications in the order of their last resubmission instead, falling back to the publication date for the ones never resubmitted, so that a publication resubmitted and failed again moves to the end of the queue.
 
 Resubmission changes the status from `FAILED` to `RESUBMITTED` and updates the last resubmission date; when a listener is about to run, the publication moves to `PROCESSING` and the completion attempt count is incremented.
 

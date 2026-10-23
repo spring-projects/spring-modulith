@@ -663,9 +663,14 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			parameters.put(PUBLICATION_DATE, Values.value(instant.atOffset(ZoneOffset.UTC)));
 		}
 
+		var publicationDate = EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE);
+		var order = criteria.isLeastRecentlyAttemptedFirst()
+				? coalesce(EVENT_PUBLICATION_NODE.property(LAST_RESUBMISSION_DATE), publicationDate)
+				: publicationDate;
+
 		var limit = criteria.getMaxItemsToRead();
 		var builder = match.returning(EVENT_PUBLICATION_NODE)
-				.orderBy(EVENT_PUBLICATION_NODE.property(PUBLICATION_DATE))
+				.orderBy(order)
 				.ascending();
 
 		var statement = limit != -1 ? builder.limit(limit) : builder;

@@ -254,12 +254,14 @@ public interface EventPublicationRepository {
 
 	static class FailedCriteria {
 
-		public static final FailedCriteria ALL = new FailedCriteria(-1, null);
+		public static final FailedCriteria ALL = new FailedCriteria(-1, null, false);
 
 		private final long maxItemsToRead;
 		private final @Nullable Instant publicationDateReference;
+		private final boolean leastRecentlyAttemptedFirst;
 
-		private FailedCriteria(long maxItemsToRead, @Nullable Instant publicationDateReference) {
+		private FailedCriteria(long maxItemsToRead, @Nullable Instant publicationDateReference,
+				boolean leastRecentlyAttemptedFirst) {
 
 			Assert.isTrue(maxItemsToRead == -1 || maxItemsToRead > 0,
 					() -> "Maximum number of items to read must be -1 (unlimited) or positive, but was: %d!"
@@ -267,6 +269,7 @@ public interface EventPublicationRepository {
 
 			this.maxItemsToRead = maxItemsToRead;
 			this.publicationDateReference = publicationDateReference;
+			this.leastRecentlyAttemptedFirst = leastRecentlyAttemptedFirst;
 		}
 
 		/**
@@ -281,7 +284,7 @@ public interface EventPublicationRepository {
 		}
 
 		public FailedCriteria withPublicationsPublishedBefore(Instant reference) {
-			return new FailedCriteria(maxItemsToRead, reference);
+			return new FailedCriteria(maxItemsToRead, reference, leastRecentlyAttemptedFirst);
 		}
 
 		/**
@@ -299,7 +302,26 @@ public interface EventPublicationRepository {
 		 * @param itemsToRead {@code -1} for no limit, or a positive value
 		 */
 		public FailedCriteria withItemsToRead(long itemsToRead) {
-			return new FailedCriteria(itemsToRead, publicationDateReference);
+			return new FailedCriteria(itemsToRead, publicationDateReference, leastRecentlyAttemptedFirst);
+		}
+
+		/**
+		 * Whether to read the {@link org.springframework.modulith.events.EventPublication}s in the order of their last
+		 * re-submission, falling back to their publication date for the ones never resubmitted, instead of the oldest
+		 * ones first.
+		 *
+		 * @since 2.2
+		 */
+		public boolean isLeastRecentlyAttemptedFirst() {
+			return leastRecentlyAttemptedFirst;
+		}
+
+		/**
+		 * @param leastRecentlyAttemptedFirst whether to read the publications least recently attempted first.
+		 * @since 2.2
+		 */
+		public FailedCriteria withLeastRecentlyAttemptedFirst(boolean leastRecentlyAttemptedFirst) {
+			return new FailedCriteria(maxItemsToRead, publicationDateReference, leastRecentlyAttemptedFirst);
 		}
 	}
 }

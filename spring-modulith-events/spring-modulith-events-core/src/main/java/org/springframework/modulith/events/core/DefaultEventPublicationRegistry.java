@@ -260,7 +260,8 @@ public class DefaultEventPublicationRegistry
 
 		var criteria = FailedCriteria.ALL
 				.withPublicationsPublishedBefore(clock.instant().minus(options.getMinAge()))
-				.withItemsToRead(itemsToRead);
+				.withItemsToRead(itemsToRead)
+				.withLeastRecentlyAttemptedFirst(options.isLeastRecentlyAttemptedFirst());
 
 		processPublications(events.findFailedPublications(criteria), options.getFilter(), consumer);
 	}

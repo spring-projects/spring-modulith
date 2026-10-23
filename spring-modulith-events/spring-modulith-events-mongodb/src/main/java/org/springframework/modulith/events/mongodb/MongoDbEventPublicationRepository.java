@@ -15,10 +15,12 @@
  */
 package org.springframework.modulith.events.mongodb;
 
+import static org.springframework.data.mongodb.core.aggregation.Aggregation.*;
 import static org.springframework.data.mongodb.core.query.Criteria.*;
 import static org.springframework.data.mongodb.core.query.Query.*;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Objects;
@@ -33,6 +35,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.data.mongodb.core.BulkOperations.BulkMode;
 import org.springframework.data.mongodb.core.FindAndModifyOptions;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation;
+import org.springframework.data.mongodb.core.aggregation.ConditionalOperators;
 import org.springframework.data.mongodb.core.aggregation.Fields;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
@@ -63,6 +67,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 	private static final String STATUS = "status";
 	private static final String COMPLETION_ATTEMPTS = "completionAttempts";
 	private static final String LAST_RESUBMISSION_DATE = "lastResubmissionDate";
+	private static final String LAST_ATTEMPT_DATE = "lastAttemptDate";
 
 	private static final Sort DEFAULT_SORT = Sort.by(PUBLICATION_DATE).ascending();
 
@@ -307,6 +312,10 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 			throw new IllegalArgumentException("Number of items to read needs to fit into an integer!");
 		}
 
+		if (criteria.isLeastRecentlyAttemptedFirst()) {
+			return readLeastRecentlyAttemptedFirst(baseCriteria, limit);
+		}
+
 		var query = defaultQuery(baseCriteria);
 
 		return readMapped(limit != -1 ? query.limit((int) limit) : query);
@@ -397,6 +406,28 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 				.map(MongoDbEventPublicationRepository::documentToDomain)
 				.toList();
 
+	}
+
+	private List<TargetEventPublication> readLeastRecentlyAttemptedFirst(Criteria criteria, long limit) {
+
+		var lastAttemptDate = ConditionalOperators.ifNull(LAST_RESUBMISSION_DATE).thenValueOf(PUBLICATION_DATE);
+
+		var operations = new ArrayList<AggregationOperation>(List.of(
+				match(criteria),
+				addFields().addFieldWithValue(LAST_ATTEMPT_DATE, lastAttemptDate).build(),
+				sort(Sort.by(LAST_ATTEMPT_DATE).ascending())));
+
+		if (limit != -1) {
+			operations.add(limit(limit));
+		}
+
+		var aggregation = newAggregation(MongoDbEventPublication.class, operations);
+
+		return mongoTemplate.aggregate(aggregation, collection, MongoDbEventPublication.class)
+				.getMappedResults()
+				.stream()
+				.map(MongoDbEventPublicationRepository::documentToDomain)
+				.toList();
 	}
 
 	private Criteria byEventAndListenerId(Object event, PublicationTargetIdentifier identifier) {
