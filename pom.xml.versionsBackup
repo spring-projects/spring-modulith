@@ -1,0 +1,717 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>org.springframework.modulith</groupId>
+	<artifactId>spring-modulith</artifactId>
+	<version>2.2.0-SNAPSHOT</version>
+
+	<packaging>pom</packaging>
+
+	<name>Spring Modulith</name>
+	<description>Modular monoliths with Spring Boot</description>
+
+	<organization>
+		<name>VMware Inc.</name>
+		<url>https://spring.io</url>
+	</organization>
+
+	<url>https://spring.io/projects/spring-modulith</url>
+
+	<modules>
+		<module>spring-modulith-actuator</module>
+		<module>spring-modulith-api</module>
+		<module>spring-modulith-apt</module>
+		<module>spring-modulith-bom</module>
+		<module>spring-modulith-core</module>
+		<module>spring-modulith-docs</module>
+		<module>spring-modulith-events</module>
+		<module>spring-modulith-junit</module>
+		<module>spring-modulith-moments</module>
+		<module>spring-modulith-observability</module>
+		<module>spring-modulith-runtime</module>
+		<module>spring-modulith-starters</module>
+		<module>spring-modulith-test</module>
+	</modules>
+
+	<properties>
+
+		<aptk.version>0.30.5</aptk.version>
+		<archunit.version>1.5.1</archunit.version>
+		<cute.version>1.9.0</cute.version>
+		<errorprone.version>2.50.0</errorprone.version>
+		<jgit.version>7.8.0.202609011348-r</jgit.version>
+		<jmolecules-bom.version>2025.0.2</jmolecules-bom.version>
+		<jobrunr.version>9.0.1</jobrunr.version>
+		<json-unit-assertj.version>6.3.0</json-unit-assertj.version>
+		<namastack-outbox.version>1.10.1</namastack-outbox.version>
+		<nullaway.version>0.14.2</nullaway.version>
+		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
+		<project.build.outputTimestamp>2026-10-23T06:47:23Z</project.build.outputTimestamp>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<spring-boot.version>4.2.0-RC1</spring-boot.version>
+		<testcontainers.version>2.0.5</testcontainers.version>
+		<structurizr.version>5.0.3</structurizr.version>
+		<micrometer-tracing.version>1.8.0-RC1</micrometer-tracing.version>
+
+	</properties>
+
+	<developers>
+		<developer>
+			<id>odrotbohm</id>
+			<name>Oliver Drotbohm</name>
+			<email>odrotbohm at vmware.com</email>
+			<organization>VMware</organization>
+			<organizationUrl>http://www.spring.io</organizationUrl>
+			<roles>
+				<role>lead</role>
+			</roles>
+		</developer>
+	</developers>
+
+	<licenses>
+		<license>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
+			<comments>
+Copyright 2022-2025 the original author or authors.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	https://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied.
+
+See the License for the specific language governing permissions and
+limitations under the License.
+			</comments>
+		</license>
+	</licenses>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>io.micrometer</groupId>
+				<artifactId>micrometer-tracing-bom</artifactId>
+				<version>${micrometer-tracing.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.springframework.boot</groupId>
+				<artifactId>spring-boot-dependencies</artifactId>
+				<version>${spring-boot.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+			<dependency>
+				<groupId>org.jmolecules</groupId>
+				<artifactId>jmolecules-bom</artifactId>
+				<version>${jmolecules-bom.version}</version>
+				<type>pom</type>
+				<scope>import</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<profiles>
+
+		<profile>
+
+			<id>default</id>
+
+			<activation>
+				<activeByDefault>true</activeByDefault>
+			</activation>
+
+			<modules>
+				<module>spring-modulith-benchmarks</module>
+				<module>spring-modulith-examples</module>
+				<module>spring-modulith-integration-test</module>
+			</modules>
+
+		</profile>
+
+		<!-- Release train profile to make sure the default profile gets deactivated during releases -->
+
+		<profile>
+			<id>releaseTrain</id>
+		</profile>
+
+		<!-- For integration builds against milestones and snapshots -->
+
+		<profile>
+			<id>with-preview-repos</id>
+			<repositories>
+				<repository>
+					<id>spring-milestone</id>
+					<url>https://repo.spring.io/milestone</url>
+					<snapshots>
+						<enabled>false</enabled>
+					</snapshots>
+				</repository>
+				<repository>
+					<id>spring-snapshot</id>
+					<url>https://repo.spring.io/snapshot</url>
+					<releases>
+						<enabled>false</enabled>
+					</releases>
+				</repository>
+			</repositories>
+		</profile>
+
+		<profile>
+
+			<id>prepare-release</id>
+
+			<modules>
+				<module>spring-modulith-benchmarks</module>
+				<module>spring-modulith-distribution</module>
+				<module>spring-modulith-examples</module>
+				<module>spring-modulith-integration-test</module>
+			</modules>
+
+		</profile>
+
+		<profile>
+
+			<id>ci</id>
+
+			<build>
+				<plugins>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>attach-javadocs</id>
+								<goals>
+									<goal>jar</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+
+				</plugins>
+			</build>
+
+		</profile>
+
+		<profile>
+			<id>artifactory</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>deploy-to-artifactory</id>
+								<goals>
+									<goal>publish</goal>
+								</goals>
+								<configuration>
+									<publisher>
+										<contextUrl>https://repo.spring.io</contextUrl>
+										<username>${env.ARTIFACTORY_USERNAME}</username>
+										<password>${env.ARTIFACTORY_PASSWORD}</password>
+										<repoKey>libs-milestone-local</repoKey>
+										<snapshotRepoKey>libs-snapshot-local</snapshotRepoKey>
+									</publisher>
+									<buildInfo>
+										<buildName>CI build for Spring Modulith ${project.version}</buildName>
+									</buildInfo>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+			<id>sonatype</id>
+			<properties>
+				<maven.test.skip>true</maven.test.skip>
+			</properties>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-gpg-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>sign-artifacts</id>
+								<phase>verify</phase>
+								<goals>
+									<goal>sign</goal>
+								</goals>
+							</execution>
+						</executions>
+						<configuration>
+							<!-- Passphrase consumed from MAVEN_GPG_PASSPHRASE environment variable. -->
+						</configuration>
+					</plugin>
+					<plugin>
+						<groupId>org.sonatype.central</groupId>
+						<artifactId>central-publishing-maven-plugin</artifactId>
+						<configuration>
+							<deploymentName>Spring Modulith ${project.version}</deploymentName>
+							<publishingServerId>central-ossrh</publishingServerId>
+							<autoPublish>true</autoPublish>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+		<profile>
+
+			<id>documentation</id>
+
+			<modules>
+				<module>spring-modulith-distribution</module>
+			</modules>
+
+			<properties>
+				<generated-docs.directory>${project.build.directory}/generated-docs</generated-docs.directory>
+				<maven.test.skip>true</maven.test.skip>
+				<maven.install.skip>true</maven.install.skip>
+				<maven.deploy.skip>true</maven.deploy.skip>
+			</properties>
+
+			<build>
+
+				<plugins>
+
+					<plugin>
+						<groupId>org.jfrog.buildinfo</groupId>
+						<artifactId>artifactory-maven-plugin</artifactId>
+					</plugin>
+
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-javadoc-plugin</artifactId>
+						<inherited>false</inherited>
+						<executions>
+							<execution>
+								<id>aggregate-javadocs</id>
+								<goals>
+									<goal>aggregate-no-fork</goal>
+								</goals>
+								<phase>package</phase>
+							</execution>
+						</executions>
+					</plugin>
+
+				</plugins>
+
+				<pluginManagement>
+					<plugins>
+
+						<!--
+							Antora
+						-->
+
+						<plugin>
+							<groupId>io.spring.maven.antora</groupId>
+							<artifactId>antora-component-version-maven-plugin</artifactId>
+							<executions>
+								<execution>
+									<goals>
+										<goal>antora-component-version</goal>
+									</goals>
+								</execution>
+							</executions>
+						</plugin>
+						<plugin>
+							<groupId>io.spring.maven.antora</groupId>
+							<artifactId>antora-maven-plugin</artifactId>
+							<version>0.0.4</version>
+							<extensions>true</extensions>
+							<configuration>
+								<packages>
+									<package>@antora/atlas-extension@1.0.0-alpha.2</package>
+									<package>@antora/collector-extension@1.0.0-beta.3</package>
+									<package>@asciidoctor/tabs@1.0.0-beta.6</package>
+									<package>@springio/antora-extensions@1.14.2</package>
+									<package>@springio/asciidoctor-extensions@1.0.0-alpha.14</package>
+									<package>asciidoctor-kroki</package>
+								</packages>
+								<playbook>../src/docs/antora/antora-playbook.yml</playbook>
+								<options>
+									<option>--to-dir=target/antora/site</option>
+									<option>--stacktrace</option>
+									<option>--fetch</option>
+								</options>
+							</configuration>
+						</plugin>
+
+						<!--
+							Creates two zip files for download as well as API and reference documentation distribution.
+						-->
+						<plugin>
+							<groupId>org.apache.maven.plugins</groupId>
+							<artifactId>maven-assembly-plugin</artifactId>
+							<executions>
+								<execution>
+									<id>docs</id>
+									<goals>
+										<goal>single</goal>
+									</goals>
+									<phase>package</phase>
+									<configuration>
+										<descriptors>
+											<descriptor>src/docs/resources/assemblies/docs.xml</descriptor>
+										</descriptors>
+										<finalName>spring-modulith-${project.version}</finalName>
+										<appendAssemblyId>true</appendAssemblyId>
+									</configuration>
+								</execution>
+							</executions>
+						</plugin>
+
+						<!-- Deploy to Artifactory -->
+
+						<plugin>
+							<groupId>org.jfrog.buildinfo</groupId>
+							<artifactId>artifactory-maven-plugin</artifactId>
+							<inherited>false</inherited>
+							<executions>
+								<execution>
+									<id>deploy-docs-to-artifactory</id>
+									<goals>
+										<goal>publish</goal>
+									</goals>
+									<phase>deploy</phase>
+									<configuration>
+										<publisher>
+											<contextUrl>https://repo.spring.io</contextUrl>
+											<includePatterns>*-docs.zip</includePatterns>
+											<username>${env.ARTIFACTORY_USERNAME}</username>
+											<password>${env.ARTIFACTORY_PASSWORD}</password>
+											<repoKey>temp-private-local</repoKey>
+											<snapshotRepoKey>temp-private-local</snapshotRepoKey>
+										</publisher>
+										<buildInfo>
+											<buildName>Documentation publication build for Spring Modulith ${project.version}</buildName>
+											<buildRetentionCount>1</buildRetentionCount>
+										</buildInfo>
+										<deployProperties>
+											<zip.name>spring-modulith-docs</zip.name>
+											<zip.displayname>spring-modulith-docs</zip.displayname>
+											<zip.deployed>false</zip.deployed>
+											<zip.type>docs</zip.type>
+											<archives>*:*:*:*@zip</archives>
+										</deployProperties>
+									</configuration>
+								</execution>
+							</executions>
+						</plugin>
+
+					</plugins>
+				</pluginManagement>
+				<resources>
+					<resource>
+						<directory>src/docs/antora/resources</directory>
+						<filtering>true</filtering>
+					</resource>
+				</resources>
+			</build>
+		</profile>
+
+		<profile>
+			<id>nullaway</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-compiler-plugin</artifactId>
+						<configuration>
+							<showWarnings>true</showWarnings>
+							
+						</configuration>
+						<executions>
+							<execution>
+								<id>default-compile</id>
+								<phase>none</phase>
+							</execution>
+							<execution>
+								<id>java-compile</id>
+								<phase>compile</phase>
+								<goals>
+									<goal>compile</goal>
+								</goals>
+								<configuration>
+									<annotationProcessorPaths>
+										<path>
+											<groupId>com.google.errorprone</groupId>
+											<artifactId>error_prone_core</artifactId>
+											<version>${errorprone.version}</version>
+										</path>
+										<path>
+											<groupId>com.uber.nullaway</groupId>
+											<artifactId>nullaway</artifactId>
+											<version>${nullaway.version}</version>
+										</path>
+									</annotationProcessorPaths>
+									<compilerArgs>
+										<arg>-XDcompilePolicy=simple</arg>
+										<arg>-XDaddTypeAnnotationsToSymbol=true</arg>
+										<arg>--should-stop=ifError=FLOW</arg>
+										<arg>
+											-Xplugin:ErrorProne
+											-Xep:NullAway:ERROR
+											-XepDisableAllChecks
+											-XepOpt:NullAway:OnlyNullMarked=true
+											-XepOpt:NullAway:CustomContractAnnotations=org.springframework.lang.Contract</arg>
+									</compilerArgs>
+								</configuration>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+
+	</profiles>
+
+	<dependencies>
+
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+
+		<defaultGoal>verify</defaultGoal>
+
+		<resources>
+			<resource>
+				<directory>src/main/resources</directory>
+				<filtering>true</filtering>
+			</resource>
+		</resources>
+
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-compiler-plugin</artifactId>
+					<version>3.16.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-surefire-plugin</artifactId>
+					<version>3.6.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-source-plugin</artifactId>
+					<version>3.4.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>flatten-maven-plugin</artifactId>
+					<version>1.8.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.5.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-javadoc-plugin</artifactId>
+					<version>3.12.0</version>
+					<configuration>
+						<doclint>accessibility,html,reference</doclint>
+						<show>package</show>
+						<quiet>true</quiet>
+						<links>
+							<link>https://docs.spring.io/spring-boot/4.2/api/java/</link>
+							<link>https://docs.spring.io/spring-framework/docs/7.1.x/javadoc-api/</link>
+							<link>https://docs.oracle.com/en/java/javase/17/docs/api/</link>
+						</links>
+					</configuration>
+				</plugin>
+				<plugin>
+					<groupId>org.jfrog.buildinfo</groupId>
+					<artifactId>artifactory-maven-plugin</artifactId>
+					<version>3.7.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-release-plugin</artifactId>
+					<version>3.3.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-gpg-plugin</artifactId>
+					<version>3.2.8</version>
+				</plugin>
+				<plugin>
+					<groupId>io.spring.maven.antora</groupId>
+					<artifactId>antora-component-version-maven-plugin</artifactId>
+					<version>0.0.4</version>
+				</plugin>
+				<plugin>
+					<groupId>io.spring.maven.antora</groupId>
+					<artifactId>antora-maven-plugin</artifactId>
+					<version>0.0.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-assembly-plugin</artifactId>
+					<version>3.8.0</version>
+				</plugin>
+				<plugin>
+					<groupId>org.apache.maven.plugins</groupId>
+					<artifactId>maven-shade-plugin</artifactId>
+					<version>3.6.2</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>exec-maven-plugin</artifactId>
+					<version>3.6.4</version>
+				</plugin>
+				<plugin>
+					<groupId>org.sonatype.central</groupId>
+					<artifactId>central-publishing-maven-plugin</artifactId>
+					<version>0.11.0</version>
+					<extensions>true</extensions>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+
+		<plugins>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>17</source>
+					<target>17</target>
+					<parameters>true</parameters>
+					<annotationProcessorPaths>
+						<path>
+							<groupId>org.springframework.boot</groupId>
+							<artifactId>spring-boot-configuration-processor</artifactId>
+						</path>
+						<path>
+							<groupId>org.projectlombok</groupId>
+							<artifactId>lombok</artifactId>
+						</path>
+					</annotationProcessorPaths>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<configuration>
+					<excludes>
+						<exclude/>
+					</excludes>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifestEntries>
+							<Implementation-Title>${project.name}</Implementation-Title>
+							<Implementation-Version>${project.version}</Implementation-Version>
+							<Automatic-Module-Name>${module.name}</Automatic-Module-Name>
+						</manifestEntries>
+					</archive>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>flatten-maven-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>flatten</id>
+						<phase>process-resources</phase>
+						<goals>
+							<goal>flatten</goal>
+						</goals>
+						<configuration>
+							<updatePomFile>true</updatePomFile>
+							<flattenMode>oss</flattenMode>
+							<pomElements>
+								<distributionManagement>remove</distributionManagement>
+								<properties>remove</properties>
+								<repositories>remove</repositories>
+								<profiles>remove</profiles>
+							</pomElements>
+						</configuration>
+					</execution>
+					<execution>
+						<id>flatten-clean</id>
+						<phase>clean</phase>
+						<goals>
+							<goal>clean</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-release-plugin</artifactId>
+				<configuration>
+					<releaseProfiles>sonatype</releaseProfiles>
+					<autoVersionSubmodules>true</autoVersionSubmodules>
+					<pushChanges>false</pushChanges>
+					<tagNameFormat>@{project.version}</tagNameFormat>
+					<localCheckout>true</localCheckout>
+					<signTag>true</signTag>
+				</configuration>
+			</plugin>
+
+		</plugins>
+	</build>
+
+	<scm>
+		<url>https://github.com/spring-projects/spring-modulith</url>
+		<connection>scm:git:https://github.com/spring-projects/spring-modulith</connection>
+		<developerConnection>scm:git:ssh://git@github.com/spring-projects-experimental/spring-modulith</developerConnection>
+		<tag>main</tag>
+	</scm>
+
+	<repositories>
+		
+		
+	</repositories>
+
+</project>
