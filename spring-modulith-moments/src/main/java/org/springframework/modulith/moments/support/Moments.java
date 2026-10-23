@@ -96,9 +96,12 @@ public class Moments implements Now {
 		LocalDateTime before = now();
 		LocalDateTime after = before.plus(duration);
 
-		this.shift = shift.plus(duration);
+		Duration initialShift = this.shift;
 
 		if (duration.isNegative()) {
+
+			this.shift = initialShift.plus(duration);
+
 			return this;
 		}
 
@@ -108,6 +111,10 @@ public class Moments implements Now {
 		while (current.isBefore(after.truncatedTo(ChronoUnit.HOURS))) {
 
 			LocalDateTime next = hourly ? current.plusHours(1) : current.plusDays(1);
+
+			// Advance the clock to the moment the events are due so that consumers see consistent time
+			var progress = Duration.between(toInstant(before), toInstant(next));
+			this.shift = initialShift.plus(progress.compareTo(duration) > 0 ? duration : progress);
 
 			if (hourly) {
 				emitEventsFor(next);
@@ -119,6 +126,8 @@ public class Moments implements Now {
 
 			current = next;
 		}
+
+		this.shift = initialShift.plus(duration);
 
 		return this;
 	}
@@ -155,6 +164,10 @@ public class Moments implements Now {
 	@Override
 	public Instant instant() {
 		return clock.instant().plus(shift);
+	}
+
+	private Instant toInstant(LocalDateTime time) {
+		return time.atZone(properties.getZoneId()).toInstant();
 	}
 
 	private void emitEventsFor(LocalDateTime time) {

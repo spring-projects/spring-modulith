@@ -199,6 +199,28 @@ class MomentsUnitTests {
 		assertThat(afterReset).isCloseTo(now, ACCEPTABLE_OFFSET);
 	}
 
+	@Test // GH-1976
+	void clockMatchesEventTimeWhileShiftingAndFullShiftAfterwards() {
+
+		var start = hourly.now();
+		var observed = new java.util.ArrayList<LocalDateTime>();
+
+		doAnswer(invocation -> {
+			observed.add(hourly.now());
+			return null;
+		}).when(events).publishEvent(any(HourHasPassed.class));
+
+		hourly.shiftBy(Duration.ofHours(3));
+
+		var firstHour = start.truncatedTo(ChronoUnit.HOURS).plusHours(1);
+
+		assertThat(observed).hasSize(3);
+		assertThat(observed.get(0)).isCloseTo(firstHour, ACCEPTABLE_OFFSET);
+		assertThat(observed.get(1)).isCloseTo(firstHour.plusHours(1), ACCEPTABLE_OFFSET);
+		assertThat(observed.get(2)).isCloseTo(firstHour.plusHours(2), ACCEPTABLE_OFFSET);
+		assertThat(hourly.now()).isCloseTo(start.plusHours(3), ACCEPTABLE_OFFSET);
+	}
+
 	private Duration getNumberOfDaysForThreeMonth(LocalDate date) {
 
 		int days = 0;
