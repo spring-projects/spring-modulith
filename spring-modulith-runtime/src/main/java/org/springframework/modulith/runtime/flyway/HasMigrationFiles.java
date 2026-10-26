@@ -63,9 +63,10 @@ public class HasMigrationFiles implements MigrationFilter {
 	}
 
 	private int getNumberOfMigrationFiles(Location location, ApplicationModuleIdentifier identifier) {
+		var asPath = identifier.toString().replace('.', '/');
 
 		try {
-			return resolver.getResources("%s/%s/*".formatted(location, identifier.toString())).length;
+			return resolver.getResources("%s/%s/*".formatted(location, asPath)).length;
 		} catch (FileNotFoundException e) {
 			return 0;
 		} catch (IOException e) {
