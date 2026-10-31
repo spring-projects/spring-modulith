@@ -18,8 +18,6 @@ package org.springframework.modulith.testapp;
 import static com.couchbase.client.core.io.CollectionIdentifier.*;
 
 import java.time.Duration;
-import java.util.Optional;
-import java.util.Set;
 
 import com.fasterxml.jackson.databind.json.JsonMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -30,7 +28,6 @@ import org.testcontainers.couchbase.BucketDefinition;
 import org.testcontainers.couchbase.CouchbaseContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import com.couchbase.client.core.env.SeedNode;
 import com.couchbase.client.java.Cluster;
 import com.couchbase.client.java.ClusterOptions;
 
@@ -57,10 +54,10 @@ public class Infrastructure {
 
 		container.start();
 
-		var seedNodes = Set.of(
-				SeedNode.create(container.getHost(), Optional.of(container.getBootstrapCarrierDirectPort()), Optional.of(container.getBootstrapHttpDirectPort())
-		));
-		try (var cluster = Cluster.connect(seedNodes, ClusterOptions.clusterOptions(container.getUsername(), container.getPassword()))) {
+		var connectionString = "couchbase://"
+				+ container.getHost() + ":" + container.getBootstrapCarrierDirectPort() + ","
+				+ container.getHost() + ":" + container.getBootstrapHttpDirectPort() + "=manager";
+		try (var cluster = Cluster.connect(connectionString, ClusterOptions.clusterOptions(container.getUsername(), container.getPassword()))) {
 			cluster.bucket(bucketName).collections().createCollection(DEFAULT_SCOPE, BASE_COLLECTION);
 			cluster.bucket(bucketName).collections().createCollection(DEFAULT_SCOPE, ARCHIVE_COLLECTION);
 			cluster.waitUntilReady(Duration.ofMinutes(2));

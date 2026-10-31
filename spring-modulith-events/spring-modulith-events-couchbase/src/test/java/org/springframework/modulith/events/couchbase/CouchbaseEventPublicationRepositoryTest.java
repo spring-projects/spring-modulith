@@ -42,6 +42,7 @@ import org.springframework.modulith.events.core.TargetEventPublication;
 import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.modulith.testapp.Infrastructure;
 import org.springframework.modulith.testapp.TestApplication;
+import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -57,6 +58,7 @@ class CouchbaseEventPublicationRepositoryTest {
 
 	@DataCouchbaseTest
 	@Import(Infrastructure.class)
+	@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 	@ContextConfiguration(classes = TestApplication.class)
 	static abstract class TestBase {
 
@@ -65,6 +67,7 @@ class CouchbaseEventPublicationRepositoryTest {
 
 		CouchbaseEventPublicationRepository repository;
 		CompletionMode completionMode;
+		String baseCollection = CouchbaseEventPublicationRepository.BASE_COLLECTION;
 		String archiveCollection = CouchbaseEventPublicationRepository.ARCHIVE_COLLECTION;
 
 		@BeforeEach
@@ -75,7 +78,7 @@ class CouchbaseEventPublicationRepositoryTest {
 
 		@AfterEach
 		void tearDown() {
-			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class).all();
+			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class).inCollection(baseCollection).all();
 			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class).inCollection(archiveCollection).all();
 		}
 

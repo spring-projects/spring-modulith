@@ -83,9 +83,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 	@Override
 	public TargetEventPublication create(TargetEventPublication publication) {
 
-		couchbaseTemplate.upsertById(CouchbaseEventPublication.class)
-				.inCollection(collection)
-				.one(domainToDocument(publication));
+		couchbaseTemplate.save(domainToDocument(publication), couchbaseTemplate.getScopeName(), collection);
 
 		return publication;
 	}
