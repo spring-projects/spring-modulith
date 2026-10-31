@@ -16,44 +16,44 @@
 package org.springframework.modulith.core;
 
 import java.lang.annotation.Annotation;
+import java.util.function.Predicate;
 
-import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated.Predicates;
 
 /**
- * Helper to make the composition of {@link DescribedPredicate}s more readable.
+ * Helper to make the composition of {@link Predicate}s more readable.
  *
  * @author Oliver Drotbohm
  * @since 1.2
  */
 class SyntacticSugar {
 
-	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(Class<? extends Annotation> type) {
+	static Predicate<CanBeAnnotated> isAnnotatedWith(Class<? extends Annotation> type) {
 		return isAnnotatedWith(type.getName());
 	}
 
-	static DescribedPredicate<CanBeAnnotated> isAnnotatedWith(String type) {
+	static Predicate<CanBeAnnotated> isAnnotatedWith(String type) {
 		return Predicates.metaAnnotatedWith(type);
 	}
 
-	static <T> DescribedPredicate<T> are(DescribedPredicate<T> predicate) {
+	static <T> Predicate<T> are(Predicate<T> predicate) {
 		return predicate;
 	}
 
-	static <T> DescribedPredicate<T> has(DescribedPredicate<T> predicate) {
+	static <T> Predicate<T> has(Predicate<T> predicate) {
 		return predicate;
 	}
 
-	static <T> DescribedPredicate<T> have(DescribedPredicate<T> predicate) {
+	static <T> Predicate<T> have(Predicate<T> predicate) {
 		return predicate;
 	}
 
-	static <T> DescribedPredicate<T> is(DescribedPredicate<T> predicate) {
+	static <T> Predicate<T> is(Predicate<T> predicate) {
 		return predicate;
 	}
 
-	static <T> DescribedPredicate<T> doNotHave(DescribedPredicate<T> predicate) {
-		return DescribedPredicate.not(predicate);
+	static <T> Predicate<T> doNotHave(Predicate<T> predicate) {
+		return Predicate.not(predicate);
 	}
 }

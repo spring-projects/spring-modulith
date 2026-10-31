@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.modulith.events.Externalized;
 import org.springframework.modulith.events.RoutingTarget;
@@ -35,12 +36,12 @@ import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Unit tests for {@link DelegatingEventExternalizer}.
+ * Unit tests for {@link EventExternalizerModuleListener}.
  *
  * @author Oliver Drotbohm
  * @since 1.3
  */
-class DelegatingEventExternalizerUnitTests {
+class EventExternalizerModuleListenerUnitTests {
 
 	@Test // GH-859
 	void doesNotRequireATransactionForExternalization() throws Exception {
@@ -114,6 +115,46 @@ class DelegatingEventExternalizerUnitTests {
 		verify(mock, times(3)).externalize(any(Object.class), any(RoutingTarget.class));
 	}
 
+	@Test // GH-1896
+	void evaluatesRoutingExpressionsAgainstOriginalEventNotMappedPayload() {
+
+		var mock = mock(EventExternalizationTransport.class);
+		when(mock.externalize(any(), any())).thenReturn(CompletableFuture.completedFuture(null));
+
+		var configuration = externalizing()
+				.select(annotatedAsExternalized())
+				.mapping(RoutedSample.class, __ -> new Mapped())
+				.build();
+
+		var service = new EventExternalizerModuleListener(configuration, mock::externalize);
+
+		service.externalize(new RoutedSample("42")).join();
+
+		var payload = ArgumentCaptor.forClass(Object.class);
+		var target = ArgumentCaptor.forClass(RoutingTarget.class);
+
+		verify(mock).externalize(payload.capture(), target.capture());
+
+		assertThat(payload.getValue()).isInstanceOf(Mapped.class);
+		assertThat(target.getValue().getKey()).isEqualTo("42");
+	}
+
 	@Externalized
 	static class Sample {}
+
+	@Externalized("target::#{getValue()}")
+	static class RoutedSample {
+
+		private final String value;
+
+		RoutedSample(String value) {
+			this.value = value;
+		}
+
+		public String getValue() {
+			return value;
+		}
+	}
+
+	record Mapped() {}
 }

@@ -338,6 +338,78 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			}
 		}
 
+		@Test // GH-1764
+		void marksPublicationAsAbandoned() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markAbandoned(publication.getIdentifier(), Instant.now(), null);
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findAbandonedPublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findAbandonedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+
+			if (completionMode == CompletionMode.ARCHIVE) {
+				assertThat(getArchivedPublications()).hasSize(1);
+			}
+		}
+
+		@Test // GH-1764
+		void distinguishesAbandonedFromCompletedPublications() {
+
+			var completed = createPublication(new TestEvent("completed"));
+			var abandoned = createPublication(new TestEvent("abandoned"));
+
+			repository.markCompleted(completed.getIdentifier(), Instant.now());
+			repository.markAbandoned(abandoned.getIdentifier(), Instant.now(), null);
+
+			var expectedCount = completionMode == CompletionMode.DELETE ? 0 : 1;
+
+			assertThat(repository.countByStatus(Status.COMPLETED)).isEqualTo(expectedCount);
+			assertThat(repository.countByStatus(Status.ABANDONED)).isEqualTo(expectedCount);
+
+			if (completionMode != CompletionMode.DELETE) {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(completed.getIdentifier());
+
+				assertThat(repository.findAbandonedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(abandoned.getIdentifier());
+			}
+		}
+
+		@Test // GH-1764
+		void shouldDeleteAbandonedEventsBefore() {
+
+			assumeFalse(completionMode == CompletionMode.DELETE);
+
+			var publication1 = createPublication(new TestEvent("abc"));
+			var publication2 = createPublication(new TestEvent("def"));
+
+			var now = Instant.now();
+
+			repository.markAbandoned(publication1.getIdentifier(), now.minusSeconds(30), null);
+			repository.markAbandoned(publication2.getIdentifier(), now, null);
+
+			repository.deleteAbandonedPublicationsBefore(now.minusSeconds(15));
+
+			assertThat(repository.findAbandonedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication2.getIdentifier());
+		}
+
 		@Test // GH 806
 		void archivesByEvent() {
 
@@ -466,6 +538,139 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			assertThat(reloaded).hasSize(1);
 			assertThat(reloaded.get(0).getStatus()).isEqualTo(Status.FAILED);
+		}
+
+		@Test // GH-1764
+		void abandonsFailedPublicationIfStillFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+
+			em.flush();
+			em.clear();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+
+			} else {
+
+				assertThat(repository.findByStatus(Status.ABANDONED))
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+		}
+
+		@Test // GH-1764
+		void doesNotAbandonPublicationThatHasBeenConcurrentlyResubmitted() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isFalse();
+
+			em.flush();
+			em.clear();
+
+			assertThat(repository.findByStatus(Status.RESUBMITTED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+			assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+		}
+
+		@Test // GH-1565
+		void resubmitsPublicationWithNullStatusColumn() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			setStatusColumnToNull(publication);
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isTrue();
+		}
+
+		@Test // GH-1565
+		void marksPublicationWithNullStatusColumnAsFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			setStatusColumnToNull(publication);
+
+			repository.markFailed(publication.getIdentifier());
+
+			em.clear();
+
+			assertThat(repository.findByStatus(Status.FAILED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+		}
+
+		@Test // GH-1925
+		void doesNotResubmitCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			em.flush();
+			em.clear();
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isFalse();
+		}
+
+		@Test // GH-1925
+		void doesNotMarkCompletedPublicationFailed() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			em.flush();
+			em.clear();
+
+			repository.markFailed(publication.getIdentifier());
+			em.clear();
+
+			assertThat(repository.findByStatus(Status.FAILED)).isEmpty();
+		}
+
+		@Test // GH-1908
+		void doesNotLookUpFailedPublicationPublishedAfterReferenceDate() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			var criteria = FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().minusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria)).isEmpty();
+		}
+
+		/**
+		 * Simulates a publication persisted by a schema version that predates the {@code status} column, i.e. one for
+		 * which the column was never backfilled and is {@literal null} rather than defaulted.
+		 */
+		private void setStatusColumnToNull(TargetEventPublication publication) {
+
+			em.flush();
+
+			new JdbcTemplate(dataSource)
+					.update("update event_publication set status = null where id = ?", publication.getIdentifier());
+
+			em.clear();
 		}
 
 		private List<JpaEventPublication> getIncompletePublications() {

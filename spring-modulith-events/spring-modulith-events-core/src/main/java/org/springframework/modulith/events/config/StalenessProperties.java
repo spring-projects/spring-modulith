@@ -33,8 +33,7 @@ import org.springframework.util.Assert;
 @ConfigurationProperties("spring.modulith.events.staleness")
 public class StalenessProperties implements Staleness {
 
-	public static StalenessProperties DEFAULTS = new StalenessProperties(null, null, null,
-			null, null, null);
+	public static StalenessProperties DEFAULTS = new StalenessProperties(null, null, null, null);
 
 	/**
 	 * Configures after which {@link Duration} an {@link org.springframework.modulith.events.EventPublication} marked as
@@ -64,27 +63,20 @@ public class StalenessProperties implements Staleness {
 			@Nullable Duration published,
 			@Nullable Duration processing,
 			@Nullable Duration resubmitted,
-			@Nullable Duration resubmission,
-			@Nullable Duration checkInterval,
-			@Nullable Duration checkIntervall) {
+			@Nullable Duration checkInterval) {
 
-		this.published = published == null ? Duration.ZERO : published;
-		this.processing = processing == null ? Duration.ZERO : processing;
-		this.resubmitted = resubmitted == null ? resubmission == null ? Duration.ZERO : resubmission : resubmitted;
-
-		// Prefer check-interval; keep check-intervall as a deprecated alias for compatibility.
-		this.checkInterval = checkInterval != null
-				? checkInterval
-				: checkIntervall != null
-						? checkIntervall
-						: Duration.ofMinutes(1);
+		this.published = published == null ? UNCONFIGURED_DURATION : requirePositive(published, "published");
+		this.processing = processing == null ? UNCONFIGURED_DURATION : requirePositive(processing, "processing");
+		this.resubmitted = resubmitted == null ? UNCONFIGURED_DURATION : requirePositive(resubmitted, "resubmitted");
+		this.checkInterval = checkInterval == null ? Duration.ofMinutes(1)
+				: requirePositive(checkInterval, "checkInterval");
 	}
 
 	boolean monitorStaleness() {
 
-		return !published.equals(Duration.ZERO)
-				|| !processing.equals(Duration.ZERO)
-				|| !resubmitted.equals(Duration.ZERO);
+		return !published.equals(UNCONFIGURED_DURATION)
+				|| !processing.equals(UNCONFIGURED_DURATION)
+				|| !resubmitted.equals(UNCONFIGURED_DURATION);
 	}
 
 	Duration getCheckInterval() {
@@ -104,7 +96,15 @@ public class StalenessProperties implements Staleness {
 			case PUBLISHED -> published;
 			case PROCESSING -> processing;
 			case RESUBMITTED -> resubmitted;
-			default -> Duration.ZERO;
+			default -> throw new IllegalArgumentException("Unsupported status: " + status);
 		};
+	}
+
+	private static Duration requirePositive(Duration duration, String name) {
+
+		Assert.isTrue(!duration.isZero() && !duration.isNegative(),
+				() -> "Staleness property '%s' must be greater than zero but was %s!".formatted(name, duration));
+
+		return duration;
 	}
 }

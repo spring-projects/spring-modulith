@@ -27,8 +27,11 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
+import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor.CompletionRegisteringMethodInterceptor;
+import org.springframework.modulith.events.support.InTransactionCompletionRegisteringAdvisor.InTransactionCompletionRegisteringInterceptor;
 import org.springframework.scheduling.annotation.AnnotationAsyncExecutionInterceptor;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableAsync;
@@ -64,11 +67,20 @@ class CompletionRegisteringAdvisorIntegrationTests {
 
 		@Bean
 		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-		static CompletionRegisteringAdvisor completionRegisteringAdvisor() {
+		static CompletionRegisteringAdvisor completionRegisteringAdvisor(Environment environment) {
 
 			var publicationRegistry = mock(EventPublicationRegistry.class);
 
-			return new CompletionRegisteringAdvisor(() -> publicationRegistry);
+			return new CompletionRegisteringAdvisor(() -> publicationRegistry,
+					EventListenerMethodMetadata.of(() -> environment));
+		}
+
+		@Bean
+		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+		static CompletionRegisteringBeanPostProcessor completionRegisteringBeanPostProcessor(
+				Environment environment) {
+			return new CompletionRegisteringBeanPostProcessor(() -> mock(EventPublicationRegistry.class),
+					EventListenerMethodMetadata.of(() -> environment));
 		}
 	}
 
@@ -91,7 +103,8 @@ class CompletionRegisteringAdvisorIntegrationTests {
 					.startsWith(
 							AnnotationAsyncExecutionInterceptor.class,
 							CompletionRegisteringMethodInterceptor.class,
-							TransactionInterceptor.class);
+							TransactionInterceptor.class,
+							InTransactionCompletionRegisteringInterceptor.class);
 		});
 	}
 }

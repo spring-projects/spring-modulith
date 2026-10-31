@@ -15,7 +15,7 @@
  */
 package org.springframework.modulith.core;
 
-import static com.tngtech.archunit.base.DescribedPredicate.*;
+import static java.util.function.Predicate.*;
 import static org.springframework.modulith.core.SyntacticSugar.*;
 import static org.springframework.modulith.core.Types.*;
 
@@ -27,7 +27,6 @@ import java.util.stream.Stream;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 
-import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaClass.Predicates;
 import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
@@ -44,9 +43,9 @@ import com.tngtech.archunit.core.domain.properties.CanBeAnnotated;
 public class NamedInterface implements Iterable<JavaClass> {
 
 	static final String UNNAMED_NAME = "<<UNNAMED>>";
-	private static final DescribedPredicate<CanBeAnnotated> ANNOTATED_NAMED_INTERFACE = //
+	private static final Predicate<CanBeAnnotated> ANNOTATED_NAMED_INTERFACE = //
 			isAnnotatedWith(org.springframework.modulith.NamedInterface.class);
-	private static final DescribedPredicate<JavaClass> ANNOTATED_NAMED_INTERFACE_PACKAGE = //
+	private static final Predicate<JavaClass> ANNOTATED_NAMED_INTERFACE_PACKAGE = //
 			residesInPackageAnnotatedWith(org.springframework.modulith.NamedInterface.class);
 
 	private final String name;

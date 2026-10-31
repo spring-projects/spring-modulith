@@ -307,6 +307,35 @@ scenario.publish(new MyApplicationEvent(…))
 ----
 ======
 
+To assert that an event does _not_ arrive, conclude the definition with `….notToArrive()` instead.
+As the absence of an event can only be established by waiting, the `Scenario` runs for the full wait time (see xref:testing.adoc#scenarios.customize[Customizing Scenario Execution]) before it succeeds, and fails as soon as a matching event is published.
+`….notToArriveAndVerify(result -> …)` additionally hands the result of the original stimulus into the given callback.
+
+.Expecting an event not to arrive
+[tabs]
+======
+Java::
++
+[source, java, role="primary"]
+----
+scenario.publish(new MyApplicationEvent(…))
+  .andWaitAtMost(Duration.ofSeconds(1))
+  .forEventOfType(SomeOtherEvent.class)
+  .matching(event -> …)
+  .notToArrive();
+----
+Kotlin::
++
+[source, kotlin, role="secondary"]
+----
+scenario.publish(MyApplicationEvent(…))
+  .andWaitAtMost(Duration.ofSeconds(1))
+  .forEventOfType(SomeOtherEvent::class.java)
+  .matching { event -> … }
+  .notToArrive()
+----
+======
+
 Alternatively to an event publication acting as expected completion signal, we can also inspect the state of the application module by invoking a method on one of the components exposed.
 The scenario would then rather look like this:
 

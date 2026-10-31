@@ -20,6 +20,10 @@ import java.util.concurrent.Semaphore;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.BeanFactory;
+import org.springframework.context.expression.BeanFactoryResolver;
+import org.springframework.expression.EvaluationContext;
+import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.RoutingTarget;
@@ -38,18 +42,50 @@ abstract class EventExternalizerSupport {
 	private static final Logger logger = LoggerFactory.getLogger(EventExternalizerSupport.class);
 
 	private final EventExternalizationConfiguration configuration;
+	private final EvaluationContext context;
 	private final Semaphore semaphore = new Semaphore(1);
 
 	/**
-	 * Creates a new {@link EventExternalizationSupport} for the given {@link EventExternalizationConfiguration}.
+	 * Creates a new {@link EventExternalizerSupport} for the given {@link EventExternalizationConfiguration}, not
+	 * resolving bean references in routing target and key expressions.
 	 *
 	 * @param configuration must not be {@literal null}.
+	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
+	 *             {@link #EventExternalizerSupport(EventExternalizationConfiguration, BeanFactory)} instead.
 	 */
+	@Deprecated(since = "2.2, 2.1.2", forRemoval = true)
 	protected EventExternalizerSupport(EventExternalizationConfiguration configuration) {
+		this(configuration, new StandardEvaluationContext());
+	}
+
+	/**
+	 * Creates a new {@link EventExternalizerSupport} for the given {@link EventExternalizationConfiguration}, resolving
+	 * routing target and key expressions (which may refer to beans) against the original event using an
+	 * {@link EvaluationContext} backed by the given {@link BeanFactory}.
+	 *
+	 * @param configuration must not be {@literal null}.
+	 * @param beanFactory must not be {@literal null}.
+	 * @since 2.2, 2.1.2
+	 */
+	protected EventExternalizerSupport(EventExternalizationConfiguration configuration, BeanFactory beanFactory) {
 
 		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
+		Assert.notNull(beanFactory, "BeanFactory must not be null!");
+
+		var context = new StandardEvaluationContext();
+		context.setBeanResolver(new BeanFactoryResolver(beanFactory));
 
 		this.configuration = configuration;
+		this.context = context;
+	}
+
+	private EventExternalizerSupport(EventExternalizationConfiguration configuration, EvaluationContext context) {
+
+		Assert.notNull(configuration, "EventExternalizationConfiguration must not be null!");
+		Assert.notNull(context, "EvaluationContext must not be null!");
+
+		this.configuration = configuration;
+		this.context = context;
 	}
 
 	/**
@@ -67,17 +103,18 @@ abstract class EventExternalizerSupport {
 		}
 
 		var target = configuration.determineTarget(event);
+		var resolved = resolve(target, event);
 		var mapped = configuration.map(event);
 
 		if (logger.isTraceEnabled()) {
-			logger.trace("Externalizing event of type {} to {}, payload: {}).", event.getClass(), target, mapped);
+			logger.trace("Externalizing event of type {} to {}, payload: {}).", event.getClass(), resolved, mapped);
 		} else if (logger.isDebugEnabled()) {
-			logger.debug("Externalizing event of type {} to {}.", event.getClass(), target);
+			logger.debug("Externalizing event of type {} to {}.", event.getClass(), resolved);
 		}
 
 		return configuration.serializeExternalization()
-				? doExternalizeSerialized(event, mapped, target)
-				: doExternalize(event, mapped, target);
+				? doExternalizeSerialized(event, mapped, resolved)
+				: doExternalize(event, mapped, resolved);
 	}
 
 	/**
@@ -109,5 +146,25 @@ abstract class EventExternalizerSupport {
 
 		return externalize(mapped, target)
 				.thenApply(it -> new EventExternalized<>(event, mapped, target, it));
+	}
+
+	/**
+	 * Resolves dynamic target and key expressions declared on the given {@link RoutingTarget} against the given
+	 * (original, unmapped) event, so that a mapping applied downstream cannot affect routing.
+	 *
+	 * @param target must not be {@literal null}.
+	 * @param event must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 */
+	private RoutingTarget resolve(RoutingTarget target, Object event) {
+
+		if (!target.hasExpression()) {
+			return target;
+		}
+
+		var routing = BrokerRouting.of(target, context);
+		var resolved = RoutingTarget.forTarget(routing.getTarget(event));
+
+		return target.getKey() == null ? resolved.withoutKey() : resolved.andKey(routing.getKey(event));
 	}
 }

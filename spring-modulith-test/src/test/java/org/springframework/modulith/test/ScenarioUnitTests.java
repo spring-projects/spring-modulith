@@ -26,6 +26,7 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -484,6 +485,55 @@ class ScenarioUnitTests {
 				.andWaitAtMost(Duration.ofMillis(500))
 				.andWaitForStateChange(delayed(null)))
 						.expectFailure();
+	}
+
+	@Test // GH-1357
+	void succeedsIfUnexpectedEventDoesNotArrive() {
+
+		givenAScenario(it -> publishObject(it)
+				.andWaitAtMost(WAIT_TIME)
+				.forEventOfType(String.class)
+				.notToArrive())
+				.expectSuccess();
+	}
+
+	@Test // GH-1357
+	void failsIfUnexpectedEventArrives() {
+
+		givenAScenario(it -> publishObject(it)
+				.forEventOfType(String.class)
+				.notToArrive())
+				.onEvent(() -> "foo")
+				.expectFailure();
+	}
+
+	@Test // GH-1357
+	void succeedsIfEventNotMatchingFilterArrives() {
+
+		givenAScenario(it -> publishObject(it)
+				.andWaitAtMost(WAIT_TIME)
+				.forEventOfType(String.class)
+				.matching(String::isEmpty)
+				.notToArrive())
+				.onEvent(() -> "foo")
+				.expectSuccess();
+	}
+
+	@Test // GH-1357
+	void passesStimulusResultToVerificationIfEventDoesNotArrive() {
+
+		var verified = new AtomicBoolean();
+
+		givenAScenario(it -> it.stimulate((tx, publisher) -> "result")
+				.andWaitAtMost(WAIT_TIME)
+				.forEventOfType(String.class)
+				.notToArriveAndVerify(result -> {
+					assertThat(result).isEqualTo("result");
+					verified.set(true);
+				}))
+				.expectSuccess();
+
+		assertThat(verified).isTrue();
 	}
 
 	private Fixture givenAScenario(Consumer<Scenario> consumer) {

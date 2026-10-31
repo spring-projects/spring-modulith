@@ -1,11 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
-		<version>4.2.0-M1</version>
-		<relativePath />
+		<version>4.2.0-RC1</version>
+		<relativePath/>
 	</parent>
 
 	<groupId>org.springframework.modulith</groupId>
@@ -18,8 +19,7 @@
 	<modules>
 		<module>spring-modulith-example-epr-jdbc</module>
 		<module>spring-modulith-example-epr-couchbase</module>
-		<!-- Skip because it doesn't work with Boot 4.0 RC1 for now -->
-		<!--<module>spring-modulith-example-epr-mongodb</module>-->
+		<module>spring-modulith-example-epr-mongodb</module>
 		<module>spring-modulith-example-epr-neo4j</module>
 		<module>spring-modulith-example-full</module>
 		<module>spring-modulith-example-kafka</module>
@@ -31,7 +31,7 @@
 		<jmolecules.version>2025.0.2</jmolecules.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
-		<project.build.outputTimestamp>2019-09-30T15:30:00Z</project.build.outputTimestamp>
+		<project.build.outputTimestamp>2026-10-23T06:47:58Z</project.build.outputTimestamp>
 	</properties>
 
 	<profiles>

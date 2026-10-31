@@ -81,16 +81,15 @@ class NamastackOutboxEventRecorder implements ApplicationListener<PayloadApplica
 		}
 
 		var target = configuration.determineTarget(payload);
-		var mapped = configuration.map(payload);
 		var routing = BrokerRouting.of(target, context);
-		var key = routing.getKey(mapped);
+		var key = routing.getKey(payload);
 
 		if (LOGGER.isDebugEnabled()) {
 			LOGGER.debug("Scheduling event of type {} to outbox for target {}.",
 					payload.getClass().getName(), target.getTarget());
 		}
 
-		scheduleToOutbox(mapped, key);
+		scheduleToOutbox(payload, key);
 	}
 
 	/**

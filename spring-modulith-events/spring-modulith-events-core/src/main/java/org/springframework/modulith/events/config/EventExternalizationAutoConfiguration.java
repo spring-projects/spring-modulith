@@ -26,7 +26,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurationPackages;
 import org.springframework.boot.autoconfigure.AutoConfigureAfter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Role;
@@ -89,8 +89,8 @@ public class EventExternalizationAutoConfiguration {
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "outbox")
 	static OutboxEventExternalizerFactory outboxEventExternalizerFactory(EventExternalizationConfiguration configuration,
-			ApplicationEventPublisher publisher) {
-		return new OutboxEventExternalizerFactory(configuration, publisher);
+			ApplicationContext context) {
+		return new OutboxEventExternalizerFactory(configuration, context);
 	}
 
 	/**

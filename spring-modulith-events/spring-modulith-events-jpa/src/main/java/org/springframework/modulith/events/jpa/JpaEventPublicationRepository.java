@@ -104,6 +104,13 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			 where p.id = ?1
 			""";
 
+	private static final String MARK_ABANDONED_BY_ID = """
+			update DefaultJpaEventPublication p
+			   set p.status = org.springframework.modulith.events.EventPublication$Status.ABANDONED,
+			       p.completionDate = ?2
+			 where p.id = ?1
+			""";
+
 	private static final String DELETE = """
 			delete
 			  from DefaultJpaEventPublication p
@@ -126,19 +133,29 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			delete
 			  from %s p
 			  where p.completionDate is not null
+			    and p.status = org.springframework.modulith.events.EventPublication$Status.COMPLETED
 			""";
 
 	private static final String DELETE_COMPLETED_BEFORE = """
 			delete
 			  from %s p
 			 where p.completionDate < ?1
+			   and p.status = org.springframework.modulith.events.EventPublication$Status.COMPLETED
+			""";
+
+	private static final String DELETE_ABANDONED_BEFORE = """
+			delete
+			  from %s p
+			 where p.completionDate < ?1
+			   and p.status = org.springframework.modulith.events.EventPublication$Status.ABANDONED
 			""";
 
 	private static final String UPDATE = """
 			update DefaultJpaEventPublication p
 			   set p.status = ?1
 			 where p.id = ?2
-			   and status != ?1
+			   and p.completionDate is null
+			   and (status is null or status != ?1)
 			""";
 
 	private static final String MARK_RESUBMITTED = """
@@ -147,7 +164,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			       p.completionAttempts = p.completionAttempts + 1,
 			       p.lastResubmissionDate = ?1
 			 where p.id = ?2
-			   and p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED
+			   and p.completionDate is null
+			   and (p.status is null or p.status != org.springframework.modulith.events.EventPublication$Status.RESUBMITTED)
 			""";
 
 	private static final String COUNT_BY_STATUS = """
@@ -165,8 +183,8 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	private static final String FIND_FAILED = """
 				select p
 			  from DefaultJpaEventPublication p
-			 where p.status = org.springframework.modulith.events.EventPublication$Status.FAILED
-			    or (p.status is null and p.completionDate is null)
+			 where (p.status = org.springframework.modulith.events.EventPublication$Status.FAILED
+			    or (p.status is null and p.completionDate is null))
 			""";
 
 	private static final int DELETE_BATCH_SIZE = 100;
@@ -175,7 +193,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 	private final EventSerializer serializer;
 	private final CompletionMode completionMode;
 
-	private final String getCompleted, deleteCompleted, deleteCompletedBefore;
+	private final String getCompleted, deleteCompleted, deleteCompletedBefore, deleteAbandonedBefore;
 	private final Function<Status, String> entityNameByStatus;
 
 	/**
@@ -198,13 +216,14 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		var archiveEntityName = getCompletedEntityType().getSimpleName();
 
-		this.entityNameByStatus = status -> status == Status.COMPLETED
+		this.entityNameByStatus = status -> status.isTerminal()
 				? archiveEntityName
 				: JpaEventPublication.getIncompleteType().getSimpleName();
 
 		this.getCompleted = COMPLETE.formatted(archiveEntityName);
 		this.deleteCompleted = DELETE_COMPLETED.formatted(archiveEntityName);
 		this.deleteCompletedBefore = DELETE_COMPLETED_BEFORE.formatted(archiveEntityName);
+		this.deleteAbandonedBefore = DELETE_ABANDONED_BEFORE.formatted(archiveEntityName);
 	}
 
 	/*
@@ -253,7 +272,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 					.getSingleResult();
 
 			entityManager.remove(publication);
-			entityManager.persist(publication.archive(completionDate));
+			entityManager.persist(publication.archive(completionDate, Status.COMPLETED));
 
 		} else {
 
@@ -283,7 +302,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			var publication = entityManager.find(JpaEventPublication.getIncompleteType(), identifier);
 
 			entityManager.remove(publication);
-			entityManager.persist(publication.archive(completionDate));
+			entityManager.persist(publication.archive(completionDate, Status.COMPLETED));
 
 		} else {
 
@@ -291,6 +310,52 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 					.setParameter(1, identifier)
 					.setParameter(2, completionDate)
 					.executeUpdate();
+		}
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markAbandoned(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
+	 */
+	@Override
+	public boolean markAbandoned(UUID identifier, Instant instant, @Nullable Status expectedCurrentStatus) {
+
+		if (completionMode == CompletionMode.DELETE) {
+
+			var guard = expectedCurrentStatus == null ? "" : " and p.status = ?2";
+			var query = entityManager.createQuery(DELETE_BY_ID + guard).setParameter(1, identifier);
+
+			if (expectedCurrentStatus != null) {
+				query.setParameter(2, expectedCurrentStatus);
+			}
+
+			return query.executeUpdate() == 1;
+
+		} else if (completionMode == CompletionMode.ARCHIVE) {
+
+			var publication = entityManager.find(JpaEventPublication.getIncompleteType(), identifier);
+
+			if (publication == null || (expectedCurrentStatus != null && publication.status != expectedCurrentStatus)) {
+				return false;
+			}
+
+			entityManager.remove(publication);
+			entityManager.persist(publication.archive(instant, Status.ABANDONED));
+
+			return true;
+
+		} else {
+
+			var guard = expectedCurrentStatus == null ? "" : " and p.status = ?3";
+			var query = entityManager.createQuery(MARK_ABANDONED_BY_ID + guard)
+					.setParameter(1, identifier)
+					.setParameter(2, instant);
+
+			if (expectedCurrentStatus != null) {
+				query.setParameter(3, expectedCurrentStatus);
+			}
+
+			return query.executeUpdate() == 1;
 		}
 	}
 
@@ -381,6 +446,15 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findAbandonedPublications()
+	 */
+	@Override
+	public List<TargetEventPublication> findAbandonedPublications() {
+		return findByStatus(Status.ABANDONED);
+	}
+
+	/*
+	 * (non-Javadoc)
 	 * @see org.springframework.modulith.events.core.EventPublicationRepository#findFailedPublications(org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria)
 	 */
 	@Override
@@ -446,6 +520,20 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 		Assert.notNull(instant, "Instant must not be null!");
 
 		entityManager.createQuery(deleteCompletedBefore)
+				.setParameter(1, instant)
+				.executeUpdate();
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#deleteAbandonedPublicationsBefore(java.time.Instant)
+	 */
+	@Override
+	public void deleteAbandonedPublicationsBefore(Instant instant) {
+
+		Assert.notNull(instant, "Instant must not be null!");
+
+		entityManager.createQuery(deleteAbandonedBefore)
 				.setParameter(1, instant)
 				.executeUpdate();
 	}

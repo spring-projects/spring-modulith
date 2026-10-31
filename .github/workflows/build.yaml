@@ -1,8 +1,8 @@
-name: CI Build
+name: CI Build (Open Source)
 
 on:
   push:
-    branches: [ main, 2.0.x, 1.4.x, 1.3.x, 1.2.x, feature/* ]
+    branches: [ main, 2.1.x, 2.0.x, 1.4.x, feature/* ]
 
 jobs:
   build:

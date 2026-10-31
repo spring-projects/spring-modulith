@@ -17,12 +17,13 @@ package org.springframework.modulith.events.support;
 
 import java.util.concurrent.CompletableFuture;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.RoutingTarget;
 import org.springframework.util.Assert;
 
 /**
- * An {@link EventExternalizationSupport} delegating to a {@link EventExternalizationTransport} for the actual
+ * An {@link EventExternalizerSupport} delegating to a {@link EventExternalizationTransport} for the actual
  * externalization.
  *
  * @author Oliver Drotbohm
@@ -34,12 +35,17 @@ abstract class TransportAwareEventExternalizer extends EventExternalizerSupport 
 	private final EventExternalizationTransport transport;
 
 	/**
-	 * Creates a new {@link DelegatingEventExternalizer} for the given {@link EventExternalizationConfiguration} and
-	 * {@link EventExternalizationTransport} implementing the actual externalization.
+	 * Creates a new {@link TransportAwareEventExternalizer} for the given {@link EventExternalizationConfiguration} and
+	 * {@link EventExternalizationTransport} implementing the actual externalization, not resolving bean references in
+	 * routing target and key expressions.
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param transport must not be {@literal null}.
+	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
+	 *             {@link #TransportAwareEventExternalizer(EventExternalizationConfiguration, EventExternalizationTransport, BeanFactory)}
+	 *             instead.
 	 */
+	@Deprecated(since = "2.2, 2.1.2", forRemoval = true)
 	public TransportAwareEventExternalizer(EventExternalizationConfiguration configuration,
 			EventExternalizationTransport transport) {
 
@@ -50,9 +56,29 @@ abstract class TransportAwareEventExternalizer extends EventExternalizerSupport 
 		this.transport = transport;
 	}
 
+	/**
+	 * Creates a new {@link TransportAwareEventExternalizer} for the given {@link EventExternalizationConfiguration},
+	 * {@link EventExternalizationTransport} implementing the actual externalization and {@link BeanFactory} to resolve
+	 * routing target and key expressions (which may refer to beans) against the original event.
+	 *
+	 * @param configuration must not be {@literal null}.
+	 * @param transport must not be {@literal null}.
+	 * @param beanFactory must not be {@literal null}.
+	 * @since 2.2, 2.1.2
+	 */
+	public TransportAwareEventExternalizer(EventExternalizationConfiguration configuration,
+			EventExternalizationTransport transport, BeanFactory beanFactory) {
+
+		super(configuration, beanFactory);
+
+		Assert.notNull(transport, "EventExternalizationTransport must not be null!");
+
+		this.transport = transport;
+	}
+
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.support.EventExternalizationSupport#externalize(org.springframework.modulith.events.RoutingTarget, java.lang.Object)
+	 * @see org.springframework.modulith.events.support.EventExternalizerSupport#externalize(org.springframework.modulith.events.RoutingTarget, java.lang.Object)
 	 */
 	@Override
 	protected CompletableFuture<?> externalize(Object payload, RoutingTarget target) {

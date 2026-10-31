@@ -43,8 +43,7 @@ import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
- * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
- * externalize events to JMS.
+ * Auto-configuration to set up a {@link EventExternalizerModuleListener} to externalize events to JMS.
  *
  * @author Oliver Drotbohm
  * @since 1.1
@@ -67,7 +66,7 @@ class JmsEventExternalizerConfiguration {
 		logger.debug("Registering domain event externalization to JMS…");
 
 		return new EventExternalizerModuleListener(configuration,
-				createJmsTransport(operations, serializer, factory));
+				createJmsTransport(operations, serializer, factory), factory);
 	}
 
 	@AutoConfiguration

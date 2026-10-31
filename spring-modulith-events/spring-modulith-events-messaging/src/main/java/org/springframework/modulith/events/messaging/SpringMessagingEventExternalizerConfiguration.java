@@ -43,8 +43,8 @@ import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
 /**
- * Auto-configuration to set up a {@link org.springframework.modulith.events.support.DelegatingEventExternalizer} to
- * externalize events to a Spring Messaging {@link MessageChannel}.
+ * Auto-configuration to set up a {@link EventExternalizerModuleListener} to externalize events to a Spring Messaging
+ * {@link MessageChannel}.
  *
  * @author Josh Long
  * @author Oliver Drotbohm
@@ -67,7 +67,8 @@ class SpringMessagingEventExternalizerConfiguration {
 
 		logger.debug("Registering domain event externalization for Spring Messaging…");
 
-		return new EventExternalizerModuleListener(configuration, createMessagingTransport(configuration, factory));
+		return new EventExternalizerModuleListener(configuration, createMessagingTransport(configuration, factory),
+				factory);
 	}
 
 	@AutoConfiguration

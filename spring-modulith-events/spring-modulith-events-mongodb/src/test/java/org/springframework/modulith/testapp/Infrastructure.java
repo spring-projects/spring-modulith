@@ -29,7 +29,7 @@ public class Infrastructure {
 	@Bean
 	@ServiceConnection
 	MongoDBContainer mongoDBContainer() {
-		return new MongoDBContainer(DockerImageName.parse("mongo:latest"));
+		return new MongoDBContainer(DockerImageName.parse("mongo:7.0")).withReplicaSet();
 	}
 
 	@Bean

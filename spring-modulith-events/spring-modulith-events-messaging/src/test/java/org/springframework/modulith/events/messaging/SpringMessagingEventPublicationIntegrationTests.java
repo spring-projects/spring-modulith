@@ -46,7 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 @SpringBootTest
 class SpringMessagingEventPublicationIntegrationTests {
 
-	private static final String TARGET = "target::#{someExpression}";
+	private static final String TARGET = "target::#{getSomeExpression()}";
+	private static final String RESOLVED_KEY = "resolved";
 	private static final String CHANNEL_NAME = "target";
 	private static final AtomicInteger COUNTER = new AtomicInteger();
 
@@ -69,7 +70,7 @@ class SpringMessagingEventPublicationIntegrationTests {
 					.handle((__, headers) -> {
 
 						assertThat(headers.get(SpringMessagingEventExternalizerConfiguration.MODULITH_ROUTING_HEADER))
-								.isEqualTo(TARGET);
+								.isEqualTo("target::" + RESOLVED_KEY);
 
 						COUNTER.incrementAndGet();
 						return null;
@@ -100,7 +101,12 @@ class SpringMessagingEventPublicationIntegrationTests {
 	}
 
 	@Externalized(TARGET)
-	static class TestEvent {}
+	static class TestEvent {
+
+		public String getSomeExpression() {
+			return RESOLVED_KEY;
+		}
+	}
 
 	@RequiredArgsConstructor
 	static class TestPublisher {

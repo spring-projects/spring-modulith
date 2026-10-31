@@ -39,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.mongodb.test.autoconfigure.DataMongoTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
+import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.ResubmissionOptions;
@@ -51,6 +52,7 @@ import org.springframework.modulith.testapp.Infrastructure;
 import org.springframework.modulith.testapp.TestApplication;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.transaction.support.TransactionTemplate;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
 /**
@@ -200,6 +202,78 @@ class MongoDbEventPublicationRepositoryTest {
 			if (completionMode == CompletionMode.ARCHIVE) {
 				assertThat(mongoTemplate.findAll(MongoDbEventPublication.class, archiveCollection)).isNotEmpty();
 			}
+		}
+
+		@Test // GH-1764
+		void marksPublicationAsAbandoned() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markAbandoned(publication.getIdentifier(), Instant.now(), null);
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findAbandonedPublications()).isEmpty();
+
+			} else {
+
+				assertThat(repository.findAbandonedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+
+			if (completionMode == CompletionMode.ARCHIVE) {
+				assertThat(mongoTemplate.findAll(MongoDbEventPublication.class, archiveCollection)).isNotEmpty();
+			}
+		}
+
+		@Test // GH-1764
+		void distinguishesAbandonedFromCompletedPublications() {
+
+			var completed = createPublication(new TestEvent("completed"));
+			var abandoned = createPublication(new TestEvent("abandoned"));
+
+			repository.markCompleted(completed.getIdentifier(), Instant.now());
+			repository.markAbandoned(abandoned.getIdentifier(), Instant.now(), null);
+
+			var expectedCount = completionMode == CompletionMode.DELETE ? 0 : 1;
+
+			assertThat(repository.countByStatus(Status.COMPLETED)).isEqualTo(expectedCount);
+			assertThat(repository.countByStatus(Status.ABANDONED)).isEqualTo(expectedCount);
+
+			if (completionMode != CompletionMode.DELETE) {
+
+				assertThat(repository.findCompletedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(completed.getIdentifier());
+
+				assertThat(repository.findAbandonedPublications())
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(abandoned.getIdentifier());
+			}
+		}
+
+		@Test // GH-1764
+		void shouldDeleteAbandonedEventsBefore() {
+
+			assumeFalse(completionMode == CompletionMode.DELETE);
+
+			var publication1 = createPublication(new TestEvent("abc"));
+			var publication2 = createPublication(new TestEvent("def"));
+
+			var now = Instant.now();
+
+			repository.markAbandoned(publication1.getIdentifier(), now.minusSeconds(30), null);
+			repository.markAbandoned(publication2.getIdentifier(), now, null);
+
+			repository.deleteAbandonedPublicationsBefore(now.minusSeconds(15));
+
+			assertThat(repository.findAbandonedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication2.getIdentifier());
 		}
 
 		@Test // GH-4
@@ -376,7 +450,7 @@ class MongoDbEventPublicationRepositoryTest {
 		}
 
 		@ParameterizedTest // GH-1855
-		@EnumSource(value = Status.class, names = "COMPLETED", mode = EnumSource.Mode.EXCLUDE)
+		@EnumSource(value = Status.class, names = { "COMPLETED", "ABANDONED" }, mode = EnumSource.Mode.EXCLUDE)
 		void recognizesPreviouslyCompletedPublications(Status status) {
 
 			var now = Instant.parse("2026-01-01T12:00:00Z");
@@ -507,6 +581,99 @@ class MongoDbEventPublicationRepositoryTest {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1764
+		void abandonsFailedPublicationIfStillFailed() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+
+			if (completionMode == CompletionMode.DELETE) {
+
+				assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+
+			} else {
+
+				assertThat(repository.findByStatus(Status.ABANDONED))
+						.extracting(TargetEventPublication::getIdentifier)
+						.containsExactly(publication.getIdentifier());
+			}
+		}
+
+		@Test // GH-1764
+		void doesNotAbandonPublicationThatHasBeenConcurrentlyResubmitted() {
+
+			var event = new TestEvent("first");
+			var publication = createPublication(event);
+
+			repository.markFailed(publication.getIdentifier());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isFalse();
+			assertThat(repository.findByStatus(Status.RESUBMITTED))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(publication.getIdentifier());
+			assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+		}
+
+		@Test // GH-1412
+		void archivesPublicationsInsideTransaction() {
+
+			assumeTrue(completionMode == CompletionMode.ARCHIVE);
+
+			var first = createPublication(new TestEvent("first"));
+			var second = createPublication(new TestEvent("second"));
+			var template = new TransactionTemplate(new MongoTransactionManager(mongoTemplate.getMongoDatabaseFactory()));
+
+			template.executeWithoutResult(__ -> {
+				repository.markCompleted(first.getIdentifier(), Instant.now());
+				repository.markCompleted(second.getIdentifier(), Instant.now());
+			});
+
+			assertThat(repository.findIncompletePublications()).isEmpty();
+			assertThat(repository.findCompletedPublications())
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactlyInAnyOrder(first.getIdentifier(), second.getIdentifier());
+		}
+
+		@Test // GH-1412
+		void keepsExistingArchiveEntryWhenArchivingAgain() {
+
+			assumeTrue(completionMode == CompletionMode.ARCHIVE);
+
+			var publication = createPublication(new TestEvent("first"));
+			var firstCompletion = Instant.now().truncatedTo(ChronoUnit.MILLIS);
+
+			repository.markCompleted(publication.getIdentifier(), firstCompletion);
+
+			// Re-create the active entry with the same identifier to simulate a concurrent archival
+			mongoTemplate.save(new MongoDbEventPublication(publication.getIdentifier(), Instant.now(), "listener",
+					new TestEvent("first"), null, Status.PUBLISHED, null, 1));
+
+			repository.markCompleted(publication.getIdentifier(), firstCompletion.plusSeconds(60));
+
+			assertThat(mongoTemplate.findAll(MongoDbEventPublication.class, archiveCollection)).singleElement()
+					.satisfies(it -> assertThat(it.completionDate).isEqualTo(firstCompletion));
+			assertThat(mongoTemplate.findAll(MongoDbEventPublication.class,
+					mongoTemplate.getCollectionName(MongoDbEventPublication.class))).isEmpty();
+		}
+
+		@Test // GH-1908
+		void doesNotLookUpFailedPublicationPublishedAfterReferenceDate() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			var criteria = FailedCriteria.ALL
+					.withPublicationsPublishedBefore(publication.getPublicationDate().minusMillis(50));
+
+			assertThat(repository.findFailedPublications(criteria)).isEmpty();
+		}
+
 		private TargetEventPublication createPublication(Object event) {
 			return createPublication(event, TARGET_IDENTIFIER);
 		}
@@ -525,11 +692,11 @@ class MongoDbEventPublicationRepositoryTest {
 
 		private MongoDbEventPublication savePublicationAt(Instant date, Status status) {
 
-			var completed = status == Status.COMPLETED;
+			var terminal = status == Status.COMPLETED || status == Status.ABANDONED;
 			var publication = new MongoDbEventPublication(UUID.randomUUID(), date, "listener", new TestEvent("event"),
-					completed ? date.plusSeconds(1) : null, status, null, 1);
+					terminal ? date.plusSeconds(1) : null, status, null, 1);
 
-			return completed && completionMode == CompletionMode.ARCHIVE
+			return terminal && completionMode == CompletionMode.ARCHIVE
 					? mongoTemplate.save(publication, archiveCollection)
 					: mongoTemplate.save(publication);
 		}

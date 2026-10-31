@@ -115,6 +115,10 @@ do
     updateCommitMessage "$sourceGh" "$targetGh"
     echo "Updated commit message"
 
+    # Replace @Test ticket references in the cherry-picked test sources with the new one
+    updateTestReferences "$sourceGh" "$targetGh" || _exit 1 "Failed to update test references for commit $sha"
+    echo "Updated test references"
+
   done <<< "$shas"
 
 done

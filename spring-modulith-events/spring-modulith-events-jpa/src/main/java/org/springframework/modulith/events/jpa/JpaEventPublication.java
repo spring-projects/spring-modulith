@@ -107,10 +107,10 @@ public abstract class JpaEventPublication {
 		return mode == CompletionMode.ARCHIVE ? ArchivedJpaEventPublication.class : DefaultJpaEventPublication.class;
 	}
 
-	ArchivedJpaEventPublication archive(Instant instant) {
+	ArchivedJpaEventPublication archive(Instant instant, Status status) {
 
 		var result = new ArchivedJpaEventPublication(id, publicationDate, listenerId, serializedEvent, eventType,
-				Status.COMPLETED, lastResubmissionDate, completionAttempts);
+				status, lastResubmissionDate, completionAttempts);
 		result.completionDate = instant;
 
 		return result;

@@ -17,10 +17,15 @@ package org.springframework.modulith.core;
 
 import static org.assertj.core.api.Assertions.*;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import org.junit.jupiter.api.DynamicTest;
+import org.junit.jupiter.api.NamedExecutable;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestFactory;
 import org.springframework.core.ResolvableType;
 import org.springframework.modulith.core.FormattableType.NonModuleTypeAbbreviation;
 
@@ -128,6 +133,31 @@ class FormattableTypeUnitTests {
 		assertThat(type.getAbbreviatedFullName()).isEqualTo("j.u.List<j.u.Map<j.l.String, j.l.Integer>>");
 	}
 
+	@TestFactory // GH-1901
+	Stream<DynamicTest> handlesArrayTypesFromResolvableType() throws Exception {
+
+		var method = Sample.class.getMethod("arrays", Integer[].class, byte[].class, Integer[][].class, List.class);
+
+		var tests = Stream.of(
+				new $(method, 0, "j.l.Integer[]"),
+				new $(method, 1, "byte[]"),
+				new $(method, 2, "j.l.Integer[][]"),
+				new $(method, 3, "j.u.List<j.l.Integer[]>"));
+
+		return DynamicTest.stream(tests);
+	}
+
+	@Test // GH-1901
+	void rendersArrayTypesConsistentlyIndependentOfLookupOrder() {
+
+		var fromResolvableType = FormattableType.of(ResolvableType.forClass(Sample[].class));
+		var fromClass = FormattableType.of(Sample[].class);
+
+		assertThat(fromClass.getFullName())
+				.isEqualTo(fromResolvableType.getFullName())
+				.isEqualTo("org.springframework.modulith.core.FormattableTypeUnitTests.Sample[]");
+	}
+
 	interface Sample {
 
 		<T> List<?> wildcarded(List<T> parameterized);
@@ -135,5 +165,24 @@ class FormattableTypeUnitTests {
 		void classWildcard(Class<?> type);
 
 		List<Map<String, Integer>> genericReturnType();
+
+		void arrays(Integer[] integers, byte[] bytes, Integer[][] matrix, List<Integer[]> list);
+	}
+
+	record $(ResolvableType type, String expected) implements NamedExecutable {
+
+		public $(Method method, int parameterIndex, String expected) {
+			this(ResolvableType.forMethodParameter(method, parameterIndex), expected);
+		}
+
+		@Override
+		public final String toString() {
+			return "%s renders as %s".formatted(type, expected);
+		}
+
+		@Override
+		public void execute() throws Throwable {
+			assertThat(FormattableType.of(type).getAbbreviatedFullName()).isEqualTo(expected);
+		}
 	}
 }

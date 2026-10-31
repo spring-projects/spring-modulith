@@ -18,6 +18,7 @@ package org.springframework.modulith.events.support;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
+import org.springframework.beans.factory.BeanFactory;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 
@@ -43,11 +44,33 @@ public class OutboxEventExternalizer extends TransportAwareEventExternalizer {
 	 *
 	 * @param configuration must not be {@literal null}.
 	 * @param publisher must not be {@literal null}.
+	 * @deprecated since 2.2, 2.1.2, for removal in 2.3. Use
+	 *             {@link #OutboxEventExternalizer(EventExternalizationConfiguration, ApplicationEventPublisher, EventExternalizationTransport, BeanFactory)}
+	 *             instead.
 	 */
+	@Deprecated(since = "2.2, 2.1.2", forRemoval = true)
 	public OutboxEventExternalizer(EventExternalizationConfiguration configuration, ApplicationEventPublisher publisher,
 			EventExternalizationTransport transport) {
 
 		super(configuration, transport);
+
+		this.events = publisher;
+	}
+
+	/**
+	 * Creates a new {@link OutboxEventExternalizer} for the given {@link EventExternalizationConfiguration}, transport
+	 * function and {@link BeanFactory} to resolve routing target and key expressions (which may refer to beans) against
+	 * the original event.
+	 *
+	 * @param configuration must not be {@literal null}.
+	 * @param publisher must not be {@literal null}.
+	 * @param beanFactory must not be {@literal null}.
+	 * @since 2.2, 2.1.2
+	 */
+	public OutboxEventExternalizer(EventExternalizationConfiguration configuration, ApplicationEventPublisher publisher,
+			EventExternalizationTransport transport, BeanFactory beanFactory) {
+
+		super(configuration, transport, beanFactory);
 
 		this.events = publisher;
 	}

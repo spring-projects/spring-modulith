@@ -24,11 +24,20 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import org.springframework.modulith.events.core.AbandonPolicies;
+import org.springframework.modulith.events.core.DefaultAbandonedEventPublications;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
+import org.springframework.modulith.events.core.DefaultFailedEventPublications;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.modulith.events.core.EventPublicationRepository;
 import org.springframework.modulith.events.support.CompletionRegisteringAdvisor;
 import org.springframework.modulith.events.support.PersistentApplicationEventMulticaster;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.DefaultTransactionDefinition;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.function.SingletonSupplier;
 
 /**
  * Fundamental configuration for the {@link EventPublicationRegistry} support.
@@ -43,9 +52,18 @@ class EventPublicationConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
+			ObjectProvider<Clock> clock, ObjectProvider<AbandonPolicies> abandonPolicies) {
+
+		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()),
+				abandonPolicies.getIfAvailable(AbandonPolicies::none));
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	DefaultAbandonedEventPublications abandonedEventPublications(EventPublicationRepository repository,
 			ObjectProvider<Clock> clock) {
 
-		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()));
+		return new DefaultAbandonedEventPublications(repository, clock.getIfAvailable(() -> Clock.systemUTC()));
 	}
 
 	@Bean
@@ -59,7 +77,24 @@ class EventPublicationConfiguration {
 
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry) {
-		return new CompletionRegisteringAdvisor(registry::getObject);
+	static DefaultFailedEventPublications failedEventPublications(
+			ObjectFactory<EventPublicationRegistry> eventPublicationRegistry,
+			PersistentApplicationEventMulticaster multicaster, ObjectFactory<Environment> environment) {
+
+		return new DefaultFailedEventPublications(() -> eventPublicationRegistry.getObject(),
+				multicaster::getTransactionalEventListeners, () -> environment.getObject());
+	}
+
+	@Bean
+	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+	static CompletionRegisteringAdvisor completionRegisteringAdvisor(ObjectFactory<EventPublicationRegistry> registry,
+			ObjectFactory<Environment> environment, ObjectFactory<PlatformTransactionManager> transactionManager) {
+
+		var definition = new DefaultTransactionDefinition(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+		var template = SingletonSupplier
+				.of(() -> new TransactionTemplate(transactionManager.getObject(), definition));
+
+		return new CompletionRegisteringAdvisor(registry::getObject,
+				EventListenerMethodMetadata.of(environment::getObject), template);
 	}
 }

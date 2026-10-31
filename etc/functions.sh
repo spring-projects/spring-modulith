@@ -214,3 +214,29 @@ updateCommitMessage() {
     return 1
   fi
 }
+
+# Replaces references to the source ticket on @Test lines (e.g. "@Test // GH-1234") in the Java files touched by
+# the HEAD commit with the target ticket and amends the commit if anything changed.
+updateTestReferences() {
+  local source="$1"
+  local target="$2"
+  local files
+  local changed=false
+
+  files=$(git diff-tree --no-commit-id --name-only -r --diff-filter=AM HEAD | grep '\.java$')
+
+  while IFS= read -r file; do
+    [ -f "$file" ] || continue
+    SOURCE_GH="$source" TARGET_GH="$target" perl -i -pe 's/\b\Q$ENV{SOURCE_GH}\E\b/$ENV{TARGET_GH}/g if /\@Test\b/' "$file"
+    if ! git diff --quiet -- "$file"; then
+      git add -- "$file"
+      changed=true
+    fi
+  done <<< "$files"
+
+  if [ "$changed" == "true" ]; then
+    git commit --amend --no-edit || return 1
+  fi
+
+  return 0
+}

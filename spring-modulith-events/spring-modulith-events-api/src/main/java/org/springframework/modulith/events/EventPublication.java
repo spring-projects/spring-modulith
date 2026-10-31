@@ -46,8 +46,8 @@ public interface EventPublication {
 	Object getEvent();
 
 	/**
-	 * Returns the event as Spring {@link ApplicationEvent}, effectively wrapping it into a
-	 * {@link PayloadApplicationEvent} in case it's not one already.
+	 * Returns the event as Spring {@link ApplicationEvent}: the event itself if it already is one, or the event
+	 * wrapped into a {@link PayloadApplicationEvent} otherwise.
 	 *
 	 * @return the underlying event as {@link ApplicationEvent}.
 	 */
@@ -55,8 +55,8 @@ public interface EventPublication {
 
 		Object event = getEvent();
 
-		return PayloadApplicationEvent.class.isInstance(event) //
-				? PayloadApplicationEvent.class.cast(event)
+		return ApplicationEvent.class.isInstance(event) //
+				? ApplicationEvent.class.cast(event)
 				: new PayloadApplicationEvent<>(this, event);
 	}
 
@@ -162,6 +162,24 @@ public interface EventPublication {
 		/**
 		 * A previously failed publication has been resubmitted for processing.
 		 */
-		RESUBMITTED;
+		RESUBMITTED,
+
+		/**
+		 * The publication has permanently given up on further resubmission attempts, as decided by an application-defined
+		 * policy. Distinct from {@link #COMPLETED}, which indicates a successful listener invocation.
+		 *
+		 * @since 2.2
+		 */
+		ABANDONED;
+
+		/**
+		 * Returns whether this {@link Status} is terminal, i.e. the publication will not transition into any other
+		 * {@link Status} anymore.
+		 *
+		 * @since 2.2
+		 */
+		public boolean isTerminal() {
+			return this == COMPLETED || this == ABANDONED;
+		}
 	}
 }

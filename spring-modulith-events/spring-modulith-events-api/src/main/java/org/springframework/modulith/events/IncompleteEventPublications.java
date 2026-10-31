@@ -23,7 +23,9 @@ import java.util.function.Predicate;
  *
  * @author Oliver Drotbohm
  * @since 1.1
+ * @deprecated since 2.2. Please use {@link FailedEventPublications} instead.
  */
+@Deprecated(since = "2.2", forRemoval = true)
 public interface IncompleteEventPublications {
 
 	/**

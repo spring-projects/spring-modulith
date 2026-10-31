@@ -26,6 +26,9 @@ import org.junit.jupiter.api.Test;
 import org.springframework.aop.framework.Advised;
 import org.springframework.aop.framework.ProxyFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.mock.env.MockEnvironment;
+import org.springframework.modulith.events.ApplicationModuleListener;
+import org.springframework.modulith.events.core.EventListenerMethodMetadata;
 import org.springframework.modulith.events.core.EventPublicationRegistry;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.transaction.event.TransactionPhase;
@@ -38,8 +41,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
  */
 class CompletionRegisteringAdvisorUnitTests {
 
+	static final String TRIGGER_ANNOTATION_PROPERTY = "spring.modulith.events.registry-trigger-annotation";
+
 	EventPublicationRegistry registry = mock(EventPublicationRegistry.class);
 	SomeEventListener bean = new SomeEventListener();
+	MockEnvironment environment = new MockEnvironment();
 
 	@Test
 	void triggersCompletionForAfterCommitEventListener() throws Exception {
@@ -97,6 +103,27 @@ class CompletionRegisteringAdvisorUnitTests {
 		assertThat(future.get()).isNotNull();
 	}
 
+	@Test // GH-1903
+	void doesNotTriggerCompletionForListenerMissingTriggerAnnotation() {
+
+		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, ApplicationModuleListener.class.getName());
+
+		createProxyFor(bean).onAfterCommit(new Object());
+
+		verify(registry, never()).markProcessing(any(), any());
+		verify(registry, never()).markCompleted(any(), any());
+	}
+
+	@Test // GH-1903
+	void triggersCompletionForListenerCarryingTriggerAnnotation() {
+
+		environment.setProperty(TRIGGER_ANNOTATION_PROPERTY, ApplicationModuleListener.class.getName());
+
+		createProxyFor(bean).onModuleEvent(new Object());
+
+		verify(registry).markCompleted(any(), any());
+	}
+
 	private void assertCompletion(BiConsumer<SomeEventListener, Object> consumer) {
 		assertCompletion(consumer, true);
 	}
@@ -120,7 +147,8 @@ class CompletionRegisteringAdvisorUnitTests {
 	private <T> T createProxyFor(T bean) {
 
 		ProxyFactory factory = new ProxyFactory(bean);
-		factory.addAdvisor(new CompletionRegisteringAdvisor(() -> registry));
+		factory.addAdvisor(new CompletionRegisteringAdvisor(() -> registry,
+				EventListenerMethodMetadata.of(() -> environment)));
 		return (T) factory.getProxy();
 	}
 
@@ -131,6 +159,9 @@ class CompletionRegisteringAdvisorUnitTests {
 
 		@TransactionalEventListener(phase = TransactionPhase.AFTER_ROLLBACK)
 		void onAfterRollback(Object object) {}
+
+		@ApplicationModuleListener
+		void onModuleEvent(Object event) {}
 
 		@EventListener
 		void simpleEventListener(Object object) {}

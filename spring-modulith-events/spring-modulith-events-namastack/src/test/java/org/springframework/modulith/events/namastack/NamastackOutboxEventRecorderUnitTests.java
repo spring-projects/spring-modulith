@@ -15,9 +15,12 @@
  */
 package org.springframework.modulith.events.namastack;
 
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.Outbox;
+
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.PayloadApplicationEvent;
@@ -47,6 +50,30 @@ class NamastackOutboxEventRecorderUnitTests {
 
 		verify(outbox).schedule(payload, "value");
 	}
+
+	@Test // GH-1895
+	void storesOriginalEventWithoutApplyingMapping() {
+
+		var mappings = new AtomicInteger();
+		var configuration = EventExternalizationConfiguration.externalizing()
+				.select(EventExternalizationConfiguration.annotatedAsExternalized())
+				.mapping(SampleEvent.class, it -> {
+					mappings.incrementAndGet();
+					return new MappedEvent(it.getValue());
+				})
+				.build();
+
+		var payload = new SampleEvent("value");
+		var outbox = mock(Outbox.class);
+		var recorder = new NamastackOutboxEventRecorder(configuration, outbox, new StandardEvaluationContext());
+
+		recorder.onApplicationEvent(new PayloadApplicationEvent<>(this, payload));
+
+		verify(outbox).schedule(payload, "value");
+		assertThat(mappings).hasValue(0);
+	}
+
+	record MappedEvent(String value) {}
 
 	@Externalized("target::#{getValue()}")
 	static class SampleEvent {

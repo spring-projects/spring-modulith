@@ -22,6 +22,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.jspecify.annotations.Nullable;
+import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.EventPublication;
 import org.springframework.modulith.events.ResubmissionOptions;
 
@@ -127,4 +128,20 @@ public interface EventPublicationRegistry {
 	 * @since 2.0
 	 */
 	void markStalePublicationsFailed(Staleness staleness);
+
+	/**
+	 * Applies an abandon decision to all currently {@link EventPublication.Status#FAILED} {@link EventPublication}s,
+	 * marking the ones the effective {@link AbandonPolicy} decides to give up on as
+	 * {@link EventPublication.Status#ABANDONED}. If {@code override} is given, it is applied instead of the globally
+	 * configured {@link AbandonPolicy} beans, while the framework-provided default (based on the configured
+	 * resubmission attempts) still applies as the fallback for {@link AbandonPolicy.Decision#DEFAULT} decisions. Pass
+	 * {@literal null} to apply the globally configured policy as-is.
+	 * <p>
+	 * This is an explicit operation triggered by application code on demand; it is not run automatically, so it never
+	 * retroactively abandons publications unless the application decides to invoke it.
+	 *
+	 * @param override can be {@literal null}.
+	 * @since 2.2
+	 */
+	void applyAbandonPolicy(@Nullable AbandonPolicy override);
 }
