@@ -41,19 +41,23 @@ class DefaultEventPublication implements TargetEventPublication {
 	private Optional<Instant> completionDate;
 
 	/**
-	 * Creates a new {@link DefaultEventPublication} for the given event and {@link PublicationTargetIdentifier}.
+	 * Creates a new {@link DefaultEventPublication} for the given identifier, event and
+	 * {@link PublicationTargetIdentifier}.
 	 *
+	 * @param identifier must not be {@literal null}.
 	 * @param event must not be {@literal null}.
 	 * @param targetIdentifier must not be {@literal null}.
 	 * @param publicationDate must not be {@literal null}.
 	 */
-	DefaultEventPublication(Object event, PublicationTargetIdentifier targetIdentifier, Instant publicationDate) {
+	DefaultEventPublication(UUID identifier, Object event, PublicationTargetIdentifier targetIdentifier,
+			Instant publicationDate) {
 
+		Assert.notNull(identifier, "Identifier must not be null!");
 		Assert.notNull(event, "Event must not be null!");
 		Assert.notNull(targetIdentifier, "PublicationTargetIdentifier must not be null!");
 		Assert.notNull(publicationDate, "Publication date must not be null!");
 
-		this.identifier = UUID.randomUUID();
+		this.identifier = identifier;
 		this.event = event;
 		this.targetIdentifier = targetIdentifier;
 		this.publicationDate = publicationDate;

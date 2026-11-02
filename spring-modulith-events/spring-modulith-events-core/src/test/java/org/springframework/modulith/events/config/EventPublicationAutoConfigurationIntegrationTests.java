@@ -22,6 +22,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.UUID;
 import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
@@ -33,6 +34,7 @@ import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutdown;
+import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.assertj.AssertableApplicationContext;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.boot.test.context.runner.ContextConsumer;
@@ -53,6 +55,10 @@ import org.springframework.scheduling.annotation.ProxyAsyncConfiguration;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.aspectj.AspectJAsyncConfiguration;
 import org.springframework.test.util.ReflectionTestUtils;
+import org.springframework.util.IdGenerator;
+import org.springframework.util.JdkIdGenerator;
+
+import com.github.f4b6a3.uuid.UuidCreator;
 
 /**
  * Unit tests for {@link EventPublicationConfiguration}.
@@ -132,6 +138,49 @@ class EventPublicationAutoConfigurationIntegrationTests {
 					var registry = context.getBean(EventPublicationRegistry.class);
 
 					assertThat(ReflectionTestUtils.getField(registry, "clock")).isSameAs(clock);
+				});
+	}
+
+	@Test // GH-1988
+	void usesJdkIdGeneratorIfUuidCreatorIsNotPresent() {
+
+		basicSetup()
+				.withClassLoader(new FilteredClassLoader(UuidCreator.class))
+				.run(context -> {
+
+					assertThat(context).doesNotHaveBean(IdGenerator.class);
+
+					var registry = context.getBean(EventPublicationRegistry.class);
+
+					assertThat(ReflectionTestUtils.getField(registry, "idGenerator")).isInstanceOf(JdkIdGenerator.class);
+				});
+	}
+
+	@Test // GH-1988
+	void usesTimeOrderedUuidsIfUuidCreatorIsPresent() {
+
+		basicSetup().run(context -> {
+
+			var registry = context.getBean(EventPublicationRegistry.class);
+			var idGenerator = (IdGenerator) ReflectionTestUtils.getField(registry, "idGenerator");
+
+			assertThat(idGenerator).isSameAs(context.getBean(IdGenerator.class));
+			assertThat(idGenerator.generateId().version()).isEqualTo(7);
+		});
+	}
+
+	@Test // GH-1988
+	void wiresCustomIdGeneratorIntoEventPublicationRegistryIfConfigured() {
+
+		IdGenerator idGenerator = UUID::randomUUID;
+
+		basicSetup()
+				.withBean(IdGenerator.class, () -> idGenerator)
+				.run(context -> {
+
+					var registry = context.getBean(EventPublicationRegistry.class);
+
+					assertThat(ReflectionTestUtils.getField(registry, "idGenerator")).isSameAs(idGenerator);
 				});
 	}
 

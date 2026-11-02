@@ -68,6 +68,20 @@ class DefaultEventPublicationRegistryUnitTests {
 		});
 	}
 
+	@Test // GH-1988
+	void usesCustomIdGeneratorIfConfigured() {
+
+		when(repository.create(any())).then(returnsFirstArg());
+
+		var id = UUID.randomUUID();
+		var clock = Clock.fixed(Instant.now(), ZoneId.systemDefault());
+		var registry = new DefaultEventPublicationRegistry(repository, clock, AbandonPolicies.none(), () -> id);
+
+		var publications = registry.store(new Object(), Stream.of(PublicationTargetIdentifier.of("id")));
+
+		assertThat(publications).extracting(TargetEventPublication::getIdentifier).containsExactly(id);
+	}
+
 	@Test // GH-819
 	void removesFailingResubmissionFromInProgressPublications() {
 

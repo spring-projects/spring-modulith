@@ -57,6 +57,13 @@
 			<optional>true</optional>
 		</dependency>
 
+		<dependency>
+			<groupId>com.github.f4b6a3</groupId>
+			<artifactId>uuid-creator</artifactId>
+			<version>${uuid-creator.version}</version>
+			<optional>true</optional>
+		</dependency>
+
 		<!-- Test -->
 
 		<dependency>
