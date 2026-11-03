@@ -1173,12 +1173,12 @@ public class ApplicationModule implements Comparable<ApplicationModule> {
 		}
 
 		/**
-		 * Creates a new AllowedDependecies from the given {@link ApplicationModule} to the targets defined in the
+		 * Creates a new {@link AllowedDependencies} from the given {@link ApplicationModule} to the targets defined in the
 		 * expression.
 		 *
 		 * @param source the source {@link ApplicationModule}, must not be {@literal null}.
 		 * @param expression the expression identifying the targets, must not be {@literal null} or empty.
-		 * @param modules all {@link ApplicationModules} available, must not be {@literal null}..
+		 * @param modules all {@link ApplicationModules} available, must not be {@literal null}.
 		 * @return will never be {@literal null}.
 		 * @since 2.2
 		 */
