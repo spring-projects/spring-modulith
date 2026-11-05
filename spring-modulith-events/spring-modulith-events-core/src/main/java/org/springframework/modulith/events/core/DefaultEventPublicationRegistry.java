@@ -231,7 +231,7 @@ public class DefaultEventPublicationRegistry
 
 		if (currentlyResubmitted >= options.getMaxInFlight()) {
 
-			LOGGER.info("Skipping resubmission as only %s should be resubmitted in parallel and currently %s are.",
+			LOGGER.info("Skipping resubmission as only {} should be resubmitted in parallel and currently {} are.",
 					options.getMaxInFlight(), currentlyResubmitted);
 			return;
 		}
