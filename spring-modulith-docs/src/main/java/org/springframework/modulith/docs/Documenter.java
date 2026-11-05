@@ -493,9 +493,11 @@ public class Documenter {
 
 		if (this.components == null) {
 
+			// Keep the module order, as relationships are added to the model in iteration order
 			this.components = modules.stream() //
 					.collect(Collectors.toMap(Function.identity(),
-							it -> container.addComponent(options.defaultDisplayName.apply(it), "", "Module")));
+							it -> container.addComponent(options.defaultDisplayName.apply(it), "", "Module"),
+							(left, right) -> left, LinkedHashMap::new));
 
 			components.forEach((key, value) -> addDependencies(key, value, options));
 		}

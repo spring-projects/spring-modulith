@@ -24,6 +24,7 @@ import java.nio.file.Path;
 import java.util.Comparator;
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -67,6 +68,32 @@ class DocumenterTest {
 						.anyMatch(it -> it.getTagsAsSet().contains(DependencyType.EVENT_LISTENER.toString())));
 
 		documenter.writeModulesAsPlantUml(options);
+	}
+
+	@Test // GH-1997
+	void writesRelationshipsInModuleOrder() {
+
+		var lines = documenter.toPlantUml().lines().map(String::trim).toList();
+
+		// Component(<id>, "<display name>", …)
+		var displayNames = lines.stream()
+				.filter(it -> it.startsWith("Component("))
+				.collect(Collectors.toMap(DocumenterTest::firstArgument, it -> it.split("\"")[1]));
+
+		var moduleOrder = documenter.getModules().stream()
+				.map(ApplicationModule::getDisplayName)
+				.toList();
+
+		var relationshipSources = lines.stream()
+				.filter(it -> it.startsWith("Rel"))
+				.map(DocumenterTest::firstArgument)
+				.map(displayNames::get)
+				.toList();
+
+		assertThat(relationshipSources).isNotEmpty();
+		assertThat(relationshipSources).map(moduleOrder::indexOf)
+				.doesNotContain(-1)
+				.isSorted();
 	}
 
 	@Test
@@ -175,6 +202,10 @@ class DocumenterTest {
 
 	private static Path createFile(Path filePath) throws IOException {
 		return Files.createDirectories(filePath);
+	}
+
+	private static String firstArgument(String plantUmlLine) {
+		return plantUmlLine.substring(plantUmlLine.indexOf('(') + 1, plantUmlLine.indexOf(',')).trim();
 	}
 
 	private static void deleteDirectoryContents(Path path) throws IOException {
