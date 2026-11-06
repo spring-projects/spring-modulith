@@ -429,6 +429,25 @@ class MyConfiguration {
 }
 ----
 
+[[publication-registry.customize-publication-identifier]]
+=== Customizing the Event Publication Identifier
+
+By default, the Event Publication Registry will use random (version 4) UUIDs as event publication identifiers.
+If https://github.com/f4b6a3/uuid-creator[UUID Creator] (`com.github.f4b6a3:uuid-creator`) is present on the classpath, time-ordered (version 7) UUIDs will be used instead, which keep inserts into the database index sequential.
+If you want to customize this, register a bean of type `IdGenerator` with the application context:
+
+[source, java]
+----
+@Configuration
+class MyConfiguration {
+
+  @Bean
+  IdGenerator myCustomIdGenerator() {
+    return … // Your custom IdGenerator instance created here.
+  }
+}
+----
+
 [[externalization]]
 == Externalizing Events
 

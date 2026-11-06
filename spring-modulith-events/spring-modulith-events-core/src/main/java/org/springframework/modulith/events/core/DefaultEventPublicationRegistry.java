@@ -39,6 +39,8 @@ import org.springframework.modulith.events.core.EventPublicationRepository.Faile
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
+import org.springframework.util.IdGenerator;
+import org.springframework.util.JdkIdGenerator;
 
 /**
  * A registry to capture event publications to {@link org.springframework.context.ApplicationListener}s. Allows to
@@ -57,6 +59,7 @@ public class DefaultEventPublicationRegistry
 	private final EventPublicationRepository events;
 	private final Clock clock;
 	private final AbandonPolicies abandonPolicies;
+	private final IdGenerator idGenerator;
 	private final PublicationsInProgress inProgress;
 
 	/**
@@ -81,14 +84,32 @@ public class DefaultEventPublicationRegistry
 	 */
 	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock,
 			AbandonPolicies abandonPolicies) {
+		this(events, clock, abandonPolicies, new JdkIdGenerator());
+	}
+
+	/**
+	 * Creates a new {@link DefaultEventPublicationRegistry} for the given {@link EventPublicationRepository},
+	 * {@link Clock}, {@link AbandonPolicies} and {@link IdGenerator} used to create the identifiers of new event
+	 * publications.
+	 *
+	 * @param events must not be {@literal null}.
+	 * @param clock must not be {@literal null}.
+	 * @param abandonPolicies must not be {@literal null}.
+	 * @param idGenerator must not be {@literal null}.
+	 * @since 2.2
+	 */
+	public DefaultEventPublicationRegistry(EventPublicationRepository events, Clock clock,
+			AbandonPolicies abandonPolicies, IdGenerator idGenerator) {
 
 		Assert.notNull(events, "EventPublicationRepository must not be null!");
 		Assert.notNull(clock, "Clock must not be null!");
 		Assert.notNull(abandonPolicies, "AbandonPolicies must not be null!");
+		Assert.notNull(idGenerator, "IdGenerator must not be null!");
 
 		this.events = events;
 		this.clock = clock;
 		this.abandonPolicies = abandonPolicies;
+		this.idGenerator = idGenerator;
 		this.inProgress = new PublicationsInProgress();
 	}
 
@@ -99,7 +120,7 @@ public class DefaultEventPublicationRegistry
 	@Override
 	public Collection<TargetEventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
-		return listeners.map(it -> TargetEventPublication.of(event, it, clock.instant()))
+		return listeners.map(it -> TargetEventPublication.of(idGenerator.generateId(), event, it, clock.instant()))
 				.peek(it -> LOGGER.debug(REGISTER, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue()))
 				.map(events::create)
 				.map(inProgress::register)

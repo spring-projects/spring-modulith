@@ -29,6 +29,7 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
@@ -41,6 +42,7 @@ import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
 import org.springframework.modulith.events.AbandonPolicy;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
+import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.UuidCreatorConfiguration;
 import org.springframework.modulith.events.core.AbandonPolicies;
 import org.springframework.modulith.events.core.DefaultAbandonedEventPublications;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
@@ -56,6 +58,9 @@ import org.springframework.scheduling.annotation.AbstractAsyncConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.util.IdGenerator;
+
+import com.github.f4b6a3.uuid.UuidCreator;
 
 /**
  * Fundamental configuration for the {@link EventPublicationRegistry} support.
@@ -65,7 +70,7 @@ import org.springframework.transaction.PlatformTransactionManager;
  * @author Dmitry Belyaev
  */
 @AutoConfiguration
-@Import({ AsyncEnablingConfiguration.class, StalenessMonitorConfiguration.class })
+@Import({ AsyncEnablingConfiguration.class, StalenessMonitorConfiguration.class, UuidCreatorConfiguration.class })
 @EnableConfigurationProperties({ StalenessProperties.class, ResubmissionProperties.class })
 public class EventPublicationAutoConfiguration extends EventPublicationConfiguration {
 
@@ -74,8 +79,9 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	@ConditionalOnBean(EventPublicationRepository.class)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
-			ObjectProvider<Clock> clock, ObjectProvider<AbandonPolicies> abandonPolicies) {
-		return super.eventPublicationRegistry(repository, clock, abandonPolicies);
+			ObjectProvider<Clock> clock, ObjectProvider<AbandonPolicies> abandonPolicies,
+			ObjectProvider<IdGenerator> idGenerator) {
+		return super.eventPublicationRegistry(repository, clock, abandonPolicies, idGenerator);
 	}
 
 	@Override
@@ -148,6 +154,17 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 	@EnableAsync
 	@ConditionalOnMissingBean(AbstractAsyncConfiguration.class)
 	static class AsyncEnablingConfiguration {}
+
+	@ConditionalOnClass(UuidCreator.class)
+	static class UuidCreatorConfiguration {
+
+		@Bean
+		@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+		@ConditionalOnMissingBean(IdGenerator.class)
+		static IdGenerator uuidCreatorIdGenerator() {
+			return UuidCreator::getTimeOrderedEpoch;
+		}
+	}
 
 	static class AsyncPropertiesDefaulter implements BeanPostProcessor {
 

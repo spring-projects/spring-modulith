@@ -16,6 +16,7 @@
 package org.springframework.modulith.events.core;
 
 import java.time.Instant;
+import java.util.UUID;
 
 import org.springframework.util.Assert;
 
@@ -39,7 +40,7 @@ public interface TargetEventPublication extends Completable, org.springframework
 	 * @see #of(Object, PublicationTargetIdentifier, Instant)
 	 */
 	static TargetEventPublication of(Object event, PublicationTargetIdentifier id) {
-		return new DefaultEventPublication(event, id, Instant.now());
+		return of(UUID.randomUUID(), event, id, Instant.now());
 	}
 
 	/**
@@ -51,7 +52,23 @@ public interface TargetEventPublication extends Completable, org.springframework
 	 * @return will never be {@literal null}.
 	 */
 	static TargetEventPublication of(Object event, PublicationTargetIdentifier id, Instant publicationDate) {
-		return new DefaultEventPublication(event, id, publicationDate);
+		return of(UUID.randomUUID(), event, id, publicationDate);
+	}
+
+	/**
+	 * Creates a {@link TargetEventPublication} with the given identifier for the given event, listener identifier and
+	 * publication date.
+	 *
+	 * @param identifier must not be {@literal null}.
+	 * @param event must not be {@literal null}.
+	 * @param id must not be {@literal null}.
+	 * @param publicationDate must not be {@literal null}.
+	 * @return will never be {@literal null}.
+	 * @since 2.2
+	 */
+	static TargetEventPublication of(UUID identifier, Object event, PublicationTargetIdentifier id,
+			Instant publicationDate) {
+		return new DefaultEventPublication(identifier, event, id, publicationDate);
 	}
 
 	/**

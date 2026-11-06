@@ -37,6 +37,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
 import org.springframework.transaction.support.DefaultTransactionDefinition;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.util.IdGenerator;
+import org.springframework.util.JdkIdGenerator;
 import org.springframework.util.function.SingletonSupplier;
 
 /**
@@ -52,10 +54,11 @@ class EventPublicationConfiguration {
 	@Bean
 	@Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 	DefaultEventPublicationRegistry eventPublicationRegistry(EventPublicationRepository repository,
-			ObjectProvider<Clock> clock, ObjectProvider<AbandonPolicies> abandonPolicies) {
+			ObjectProvider<Clock> clock, ObjectProvider<AbandonPolicies> abandonPolicies,
+			ObjectProvider<IdGenerator> idGenerator) {
 
 		return new DefaultEventPublicationRegistry(repository, clock.getIfAvailable(() -> Clock.systemUTC()),
-				abandonPolicies.getIfAvailable(AbandonPolicies::none));
+				abandonPolicies.getIfAvailable(AbandonPolicies::none), idGenerator.getIfAvailable(JdkIdGenerator::new));
 	}
 
 	@Bean
