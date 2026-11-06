@@ -143,17 +143,43 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.distinct()
 				.collect(Collectors.toUnmodifiableSet());
 
-		this.modules = sources.stream() //
-				.map(it -> {
+		var exclusions = sources.stream()
+				.map(ApplicationModuleSource::getModuleBasePackage)
+				.toList();
 
-					var exclusions = sources.stream()
-							.map(ApplicationModuleSource::getModuleBasePackage)
-							.toList();
+		var modules = sources.stream() //
+				.map(it -> new ApplicationModule(it, new JavaPackages(exclusions)))
+				.toList();
 
-					return new ApplicationModule(it, new JavaPackages(exclusions));
+		var duplicates = modules.stream()
+				.collect(groupingBy(ApplicationModule::getIdentifier))
+				.entrySet().stream()
+				.filter(it -> it.getValue().size() > 1)
+				.toList();
 
-				})
+		if (!duplicates.isEmpty()) {
+
+			var message = duplicates.stream()
+					.map(it -> {
+
+						var basePackages = it.getValue().stream()
+								.map(module -> "'" + module.getBasePackage().getName() + "'")
+								.sorted()
+								.collect(joining(" and "));
+
+						return ("Application module identifier '%s' is not unique. The modules with the base packages %s use it."
+								+ " Declare an explicit identifier with @ApplicationModule(id = …), or set @Modulithic(useFullyQualifiedModuleNames = true).")
+										.formatted(it.getKey(), basePackages);
+
+					})
+					.collect(joining("\n"));
+
+			throw new IllegalStateException(message);
+		}
+
+		this.modules = modules.stream()
 				.collect(toMap(ApplicationModule::getIdentifier, Function.identity()));
+
 
 		this.rootPackages = packagesToImport.stream() //
 				.distinct()
