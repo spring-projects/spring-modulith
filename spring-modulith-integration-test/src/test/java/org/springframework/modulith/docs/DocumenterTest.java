@@ -70,32 +70,6 @@ class DocumenterTest {
 		documenter.writeModulesAsPlantUml(options);
 	}
 
-	@Test // GH-1996
-	void writesRelationshipsInModuleOrder() {
-
-		var lines = documenter.toPlantUml().lines().map(String::trim).toList();
-
-		// Component(<id>, "<display name>", …)
-		var displayNames = lines.stream()
-				.filter(it -> it.startsWith("Component("))
-				.collect(Collectors.toMap(DocumenterTest::firstArgument, it -> it.split("\"")[1]));
-
-		var moduleOrder = documenter.getModules().stream()
-				.map(ApplicationModule::getDisplayName)
-				.toList();
-
-		var relationshipSources = lines.stream()
-				.filter(it -> it.startsWith("Rel"))
-				.map(DocumenterTest::firstArgument)
-				.map(displayNames::get)
-				.toList();
-
-		assertThat(relationshipSources).isNotEmpty();
-		assertThat(relationshipSources).map(moduleOrder::indexOf)
-				.doesNotContain(-1)
-				.isSorted();
-	}
-
 	@Test
 	void testName() {
 
@@ -192,6 +166,32 @@ class DocumenterTest {
 		});
 	}
 
+	@Test // GH-1996
+	void writesRelationshipsInModuleOrder() {
+
+		var lines = documenter.toPlantUml().lines().map(String::trim).toList();
+
+		// Component(<id>, "<display name>", …)
+		var displayNames = lines.stream()
+				.filter(it -> it.startsWith("Component("))
+				.collect(Collectors.toMap(DocumenterTest::firstArgument, it -> it.split("\"")[1]));
+
+		var moduleOrder = documenter.getModules().stream()
+				.map(ApplicationModule::getDisplayName)
+				.toList();
+
+		var relationshipSources = lines.stream()
+				.filter(it -> it.startsWith("Rel"))
+				.map(DocumenterTest::firstArgument)
+				.map(displayNames::get)
+				.toList();
+
+		assertThat(relationshipSources).isNotEmpty();
+		assertThat(relationshipSources).map(moduleOrder::indexOf)
+				.doesNotContain(-1)
+				.isSorted();
+	}
+
 	private static Path createTestFile(Path tempDir) throws IOException {
 		return createFile(tempDir.resolve("some-old-module.adoc"));
 	}
@@ -202,10 +202,6 @@ class DocumenterTest {
 
 	private static Path createFile(Path filePath) throws IOException {
 		return Files.createDirectories(filePath);
-	}
-
-	private static String firstArgument(String plantUmlLine) {
-		return plantUmlLine.substring(plantUmlLine.indexOf('(') + 1, plantUmlLine.indexOf(',')).trim();
 	}
 
 	private static void deleteDirectoryContents(Path path) throws IOException {
@@ -237,6 +233,10 @@ class DocumenterTest {
 		} finally {
 			options.getOutputFolder().deleteIfExists();
 		}
+	}
+
+	private static String firstArgument(String plantUmlLine) {
+		return plantUmlLine.substring(plantUmlLine.indexOf('(') + 1, plantUmlLine.indexOf(',')).trim();
 	}
 
 	private interface ThrowingBiConsumer<T, S> {
