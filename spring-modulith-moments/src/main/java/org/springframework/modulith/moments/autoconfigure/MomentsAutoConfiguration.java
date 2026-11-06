@@ -33,21 +33,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
  *
  * @author Oliver Drotbohm
  */
-@EnableScheduling
 @EnableConfigurationProperties(MomentsProperties.class)
 @ConditionalOnProperty(name = "spring.modulith.moments.enabled", havingValue = "true", matchIfMissing = true)
 @Configuration(proxyBeanMethods = false)
 class MomentsAutoConfiguration {
-
-	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "false",
-			matchIfMissing = true)
-	Moments moments(ObjectProvider<Clock> clockProvider, ApplicationEventPublisher events, MomentsProperties properties) {
-
-		Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
-
-		return new Moments(clock, events, properties);
-	}
 
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "true",
@@ -58,5 +47,25 @@ class MomentsAutoConfiguration {
 		Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
 
 		return new TimeMachine(clock, events, properties);
+	}
+
+	/**
+	 * Configuration for the plain, scheduled {@link Moments}. Disabled if the {@link TimeMachine} is enabled, as time is
+	 * supposed to be advanced manually in that case.
+	 */
+	@EnableScheduling
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "false",
+			matchIfMissing = true)
+	static class ScheduledMomentsConfiguration {
+
+		@Bean
+		Moments moments(ObjectProvider<Clock> clockProvider, ApplicationEventPublisher events,
+				MomentsProperties properties) {
+
+			Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
+
+			return new Moments(clock, events, properties);
+		}
 	}
 }
