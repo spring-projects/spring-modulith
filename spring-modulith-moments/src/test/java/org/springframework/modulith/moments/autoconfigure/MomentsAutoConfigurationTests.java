@@ -27,6 +27,7 @@ import org.springframework.modulith.moments.Quarter;
 import org.springframework.modulith.moments.support.Moments;
 import org.springframework.modulith.moments.support.MomentsProperties;
 import org.springframework.modulith.moments.support.TimeMachine;
+import org.springframework.scheduling.annotation.ScheduledAnnotationBeanPostProcessor;
 
 /**
  * Integration tests for {@link MomentsAutoConfiguration}.
@@ -93,5 +94,22 @@ class MomentsAutoConfigurationTests {
 				.run(it -> {
 					assertThat(it).hasSingleBean(TimeMachine.class);
 				});
+	}
+
+	@Test // GH-1998
+	void enablesSchedulingForMomentsBean() {
+
+		new ApplicationContextRunner()
+				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
+				.run(it -> assertThat(it).hasSingleBean(ScheduledAnnotationBeanPostProcessor.class));
+	}
+
+	@Test // GH-1998
+	void doesNotEnableSchedulingForTimeMachineBean() {
+
+		new ApplicationContextRunner()
+				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
+				.withPropertyValues("spring.modulith.moments.enable-time-machine=true")
+				.run(it -> assertThat(it).doesNotHaveBean(ScheduledAnnotationBeanPostProcessor.class));
 	}
 }
