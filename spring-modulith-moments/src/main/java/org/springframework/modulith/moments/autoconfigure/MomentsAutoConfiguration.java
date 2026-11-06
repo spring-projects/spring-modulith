@@ -23,6 +23,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.modulith.moments.support.Moments;
 import org.springframework.modulith.moments.support.MomentsProperties;
 import org.springframework.modulith.moments.support.TimeMachine;
@@ -34,21 +35,10 @@ import org.springframework.scheduling.annotation.SchedulingConfigurer;
  *
  * @author Oliver Drotbohm
  */
-@EnableScheduling
 @EnableConfigurationProperties(MomentsProperties.class)
 @ConditionalOnProperty(name = "spring.modulith.moments.enabled", havingValue = "true", matchIfMissing = true)
 @AutoConfiguration
 class MomentsAutoConfiguration {
-
-	@Bean
-	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "false",
-			matchIfMissing = true)
-	Moments moments(ObjectProvider<Clock> clockProvider, ApplicationEventPublisher events, MomentsProperties properties) {
-
-		Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
-
-		return new Moments(clock, events, properties);
-	}
 
 	@Bean
 	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "true",
@@ -61,11 +51,31 @@ class MomentsAutoConfiguration {
 		return new TimeMachine(clock, events, properties);
 	}
 
-	@Bean
-	SchedulingConfigurer momentsSchedulingConfigurer(Moments moments) {
+	/**
+	 * Configuration for the plain, scheduled {@link Moments}. Disabled if the {@link TimeMachine} is enabled, as time is
+	 * supposed to be advanced manually in that case.
+	 */
+	@EnableScheduling
+	@Configuration(proxyBeanMethods = false)
+	@ConditionalOnProperty(name = "spring.modulith.moments.enable-time-machine", havingValue = "false",
+			matchIfMissing = true)
+	static class ScheduledMomentsConfiguration {
 
-		return registrar -> moments.getTasksToBeScheduled().forEach(it -> {
-			registrar.addCronTask(it.getTask(), it.getExpression());
-		});
+		@Bean
+		Moments moments(ObjectProvider<Clock> clockProvider, ApplicationEventPublisher events,
+				MomentsProperties properties) {
+
+			Clock clock = clockProvider.getIfAvailable(() -> Clock.systemUTC());
+
+			return new Moments(clock, events, properties);
+		}
+
+		@Bean
+		SchedulingConfigurer momentsSchedulingConfigurer(Moments moments) {
+
+			return registrar -> moments.getTasksToBeScheduled().forEach(it -> {
+				registrar.addCronTask(it.getTask(), it.getExpression());
+			});
+		}
 	}
 }

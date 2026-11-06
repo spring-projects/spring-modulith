@@ -110,17 +110,12 @@ class MomentsAutoConfigurationTests {
 				});
 	}
 
-	@Test // GH-1688
-	void configuresSchedulingForTimeMachineBeanToo() {
+	@Test // GH-1688, GH-1995
+	void doesNotConfigureSchedulingForTimeMachineBean() {
 
 		new ApplicationContextRunner()
 				.withConfiguration(AutoConfigurations.of(MomentsAutoConfiguration.class))
 				.withPropertyValues("spring.modulith.moments.enable-time-machine=true")
-				.run(it -> {
-
-					var configurer = it.getBean(SchedulingConfigurer.class);
-
-					assertThatNoException().isThrownBy(() -> configurer.configureTasks(new ScheduledTaskRegistrar()));
-				});
+				.run(it -> assertThat(it).doesNotHaveBean(SchedulingConfigurer.class));
 	}
 }
