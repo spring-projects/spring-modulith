@@ -102,6 +102,7 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 			   set p.status = org.springframework.modulith.events.EventPublication$Status.COMPLETED,
 			       p.completionDate = ?2
 			 where p.id = ?1
+			   and p.completionDate is null
 			""";
 
 	private static final String MARK_ABANDONED_BY_ID = """
@@ -266,13 +267,11 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
-			var publication = entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.getIncompleteType())
+			entityManager.createQuery(BY_EVENT_AND_LISTENER_ID, JpaEventPublication.getIncompleteType())
 					.setParameter(1, serializedEvent)
 					.setParameter(2, identifierValue)
-					.getSingleResult();
-
-			entityManager.remove(publication);
-			entityManager.persist(publication.archive(completionDate, Status.COMPLETED));
+					.getResultList()
+					.forEach(it -> archive(it, completionDate, Status.COMPLETED, null));
 
 		} else {
 
@@ -301,8 +300,11 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 			var publication = entityManager.find(JpaEventPublication.getIncompleteType(), identifier);
 
-			entityManager.remove(publication);
-			entityManager.persist(publication.archive(completionDate, Status.COMPLETED));
+			if (publication == null) {
+				return;
+			}
+
+			archive(publication, completionDate, Status.COMPLETED, null);
 
 		} else {
 
@@ -322,31 +324,17 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 		if (completionMode == CompletionMode.DELETE) {
 
-			var guard = expectedCurrentStatus == null ? "" : " and p.status = ?2";
-			var query = entityManager.createQuery(DELETE_BY_ID + guard).setParameter(1, identifier);
-
-			if (expectedCurrentStatus != null) {
-				query.setParameter(2, expectedCurrentStatus);
-			}
-
-			return query.executeUpdate() == 1;
+			return deleteById(identifier, expectedCurrentStatus) == 1;
 
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
 			var publication = entityManager.find(JpaEventPublication.getIncompleteType(), identifier);
 
-			if (publication == null || (expectedCurrentStatus != null && publication.status != expectedCurrentStatus)) {
-				return false;
-			}
-
-			entityManager.remove(publication);
-			entityManager.persist(publication.archive(instant, Status.ABANDONED));
-
-			return true;
+			return publication != null && archive(publication, instant, Status.ABANDONED, expectedCurrentStatus);
 
 		} else {
 
-			var guard = expectedCurrentStatus == null ? "" : " and p.status = ?3";
+			var guard = expectedCurrentStatus == null ? " and p.completionDate is null" : " and p.status = ?3";
 			var query = entityManager.createQuery(MARK_ABANDONED_BY_ID + guard)
 					.setParameter(1, identifier)
 					.setParameter(2, instant);
@@ -592,6 +580,33 @@ class JpaEventPublicationRepository implements EventPublicationRepository {
 
 	private String serializeEvent(Object event) {
 		return serializer.serialize(event).toString();
+	}
+
+	// Deletes via a statement, so that a concurrent completion or abandonment of the same publication that has moved it
+	// to the archive already makes this one a no-op instead of failing on the removal or the duplicate archive entry.
+	private boolean archive(JpaEventPublication publication, Instant instant, Status status,
+			@Nullable Status expectedCurrentStatus) {
+
+		if (deleteById(publication.id, expectedCurrentStatus) == 0) {
+			return false;
+		}
+
+		entityManager.detach(publication);
+		entityManager.persist(publication.archive(instant, status));
+
+		return true;
+	}
+
+	private int deleteById(UUID identifier, @Nullable Status expectedCurrentStatus) {
+
+		var guard = expectedCurrentStatus == null ? "" : " and p.status = ?2";
+		var query = entityManager.createQuery(DELETE_BY_ID + guard).setParameter(1, identifier);
+
+		if (expectedCurrentStatus != null) {
+			query.setParameter(2, expectedCurrentStatus);
+		}
+
+		return query.executeUpdate();
 	}
 
 	private JpaEventPublication domainToEntity(TargetEventPublication domain) {
