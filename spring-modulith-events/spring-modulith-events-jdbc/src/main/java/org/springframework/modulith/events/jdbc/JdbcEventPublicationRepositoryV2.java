@@ -406,10 +406,14 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
 	 */
 	@Override
-	public boolean markResubmitted(UUID identifier, Instant instant) {
+	public boolean markResubmitted(UUID identifier, Instant instant, @Nullable Status expectedCurrentStatus) {
+
+		var guard = expectedCurrentStatus == null
+				? "STATUS != 'RESUBMITTED'"
+				: "STATUS = '%s'".formatted(expectedCurrentStatus.name());
 
 		var sql = asOneLine("""
 				UPDATE %s
@@ -420,8 +424,8 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 				WHERE
 						ID = ?
 						AND COMPLETION_DATE IS NULL
-						AND (STATUS IS NULL OR STATUS != 'RESUBMITTED')
-				""".formatted(settings.getTable()));
+						AND (STATUS IS NULL OR %s)
+				""".formatted(settings.getTable(), guard));
 
 		var timestamp = Timestamp.from(instant);
 		var id = uuidToDatabase(identifier);
