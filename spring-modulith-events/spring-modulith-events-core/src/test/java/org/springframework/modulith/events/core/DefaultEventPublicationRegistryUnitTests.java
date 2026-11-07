@@ -136,6 +136,20 @@ class DefaultEventPublicationRegistryUnitTests {
 		verify(repository).findFailedPublications(argThat(criteria -> criteria.getMaxItemsToRead() == 50));
 	}
 
+	@Test // GH-1906
+	void processFailedPublicationsReadsLeastRecentlyAttemptedFirstOnlyIfConfigured() {
+
+		when(repository.findFailedPublications(any())).thenReturn(Collections.emptyList());
+
+		var registry = createRegistry(Instant.now());
+
+		registry.processFailedPublications(ResubmissionOptions.defaults(), __ -> {});
+		registry.processFailedPublications(ResubmissionOptions.defaults().withLeastRecentlyAttemptedFirst(), __ -> {});
+
+		verify(repository).findFailedPublications(argThat(criteria -> !criteria.isLeastRecentlyAttemptedFirst()));
+		verify(repository).findFailedPublications(argThat(criteria -> criteria.isLeastRecentlyAttemptedFirst()));
+	}
+
 	@Test // GH-1764
 	void marksPublicationAsAbandonedWhenAbandonPolicyApplies() {
 
