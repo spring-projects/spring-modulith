@@ -1,0 +1,28 @@
+{
+	"properties": [
+		{
+			"name": "spring.modulith.documentation-source",
+			"type": "java.lang.String",
+			"description": "The documentation source to use for extracting Javadoc comments."
+		}
+	],
+	"hints": [
+		{
+			"name": "spring.modulith.documentation-source",
+			"values": [
+				{
+					"value": "spring-modulith",
+					"description": "Uses Javadoc metadata extracted by Spring Modulith APT processor."
+				}
+			],
+			"providers": [
+				{
+					"name": "class-reference",
+					"parameters": {
+						"target": "org.springframework.modulith.docs.DocumentationSource"
+					}
+				}
+			]
+		}
+	]
+}

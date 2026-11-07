@@ -74,7 +74,7 @@ class ApplicationModuleDetectionStrategyLookup {
 	 * <li>Use the prepared strategies if either {@code direct-sub-packages} or {@code explicitly-annotated} is configured
 	 * for the {@code spring.modulith.detection-strategy} configuration property.</li>
 	 * <li>Interpret the configured value as class if it doesn't match the predefined values just described.</li>
-	 * <li>Use the {@link ApplicationModuleDetectionStrategy} declared in {@code META-INF/spring.properties}
+	 * <li>Use the {@link ApplicationModuleDetectionStrategy} declared in {@code META-INF/spring.factories}
 	 * (deprecated)</li>
 	 * <li>A final fallback on the {@code direct-sub-packages}.</li>
 	 * </ol>
