@@ -158,7 +158,32 @@ class FormattableTypeUnitTests {
 				.isEqualTo("org.springframework.modulith.core.FormattableTypeUnitTests.Sample[]");
 	}
 
+	@Test // GH-2011
+	void terminatesForSelfBoundedTypeVariables() throws Exception {
+
+		var method = Sample.class.getMethod("selfBounded", Action.class);
+		var type = ResolvableType.forMethodParameter(method, 0, Sample.class);
+
+		assertThat(FormattableType.of(type).getAbbreviatedFullName())
+				.isEqualTo("o.s.m.c.FormattableTypeUnitTests.Action<o.s.m.c.FormattableTypeUnitTests.Action>");
+	}
+
+	@Test // GH-2011
+	void terminatesForEnumTypeBounds() throws Exception {
+
+		var method = Sample.class.getMethod("enumBounded", Enum.class);
+		var type = ResolvableType.forMethodParameter(method, 0, Sample.class);
+
+		assertThatNoException().isThrownBy(() -> FormattableType.of(type));
+	}
+
+	interface Action<T extends Action<T>> {}
+
 	interface Sample {
+
+		<T extends Action<T>> T selfBounded(T action);
+
+		<E extends Enum<E>> void enumBounded(E value);
 
 		<T> List<?> wildcarded(List<T> parameterized);
 

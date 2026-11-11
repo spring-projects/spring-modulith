@@ -17,8 +17,10 @@ package org.springframework.modulith.core;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -140,20 +142,39 @@ public class FormattableType {
 	 *
 	 * @param type must not be {@literal null}.
 	 * @return will never be {@literal null}.
-	 * @since 2.1.1, 2.0.8
+	 * @since 2.1.1
 	 */
 	public static FormattableType of(ResolvableType type) {
 
 		Assert.notNull(type, "ResolvableType must not be null!");
 
-		var resolved = type.resolve();
-		var generics = Stream.of(type.getGenerics())
-				.map(FormattableType::of)
-				.toList();
+		return of(type, new HashSet<>());
+	}
 
-		return resolved != null
-				? CACHE.computeIfAbsent(type.toString(), __ -> new FormattableType(resolved.getTypeName(), generics))
-				: WILDCARD;
+	private static FormattableType of(ResolvableType type, Set<ResolvableType> inProgress) {
+
+		var resolved = type.resolve();
+
+		if (resolved == null) {
+			return WILDCARD;
+		}
+
+		// Recursive type bound
+		if (!inProgress.add(type)) {
+			return of(resolved);
+		}
+
+		try {
+
+			var generics = Stream.of(type.getGenerics())
+					.map(it -> of(it, inProgress))
+					.toList();
+
+			return CACHE.computeIfAbsent(type.toString(), __ -> new FormattableType(resolved.getTypeName(), generics));
+
+		} finally {
+			inProgress.remove(type);
+		}
 	}
 
 	/**
