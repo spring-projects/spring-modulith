@@ -26,8 +26,8 @@ import org.jmolecules.event.types.DomainEvent;
 import org.springframework.util.Assert;
 
 /**
- * A {@link DomainEvent} published if a week has passed. The semantics of what constitutes are depended on the
- * {@link Locale} provided.
+ * A {@link DomainEvent} published if a week has passed. What constitutes a week depends on the {@link Locale}
+ * provided.
  *
  * @author Oliver Drotbohm
  */
@@ -71,7 +71,7 @@ public class WeekHasPassed implements DomainEvent {
 	 * Creates a new {@link WeekHasPassed} for the given {@link Year} and week of the year.
 	 *
 	 * @param year must not be {@literal null}.
-	 * @param week must not be {@literal null}.
+	 * @param week must be between 0 and 53 (inclusive).
 	 * @return will never be {@literal null}.
 	 */
 	public static WeekHasPassed of(Year year, int week) {
@@ -88,9 +88,9 @@ public class WeekHasPassed implements DomainEvent {
 	}
 
 	/**
-	 * The {@link Locale} to be used to calculate the start date of the week.
+	 * The week of the year that has just passed.
 	 *
-	 * @return will never be {@literal null}.
+	 * @return between 0 and 53 (inclusive).
 	 */
 	public int getWeek() {
 		return week;
@@ -118,6 +118,8 @@ public class WeekHasPassed implements DomainEvent {
 	}
 
 	/**
+	 * The {@link Locale} to be used to calculate the start date of the week.
+	 *
 	 * @return will never be {@literal null}.
 	 */
 	Locale getLocale() {
