@@ -35,11 +35,20 @@ class WeekHasPassedUnitTests {
 	void returnsStartDateForWeek() {
 
 		int week = LocalDate.of(2022, 2, 17)
-				.get(WeekFields.of(Locale.getDefault()).weekOfYear());
+				.get(WeekFields.of(Locale.GERMANY).weekOfYear());
 
-		WeekHasPassed event = WeekHasPassed.of(Year.of(2022), week);
+		WeekHasPassed event = WeekHasPassed.of(Year.of(2022), week, Locale.GERMANY);
 
 		assertThat(event.getStartDate()).isEqualTo(LocalDate.of(2022, 2, 14));
 		assertThat(event.getEndDate()).isEqualTo(LocalDate.of(2022, 2, 20));
+	}
+
+	@Test // GH-2018
+	void considersLocaleSpecificStartOfWeek() {
+
+		var event = WeekHasPassed.of(Year.of(2021), 1, Locale.US);
+
+		assertThat(event.getStartDate()).isEqualTo(LocalDate.of(2020, 12, 27)); // Sunday
+		assertThat(event.getEndDate()).isEqualTo(LocalDate.of(2021, 1, 2));
 	}
 }

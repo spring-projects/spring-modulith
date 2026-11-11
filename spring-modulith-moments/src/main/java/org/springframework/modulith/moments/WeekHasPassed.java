@@ -17,7 +17,6 @@ package org.springframework.modulith.moments;
 
 import java.time.LocalDate;
 import java.time.Year;
-import java.time.temporal.ChronoField;
 import java.time.temporal.WeekFields;
 import java.util.Locale;
 import java.util.Objects;
@@ -105,7 +104,7 @@ public class WeekHasPassed implements DomainEvent {
 
 		return LocalDate.of(year.getValue(), 1, 1)
 				.with(WeekFields.of(locale).weekOfYear(), week)
-				.with(ChronoField.DAY_OF_WEEK, 1);
+				.with(WeekFields.of(locale).dayOfWeek(), 1);
 	}
 
 	/**
