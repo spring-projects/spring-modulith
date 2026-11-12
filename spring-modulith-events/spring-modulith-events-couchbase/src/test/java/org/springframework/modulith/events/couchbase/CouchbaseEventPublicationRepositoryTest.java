@@ -18,6 +18,7 @@ package org.springframework.modulith.events.couchbase;
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -47,6 +48,8 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.TestPropertySource;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
  * @author Oliver Drotbohm
  * @author Alexandre Vigneron
@@ -72,14 +75,26 @@ class CouchbaseEventPublicationRepositoryTest {
 
 		@BeforeEach
 		void setUp() {
+
+			var clientFactory = couchbaseTemplate.getCouchbaseClientFactory();
+			clientFactory.getCluster().waitUntilReady(Duration.ofMinutes(2));
+			clientFactory.getBucket().waitUntilReady(Duration.ofMinutes(2));
+
 			this.completionMode = CompletionMode.from(environment);
 			this.repository = new CouchbaseEventPublicationRepository(couchbaseTemplate, completionMode);
 		}
 
 		@AfterEach
 		void tearDown() {
-			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class).inCollection(baseCollection).all();
-			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class).inCollection(archiveCollection).all();
+
+			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
+					.inCollection(baseCollection)
+					.all();
+			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
+					.inCollection(archiveCollection)
+					.all();
 		}
 
 		@Test // GH-4
@@ -193,7 +208,10 @@ class CouchbaseEventPublicationRepositoryTest {
 			}
 
 			if (completionMode == CompletionMode.ARCHIVE) {
-				assertThat(couchbaseTemplate.findByQuery(CouchbaseEventPublication.class).inCollection(archiveCollection).all()).isNotEmpty();
+				assertThat(couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+						.withConsistency(QueryScanConsistency.REQUEST_PLUS)
+						.inCollection(archiveCollection)
+						.all()).isNotEmpty();
 			}
 		}
 
@@ -262,7 +280,8 @@ class CouchbaseEventPublicationRepositoryTest {
 			repository.markCompleted(publication, Instant.now());
 			repository.deleteCompletedPublications();
 
-			assertThat(couchbaseTemplate.findByQuery(CouchbaseEventPublication.class).all()) //
+			assertThat(couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all()) //
 					.hasSize(1) //
 					.element(0) //
 					.extracting(it -> it.event) //
@@ -283,7 +302,8 @@ class CouchbaseEventPublicationRepositoryTest {
 			repository.markCompleted(second, now);
 			repository.deleteCompletedPublicationsBefore(now.minusSeconds(15));
 
-			assertThat(couchbaseTemplate.findByQuery(CouchbaseEventPublication.class).all()) //
+			assertThat(couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS).all()) //
 					.hasSize(1) //
 					.element(0).extracting(it -> it.event).isEqualTo(second.getEvent());
 		}
@@ -343,6 +363,22 @@ class CouchbaseEventPublicationRepositoryTest {
 
 			repository.markResubmitted(publication.getIdentifier(), Instant.now());
 			assertOneByStatus(Status.RESUBMITTED);
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			if (completionMode == CompletionMode.DELETE) {
+				for (var status : Status.values()) {
+					assertThat(repository.countByStatus(status)).isZero();
+				}
+			} else {
+				assertOneByStatus(Status.COMPLETED);
+			}
+
+			repository.deletePublications(List.of(publication.getIdentifier()));
+
+			for (var status : Status.values()) {
+				assertThat(repository.countByStatus(status)).isZero();
+			}
 		}
 
 		@Test // GH-1336

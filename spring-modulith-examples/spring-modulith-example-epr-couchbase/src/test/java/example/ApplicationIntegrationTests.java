@@ -86,9 +86,13 @@ class ApplicationIntegrationTests {
 					+ container.getHost() + ":" + container.getBootstrapCarrierDirectPort() + ","
 					+ container.getHost() + ":" + container.getBootstrapHttpDirectPort() + "=manager";
 			try (var cluster = Cluster.connect(connectionString, ClusterOptions.clusterOptions(container.getUsername(), container.getPassword()))) {
-				cluster.bucket(bucketName).collections().createCollection(DEFAULT_SCOPE, BASE_COLLECTION);
-				cluster.bucket(bucketName).collections().createCollection(DEFAULT_SCOPE, ARCHIVE_COLLECTION);
 				cluster.waitUntilReady(Duration.ofMinutes(2));
+
+				var bucket = cluster.bucket(bucketName);
+				bucket.waitUntilReady(Duration.ofMinutes(2));
+
+				bucket.collections().createCollection(DEFAULT_SCOPE, BASE_COLLECTION);
+				bucket.collections().createCollection(DEFAULT_SCOPE, ARCHIVE_COLLECTION);
 			}
 
 			return container;

@@ -39,8 +39,11 @@ import org.springframework.modulith.events.support.CompletionMode;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.Assert;
 
+import com.couchbase.client.java.query.QueryScanConsistency;
+
 /**
  * Repository to store {@link TargetEventPublication}s in a Couchbase DB.
+ * Queries use {@link QueryScanConsistency#REQUEST_PLUS} to observe preceding key-value mutations.
  *
  * @author Oliver Drotbohm
  * @author Alexandre Vigneron
@@ -103,6 +106,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 		if (completionMode == CompletionMode.DELETE) {
 
 			couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+					.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 					.inCollection(collection)
 					.matching(criteria)
 					.all();
@@ -191,6 +195,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 				: this.collection;
 
 		return (int) couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(collection)
 				.matching(where(STATUS).is(status))
 				.count();
@@ -201,11 +206,13 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 		var idStrings = identifiers.stream().map(UUID::toString).toArray();
 
 		couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(collection)
 				.matching(where(ID).in(idStrings))
 				.all();
 
 		couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(archiveCollection)
 				.matching(where(ID).in(idStrings))
 				.all();
@@ -214,6 +221,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 	@Override
 	public void deleteCompletedPublications() {
 		couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(archiveCollection)
 				.matching(where(COMPLETION_DATE).isNotNull())
 				.all();
@@ -225,6 +233,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 		Assert.notNull(instant, "Instant must not be null!");
 
 		couchbaseTemplate.removeByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(archiveCollection)
 				// Convert to millis before because QueryCriteria convert instant to string by default but Couchbase use Long (see InstantToLongConverter)
 				.matching(where(COMPLETION_DATE).lt(instant.toEpochMilli()))
@@ -238,6 +247,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 	private List<TargetEventPublication> readMapped(Query query, String collection) {
 
 		return couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(collection)
 				.matching(query)
 				.stream()
@@ -270,6 +280,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 
 		var query = defaultQuery(criteria);
 		var matching = couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(collection)
 				.matching(query)
 				.all();
@@ -289,6 +300,7 @@ class CouchbaseEventPublicationRepository implements EventPublicationRepository 
 	private boolean updateFirst(QueryCriteria query, String collection, UnaryOperator<CouchbaseEventPublication> mutator) {
 
 		var result = couchbaseTemplate.findByQuery(CouchbaseEventPublication.class)
+				.withConsistency(QueryScanConsistency.REQUEST_PLUS)
 				.inCollection(collection)
 				.matching(query)
 				.first();
