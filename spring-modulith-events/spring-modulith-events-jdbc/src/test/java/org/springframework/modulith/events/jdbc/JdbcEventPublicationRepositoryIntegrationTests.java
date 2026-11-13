@@ -411,6 +411,23 @@ class JdbcEventPublicationRepositoryIntegrationTests {
 			assertThat(publication.getEvent()).isSameAs(publication.getEvent());
 		}
 
+		@Test // GH-1392
+		void doesNotChangeCompletedPublicationWhenCompletedAgain() {
+
+			assumeFalse(properties.isDeleteCompletion());
+
+			var publication = createPublication(new TestEvent("first"));
+			var later = Instant.now().plusSeconds(3600);
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+			repository.markCompleted(publication.getIdentifier(), later);
+
+			var completed = repository.findCompletedPublications();
+
+			assertThat(completed).hasSize(1);
+			assertThat(completed.get(0).getCompletionDate()).hasValueSatisfying(it -> assertThat(it).isBefore(later));
+		}
+
 		String table() {
 			return "EVENT_PUBLICATION";
 		}
