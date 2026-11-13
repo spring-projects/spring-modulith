@@ -169,6 +169,6 @@ class RabbitEventExternalizerConfiguration {
 		var headers = new HashMap<>(configuration.getHeadersFor(payload));
 		headers.putAll(additionalHeaders);
 
-		operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, additionalHeaders);
+		operations.convertAndSend(routing.getTarget(payload), routing.getKey(payload), payload, headers);
 	}
 }

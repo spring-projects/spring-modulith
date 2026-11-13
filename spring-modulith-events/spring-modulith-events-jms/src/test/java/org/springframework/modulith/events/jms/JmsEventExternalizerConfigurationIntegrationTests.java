@@ -19,15 +19,20 @@ import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import io.namastack.outbox.handler.OutboxHandler;
+import jakarta.jms.Session;
+import jakarta.jms.TextMessage;
 
+import java.util.Map;
 import java.util.function.BiConsumer;
 
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.autoconfigure.AutoConfigurations;
 import org.springframework.boot.test.context.FilteredClassLoader;
 import org.springframework.boot.test.context.runner.ApplicationContextRunner;
 import org.springframework.jms.core.JmsOperations;
+import org.springframework.jms.core.MessageCreator;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.EventExternalized;
 import org.springframework.modulith.events.ExternalizationMode;
@@ -50,6 +55,9 @@ class JmsEventExternalizerConfigurationIntegrationTests {
 	static final EventExternalizationConfiguration EXTERNALIZATION_ENABLED = EventExternalizationConfiguration
 			.defaults("org").build();
 
+	JmsOperations operations = mock(JmsOperations.class);
+	EventSerializer serializer = mock(EventSerializer.class);
+
 	@Test // GH-342
 	void registersExternalizerByDefault() {
 
@@ -66,6 +74,33 @@ class JmsEventExternalizerConfigurationIntegrationTests {
 				.withPropertyValues("spring.modulith.events.externalization.enabled=false")
 				.run(ctxt -> {
 					assertThat(ctxt).doesNotHaveBean(EventExternalizerModuleListener.class);
+				});
+	}
+
+	@Test // GH-1969
+	void addsHeadersIfConfigured() {
+
+		var config = EventExternalizationConfiguration.defaults("org")
+				.headers(SampleEvent.class, __ -> Map.of("key", "value"))
+				.build();
+
+		when(serializer.serialize(any())).thenReturn("{}");
+
+		basicSetup(config)
+				.run(ctxt -> {
+
+					ctxt.getBean(EventExternalizerModuleListener.class).externalize(new SampleEvent());
+
+					var captor = ArgumentCaptor.forClass(MessageCreator.class);
+					verify(operations).send(anyString(), captor.capture());
+
+					var session = mock(Session.class);
+					var message = mock(TextMessage.class);
+					when(session.createTextMessage("{}")).thenReturn(message);
+
+					captor.getValue().createMessage(session);
+
+					verify(message).setObjectProperty("key", "value");
 				});
 	}
 
@@ -136,8 +171,8 @@ class JmsEventExternalizerConfigurationIntegrationTests {
 						JmsEventExternalizerConfiguration.class,
 						EventExternalizationAutoConfiguration.class))
 				.withBean(EventExternalizationConfiguration.class, () -> defaulted)
-				.withBean(EventSerializer.class, () -> mock(EventSerializer.class))
-				.withBean(JmsOperations.class, () -> mock(JmsOperations.class));
+				.withBean(EventSerializer.class, () -> serializer)
+				.withBean(JmsOperations.class, () -> operations);
 
 		if (excluded.length > 0) {
 			runner = runner.withClassLoader(new FilteredClassLoader(excluded));
