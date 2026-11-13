@@ -376,7 +376,7 @@ class Neo4jEventPublicationRepositoryTest {
 			repository.markFailed(publication.getIdentifier());
 			assertOneByStatus(EventPublication.Status.FAILED);
 
-			var resubmitted = repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			var resubmitted = repository.markResubmitted(publication.getIdentifier(), Instant.now(), null);
 
 			assertThat(resubmitted).isTrue();
 			assertOneByStatus(EventPublication.Status.RESUBMITTED);
@@ -405,8 +405,8 @@ class Neo4jEventPublicationRepositoryTest {
 
 			var now = Instant.now();
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
-			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now, null)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now, null)).isFalse();
 		}
 
 		@Test // GH-1337
@@ -546,7 +546,7 @@ class Neo4jEventPublicationRepositoryTest {
 			var publication = createPublication(event);
 
 			repository.markFailed(publication.getIdentifier());
-			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now(), null);
 
 			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), EventPublication.Status.FAILED)).isFalse();
 			assertThat(repository.findByStatus(EventPublication.Status.RESUBMITTED))
@@ -555,7 +555,22 @@ class Neo4jEventPublicationRepositoryTest {
 			assertThat(repository.findByStatus(EventPublication.Status.ABANDONED)).isEmpty();
 		}
 
-		@Test // GH-1565
+		@Test // GH-1971
+		void doesNotResubmitFailedPublicationThatHasBeenConcurrentlyResubmitted() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), EventPublication.Status.FAILED)).isTrue();
+
+			repository.markProcessing(publication.getIdentifier());
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), EventPublication.Status.FAILED)).isFalse();
+			assertOneByStatus(EventPublication.Status.PROCESSING);
+		}
+
+		@Test // GH-1565, GH-1971
 		void resubmitsPublicationWithNullStatusProperty() {
 
 			var event = new TestEvent("first");
@@ -563,7 +578,7 @@ class Neo4jEventPublicationRepositoryTest {
 
 			removeStatusProperty(publication);
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), EventPublication.Status.FAILED)).isTrue();
 		}
 
 		@Test // GH-1565
@@ -588,7 +603,7 @@ class Neo4jEventPublicationRepositoryTest {
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isFalse();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), null)).isFalse();
 		}
 
 		@Test // GH-1925

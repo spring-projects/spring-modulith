@@ -17,6 +17,8 @@ package org.springframework.modulith.events.mongodb;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.junit.jupiter.api.Assumptions.*;
+import static org.springframework.data.mongodb.core.query.Criteria.*;
+import static org.springframework.data.mongodb.core.query.Query.*;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -41,6 +43,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.MongoTransactionManager;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Update;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.modulith.events.core.DefaultEventPublicationRegistry;
@@ -405,8 +408,8 @@ class MongoDbEventPublicationRepositoryTest {
 
 			var now = Instant.now();
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
-			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now, null)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now, null)).isFalse();
 		}
 
 		@Test // GH-1336, GH-1855
@@ -420,7 +423,7 @@ class MongoDbEventPublicationRepositoryTest {
 			repository.markFailed(publication.getIdentifier());
 			assertByStatus(Status.FAILED, publication.getIdentifier());
 
-			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now(), null);
 			assertByStatus(Status.RESUBMITTED, publication.getIdentifier());
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
@@ -470,7 +473,7 @@ class MongoDbEventPublicationRepositoryTest {
 			assertThat(repository.findFailedPublications(FailedCriteria.ALL)).isEmpty();
 
 			repository.markFailed(publication.id);
-			assertThat(repository.markResubmitted(publication.id, now.plusSeconds(1))).isFalse();
+			assertThat(repository.markResubmitted(publication.id, now.plusSeconds(1), null)).isFalse();
 
 			assertThat(mongoTemplate.findAll(MongoDbEventPublication.class, collection)).singleElement()
 					.satisfies(it -> assertThat(it.status).isEqualTo(status));
@@ -502,7 +505,7 @@ class MongoDbEventPublicationRepositoryTest {
 			assertThat(candidates).hasSize(1);
 
 			repository.markCompleted(publication.getIdentifier(), Instant.now());
-			candidates.forEach(it -> assertThat(repository.markResubmitted(it.getIdentifier(), Instant.now())).isFalse());
+			candidates.forEach(it -> assertThat(repository.markResubmitted(it.getIdentifier(), Instant.now(), null)).isFalse());
 
 			assertCompleted(publication.getIdentifier());
 		}
@@ -518,8 +521,8 @@ class MongoDbEventPublicationRepositoryTest {
 			var recent = savePublicationAt(old.plusSeconds(3), Status.PUBLISHED);
 			var completed = savePublicationAt(old.plusSeconds(4), Status.PUBLISHED);
 
-			assertThat(repository.markResubmitted(resubmitted.id, old.plusSeconds(30))).isTrue();
-			assertThat(repository.markResubmitted(recent.id, now.minusSeconds(5))).isTrue();
+			assertThat(repository.markResubmitted(resubmitted.id, old.plusSeconds(30), null)).isTrue();
+			assertThat(repository.markResubmitted(recent.id, now.minusSeconds(5), null)).isTrue();
 			repository.markCompleted(completed.id, now.minusSeconds(30));
 
 			var registry = new DefaultEventPublicationRegistry(repository, Clock.fixed(now, ZoneOffset.UTC));
@@ -610,13 +613,37 @@ class MongoDbEventPublicationRepositoryTest {
 			var publication = createPublication(event);
 
 			repository.markFailed(publication.getIdentifier());
-			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now(), null);
 
 			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), Status.FAILED)).isFalse();
 			assertThat(repository.findByStatus(Status.RESUBMITTED))
 					.extracting(TargetEventPublication::getIdentifier)
 					.containsExactly(publication.getIdentifier());
 			assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
+		}
+
+		@Test // GH-1971
+		void resubmitsPublicationOnlyIfInExpectedStatus() {
+
+			var processing = savePublicationAt(Instant.now(), Status.PROCESSING);
+			var failed = savePublicationAt(Instant.now(), Status.FAILED);
+
+			assertThat(repository.markResubmitted(processing.id, Instant.now(), Status.FAILED)).isFalse();
+			assertThat(repository.markResubmitted(failed.id, Instant.now(), Status.FAILED)).isTrue();
+
+			assertByStatusResult(Status.PROCESSING, processing.id);
+			assertByStatusResult(Status.RESUBMITTED, failed.id);
+		}
+
+		@Test // GH-1971
+		void resubmitsFailedPublicationWithoutStatus() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			mongoTemplate.updateFirst(query(where("_id").is(publication.getIdentifier())), new Update().unset("status"),
+					MongoDbEventPublication.class);
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
 		}
 
 		@Test // GH-1412
