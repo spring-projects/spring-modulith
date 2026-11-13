@@ -24,6 +24,7 @@
 		<module>spring-modulith-bom</module>
 		<module>spring-modulith-core</module>
 		<module>spring-modulith-docs</module>
+		<module>spring-modulith-maven-plugin</module>
 		<module>spring-modulith-events</module>
 		<module>spring-modulith-junit</module>
 		<module>spring-modulith-moments</module>
