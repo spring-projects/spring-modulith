@@ -89,4 +89,12 @@ class ApplicationModulesUnitTests {
 			assertThat(it.contains("RootType")).isTrue();
 		});
 	}
+
+	@Test // GH-1964
+	void reportsDuplicateModuleIdentifiersWithDescriptiveMessage() {
+
+		assertThatIllegalStateException()
+				.isThrownBy(() -> TestUtils.of(reproducers.gh1964.app.Application.class))
+				.withMessage("Application module identifier 'billing' is not unique. The modules with the base packages 'reproducers.gh1964.first.billing' and 'reproducers.gh1964.second.billing' use it. Declare an explicit identifier with @ApplicationModule(id = …), or set @Modulithic(useFullyQualifiedModuleNames = true).");
+	}
 }
