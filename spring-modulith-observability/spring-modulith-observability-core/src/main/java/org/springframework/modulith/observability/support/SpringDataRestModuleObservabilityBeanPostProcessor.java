@@ -17,6 +17,8 @@ package org.springframework.modulith.observability.support;
 
 import io.micrometer.observation.ObservationRegistry;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
 import org.aopalliance.intercept.MethodInterceptor;
@@ -30,6 +32,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.RootResourceInformation;
 import org.springframework.modulith.core.ApplicationModule;
+import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.core.ApplicationModules;
 import org.springframework.modulith.observability.ModulithObservationConvention;
 import org.springframework.modulith.runtime.ApplicationModulesRuntime;
@@ -95,6 +98,7 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 		private final Supplier<ObservationRegistry> observationRegistry;
 		private final Supplier<ModulithObservationConvention> convention;
 		private final Environment environment;
+		private final Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> interceptors = new ConcurrentHashMap<>();
 
 		/**
 		 * Creates a new {@link DataRestControllerInterceptor} for the given {@link ApplicationModules} and {@link Tracer}.
@@ -131,9 +135,8 @@ public class SpringDataRestModuleObservabilityBeanPostProcessor extends ModuleOb
 				return invocation.proceed();
 			}
 
-			var observed = new DefaultObservedModule(module);
-
-			return ModuleEntryInterceptor.of(observed, observationRegistry.get(), convention.get(), environment)
+			return interceptors.computeIfAbsent(module.getIdentifier(), __ -> ModuleEntryInterceptor.of(
+					new DefaultObservedModule(module), observationRegistry.get(), convention.get(), environment))
 					.invoke(invocation);
 		}
 
