@@ -610,12 +610,40 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 
 	private FailureReport assertNoCyclesFor(JavaPackage rootPackage) {
 
-		var result = SlicesRuleDefinition.slices() //
+		var classes = allClasses.that(resideInAPackage(rootPackage.asFilter()));
+		var cycleRule = SlicesRuleDefinition.slices() //
 				.assignedFrom(new ApplicationModulesSliceAssignment())
-				.should().beFreeOfCycles() //
-				.evaluate(allClasses.that(resideInAPackage(rootPackage.asFilter())));
+				.should().beFreeOfCycles();
 
-		return result.getFailureReport();
+		// Event listener signatures refer to event types in other modules. Those references are kept as module
+		// dependencies, but they do not imply that the target module has to be bootstrapped by the listener's module.
+		for (var type : classes) {
+
+			var sourceModule = getModuleByType(type);
+			var referenceMethods = ArchitecturallyEvidentType.of(type, Classes.NONE).getReferenceMethods().toList();
+
+			for (var referenceMethod : referenceMethods) {
+
+				var referenceTypes = new HashSet<>(referenceMethod.getReferenceTypes());
+
+				referenceMethod.getMethod().getParameterTypes().stream() //
+						.flatMap(it -> it.getAllInvolvedRawTypes().stream()) //
+						.map(JavaClass::reflect) //
+						.forEach(referenceTypes::add);
+
+				for (var referenceType : referenceTypes) {
+
+					var targetModule = getModuleByType(referenceType);
+
+					if (sourceModule.isPresent() && targetModule.isPresent()
+							&& !sourceModule.get().equals(targetModule.get())) {
+						cycleRule = cycleRule.ignoreDependency(type.reflect(), referenceType);
+					}
+				}
+			}
+		}
+
+		return cycleRule.evaluate(classes).getFailureReport();
 	}
 
 	/**
