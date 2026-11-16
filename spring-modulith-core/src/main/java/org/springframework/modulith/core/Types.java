@@ -22,17 +22,17 @@ import java.lang.annotation.Annotation;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
-import org.jmolecules.archunit.JMoleculesArchitectureRules;
-import org.jmolecules.archunit.JMoleculesArchitectureRules.VerificationDepth;
 import org.jmolecules.archunit.JMoleculesDddRules;
 import org.jmolecules.ddd.annotation.Module;
 import org.jspecify.annotations.Nullable;
 import org.springframework.modulith.PackageInfo;
 import org.springframework.modulith.core.ApplicationModuleSource.ApplicationModuleSourceMetadata;
+import org.springframework.modulith.core.VerificationOptions.Verification;
 import org.springframework.util.Assert;
 import org.springframework.util.ClassUtils;
 
@@ -42,7 +42,6 @@ import com.tngtech.archunit.core.domain.JavaMethod;
 import com.tngtech.archunit.core.domain.JavaModifier;
 import com.tngtech.archunit.core.domain.JavaType;
 import com.tngtech.archunit.core.domain.properties.HasModifiers;
-import com.tngtech.archunit.lang.ArchRule;
 
 /**
  * Utility to deal with a variety of types.
@@ -89,7 +88,7 @@ public class Types {
 		static final String AT_DOMAIN_EVENT = BASE_PACKAGE + ".event.annotation.DomainEvent";
 		static final String DOMAIN_EVENT = BASE_PACKAGE + ".event.types.DomainEvent";
 
-		private static @Nullable Collection<ArchRule> RULES;
+		private static @Nullable List<Verification> VERIFICATIONS;
 
 		/**
 		 * Returns whether jMolecules is generally present.
@@ -124,44 +123,44 @@ public class Types {
 		}
 
 		/**
-		 * Returns all architectural rules to enforce depending on the classpath arrangement.
+		 * Returns all verifications to enforce depending on the classpath arrangement. The jMolecules architecture
+		 * verifications apply to each {@link ApplicationModule} in isolation by default.
 		 *
 		 * @return will never be {@literal null}.
 		 */
-		public static Collection<ArchRule> getRules() {
+		static List<Verification> getVerifications() {
 
-			var rules = RULES;
+			var verifications = VERIFICATIONS;
 
-			if (rules == null) {
+			if (verifications == null) {
 
 				var classLoader = JMoleculesTypes.class.getClassLoader();
-				rules = new ArrayList<ArchRule>();
+				verifications = new ArrayList<Verification>();
 
 				if (ClassUtils.isPresent(DDD_RULES, classLoader) && ClassUtils.isPresent(AT_ENTITY, classLoader)) {
-					rules.add(JMoleculesDddRules.all());
+					verifications.add(Verification.of(JMoleculesDddRules.all()));
 				}
 
 				if (!ClassUtils.isPresent(ARCHITECTURE_RULES, classLoader)) {
-					return rules;
+					return verifications;
 				}
 
 				if (ClassUtils.isPresent(HEXAGONAL, classLoader)) {
-					rules.add(JMoleculesArchitectureRules.ensureHexagonal(VerificationDepth.LENIENT));
+					verifications.add(Verification.of(HexagonalVerifications.defaults()));
 				}
 
 				if (ClassUtils.isPresent(LAYERED, classLoader)) {
-					rules.add(JMoleculesArchitectureRules.ensureLayering());
+					verifications.add(Verification.of(LayeredVerifications.defaults()));
 				}
 
 				if (ClassUtils.isPresent(ONION, classLoader)) {
-					rules.add(JMoleculesArchitectureRules.ensureOnionClassical());
-					rules.add(JMoleculesArchitectureRules.ensureOnionSimple());
+					verifications.add(Verification.of(OnionVerifications.defaults()));
 				}
 
-				RULES = rules;
+				VERIFICATIONS = verifications;
 			}
 
-			return rules;
+			return verifications;
 		}
 	}
 

@@ -484,7 +484,7 @@ public class ApplicationModules implements Iterable<ApplicationModule> {
 				.flatMap(it -> it.getDetails().stream()) //
 				.collect(toViolations());
 
-		var additionalViolations = options.getAdditionalVerifications().stream()
+		var additionalViolations = options.getAdditionalVerifications(this).stream()
 				.map(it -> it.evaluate(allClasses))
 				.map(EvaluationResult::getFailureReport)
 				.flatMap(it -> it.getDetails().stream())

@@ -30,6 +30,10 @@ If those are configured, dependencies to other application modules are rejected.
 See xref:fundamentals.adoc#modules.explicit-dependencies[Explicit Application Module Dependencies] and xref:fundamentals.adoc#modules.named-interfaces[Named Interfaces] for details.
 
 Spring Modulith optionally integrates with the jMolecules ArchUnit library and, if present, automatically triggers its Domain-Driven Design and architectural verification rules described https://github.com/xmolecules/jmolecules-integrations/tree/main/jmolecules-archunit[here].
+The architectural verification rules (Hexagonal, Layered and Onion Architecture) are applied within each application module, considering only the module's own types.
+References between modules are only governed by them for modules explicitly declared via jMolecules' `@Hexagon`, `@Onion` or `@Layered`.
+Otherwise, that is what the module verification described above is about.
+See <<verification.customization,Customizing the Verification>> for details and how to change that.
 
 == Handling Detected Violations
 
@@ -44,19 +48,104 @@ ApplicationModules.of(…)
   .throwIfPresent();
 ----
 
+[[verification.customization]]
 == Customizing the Verification
 
 As described xref:verification.adoc#verification[above], by default, both the `ApplicationModules.verify(…)` and `….detectViolations(…)` automatically perform additional verifications depending on the classpath configuration.
-
 To customize these, disable them or register additional verifications, both `verify(…)` and `detectVolations(…)` take a `VerificationOptions` instance.
+
+[[verification.customization.architecture-defaults]]
+=== Default Architecture Verifications
+
+Depending on which jMolecules architecture artifacts are present on the classpath, `VerificationOptions.defaults()` registers `HexagonalVerifications.defaults()`, `OnionVerifications.defaults()` and `LayeredVerifications.defaults()`.
+They build on the jMolecules defaults, but adapt them to Spring Modulith in the following ways:
+
+* *Application modules are the architectural units* -- every application module is considered an architectural unit, nested modules nested units.
+The `exposes`, `refersVia`, `additionallyExposes` and `additionallyRefersVia` attributes of `@Hexagon`, `@Onion` and `@Layered` declared on a module's base package are considered.
+Units declared via jMolecules annotations on other packages are not.
+* *Each module is verified in isolation* -- the rules for the inside of a module only consider its own types, excluding the ones of nested modules.
+* *References between modules are only verified for declared modules* -- references to a module whose base package is annotated with `@Hexagon`, `@Onion` or `@Layered` have to respect the types it exposes, references from it the roles allowed to refer to other modules.
+References to all other modules are not verified, as what modules may refer to in each other is governed by the module verification described xref:verification.adoc#verification[above].
+Use `HexagonalVerifications.withModulesAsHexagons()`, `OnionVerifications.withModulesAsOnions()` or `LayeredVerifications.withModulesAsLayered()` to treat all modules as if they were declared that way.
+* *Relaxed settings* -- see the table below.
+
+[cols="1,2,2"]
+|===
+|Setting |jMolecules defaults |Spring Modulith defaults
+
+|Hexagonal Architecture verification depth
+|`VerificationDepth.STRICT`, i.e. adapters may only refer to ports, not to other application code.
+|`VerificationDepth.LENIENT`, i.e. adapters and ports may also refer to other application code, and primary adapters to secondary ports.
+
+|Hexagonal Architecture references between units
+|Only secondary adapters may refer to other units and only to their primary adapters.
+|Same, plus `withDirectApplicationAccess()`: the application core (application code, including types without hexagonal stereotypes, as well as primary and secondary ports) may also refer to the application code and primary ports of other modules.
+
+|Onion Architecture references between units
+|Only the infrastructure ring may refer to other units and only to their infrastructure ring.
+|Same, plus `withDirectApplicationAccess()`: application ring types (including types not assigned to a ring) may also refer to the application ring of other modules.
+
+|Layered Architecture layering
+|Access to all lower layers allowed.
+|Same.
+
+|Layered Architecture references between units
+|Only the application and domain layer may refer to other units and only to their application and domain layer.
+|Same, plus `withDirectApplicationAccess()`: application layer types (including types not assigned to a layer) may refer to the application layer of other modules, even if those declare a different exposure.
+|===
+
+The settings for references between units only apply to the modules declared via `@Hexagon`, `@Onion` or `@Layered`, or to all modules using the architecture's stereotypes if they are treated as declared.
+The direct application access is granted independently of the exposure and referrers configured, globally or on individual modules.
+
+[[verification.customization.architecture]]
+=== Customizing the Architecture Verifications
+
+The jMolecules architecture verifications executed by default are represented by `HexagonalVerifications`, `OnionVerifications` and `LayeredVerifications`.
+Their `defaults()` describe what is executed by default, including treating the application modules as architectural units.
+To tweak them, set up the jMolecules options type of the architectural style (e.g. `HexagonalVerificationOptions`), hand it to the corresponding type's `of(…)` method and register the result, replacing the default for that architectural style.
 
 [source, java]
 ----
-var hexagonal = JMoleculesArchitectureRules.ensureHexagonal(VerificationDepth.STRICT); <1>
-var options = VerificationOptions.defaults().withAdditionalVerifications(hexagonal); <2>
+var jMolecules = HexagonalVerificationOptions.defaults() <1>
+  .withAdditionalExposure(Exposure.PRIMARY_PORTS); <2>
+
+var hexagonal = HexagonalVerifications.of(jMolecules)
+  .withModulesAsHexagons(); <3>
+
+var options = VerificationOptions.defaults()
+  .withArchitectureVerifications(hexagonal); <4>
+
+ApplicationModules.of(…).verify(options); <5>
+----
+<1> Start with the jMolecules defaults, i.e. `VerificationDepth.STRICT` and only secondary adapters referring to primary adapters of other modules.
+<2> Also allow secondary adapters to refer to the primary ports of other modules.
+<3> Also verify the references between modules not declared via `@Hexagon`.
+<4> Replace the default Hexagonal Architecture verification with the customized one.
+<5> Execute the verification using the just configured options.
+
+`of(…)` uses the options given as they are, i.e. the Spring Modulith-specific settings described in <<verification.customization.architecture-defaults>> (`VerificationDepth.LENIENT`, direct application access) are not applied unless configured explicitly.
+`withModulesAsHexagons()`, `withModulesAsOnions()` and `withModulesAsLayered()` verify the references between all modules using the architecture's stereotypes, as if they were declared via `@Hexagon`, `@Onion` or `@Layered`, using the exposure and referrers configured in the jMolecules options unless declared on individual modules.
+Modules not using any of the stereotypes are not restricted.
+Spring Modulith always detects the application modules as architectural units, replacing any unit resolver configured in the jMolecules options.
+For the verification within the modules, it also replaces the scope configured with the one of the individual modules.
+
+=== Setting up Verifications from Scratch
+
+To replace the default verifications entirely, register your own, set up via the jMolecules API.
+Build the jMolecules options in a dedicated step.
+
+[source, java]
+----
+var hexagonal = HexagonalVerificationOptions.defaults()
+  .withDepth(VerificationDepth.STRICT); <1>
+
+var options = VerificationOptions.defaults()
+  .withAdditionalVerifications(JMoleculesArchitectureRules.ensureHexagonal(hexagonal)); <2>
 
 ApplicationModules.of(…).verify(options); <3>
 ----
-<1> Set up the jMolecules Architecture verification for Hexagonal Architecture in strict mode.
-<2> Create a `VerificationOptions` instance replacing the default verification with the one just set up.
+<1> Set up the options for the jMolecules Architecture verification for Hexagonal Architecture in strict mode.
+<2> Create a `VerificationOptions` instance replacing the default verifications with the one just set up.
 <3> Execute the verification using the just configured options.
+
+Note that verifications set up that way consider the entire application, and the architectural units declared via jMolecules annotations only.

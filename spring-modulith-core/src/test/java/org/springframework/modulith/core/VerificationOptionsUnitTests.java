@@ -30,12 +30,15 @@ import com.tngtech.archunit.lang.ArchRule;
  */
 class VerificationOptionsUnitTests {
 
+	ApplicationModules modules = TestUtils.of("example", "example.ninvalid", "example.cycle..");
+
 	@Test // GH-1185
 	void usesJMoleculesVerificationsByDefault() {
 
 		var options = VerificationOptions.defaults();
 
-		assertThat(options.getAdditionalVerifications()).isEqualTo(JMoleculesTypes.getRules());
+		assertThat(options.getAdditionalVerifications(modules))
+				.hasSize(JMoleculesTypes.getVerifications().size());
 	}
 
 	@Test // GH-1185
@@ -43,10 +46,10 @@ class VerificationOptionsUnitTests {
 
 		var archRule = mock(ArchRule.class);
 		var options = VerificationOptions.defaults();
+		var extended = options.andAdditionalVerifications(archRule);
 
-		assertThat(options.andAdditionalVerifications(archRule).getAdditionalVerifications())
-				.hasSize(options.getAdditionalVerifications().size() + 1)
-				.containsAll(JMoleculesTypes.getRules())
+		assertThat(extended.getAdditionalVerifications(modules))
+				.hasSize(options.getAdditionalVerifications(modules).size() + 1)
 				.contains(archRule);
 	}
 
@@ -56,8 +59,32 @@ class VerificationOptionsUnitTests {
 		var archRule = mock(ArchRule.class);
 		var options = VerificationOptions.defaults().withAdditionalVerifications(archRule);
 
-		assertThat(options.getAdditionalVerifications())
+		assertThat(options.getAdditionalVerifications(modules))
 				.hasSize(1)
 				.containsExactly(archRule);
+	}
+
+	@Test // GH-193
+	void replacesDefaultArchitectureVerificationsOfSameStyle() {
+
+		var defaults = VerificationOptions.defaults();
+		var hexagonal = HexagonalVerifications.defaults()
+				.withModulesAsHexagons();
+
+		var options = defaults.withArchitectureVerifications(hexagonal);
+
+		assertThat(options.getAdditionalVerifications(modules))
+				.hasSize(defaults.getAdditionalVerifications(modules).size());
+	}
+
+	@Test // GH-193
+	void addsArchitectureVerificationsIfNotRegisteredBefore() {
+
+		var hexagonal = HexagonalVerifications.defaults();
+		var options = VerificationOptions.defaults()
+				.withoutAdditionalVerifications()
+				.withArchitectureVerifications(hexagonal);
+
+		assertThat(options.getAdditionalVerifications(modules)).hasSize(1);
 	}
 }

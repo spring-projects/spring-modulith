@@ -78,6 +78,24 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.jmolecules</groupId>
+			<artifactId>jmolecules-hexagonal-architecture</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jmolecules</groupId>
+			<artifactId>jmolecules-layered-architecture</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jmolecules</groupId>
+			<artifactId>jmolecules-onion-architecture</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-tx</artifactId>
 			<scope>test</scope>
@@ -102,5 +120,30 @@
 		</dependency>
 
 	</dependencies>
+
+	<build>
+		<plugins>
+
+			<!-- Verifies the defaults work without the jMolecules ArchUnit integration on the classpath -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>without-jmolecules-archunit</id>
+						<goals>
+							<goal>test</goal>
+						</goals>
+						<configuration>
+							<test>**/*WithoutJMoleculesArchUnit*Tests.java</test>
+							<classpathDependencyExcludes>
+								<classpathDependencyExclude>org.jmolecules.integrations:jmolecules-archunit</classpathDependencyExclude>
+							</classpathDependencyExcludes>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
 
 </project>
