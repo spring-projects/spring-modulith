@@ -122,10 +122,25 @@ class AnnotationModulithMetadata implements ModulithMetadata {
 
 		var name = PackageName.of(basePackage);
 
-		// Only add non-nested additional packages
-		Stream.of(annotation.additionalPackages())
+		var additionalPackages = Stream.of(annotation.additionalPackages())
 				.map(PackageName::of)
+				.distinct()
+				.toList();
+
+		// Reject additional packages enclosing the application root.
+		additionalPackages.forEach(candidate -> Assert.isTrue(!candidate.isParentPackageOf(name),
+				() -> "Additional package '%s' must not enclose application root package '%s'!"
+						.formatted(candidate.getName(), basePackage)));
+
+		// Preserve the existing behavior of ignoring packages nested in the application root.
+		var validAdditionalPackages = additionalPackages.stream()
 				.filter(Predicate.not(name::contains))
+				.toList();
+
+		// Ignore additional packages already covered by another additional package.
+		validAdditionalPackages.stream()
+				.filter(candidate -> validAdditionalPackages.stream()
+						.noneMatch(other -> other.isParentPackageOf(candidate)))
 				.map(PackageName::getName)
 				.forEach(result::add);
 
