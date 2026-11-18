@@ -112,6 +112,33 @@ class TimeMachineUnitTests {
 	}
 
 	@Test // GH-2021
+	void shiftsAndSkipsWorkOnTheSameClock() {
+
+		timeMachine.shiftBy(Duration.ofHours(1));
+		timeMachine.skipBy(Duration.ofDays(1));
+		timeMachine.shiftBy(Duration.ofHours(1));
+
+		verify(events).publishEvent(HourHasPassed.of(LocalDateTime.of(2026, 5, 17, 10, 0)));
+		verify(events).publishEvent(HourHasPassed.of(LocalDateTime.of(2026, 5, 18, 11, 0)));
+		verify(events, times(2)).publishEvent(any(HourHasPassed.class));
+		verify(events, never()).publishEvent(any(DayHasPassed.class));
+
+		assertThat(timeMachine.instant()).isEqualTo(START.plus(Duration.ofDays(1)).plus(Duration.ofHours(2)));
+	}
+
+	@Test // GH-2021
+	void skipDuringShiftIsNotLost() {
+
+		doAnswer(__ -> timeMachine.skipBy(Duration.ofDays(1)))
+				.doNothing()
+				.when(events).publishEvent(any(HourHasPassed.class));
+
+		timeMachine.shiftBy(Duration.ofHours(3));
+
+		assertThat(timeMachine.instant()).isEqualTo(START.plus(Duration.ofDays(1)).plus(Duration.ofHours(3)));
+	}
+
+	@Test // GH-2021
 	void skipsAccumulate() {
 
 		timeMachine.skipBy(Duration.ofDays(1)).skipBy(Duration.ofHours(1));

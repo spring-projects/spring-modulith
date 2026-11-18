@@ -19,10 +19,8 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneId;
 
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.util.Assert;
 
 /**
  * Extension of {@link Moments} to publicly expose methods to shift time.
@@ -36,8 +34,6 @@ import org.springframework.util.Assert;
  */
 public class TimeMachine extends Moments {
 
-	private final AdjustableClock clock;
-
 	/**
 	 * Creates a new {@link TimeMachine} for the given {@link Clock}, {@link ApplicationEventPublisher} and
 	 * {@link MomentsProperties}.
@@ -47,14 +43,7 @@ public class TimeMachine extends Moments {
 	 * @param properties must not be {@literal null}.
 	 */
 	public TimeMachine(Clock clock, ApplicationEventPublisher events, MomentsProperties properties) {
-		this(new AdjustableClock(clock), events, properties);
-	}
-
-	private TimeMachine(AdjustableClock clock, ApplicationEventPublisher events, MomentsProperties properties) {
-
 		super(clock, events, properties);
-
-		this.clock = clock;
 	}
 
 	/*
@@ -86,11 +75,10 @@ public class TimeMachine extends Moments {
 	 * @since 2.3
 	 * @see #skipTo(Instant)
 	 */
-	public synchronized TimeMachine skipBy(Duration duration) {
+	@Override
+	public TimeMachine skipBy(Duration duration) {
 
-		Assert.notNull(duration, "Duration must not be null!");
-
-		clock.skipBy(duration);
+		super.skipBy(duration);
 
 		return this;
 	}
@@ -106,11 +94,10 @@ public class TimeMachine extends Moments {
 	 * @since 2.3
 	 * @see #skipBy(Duration)
 	 */
-	public synchronized TimeMachine skipTo(Instant instant) {
+	@Override
+	public TimeMachine skipTo(Instant instant) {
 
-		Assert.notNull(instant, "Instant must not be null!");
-
-		clock.skipBy(Duration.between(instant(), instant));
+		super.skipTo(instant);
 
 		return this;
 	}
@@ -122,77 +109,7 @@ public class TimeMachine extends Moments {
 	 * @since 2.0.1
 	 */
 	@Override
-	public synchronized Moments reset() {
-
-		clock.reset();
-
+	public Moments reset() {
 		return super.reset();
-	}
-
-	/**
-	 * A {@link Clock} that applies an adjustable offset to a delegate {@link Clock}.
-	 *
-	 * @author Naitik Singh
-	 * @since 2.3
-	 */
-	private static class AdjustableClock extends Clock {
-
-		private final Clock delegate;
-		private volatile Duration adjustment = Duration.ZERO;
-
-		/**
-		 * Creates a new {@link AdjustableClock} for the given delegate {@link Clock}.
-		 *
-		 * @param delegate must not be {@literal null}.
-		 */
-		AdjustableClock(Clock delegate) {
-
-			Assert.notNull(delegate, "Clock must not be null!");
-
-			this.delegate = delegate;
-		}
-
-		/**
-		 * Adds the given {@link Duration} to the current adjustment. Callers need to synchronize.
-		 *
-		 * @param duration must not be {@literal null}.
-		 */
-		void skipBy(Duration duration) {
-			this.adjustment = adjustment.plus(duration);
-		}
-
-		/**
-		 * Wipes the current adjustment. Callers need to synchronize.
-		 */
-		void reset() {
-			this.adjustment = Duration.ZERO;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.time.Clock#instant()
-		 */
-		@Override
-		public Instant instant() {
-			return delegate.instant().plus(adjustment);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.time.Clock#getZone()
-		 */
-		@Override
-		public ZoneId getZone() {
-			return delegate.getZone();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.time.Clock#withZone(java.time.ZoneId)
-		 */
-		@Override
-		public Clock withZone(ZoneId zone) {
-			return Clock.offset(delegate.withZone(zone), adjustment);
-		}
 	}
 }
