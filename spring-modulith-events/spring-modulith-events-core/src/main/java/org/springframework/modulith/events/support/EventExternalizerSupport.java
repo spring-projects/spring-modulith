@@ -89,6 +89,19 @@ abstract class EventExternalizerSupport {
 	}
 
 	/**
+	 * Returns whether the given event is selected for externalization.
+	 *
+	 * @param event must not be {@literal null}.
+	 * @since 2.1.3
+	 */
+	public boolean supports(Object event) {
+
+		Assert.notNull(event, "Object must not be null!");
+
+		return configuration.supports(event);
+	}
+
+	/**
 	 * Externalizes the given event.
 	 *
 	 * @param event must not be {@literal null}.
