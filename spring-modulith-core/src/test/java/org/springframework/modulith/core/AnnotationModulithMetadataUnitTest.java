@@ -64,6 +64,69 @@ class AnnotationModulithMetadataUnitTest {
 		});
 	}
 
+	@Test // GH-1982
+	void skipsAdditionalPackagesNestedInOtherAdditionalPackages() {
+
+		assertThat(AnnotationModulithMetadata.of(WithNestedAdditionalPackages.class))
+				.hasValueSatisfying(it -> {
+
+					assertThat(it.getBasePackages())
+							.containsExactly(
+									WithNestedAdditionalPackages.class.getPackageName(),
+									"org.springframework.modulith.extra");
+				});
+	}
+
+	@Test // GH-1982
+	void skipsNestedAdditionalPackagesRegardlessOfDeclarationOrder() {
+
+		assertThat(AnnotationModulithMetadata.of(WithReversedNestedAdditionalPackages.class))
+				.hasValueSatisfying(it -> {
+
+					assertThat(it.getBasePackages())
+							.containsExactly(
+									WithReversedNestedAdditionalPackages.class.getPackageName(),
+									"org.springframework.modulith.extra");
+				});
+	}
+
+	@Test // GH-1982
+	void rejectsAdditionalPackageEnclosingApplicationRoot() {
+
+		assertThatIllegalArgumentException()
+				.isThrownBy(() -> AnnotationModulithMetadata.of(WithEnclosingAdditionalPackage.class)
+						.orElseThrow()
+						.getBasePackages())
+				.withMessageContaining("org.springframework.modulith");
+	}
+
+	@Test // GH-1982
+	void keepsIndependentAdditionalPackagesAndRemovesDuplicates() {
+
+		assertThat(AnnotationModulithMetadata.of(WithIndependentAndDuplicateAdditionalPackages.class))
+				.hasValueSatisfying(it -> {
+
+					assertThat(it.getBasePackages())
+							.containsExactly(
+									WithIndependentAndDuplicateAdditionalPackages.class.getPackageName(),
+									"org.springframework.modulith.extra",
+									"org.springframework.modulith.extras");
+				});
+	}
+
+	@Test // GH-1982
+	void ignoresApplicationRootAndItsSubpackages() {
+
+		assertThat(AnnotationModulithMetadata.of(WithApplicationRootAsAdditionalPackage.class))
+				.hasValueSatisfying(it -> {
+
+					assertThat(it.getBasePackages())
+							.containsExactly(
+									WithApplicationRootAsAdditionalPackage.class.getPackageName(),
+									"org.springframework.modulith.extra");
+				});
+	}
+
 	@Modulithic(useFullyQualifiedModuleNames = true)
 	static class Sample {}
 
@@ -76,4 +139,33 @@ class AnnotationModulithMetadataUnitTest {
 
 	@Modulithic(additionalPackages = "org.springframework.modulith.core.nested")
 	static class WithInvalidAdditionalpackages {}
+
+	@Modulithic(additionalPackages = {
+			"org.springframework.modulith.extra",
+			"org.springframework.modulith.extra.billing"
+	})
+	static class WithNestedAdditionalPackages {}
+
+	@Modulithic(additionalPackages = {
+			"org.springframework.modulith.extra.billing",
+			"org.springframework.modulith.extra"
+	})
+	static class WithReversedNestedAdditionalPackages {}
+
+	@Modulithic(additionalPackages = "org.springframework.modulith")
+	static class WithEnclosingAdditionalPackage {}
+
+	@Modulithic(additionalPackages = {
+			"org.springframework.modulith.extra",
+			"org.springframework.modulith.extras",
+			"org.springframework.modulith.extra"
+	})
+	static class WithIndependentAndDuplicateAdditionalPackages {}
+
+	@Modulithic(additionalPackages = {
+			"org.springframework.modulith.core",
+			"org.springframework.modulith.core.nested",
+			"org.springframework.modulith.extra"
+	})
+	static class WithApplicationRootAsAdditionalPackage {}
 }
