@@ -19,9 +19,7 @@ import io.micrometer.observation.Observation;
 import io.micrometer.observation.Observation.Scope;
 import io.micrometer.observation.ObservationRegistry;
 
-import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.aopalliance.intercept.MethodInterceptor;
 import org.aopalliance.intercept.MethodInvocation;
@@ -30,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.env.Environment;
 import org.springframework.http.server.observation.ServerRequestObservationContext;
-import org.springframework.modulith.core.ApplicationModuleIdentifier;
 import org.springframework.modulith.observability.ModulithContext;
 import org.springframework.modulith.observability.ModulithObservationConvention;
 import org.springframework.modulith.observability.ModulithObservations.LowKeys;
@@ -47,7 +44,6 @@ import org.springframework.util.ClassUtils;
 class ModuleEntryInterceptor implements MethodInterceptor {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(ModuleEntryInterceptor.class);
-	private static final Map<ApplicationModuleIdentifier, ModuleEntryInterceptor> CACHE = new ConcurrentHashMap<>();
 
 	private final ObservedModule module;
 	private final ObservationRegistry observationRegistry;
@@ -79,9 +75,7 @@ class ModuleEntryInterceptor implements MethodInterceptor {
 	public static ModuleEntryInterceptor of(ObservedModule module, ObservationRegistry observationRegistry,
 			@Nullable ModulithObservationConvention custom, Environment environment) {
 
-		return Objects.requireNonNull(CACHE.computeIfAbsent(module.getIdentifier(), __ -> {
-			return new ModuleEntryInterceptor(module, observationRegistry, custom, environment);
-		}));
+		return new ModuleEntryInterceptor(module, observationRegistry, custom, environment);
 	}
 
 	/*
