@@ -6,7 +6,7 @@
 	<parent>
 		<groupId>org.springframework.modulith</groupId>
 		<artifactId>spring-modulith-starters</artifactId>
-		<version>1.4.14</version>
+		<version>1.4.15-SNAPSHOT</version>
 		<relativePath>../pom.xml</relativePath>
 	</parent>
 
@@ -22,26 +22,26 @@
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-api</artifactId>
-			<version>1.4.14</version>
+			<version>1.4.15-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-apt</artifactId>
-			<version>1.4.14</version>
+			<version>1.4.15-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-core</artifactId>
-			<version>1.4.14</version>
+			<version>1.4.15-SNAPSHOT</version>
 			<scope>runtime</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.springframework.modulith</groupId>
 			<artifactId>spring-modulith-moments</artifactId>
-			<version>1.4.14</version>
+			<version>1.4.15-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

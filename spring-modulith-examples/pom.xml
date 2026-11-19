@@ -11,7 +11,7 @@
 
 	<groupId>org.springframework.modulith</groupId>
 	<artifactId>spring-modulith-examples</artifactId>
-	<version>1.4.14</version>
+	<version>1.4.15-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
 	<name>Spring Modulith - Examples</name>
@@ -29,7 +29,7 @@
 		<jmolecules.version>2023.2.2</jmolecules.version>
 		<maven.deploy.skip>true</maven.deploy.skip>
 		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
-		<project.build.outputTimestamp>2026-10-22T00:00:00Z</project.build.outputTimestamp>
+		<project.build.outputTimestamp>2026-11-19T22:58:35Z</project.build.outputTimestamp>
 	</properties>
 
 	<profiles>
@@ -104,7 +104,7 @@
 			<dependency>
 				<groupId>org.springframework.modulith</groupId>
 				<artifactId>spring-modulith-bom</artifactId>
-				<version>1.4.14</version>
+				<version>1.4.15-SNAPSHOT</version>
 				<type>pom</type>
 				<scope>import</scope>
 			</dependency>

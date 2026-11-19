@@ -4,7 +4,7 @@
 
 	<groupId>org.springframework.modulith</groupId>
 	<artifactId>spring-modulith</artifactId>
-	<version>1.4.14</version>
+	<version>1.4.15-SNAPSHOT</version>
 
 	<packaging>pom</packaging>
 
@@ -44,7 +44,7 @@
 		<jgit.version>7.3.0.202506031305-r</jgit.version>
 		<jmolecules-bom.version>2023.3.4</jmolecules-bom.version>
 		<!-- Use stable timestamp (1.0 release) for reproducible builds -->
-		<project.build.outputTimestamp>2026-10-22T00:00:00Z</project.build.outputTimestamp>
+		<project.build.outputTimestamp>2026-11-19T22:58:35Z</project.build.outputTimestamp>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<spring-boot.version>3.5.16</spring-boot.version>
