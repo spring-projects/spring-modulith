@@ -39,6 +39,7 @@ import org.springframework.modulith.events.jobrunr.JobRunrExternalizationTranspo
 import org.springframework.modulith.events.support.BrokerRouting;
 import org.springframework.modulith.events.support.EventExternalizationTransport;
 import org.springframework.modulith.events.support.EventExternalizerModuleListener;
+import org.springframework.modulith.events.support.NamastackOutboxExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizer;
 import org.springframework.modulith.events.support.OutboxEventExternalizerFactory;
 
@@ -92,7 +93,7 @@ class SpringMessagingEventExternalizerConfiguration {
 
 				logger.debug("Registering Namastack domain event outbox externalization for Spring Messaging.");
 
-				return (payload, metadata) -> externalizer.externalizeBlocking(payload);
+				return new NamastackOutboxExternalizer(externalizer, "namastackSpringMessagingOutboxExternalizer");
 			}
 		}
 
