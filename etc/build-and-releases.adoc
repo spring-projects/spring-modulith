@@ -21,6 +21,8 @@
 * `milestone.yml` (`release/milestone`) -- Runs Artifactory deployment of artifacts and documentation.
 * `release.yml` (`release/release`) -- Runs Maven Central deployment of artifacts and Artifactory deployment of documentation.
 
+* `release-docs.yaml` (tag push, manual) -- Runs only the Artifactory documentation deployment for a pushed tag or a tag provided as input (e.g. to re-publish documentation for an existing release).
+
 == Release procedure
 
 * On the version branch (`main`, `….x`) run:

@@ -1,0 +1,41 @@
+name: Deploy release documentation
+
+on:
+  push:
+    tags: [ '**' ]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to build and publish the documentation for (e.g. 2.2.0)'
+        required: true
+        type: string
+
+jobs:
+  docs:
+    name: Deploy documentation for ${{ inputs.tag || github.ref_name }}
+    runs-on: ubuntu-latest
+    if: github.repository == 'spring-projects/spring-modulith'
+
+    steps:
+
+    - name: Check out sources
+      uses: actions/checkout@v6
+      with:
+        ref: refs/tags/${{ inputs.tag || github.ref_name }}
+
+    - name: Set up JDK 17
+      uses: actions/setup-java@v5
+      with:
+        distribution: 'temurin'
+        java-version: 17
+        cache: 'maven'
+
+    - name: Setup Graphviz
+      uses: ts-graphviz/setup-graphviz@v2
+
+    - name: Deploy documentation
+      env:
+        ARTIFACTORY_USERNAME: ${{ secrets.ARTIFACTORY_USERNAME }}
+        ARTIFACTORY_PASSWORD: ${{ secrets.ARTIFACTORY_PASSWORD }}
+        DEVELOCITY_ACCESS_KEY: ${{ secrets.GRADLE_ENTERPRISE_SECRET_ACCESS_KEY }}
+      run: ./mvnw -B clean deploy -Pdocumentation
