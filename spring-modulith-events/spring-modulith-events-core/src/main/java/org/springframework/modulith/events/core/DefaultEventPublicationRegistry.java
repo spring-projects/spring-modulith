@@ -236,7 +236,7 @@ public class DefaultEventPublicationRegistry
 
 		LOGGER.debug(getConfirmationMessage(publications) + " found.");
 
-		processPublications(publications, filter, consumer);
+		processPublications(publications, null, filter, consumer);
 	}
 
 	/*
@@ -262,7 +262,7 @@ public class DefaultEventPublicationRegistry
 				.withPublicationsPublishedBefore(clock.instant().minus(options.getMinAge()))
 				.withItemsToRead(itemsToRead);
 
-		processPublications(events.findFailedPublications(criteria), options.getFilter(), consumer);
+		processPublications(events.findFailedPublications(criteria), Status.FAILED, options.getFilter(), consumer);
 	}
 
 	/*
@@ -359,14 +359,15 @@ public class DefaultEventPublicationRegistry
 		markFailed(publication.getEvent(), publication.getTargetIdentifier());
 	}
 
-	private void processPublications(Collection<TargetEventPublication> publications, Predicate<EventPublication> filter,
+	private void processPublications(Collection<TargetEventPublication> publications,
+			@Nullable Status expectedCurrentStatus, Predicate<EventPublication> filter,
 			Consumer<TargetEventPublication> consumer) {
 
 		publications.stream() //
 				.filter(filter) //
 				.forEach(it -> {
 
-					if (!events.markResubmitted(it.getIdentifier(), clock.instant())) {
+					if (!events.markResubmitted(it.getIdentifier(), clock.instant(), expectedCurrentStatus)) {
 						return;
 					}
 
