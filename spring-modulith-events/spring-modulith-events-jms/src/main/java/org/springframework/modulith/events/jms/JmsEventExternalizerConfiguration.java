@@ -31,6 +31,9 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.expression.BeanFactoryResolver;
 import org.springframework.expression.spel.support.StandardEvaluationContext;
 import org.springframework.jms.core.JmsOperations;
+import org.springframework.jms.support.JmsHeaderMapper;
+import org.springframework.jms.support.SimpleJmsHeaderMapper;
+import org.springframework.messaging.MessageHeaders;
 import org.springframework.modulith.events.EventExternalizationConfiguration;
 import org.springframework.modulith.events.ExternalizationMode;
 import org.springframework.modulith.events.config.EventExternalizationAutoConfiguration;
@@ -57,6 +60,7 @@ import org.springframework.modulith.events.support.OutboxEventExternalizerFactor
 class JmsEventExternalizerConfiguration {
 
 	private static final Logger logger = LoggerFactory.getLogger(JmsEventExternalizerConfiguration.class);
+	private static final JmsHeaderMapper HEADER_MAPPER = new SimpleJmsHeaderMapper();
 
 	@Bean
 	@ConditionalOnProperty(name = ExternalizationMode.PROPERTY, havingValue = "module-listener", matchIfMissing = true)
@@ -66,7 +70,7 @@ class JmsEventExternalizerConfiguration {
 		logger.debug("Registering domain event externalization to JMS…");
 
 		return new EventExternalizerModuleListener(configuration,
-				createJmsTransport(operations, serializer, factory), factory);
+				createJmsTransport(configuration, operations, serializer, factory), factory);
 	}
 
 	@AutoConfiguration
@@ -75,10 +79,10 @@ class JmsEventExternalizerConfiguration {
 
 		private final OutboxEventExternalizer externalizer;
 
-		JmsOutboxConfiguration(JmsOperations operations, EventSerializer serializer, BeanFactory beanFactory,
-				OutboxEventExternalizerFactory factory) {
+		JmsOutboxConfiguration(EventExternalizationConfiguration configuration, JmsOperations operations,
+				EventSerializer serializer, BeanFactory beanFactory, OutboxEventExternalizerFactory factory) {
 
-			this.externalizer = factory.forTransport(createJmsTransport(operations, serializer, beanFactory));
+			this.externalizer = factory.forTransport(createJmsTransport(configuration, operations, serializer, beanFactory));
 		}
 
 		@AutoConfiguration
@@ -108,7 +112,7 @@ class JmsEventExternalizerConfiguration {
 		}
 	}
 
-	private static EventExternalizationTransport createJmsTransport(
+	private static EventExternalizationTransport createJmsTransport(EventExternalizationConfiguration configuration,
 			JmsOperations operations, EventSerializer serializer, BeanFactory factory) {
 
 		var context = new StandardEvaluationContext();
@@ -118,8 +122,15 @@ class JmsEventExternalizerConfiguration {
 
 			var serialized = serializer.serialize(payload);
 			var routing = BrokerRouting.of(target, context);
+			var headers = new MessageHeaders(configuration.getHeadersFor(payload));
 
-			operations.send(routing.getTarget(payload), session -> session.createTextMessage(serialized.toString()));
+			operations.send(routing.getTarget(payload), session -> {
+
+				var message = session.createTextMessage(serialized.toString());
+				HEADER_MAPPER.fromHeaders(headers, message);
+
+				return message;
+			});
 
 			return CompletableFuture.completedFuture(null);
 		};
