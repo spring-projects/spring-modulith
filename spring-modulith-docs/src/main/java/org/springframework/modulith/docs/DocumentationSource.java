@@ -27,7 +27,7 @@ import com.tngtech.archunit.core.domain.JavaMethod;
  *
  * @author Oliver Drotbohm
  */
-interface DocumentationSource {
+public interface DocumentationSource {
 
 	/**
 	 * Returns the documentation to be used for the given {@link JavaMethod}.

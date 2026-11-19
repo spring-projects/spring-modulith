@@ -48,8 +48,8 @@ class AsciidoctorUnitTests {
 	@Test
 	void doesNotRenderLinkToMethodReferenceForNonPublicType() {
 
-		assertThat(asciidoctor.toInlineCode("DocumentationSource#getDocumentation(JavaMethod)"))
-				.isEqualTo("`o.s.m.d.DocumentationSource#getDocumentation(JavaMethod)`");
+		assertThat(asciidoctor.toInlineCode("ConfigurationProperties#getModuleProperties(ApplicationModule)"))
+				.isEqualTo("`o.s.m.d.ConfigurationProperties#getModuleProperties(ApplicationModule)`");
 	}
 
 	@Test
