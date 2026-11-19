@@ -2,7 +2,7 @@ name: CI Build (Open Source)
 
 on:
   push:
-    branches: [ main, 2.1.x, 2.0.x, 1.4.x, feature/* ]
+    branches: [ main, 2.2.x, 2.1.x, 2.0.x, 1.4.x, feature/* ]
 
 jobs:
   build:
