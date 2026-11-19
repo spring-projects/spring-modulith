@@ -17,6 +17,7 @@ package org.springframework.modulith.moments.support;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 
 import org.springframework.context.ApplicationEventPublisher;
@@ -25,8 +26,11 @@ import org.springframework.context.ApplicationEventPublisher;
  * Extension of {@link Moments} to publicly expose methods to shift time.
  *
  * @author Oliver Drotbohm
+ * @author Naitik Singh
  * @see #now()
  * @see #shiftBy(Duration)
+ * @see #skipBy(Duration)
+ * @see #skipTo(Instant)
  */
 public class TimeMachine extends Moments {
 
@@ -61,6 +65,46 @@ public class TimeMachine extends Moments {
 	}
 
 	/**
+	 * Moves the current point in time by the given {@link Duration} <em>without</em> publishing any events for the time
+	 * skipped. A subsequent {@link #shiftBy(Duration)} only publishes the events for the time passing from the new point
+	 * in time on. A negative {@link Duration} moves time backwards and, just like {@link #shiftBy(Duration)} with a
+	 * negative {@link Duration}, does not publish any events either.
+	 *
+	 * @param duration must not be {@literal null}.
+	 * @return the current instance, will never be {@literal null}.
+	 * @since 2.3
+	 * @see #skipTo(Instant)
+	 */
+	@Override
+	public TimeMachine skipBy(Duration duration) {
+
+		super.skipBy(duration);
+
+		return this;
+	}
+
+	/**
+	 * Moves the current point in time to the given {@link Instant} <em>without</em> publishing any events for the time
+	 * skipped. A subsequent {@link #shiftBy(Duration)} only publishes the events for the time passing from the new point
+	 * in time on. An {@link Instant} in the past moves time backwards without publishing any events either. Note that
+	 * time keeps advancing from the given {@link Instant} on, according to the underlying {@link Clock}.
+	 *
+	 * @param instant must not be {@literal null}.
+	 * @return the current instance, will never be {@literal null}.
+	 * @since 2.3
+	 * @see #skipBy(Duration)
+	 */
+	@Override
+	public TimeMachine skipTo(Instant instant) {
+
+		super.skipTo(instant);
+
+		return this;
+	}
+
+	/**
+	 * Resets all shifts and skips applied to the current point in time.
+	 *
 	 * @see org.springframework.modulith.moments.support.Moments#reset()
 	 * @since 2.0.1
 	 */
