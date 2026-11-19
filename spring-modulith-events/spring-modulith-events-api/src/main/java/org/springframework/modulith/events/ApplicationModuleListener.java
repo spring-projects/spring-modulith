@@ -37,18 +37,30 @@ import org.springframework.transaction.event.TransactionalEventListener;
  * <p>
  * It is advisable that you use these integration listeners in combination with the Spring Modulith Event Publication
  * Registry to make sure that the event publication does not get lost in case of an application or listener failure.
+ * <p>
+ * The listeners are run on the {@link java.util.concurrent.Executor} bean named {@value #TASK_EXECUTOR_BEAN_NAME} if
+ * present, and on the default executor used for {@link Async} methods otherwise. Spring Modulith's Spring Boot
+ * auto-configuration registers such a dedicated executor by default.
  *
  * @author Oliver Drotbohm
  * @see <a href="https://docs.spring.io/spring-modulith/reference/events.html#publication-registry">Spring Modulith
  *      Event Publication Registry - Reference Documentation</a>
  */
-@Async
+@Async("#{containsObject('" + ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME + "') ? '"
+		+ ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME + "' : ''}") // empty qualifier -> default executor
 @Transactional(propagation = Propagation.REQUIRES_NEW)
 @TransactionalEventListener
 @Documented
 @Target({ ElementType.METHOD, ElementType.ANNOTATION_TYPE })
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ApplicationModuleListener {
+
+	/**
+	 * The name of the {@link java.util.concurrent.Executor} bean to run application module listeners on, if present.
+	 *
+	 * @since 2.2
+	 */
+	String TASK_EXECUTOR_BEAN_NAME = "applicationModuleListenerTaskExecutor";
 
 	/**
 	 * Whether the transaction to be run for the event listener is supposed to be read-only (default {@literal false}).

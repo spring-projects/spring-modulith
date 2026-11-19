@@ -31,15 +31,23 @@ import org.springframework.boot.autoconfigure.AutoConfiguration;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnThreading;
+import org.springframework.boot.autoconfigure.task.TaskExecutionAutoConfiguration;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties;
 import org.springframework.boot.autoconfigure.task.TaskExecutionProperties.Shutdown;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.boot.task.SimpleAsyncTaskExecutorBuilder;
+import org.springframework.boot.task.ThreadPoolTaskExecutorBuilder;
+import org.springframework.boot.thread.Threading;
 import org.springframework.context.Lifecycle;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.annotation.Role;
 import org.springframework.core.env.Environment;
+import org.springframework.core.task.SimpleAsyncTaskExecutor;
 import org.springframework.modulith.events.AbandonPolicy;
+import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.modulith.events.config.EventPublicationAutoConfiguration.AsyncEnablingConfiguration;
 import org.springframework.modulith.events.core.AbandonPolicies;
 import org.springframework.modulith.events.core.DefaultAbandonedEventPublications;
@@ -63,8 +71,9 @@ import org.springframework.transaction.PlatformTransactionManager;
  * @author Oliver Drotbohm
  * @author Björn Kieling
  * @author Dmitry Belyaev
+ * @author Hyun Lee
  */
-@AutoConfiguration
+@AutoConfiguration(after = TaskExecutionAutoConfiguration.class)
 @Import({ AsyncEnablingConfiguration.class, StalenessMonitorConfiguration.class })
 @EnableConfigurationProperties({ StalenessProperties.class, ResubmissionProperties.class })
 public class EventPublicationAutoConfiguration extends EventPublicationConfiguration {
@@ -143,6 +152,29 @@ public class EventPublicationAutoConfiguration extends EventPublicationConfigura
 			matchIfMissing = true)
 	static AsyncPropertiesDefaulter asyncPropertiesDefaulter(Environment environment) {
 		return new AsyncPropertiesDefaulter(environment);
+	}
+
+	/**
+	 * A dedicated executor for {@link ApplicationModuleListener}s, built like Spring Boot's application task executor.
+	 * Registered as non-default candidate so that by-type lookups of an executor keep resolving the application's
+	 * default one.
+	 */
+	@Lazy
+	@Bean(name = ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME, defaultCandidate = false)
+	@ConditionalOnMissingBean(name = ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME)
+	@ConditionalOnBean(ThreadPoolTaskExecutorBuilder.class)
+	@ConditionalOnThreading(Threading.PLATFORM)
+	ThreadPoolTaskExecutor applicationModuleListenerTaskExecutor(ThreadPoolTaskExecutorBuilder builder) {
+		return builder.build();
+	}
+
+	@Bean(name = ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME, defaultCandidate = false)
+	@ConditionalOnMissingBean(name = ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME)
+	@ConditionalOnBean(SimpleAsyncTaskExecutorBuilder.class)
+	@ConditionalOnThreading(Threading.VIRTUAL)
+	SimpleAsyncTaskExecutor applicationModuleListenerTaskExecutorVirtualThreads(
+			SimpleAsyncTaskExecutorBuilder builder) {
+		return builder.build();
 	}
 
 	@EnableAsync
