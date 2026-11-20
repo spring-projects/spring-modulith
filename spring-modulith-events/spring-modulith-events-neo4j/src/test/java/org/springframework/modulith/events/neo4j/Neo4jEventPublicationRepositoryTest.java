@@ -615,6 +615,32 @@ class Neo4jEventPublicationRepositoryTest {
 			assertThat(repository.findFailedPublications(criteria)).isEmpty();
 		}
 
+		@Test // GH-1392
+		void doesNotCompleteAbandonedPublication() {
+
+			var publication = createPublication(new TestEvent("abandoned"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), EventPublication.Status.FAILED))
+					.isTrue();
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.findCompletedPublications()).isEmpty();
+		}
+
+		@Test // GH-1392
+		void doesNotAbandonCompletedPublication() {
+
+			var publication = createPublication(new TestEvent("completed"));
+
+			repository.markCompleted(publication.getIdentifier(), Instant.now());
+
+			assertThat(repository.markAbandoned(publication.getIdentifier(), Instant.now(), null)).isFalse();
+			assertThat(repository.findAbandonedPublications()).isEmpty();
+		}
+
 		/**
 		 * Simulates a publication persisted by a schema version that predates the {@code status} property, i.e. one for
 		 * which the property is missing rather than defaulted.

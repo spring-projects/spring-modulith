@@ -174,9 +174,7 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		} else if (completionMode == CompletionMode.ARCHIVE) {
 
 			if (expectedCurrentStatus == null) {
-
-				archiveTerminal(List.of(identifier), instant, Status.ABANDONED);
-				return true;
+				return archiveTerminal(List.of(identifier), instant, Status.ABANDONED);
 			}
 
 			var options = FindAndModifyOptions.options().returnNew(true);
@@ -445,14 +443,16 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 		return query(criteria).with(DEFAULT_SORT);
 	}
 
-	private void archiveTerminal(Collection<UUID> identifiers, Instant now, Status status) {
+	private boolean archiveTerminal(Collection<UUID> identifiers, Instant now, Status status) {
 
 		Assert.isTrue(!archiveCollection.equals(collection),
 				"Archive collection must not be identical to the default collection!");
 
 		if (identifiers.isEmpty()) {
-			return;
+			return false;
 		}
+
+		var archived = false;
 
 		// Avoid $merge as it's not supported in transactions. Upserting via $setOnInsert keeps existing archive entries.
 		var publications = mongoTemplate.find(query(where(ID).in(identifiers).and(COMPLETION_DATE).isNull()),
@@ -479,10 +479,12 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 				operations.upsert(query(where(ID).is(publication.id)), update);
 			}
 
-			operations.execute();
+			archived = !operations.execute().getUpserts().isEmpty();
 		}
 
 		mongoTemplate.remove(query(where(ID).in(identifiers)), MongoDbEventPublication.class, collection);
+
+		return archived;
 	}
 
 	private static class MongoDbEventPublicationAdapter implements TargetEventPublication {
