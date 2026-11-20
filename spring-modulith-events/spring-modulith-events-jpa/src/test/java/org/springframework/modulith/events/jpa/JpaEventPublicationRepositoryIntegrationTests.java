@@ -502,6 +502,30 @@ class JpaEventPublicationRepositoryIntegrationTests {
 					.containsExactly(publication.getIdentifier());
 		}
 
+		@Test // GH-1906
+		void looksUpLeastRecentlyAttemptedFailedPublicationsFirstOnlyIfConfigured() {
+
+			var now = Instant.now();
+			var first = createPublication(new TestEvent("first"), now.minusSeconds(2));
+			var second = createPublication(new TestEvent("second"), now.minusSeconds(1));
+
+			repository.markFailed(first.getIdentifier());
+			repository.markFailed(second.getIdentifier());
+
+			repository.markResubmitted(first.getIdentifier(), now);
+			repository.markFailed(first.getIdentifier());
+
+			var criteria = FailedCriteria.ALL.withItemsToRead(1);
+
+			assertThat(repository.findFailedPublications(criteria))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(first.getIdentifier());
+
+			assertThat(repository.findFailedPublications(criteria.withLeastRecentlyAttemptedFirst(true)))
+					.extracting(TargetEventPublication::getIdentifier)
+					.containsExactly(second.getIdentifier());
+		}
+
 		@Test // GH-1375
 		void looksUpFailedPublicationWithReferenceDate() throws Exception {
 
@@ -682,10 +706,14 @@ class JpaEventPublicationRepositoryIntegrationTests {
 		}
 
 		private TargetEventPublication createPublication(Object event) {
+			return createPublication(event, Instant.now());
+		}
+
+		private TargetEventPublication createPublication(Object event, Instant publicationDate) {
 
 			serializer.registerSerialization(event);
 
-			return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER));
+			return repository.create(TargetEventPublication.of(event, TARGET_IDENTIFIER, publicationDate));
 		}
 
 		private void savePublicationAt(LocalDateTime date) {
