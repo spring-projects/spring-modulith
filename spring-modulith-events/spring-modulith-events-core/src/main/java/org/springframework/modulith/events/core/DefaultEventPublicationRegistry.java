@@ -38,6 +38,8 @@ import org.springframework.modulith.events.ResubmissionOptions;
 import org.springframework.modulith.events.core.EventPublicationRepository.FailedCriteria;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.util.Assert;
 
 /**
@@ -99,11 +101,29 @@ public class DefaultEventPublicationRegistry
 	@Override
 	public Collection<TargetEventPublication> store(Object event, Stream<PublicationTargetIdentifier> listeners) {
 
-		return listeners.map(it -> TargetEventPublication.of(event, it, clock.instant()))
+		var publications = listeners.map(it -> TargetEventPublication.of(event, it, clock.instant()))
 				.peek(it -> LOGGER.debug(REGISTER, it.getEvent().getClass().getName(), it.getTargetIdentifier().getValue()))
 				.map(events::create)
 				.map(inProgress::register)
 				.toList();
+
+		// Listeners are not invoked if the publishing transaction does not commit, so that neither markCompleted(…) nor
+		// markFailed(…) would ever release the publications registered above.
+		if (TransactionSynchronizationManager.isSynchronizationActive()) {
+
+			TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+
+				@Override
+				public void afterCompletion(int status) {
+
+					if (status != STATUS_COMMITTED) {
+						publications.forEach(inProgress::unregister);
+					}
+				}
+			});
+		}
+
+		return publications;
 	}
 
 	/*
