@@ -35,6 +35,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.modulith.events.EventPublication.Status;
 import org.springframework.modulith.events.ResubmissionOptions;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 /**
  * Unit tests for {@link DefaultEventPublicationRegistry}.
@@ -171,6 +173,54 @@ class DefaultEventPublicationRegistryUnitTests {
 				status -> status == Status.RESUBMITTED ? Duration.ofMinutes(5) : Duration.ZERO);
 
 		verify(repository, never()).markFailed(any());
+	}
+
+	@Test // GH-2036
+	void releasesInProgressPublicationsIfPublishingTransactionDoesNotCommit() {
+
+		when(repository.create(any())).then(returnsFirstArg());
+
+		var registry = createRegistry(Instant.now());
+
+		TransactionSynchronizationManager.initSynchronization();
+
+		try {
+
+			registry.store(new Object(), Stream.of(PublicationTargetIdentifier.of("id")));
+
+			assertThat(registry.getPublicationsInProgress()).hasSize(1);
+
+			TransactionSynchronizationManager.getSynchronizations()
+					.forEach(it -> it.afterCompletion(TransactionSynchronization.STATUS_ROLLED_BACK));
+
+			assertThat(registry.getPublicationsInProgress()).isEmpty();
+
+		} finally {
+			TransactionSynchronizationManager.clearSynchronization();
+		}
+	}
+
+	@Test // GH-2036
+	void keepsInProgressPublicationsIfPublishingTransactionCommits() {
+
+		when(repository.create(any())).then(returnsFirstArg());
+
+		var registry = createRegistry(Instant.now());
+
+		TransactionSynchronizationManager.initSynchronization();
+
+		try {
+
+			registry.store(new Object(), Stream.of(PublicationTargetIdentifier.of("id")));
+
+			TransactionSynchronizationManager.getSynchronizations()
+					.forEach(it -> it.afterCompletion(TransactionSynchronization.STATUS_COMMITTED));
+
+			assertThat(registry.getPublicationsInProgress()).hasSize(1);
+
+		} finally {
+			TransactionSynchronizationManager.clearSynchronization();
+		}
 	}
 
 	private DefaultEventPublicationRegistry createRegistry(Instant instant) {
