@@ -461,8 +461,8 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			var now = Instant.now();
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isTrue();
-			assertThat(repository.markResubmitted(publication.getIdentifier(), now)).isFalse();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now, null)).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), now, null)).isFalse();
 		}
 
 		@Test // GH-1375
@@ -476,7 +476,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			repository.markFailed(publication.getIdentifier());
 			assertOneByStatus(Status.FAILED);
 
-			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now(), null);
 			assertOneByStatus(Status.RESUBMITTED);
 		}
 
@@ -575,7 +575,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			var publication = createPublication(event);
 
 			repository.markFailed(publication.getIdentifier());
-			repository.markResubmitted(publication.getIdentifier(), Instant.now());
+			repository.markResubmitted(publication.getIdentifier(), Instant.now(), null);
 
 			em.flush();
 			em.clear();
@@ -591,7 +591,22 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			assertThat(repository.findByStatus(Status.ABANDONED)).isEmpty();
 		}
 
-		@Test // GH-1565
+		@Test // GH-1971
+		void doesNotResubmitFailedPublicationThatHasBeenConcurrentlyResubmitted() {
+
+			var publication = createPublication(new TestEvent("first"));
+
+			repository.markFailed(publication.getIdentifier());
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
+
+			repository.markProcessing(publication.getIdentifier());
+
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), Status.FAILED)).isFalse();
+			assertOneByStatus(Status.PROCESSING);
+		}
+
+		@Test // GH-1565, GH-1971
 		void resubmitsPublicationWithNullStatusColumn() {
 
 			var event = new TestEvent("first");
@@ -599,7 +614,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 
 			setStatusColumnToNull(publication);
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isTrue();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), Status.FAILED)).isTrue();
 		}
 
 		@Test // GH-1565
@@ -628,7 +643,7 @@ class JpaEventPublicationRepositoryIntegrationTests {
 			em.flush();
 			em.clear();
 
-			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now())).isFalse();
+			assertThat(repository.markResubmitted(publication.getIdentifier(), Instant.now(), null)).isFalse();
 		}
 
 		@Test // GH-1925

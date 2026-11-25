@@ -214,12 +214,15 @@ class MongoDbEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
 	 */
 	@Override
-	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+	public boolean markResubmitted(UUID identifier, Instant resubmissionDate, @Nullable Status expectedCurrentStatus) {
 
-		var query = query(where(ID).is(identifier).and(STATUS).ne(Status.RESUBMITTED).and(COMPLETION_DATE).isNull());
+		var criteria = where(ID).is(identifier).and(COMPLETION_DATE).isNull().and(STATUS);
+		var query = query(expectedCurrentStatus == null
+				? criteria.ne(Status.RESUBMITTED)
+				: criteria.in(expectedCurrentStatus, null));
 		var update = Update.update(STATUS, Status.RESUBMITTED)
 				.inc(COMPLETION_ATTEMPTS, 1)
 				.set(LAST_RESUBMISSION_DATE, resubmissionDate);

@@ -31,6 +31,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.jspecify.annotations.Nullable;
+import org.neo4j.cypherdsl.core.Condition;
 import org.neo4j.cypherdsl.core.Cypher;
 import org.neo4j.cypherdsl.core.Node;
 import org.neo4j.cypherdsl.core.ResultStatement;
@@ -72,6 +73,7 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 	private static final String STATUS = "status";
 	private static final String COMPLETION_ATTEMPTS = "completionAttempts";
 	private static final String LAST_RESUBMISSION_DATE = "lastResubmissionDate";
+	private static final String EXPECTED_STATUS = "expectedStatus";
 
 	// return references
 	private static final String STATUS_COUNT = "statusCount";
@@ -166,16 +168,24 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
 			.build();
 
-	private static final Statement RESUBMIT_STATEMENT = match(EVENT_PUBLICATION_NODE)
-			.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
-			.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
-			.and(EVENT_PUBLICATION_NODE.property(STATUS).isNull()
-					.or(EVENT_PUBLICATION_NODE.property(STATUS).ne(literalOf(Status.RESUBMITTED.name()))))
-			.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
-			.set(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS)
-					.to(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS).add(literalOf(1))))
-			.set(EVENT_PUBLICATION_NODE.property(LAST_RESUBMISSION_DATE).to(parameter(LAST_RESUBMISSION_DATE)))
-			.build();
+	private static final Statement RESUBMIT_STATEMENT = resubmitStatement(
+			EVENT_PUBLICATION_NODE.property(STATUS).ne(literalOf(Status.RESUBMITTED.name())));
+
+	private static final Statement RESUBMIT_IF_IN_EXPECTED_STATUS_STATEMENT = resubmitStatement(
+			EVENT_PUBLICATION_NODE.property(STATUS).eq(parameter(EXPECTED_STATUS)));
+
+	private static Statement resubmitStatement(Condition status) {
+
+		return match(EVENT_PUBLICATION_NODE)
+				.where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
+				.and(EVENT_PUBLICATION_NODE.property(COMPLETION_DATE).isNull())
+				.and(EVENT_PUBLICATION_NODE.property(STATUS).isNull().or(status))
+				.set(EVENT_PUBLICATION_NODE.property(STATUS).to(parameter(STATUS)))
+				.set(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS)
+						.to(EVENT_PUBLICATION_NODE.property(COMPLETION_ATTEMPTS).add(literalOf(1))))
+				.set(EVENT_PUBLICATION_NODE.property(LAST_RESUBMISSION_DATE).to(parameter(LAST_RESUBMISSION_DATE)))
+				.build();
+	}
 
 	private static final Lazy<Statement> COMPLETE_IN_ARCHIVE_BY_ID_STATEMENT = Lazy.of(
 			() -> applyProperties(match(EVENT_PUBLICATION_NODE).where(EVENT_PUBLICATION_NODE.property(ID).eq(parameter(ID)))
@@ -705,16 +715,23 @@ class Neo4jEventPublicationRepository implements EventPublicationRepository {
 
 	/*
 	 * (non-Javadoc)
-	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant)
+	 * @see org.springframework.modulith.events.core.EventPublicationRepository#markResubmitted(java.util.UUID, java.time.Instant, org.springframework.modulith.events.EventPublication.Status)
 	 */
 	@Override
-	public boolean markResubmitted(UUID identifier, Instant resubmissionDate) {
+	public boolean markResubmitted(UUID identifier, Instant resubmissionDate, @Nullable Status expectedCurrentStatus) {
 
-		var update = neo4jClient.query(renderer.render(RESUBMIT_STATEMENT))
+		var statement = expectedCurrentStatus == null ? RESUBMIT_STATEMENT : RESUBMIT_IF_IN_EXPECTED_STATUS_STATEMENT;
+
+		var query = neo4jClient.query(renderer.render(statement))
 				.bind(Values.value(identifier.toString())).to(ID)
 				.bind(Status.RESUBMITTED.name()).to(STATUS)
-				.bind(Values.value(resubmissionDate.atOffset(ZoneOffset.UTC))).to(LAST_RESUBMISSION_DATE)
-				.run();
+				.bind(Values.value(resubmissionDate.atOffset(ZoneOffset.UTC))).to(LAST_RESUBMISSION_DATE);
+
+		if (expectedCurrentStatus != null) {
+			query = query.bind(expectedCurrentStatus.name()).to(EXPECTED_STATUS);
+		}
+
+		var update = query.run();
 
 		return update.counters().propertiesSet() > 1;
 	}
