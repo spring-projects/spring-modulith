@@ -32,6 +32,7 @@ import java.util.function.BiConsumer;
 import org.jmolecules.event.annotation.Externalized;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.amqp.rabbit.connection.CorrelationData;
 import org.springframework.amqp.rabbit.core.RabbitMessageOperations;
 import org.springframework.amqp.support.AmqpHeaders;
@@ -250,6 +251,29 @@ class RabbitEventExternalizerConfigurationIntegrationTests {
 	void propagatesPublisherNackToNamastackOutboxHandler() {
 
 		assertPublisherNack(OutboxHandler.class, (transport, event) -> transport.handle(event, null));
+	}
+
+	@Test // GH-1969
+	void addsHeadersIfConfigured() {
+
+		var config = EventExternalizationConfiguration.defaults("org")
+				.headers(SampleEvent.class, __ -> Map.of("key", "value"))
+				.build();
+		var operations = confirmingOperations();
+
+		basicSetup(config, operations)
+				.withPropertyValues(ExternalizationMode.PROPERTY + "=" + ExternalizationMode.OUTBOX)
+				.run(ctxt -> {
+
+					ctxt.getBean(OutboxHandler.class).handle(new SampleEvent(), null);
+
+					ArgumentCaptor<Map<String, Object>> captor = ArgumentCaptor.captor();
+					verify(operations).convertAndSend(any(), any(), any(), captor.capture());
+
+					assertThat(captor.getValue())
+							.containsEntry("key", "value")
+							.containsKey(AmqpHeaders.PUBLISH_CONFIRM_CORRELATION);
+				});
 	}
 
 	private ApplicationContextRunner basicSetup() {
