@@ -1,5 +1,19 @@
 = Contributing to Spring Modulith
 
+[IMPORTANT]
+====
+In the age of AI, we're facing a significant increase of drive-by submissions that impede the team's work, because they all need to be evaluated. If your contribution does not exceed pointing an LLM to a ticket and pipe the output into a PR, we kindly ask you to refrain from submitting it. We prefer a ticket-first process:
+
+1. If you find something worth fixing or have an idea for a feature, please open a ticket and describe what you're trying to achieve. Don't immediately jump to implementation suggestions. If you'd like to propose changes for the idea as well, please indicate so in the ticket.
+2. The team will then evaluate the ticket, whether it's worth fixing, give implementation recommendations, etc. We will assign you the ticket if we're willing to consider a PR submitted by you.
+3. We would need you to be able to document a real-world need for the issue to be fixed. Contributions would need you to be able to explain questions about design decisions and implementation details. We do not want to communicate with sole https://dev.to/adamthedeveloper/dont-be-a-proxy-between-me-and-your-ai-mcn[AI-proxies].
+
+We reserve the right to close PRs submitted without following the process without further comment.
+_We value your time, so please value ours, too._
+====
+
+== General
+
 * As a contributor to this project you agree to follow the Spring Project https://github.com/spring-projects/.github/blob/main/CODE_OF_CONDUCT.md[code of conduct].
 * All commits must include a __Signed-off-by__ trailer at the end of each commit message to indicate that the contributor agrees to the Developer Certificate of Origin.
 For additional details, please refer to the blog post https://spring.io/blog/2025/01/06/hello-dco-goodbye-cla-simplifying-contributions-to-spring[Hello DCO, Goodbye CLA: Simplifying Contributions to Spring].
