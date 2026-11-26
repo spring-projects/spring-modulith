@@ -26,6 +26,7 @@ import java.time.Month;
 import java.time.MonthDay;
 import java.time.Year;
 import java.time.YearMonth;
+import java.time.ZoneId;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.Collection;
@@ -49,16 +50,15 @@ import org.springframework.util.Assert;
  *
  * @author Oliver Drotbohm
  * @author John Cunliffe
+ * @author Naitik Singh
  */
 public class Moments implements Now {
 
 	private static final MonthDay DEC_31ST = MonthDay.of(Month.DECEMBER, 31);
 
-	private final Clock clock;
+	private final AdjustableClock clock;
 	private final ApplicationEventPublisher events;
 	private final MomentsProperties properties;
-
-	private Duration shift = Duration.ZERO;
 
 	/**
 	 * Creates a new {@link Moments} for the given {@link Clock}, {@link ApplicationEventPublisher} and
@@ -74,7 +74,7 @@ public class Moments implements Now {
 		Assert.notNull(events, "ApplicationEventPublisher must not be null!");
 		Assert.notNull(properties, "MomentsProperties must not be null!");
 
-		this.clock = clock;
+		this.clock = new AdjustableClock(clock);
 		this.events = events;
 		this.properties = properties;
 	}
@@ -129,11 +129,10 @@ public class Moments implements Now {
 
 		LocalDateTime before = now();
 		LocalDateTime after = before.plus(duration);
-		Duration initialShift = this.shift;
 
 		if (duration.isNegative()) {
 
-			this.shift = initialShift.plus(duration);
+			clock.adjustBy(duration);
 
 			return this;
 		}
@@ -148,13 +147,16 @@ public class Moments implements Now {
 
 		LocalDateTime current = before.truncatedTo(step);
 		LocalDateTime stop = after.truncatedTo(step);
+		Duration applied = Duration.ZERO;
 
 		while (current.isBefore(stop)) {
 
 			LocalDateTime next = current.plus(1, step);
 
 			// Advance the clock to the moment the events are due so that consumers see consistent time
-			this.shift = initialShift.plus(Duration.between(toInstant(before), toInstant(next)));
+			Duration due = Duration.between(toInstant(before), toInstant(next));
+			clock.adjustBy(due.minus(applied));
+			applied = due;
 
 			if (secondly) {
 				emitSecondEventFor(next.minusSeconds(1).truncatedTo(ChronoUnit.SECONDS));
@@ -180,14 +182,32 @@ public class Moments implements Now {
 			current = next;
 		}
 
-		this.shift = initialShift.plus(duration);
+		clock.adjustBy(duration.minus(applied));
+
+		return this;
+	}
+
+	Moments skipBy(Duration duration) {
+
+		Assert.notNull(duration, "Duration must not be null!");
+
+		clock.adjustBy(duration);
+
+		return this;
+	}
+
+	Moments skipTo(Instant instant) {
+
+		Assert.notNull(instant, "Instant must not be null!");
+
+		clock.adjustTo(instant);
 
 		return this;
 	}
 
 	Moments reset() {
 
-		this.shift = Duration.ZERO;
+		clock.reset();
 
 		return this;
 	}
@@ -216,7 +236,7 @@ public class Moments implements Now {
 	 */
 	@Override
 	public Instant instant() {
-		return clock.instant().plus(shift);
+		return clock.instant();
 	}
 
 	private Instant toInstant(LocalDateTime time) {
@@ -270,6 +290,83 @@ public class Moments implements Now {
 		// Year has passed
 		if (MonthDay.from(date).equals(DEC_31ST)) {
 			events.publishEvent(YearHasPassed.of(year));
+		}
+	}
+
+	/**
+	 * A {@link Clock} that applies a single, adjustable offset to a delegate {@link Clock}. All modifications of the
+	 * offset are atomic, so that concurrent shifts and skips do not get lost.
+	 *
+	 * @author Naitik Singh
+	 * @since 2.3
+	 */
+	private static final class AdjustableClock extends Clock {
+
+		private final Clock delegate;
+		private volatile Duration adjustment = Duration.ZERO;
+
+		/**
+		 * Creates a new {@link AdjustableClock} for the given delegate {@link Clock}.
+		 *
+		 * @param delegate must not be {@literal null}.
+		 */
+		AdjustableClock(Clock delegate) {
+
+			Assert.notNull(delegate, "Clock must not be null!");
+
+			this.delegate = delegate;
+		}
+
+		/**
+		 * Adds the given {@link Duration} to the current adjustment.
+		 *
+		 * @param duration must not be {@literal null}.
+		 */
+		synchronized void adjustBy(Duration duration) {
+			this.adjustment = adjustment.plus(duration);
+		}
+
+		/**
+		 * Adjusts the clock so that it currently returns the given {@link Instant}.
+		 *
+		 * @param instant must not be {@literal null}.
+		 */
+		synchronized void adjustTo(Instant instant) {
+			this.adjustment = Duration.between(delegate.instant(), instant);
+		}
+
+		/**
+		 * Wipes the current adjustment.
+		 */
+		synchronized void reset() {
+			this.adjustment = Duration.ZERO;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.time.Clock#instant()
+		 */
+		@Override
+		public Instant instant() {
+			return delegate.instant().plus(adjustment);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.time.Clock#getZone()
+		 */
+		@Override
+		public ZoneId getZone() {
+			return delegate.getZone();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.time.Clock#withZone(java.time.ZoneId)
+		 */
+		@Override
+		public Clock withZone(ZoneId zone) {
+			return Clock.offset(delegate.withZone(zone), adjustment);
 		}
 	}
 
