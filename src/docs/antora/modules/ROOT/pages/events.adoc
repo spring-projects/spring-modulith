@@ -195,6 +195,15 @@ class InventoryManagement {
 ----
 ======
 
+[[aml.executor]]
+=== Listener Executor (since 2.2)
+
+Application module listeners are executed on the `Executor` bean named `applicationModuleListenerTaskExecutor` if present, and on the default executor used for `@Async` methods otherwise.
+In a Spring Boot application with `spring-modulith-events-core` on the classpath, Spring Modulith registers such a dedicated executor.
+It is created through Spring Boot's `ThreadPoolTaskExecutorBuilder` (or `SimpleAsyncTaskExecutorBuilder` if virtual threads are enabled), so that the `spring.task.execution.*` properties and the task executor customizers registered in the application apply to it.
+To replace it, declare an `Executor` bean with that name (available as `ApplicationModuleListener.TASK_EXECUTOR_BEAN_NAME`) yourself.
+To customize it without affecting any other executor, use a `BeanPostProcessor` that only handles the bean of that name.
+
 [[publication-registry]]
 == The Event Publication Registry
 
