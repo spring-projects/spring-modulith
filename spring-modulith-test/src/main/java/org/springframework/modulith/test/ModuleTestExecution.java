@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import org.jspecify.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -315,10 +316,11 @@ public class ModuleTestExecution implements Iterable<ApplicationModule> {
 
 		return candidates.stream()
 				.<Class<?>> map(ModuleTestExecution::lookupSpringBootApplicationAnnotation)
+				.filter(Objects::nonNull)
 				.findFirst();
 	}
 
-	private static Class<?> lookupSpringBootApplicationAnnotation(Class<?> clazz) {
+	private static @Nullable Class<?> lookupSpringBootApplicationAnnotation(Class<?> clazz) {
 
 		return MODULITH_TYPES.computeIfAbsent(clazz,
 				it -> new AnnotatedClassFinder(SpringBootApplication.class).findFromClass(clazz));
