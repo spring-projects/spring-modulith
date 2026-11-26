@@ -176,7 +176,35 @@ createIssueForMilestone() {
   local body="Back-port of $(getGHCode $number)."
 
   local targetNumber=$(gh issue create --assignee "@me" --label "$labels" --milestone "$targetMilestone" --title "$title" --body "$body" | awk -F '/' '{print $NF}')
+
+  # New issues default to "Todo". Output goes to stderr as stdout is captured as the issue number.
+  setIssueStatus "$targetNumber" "In progress" >&2
+
   echo "$targetNumber"
+}
+
+# Sets the status (e.g. "In progress") of the issue with the given number via GraphQL.
+setIssueStatus() {
+  local number="$1"
+  local status="$2"
+
+  local statusId=$(gh api graphql -F owner=':owner' -F name=':repo' -f query='
+    query($owner: String!, $name: String!) {
+      repository(owner: $owner, name: $name) { planningStatuses(first: 20) { nodes { id name } } }
+    }' --jq ".data.repository.planningStatuses.nodes[] | select(.name == \"$status\") | .id")
+  local issueId=$(gh issue view "$number" --json id --jq '.id')
+
+  if isBlank "$statusId" || isBlank "$issueId"; then
+    echo "WARNING: Could not resolve status [$status] or issue [$number], leaving status unchanged"
+    return 1
+  fi
+
+  gh api graphql -f issueId="$issueId" -f statusId="$statusId" -f query='
+    mutation($issueId: ID!, $statusId: ID!) {
+      setIssueStatus(input: {issueId: $issueId, statusId: $statusId}) { issue { number } }
+    }' > /dev/null || { echo "WARNING: Failed to set status [$status] on issue [$number]"; return 1; }
+
+  echo "Set status of issue [$number] to [$status]"
 }
 
 isCleanIssue() {
