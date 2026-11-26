@@ -17,16 +17,7 @@ package org.springframework.modulith.moments.support;
 
 import static org.springframework.modulith.moments.support.MomentsProperties.Granularity.*;
 
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.Month;
-import java.time.MonthDay;
-import java.time.Year;
-import java.time.YearMonth;
-import java.time.ZoneId;
+import java.time.*;
 import java.time.temporal.ChronoUnit;
 import java.time.temporal.WeekFields;
 import java.util.Collection;
@@ -294,83 +285,6 @@ public class Moments implements Now {
 	}
 
 	/**
-	 * A {@link Clock} that applies a single, adjustable offset to a delegate {@link Clock}. All modifications of the
-	 * offset are atomic, so that concurrent shifts and skips do not get lost.
-	 *
-	 * @author Naitik Singh
-	 * @since 2.3
-	 */
-	private static final class AdjustableClock extends Clock {
-
-		private final Clock delegate;
-		private volatile Duration adjustment = Duration.ZERO;
-
-		/**
-		 * Creates a new {@link AdjustableClock} for the given delegate {@link Clock}.
-		 *
-		 * @param delegate must not be {@literal null}.
-		 */
-		AdjustableClock(Clock delegate) {
-
-			Assert.notNull(delegate, "Clock must not be null!");
-
-			this.delegate = delegate;
-		}
-
-		/**
-		 * Adds the given {@link Duration} to the current adjustment.
-		 *
-		 * @param duration must not be {@literal null}.
-		 */
-		synchronized void adjustBy(Duration duration) {
-			this.adjustment = adjustment.plus(duration);
-		}
-
-		/**
-		 * Adjusts the clock so that it currently returns the given {@link Instant}.
-		 *
-		 * @param instant must not be {@literal null}.
-		 */
-		synchronized void adjustTo(Instant instant) {
-			this.adjustment = Duration.between(delegate.instant(), instant);
-		}
-
-		/**
-		 * Wipes the current adjustment.
-		 */
-		synchronized void reset() {
-			this.adjustment = Duration.ZERO;
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.time.Clock#instant()
-		 */
-		@Override
-		public Instant instant() {
-			return delegate.instant().plus(adjustment);
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.time.Clock#getZone()
-		 */
-		@Override
-		public ZoneId getZone() {
-			return delegate.getZone();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 * @see java.time.Clock#withZone(java.time.ZoneId)
-		 */
-		@Override
-		public Clock withZone(ZoneId zone) {
-			return Clock.offset(delegate.withZone(zone), adjustment);
-		}
-	}
-
-	/**
 	 * A method invocation to be scheduled per {@link Granularity}.
 	 *
 	 * @author Oliver Drotbohm
@@ -443,6 +357,83 @@ public class Moments implements Now {
 
 		private boolean shouldBeScheduledFor(Granularity granularity) {
 			return granularity.isAtLeastAsFineAs(this.granularity);
+		}
+	}
+
+	/**
+	 * A {@link Clock} that applies a single, adjustable offset to a delegate {@link Clock}. Each modification of the
+	 * offset is atomic and relative to the current one, so that concurrent shifts and skips do not get lost.
+	 *
+	 * @author Naitik Singh
+	 * @since 2.3
+	 */
+	private static final class AdjustableClock extends Clock {
+
+		private final Clock delegate;
+		private volatile Duration adjustment = Duration.ZERO;
+
+		/**
+		 * Creates a new {@link AdjustableClock} for the given delegate {@link Clock}.
+		 *
+		 * @param delegate must not be {@literal null}.
+		 */
+		AdjustableClock(Clock delegate) {
+
+			Assert.notNull(delegate, "Clock must not be null!");
+
+			this.delegate = delegate;
+		}
+
+		/**
+		 * Adds the given {@link Duration} to the current adjustment.
+		 *
+		 * @param duration must not be {@literal null}.
+		 */
+		synchronized void adjustBy(Duration duration) {
+			this.adjustment = adjustment.plus(duration);
+		}
+
+		/**
+		 * Adjusts the clock so that it currently returns the given {@link Instant}.
+		 *
+		 * @param instant must not be {@literal null}.
+		 */
+		synchronized void adjustTo(Instant instant) {
+			this.adjustment = Duration.between(delegate.instant(), instant);
+		}
+
+		/**
+		 * Wipes the current adjustment.
+		 */
+		synchronized void reset() {
+			this.adjustment = Duration.ZERO;
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.time.Clock#instant()
+		 */
+		@Override
+		public Instant instant() {
+			return delegate.instant().plus(adjustment);
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.time.Clock#getZone()
+		 */
+		@Override
+		public ZoneId getZone() {
+			return delegate.getZone();
+		}
+
+		/*
+		 * (non-Javadoc)
+		 * @see java.time.Clock#withZone(java.time.ZoneId)
+		 */
+		@Override
+		public Clock withZone(ZoneId zone) {
+			return Clock.offset(delegate.withZone(zone), adjustment);
 		}
 	}
 }
