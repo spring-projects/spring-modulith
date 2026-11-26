@@ -31,12 +31,13 @@ isValidIssueNumber() {
   # Check if the provided number matches an existing issue number
   # Note: The issue status should be "open" (backporting is done before an issue is closed)
   #       But it is not necessary to filter on status - it is preferable not to constrain
-  if ! gh issue list --limit 10000 --state "all" --json number --jq '.[].number' | grep -x -q "^$issue$"; then
-    echo "The provided issue number [$issue] does not match an existing GitHub issue number"
+  # Uses the issues API as that resolves issues and pull requests alike (gh issue list does not return the latter)
+  if ! gh api "repos/:owner/:repo/issues/$issue" --silent 2>/dev/null; then
+    echo "The provided issue number [$issue] does not match an existing GitHub issue or pull request number"
     # output value
     false
   else
-    echo "The provided issue number [$issue] matches an existing GitHub issue number"
+    echo "The provided issue number [$issue] matches an existing GitHub issue or pull request number"
     # output value
     true
   fi
