@@ -31,7 +31,7 @@ dependencies {
 The dependency added to the project's classpath causes the following things in your application:
 
 * Application code can refer to `HourHasPassed`, `DayHasPassed`, `WeekHasPassed`, `MonthHasPassed`, `QuarterHasPassed`, `YearHasPassed` types in Spring event listeners to get notified if a certain amount of time has passed.
-* A bean of type `org.springframework.modulith.Moments` is available in the `ApplicationContext` that contains the logic to trigger these events.
+* A bean of type `org.springframework.modulith.moments.support.Moments` is available in the `ApplicationContext` that contains the logic to trigger these events.
 * If `spring.modulith.moments.enable-time-machine` is set to `true`, that instance will be a `org.springframework.modulith.TimeMachine` which allows to "shift" time and by that triggers all intermediate events, which is useful to integration test functionality that is triggered by the events.
 
 By default, Moments uses a `Clock.systemUTC()` instance. To customize this, declare a bean of type `Clock`.
