@@ -100,6 +100,25 @@ class SpringModulithFlywayCustomizerUnitTests {
 				});
 	}
 
+	@Test // GH-1962
+	void retainsModulesWithMigrationsForDottedIdentifiers() {
+
+		var identifiers = ApplicationModuleIdentifiers.of(List.of(
+				ApplicationModuleIdentifier.of("fully.qualified")));
+
+		var filter = new HasMigrationFiles(new PathMatchingResourcePatternResolver());
+
+		var result = new SpringModulithFlywayCustomizer(Flyway.configure().load(), filter)
+				.augment(identifiers)
+				.toList();
+
+		assertThat(result).hasSize(2);
+
+		assertThat(result.get(1).getConfiguration().getLocations())
+				.extracting(Location::toString)
+				.containsExactly("classpath:db/migration/fully/qualified");
+	}
+
 	@Builder
 	@ToString
 	@RequiredArgsConstructor
