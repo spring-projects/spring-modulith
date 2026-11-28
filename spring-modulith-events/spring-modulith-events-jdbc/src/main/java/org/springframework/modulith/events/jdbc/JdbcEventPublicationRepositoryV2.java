@@ -602,7 +602,9 @@ class JdbcEventPublicationRepositoryV2 implements EventPublicationRepository, Be
 			args.add(Timestamp.from(instant));
 		}
 
-		sql += " ORDER BY PUBLICATION_DATE ASC";
+		sql += criteria.isLeastRecentlyAttemptedFirst()
+				? " ORDER BY COALESCE(LAST_RESUBMISSION_DATE, PUBLICATION_DATE) ASC"
+				: " ORDER BY PUBLICATION_DATE ASC";
 
 		var itemsToRead = criteria.getMaxItemsToRead();
 
